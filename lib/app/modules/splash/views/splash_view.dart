@@ -11,49 +11,29 @@ class SplashView extends GetView<SplashController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.sidebarBg,
-      body: Center(
+      body: SafeArea(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Logo mark — replace with actual asset in Sprint 1
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.orange,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              alignment: Alignment.center,
-              child: const Text(
-                'F',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 44,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'Inter',
+            // Logo centered in remaining space
+            Expanded(
+              child: Center(
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: MediaQuery.of(context).size.width * 0.65,
+                  fit: BoxFit.contain,
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            Text(
-              'FEROS',
-              style: AppTextStyles.heading1.copyWith(
-                color: Colors.white,
-                letterSpacing: 4,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Transport Management',
-              style: AppTextStyles.body.copyWith(color: Colors.white54),
-            ),
-            const SizedBox(height: 48),
-            const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: AppColors.orange,
+
+            // "Powered by FEROS" at bottom
+            Padding(
+              padding: const EdgeInsets.only(bottom: 32),
+              child: Text(
+                'Powered by FEROS',
+                style: AppTextStyles.caption.copyWith(
+                  color: Colors.white.withValues(alpha: 0.4),
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
           ],
