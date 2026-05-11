@@ -83,7 +83,7 @@ class LoginView extends GetView<LoginController> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () {},
+                        onPressed: () => _showForgotPinDialog(context),
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
                           minimumSize: Size.zero,
@@ -145,6 +145,33 @@ class LoginView extends GetView<LoginController> {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showForgotPinDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.lock_reset_outlined, color: AppColors.navy, size: 22),
+            const SizedBox(width: 8),
+            Text('Forgot PIN?', style: AppTextStyles.heading4.copyWith(color: AppColors.navy)),
+          ],
+        ),
+        content: Text(
+          'PIN reset is managed by your Admin.\n\nPlease contact your company Admin to get a new PIN assigned to your account.',
+          style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(foregroundColor: AppColors.navy),
+            child: Text('Got it', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy)),
           ),
         ],
       ),
