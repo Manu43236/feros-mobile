@@ -27,6 +27,21 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 
+	<!-- Allow HTTP for feros.in API -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>feros.in</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+
 	<!-- Camera -->
 	<key>NSCameraUsageDescription</key>
 	<string>FEROS needs camera access to capture vehicle and document photos.</string>

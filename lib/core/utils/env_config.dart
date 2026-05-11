@@ -1,15 +1,14 @@
 class EnvConfig {
   EnvConfig._();
 
-  // Toggle this for dev vs prod
-  static const _env = _Env.dev;
+  static const _env = _Env.prod;
 
   static String get baseUrl {
     switch (_env) {
       case _Env.dev:
-        return 'http://192.168.1.100:8080/api/v1'; // update to your local IP
+        return 'http://192.168.1.100:8080/api/v1';
       case _Env.prod:
-        return 'https://api.feros.in/api/v1';
+        return 'http://feros.in/api/v1';
     }
   }
 
