@@ -64,8 +64,9 @@ class LoginController extends GetxController {
       });
 
       final data = response.data as Map<String, dynamic>;
-      final token = data['data']['token'] as String;
-      final user = UserModel.fromJson(data['data']['user'] as Map<String, dynamic>);
+      final payload = data['data'] as Map<String, dynamic>;
+      final token = payload['token'] as String;
+      final user = UserModel.fromJson(payload);
 
       await _auth.saveSession(token, user);
       Get.offAllNamed(_auth.roleHome);
