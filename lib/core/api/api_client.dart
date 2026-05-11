@@ -19,7 +19,7 @@ class ApiClient extends GetxService {
 
     _dio.interceptors.addAll([
       _AuthInterceptor(),
-      if (EnvConfig.isDebug) LogInterceptor(
+      LogInterceptor(
         requestBody: true,
         responseBody: true,
         requestHeader: false,
