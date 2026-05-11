@@ -1,0 +1,85 @@
+name: feros
+description: FEROS - Fleet Equipment Rental Operating System
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management & navigation
+  get: ^4.7.3
+
+  # HTTP
+  dio: ^5.8.0+1
+
+  # Secure storage
+  flutter_secure_storage: ^9.2.4
+
+  # Image
+  image_picker: ^1.1.2
+  flutter_image_compress: ^2.4.0
+  cached_network_image: ^3.4.1
+
+  # Location & permissions
+  geolocator: ^13.0.2
+  permission_handler: ^11.4.0
+
+  # UI
+  shimmer: ^3.0.0
+  fl_chart: ^0.70.2
+  dotted_border: ^2.1.0
+
+  # Fonts
+  google_fonts: ^6.2.1
+
+  # Utils
+  intl: ^0.20.2
+  path_provider: ^2.1.5
+  connectivity_plus: ^6.1.4
+  package_info_plus: ^8.3.0
+  url_launcher: ^6.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.6
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#0F2137"
+  adaptive_icon_foreground: "assets/images/app_icon_foreground.png"
+
+flutter_native_splash:
+  color: "#0F2137"
+  image: assets/images/splash_logo.png
+  color_dark: "#0F2137"
+  image_dark: assets/images/splash_logo.png
+  android: true
+  ios: true
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
