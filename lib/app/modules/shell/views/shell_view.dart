@@ -4,6 +4,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../controllers/shell_controller.dart';
 import '../../dashboard/views/dashboard_view.dart';
+import '../../trips/views/trips_view.dart';
+import '../../../../core/services/auth_service.dart';
 
 class ShellView extends GetView<ShellController> {
   const ShellView({super.key});
@@ -30,8 +32,13 @@ class ShellView extends GetView<ShellController> {
   }
 
   List<Widget> _buildPages(int count) {
+    final role = Get.find<AuthService>().user?.role ?? '';
     return List.generate(count, (i) {
       if (i == 0) return const DashboardView();
+      // Tab 1 = Trips for DRIVER/CLEANER
+      if (i == 1 && (role == 'DRIVER' || role == 'CLEANER')) {
+        return const TripsView();
+      }
       return _PlaceholderTab(index: i);
     });
   }
