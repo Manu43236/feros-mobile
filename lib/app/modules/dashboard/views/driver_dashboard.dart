@@ -4,6 +4,7 @@ import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_endpoints.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/delivery_sheet.dart';
 import '../../../../core/widgets/odometer_sheet.dart';
 import '../../attendance/views/attendance_sheet.dart';
 import '../../payslip/views/payslip_view.dart';
@@ -33,9 +34,11 @@ class DriverDashboard extends StatelessWidget {
           statusLabel: 'ON TRIP',
           tripData: active,
           attended: attended,
-          actionLabel: 'View Trip Details',
-          actionIcon: Icons.arrow_forward,
-          onAction: () => _openTrip(context, active),
+          actionLabel: 'Mark as Done',
+          actionIcon: Icons.check_circle_outline,
+          onAction: () => _markDoneFromHome(context, active),
+          secondaryActionLabel: 'View Trip Details',
+          onSecondaryAction: () => _openTrip(context, active),
           onCardTap: () => _openTrip(context, active),
           bottomRow: _BottomNav(controller: controller, attended: attended),
         );
@@ -60,6 +63,43 @@ class DriverDashboard extends StatelessWidget {
       // ── State 1: IDLE ─────────────────────────────────────────
       return _IdleState(controller: controller);
     });
+  }
+
+  void _markDoneFromHome(BuildContext context, Map<String, dynamic> tripData) async {
+    final lrId = tripData['lrId'];
+    if (lrId == null) return;
+
+    final odmResult = await showOdometerSheet(
+      context,
+      title: 'End Trip — Record ODM',
+      hint: 'End Odometer (km)',
+      buttonLabel: 'Next',
+      buttonColor: AppColors.navy,
+      instruction: 'Take a photo of the odometer on arrival.',
+    );
+    if (odmResult == null) return;
+
+    final deliveryResult = await showDeliverySheet(
+      context,
+      endOdometer: odmResult.odometer,
+    );
+    if (deliveryResult == null) return;
+
+    try {
+      final api = Get.find<ApiClient>();
+      await api.put(ApiEndpoints.lrById(lrId), data: {
+        'lrStatus': 'DELIVERED',
+        'deliveredWeight': deliveryResult.weight,
+        'deliveredAt': DateTime.now().toIso8601String(),
+        'endOdometer': odmResult.odometer,
+      });
+      controller.fetchDashboard();
+    } catch (_) {
+      Get.snackbar('Error', 'Failed to confirm delivery',
+          backgroundColor: const Color(0xFFDC2626),
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM);
+    }
   }
 
   void _startTripFromHome(BuildContext context, Map<String, dynamic> tripData) async {
@@ -229,6 +269,8 @@ class _HomeState extends StatelessWidget {
   final String actionLabel;
   final IconData actionIcon;
   final VoidCallback onAction;
+  final String? secondaryActionLabel;
+  final VoidCallback? onSecondaryAction;
   final VoidCallback? onCardTap;
   final Widget bottomRow;
 
@@ -241,6 +283,8 @@ class _HomeState extends StatelessWidget {
     required this.actionLabel,
     required this.actionIcon,
     required this.onAction,
+    this.secondaryActionLabel,
+    this.onSecondaryAction,
     this.onCardTap,
     required this.bottomRow,
   });
@@ -286,7 +330,7 @@ class _HomeState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Trip card with action button inside
+            // Trip card with action button(s) inside
             GestureDetector(
               onTap: onCardTap,
               child: _TripInfoCard(
@@ -295,6 +339,8 @@ class _HomeState extends StatelessWidget {
                 actionLabel: actionLabel,
                 actionIcon: actionIcon,
                 onAction: onAction,
+                secondaryActionLabel: secondaryActionLabel,
+                onSecondaryAction: onSecondaryAction,
               ),
             ),
             const SizedBox(height: 20),
@@ -314,12 +360,16 @@ class _TripInfoCard extends StatelessWidget {
   final String actionLabel;
   final IconData actionIcon;
   final VoidCallback onAction;
+  final String? secondaryActionLabel;
+  final VoidCallback? onSecondaryAction;
   const _TripInfoCard({
     required this.tripData,
     required this.statusColor,
     required this.actionLabel,
     required this.actionIcon,
     required this.onAction,
+    this.secondaryActionLabel,
+    this.onSecondaryAction,
   });
 
   @override
@@ -421,7 +471,7 @@ class _TripInfoCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // Action button — inside card
+          // Primary action button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -442,6 +492,27 @@ class _TripInfoCard extends StatelessWidget {
               ),
             ),
           ),
+          if (secondaryActionLabel != null && onSecondaryAction != null) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: onSecondaryAction,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.navy,
+                  side: const BorderSide(color: AppColors.navy),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                child: Text(secondaryActionLabel!,
+                    style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Inter')),
+              ),
+            ),
+          ],
         ],
       ),
     );

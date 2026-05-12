@@ -7,6 +7,7 @@ import '../../../../core/popups/feros_snackbar.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/info_row.dart';
+import '../../../../core/widgets/delivery_sheet.dart';
 import '../../../../core/widgets/odometer_sheet.dart';
 import '../models/lr_model.dart';
 
@@ -84,8 +85,12 @@ class _TripDetailViewState extends State<TripDetailView> {
     );
     if (odmResult == null) return;
 
-    // Step 2: Delivered weight + optional delivery photo
-    final deliveryResult = await _showDeliverySheet(odmResult.odometer);
+    // Step 2: Delivered weight
+    final deliveryResult = await showDeliverySheet(
+      context,
+      endOdometer: odmResult.odometer,
+      loadedWeight: _loadedWeight ?? widget.lr.allocatedWeight,
+    );
     if (deliveryResult == null) return;
 
     setState(() => _isUpdating = true);
@@ -110,95 +115,6 @@ class _TripDetailViewState extends State<TripDetailView> {
           : 'Failed to confirm delivery');
     }
     setState(() => _isUpdating = false);
-  }
-
-  // ── Delivery Sheet (weight + optional photo) ────────────────────────────────
-  Future<_DeliveryResult?> _showDeliverySheet(double endOdometer) async {
-    final weightController = TextEditingController();
-
-    return await showModalBottomSheet<_DeliveryResult>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 20, right: 20, top: 20,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.border, borderRadius: BorderRadius.circular(2)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text('Confirm Delivery',
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy)),
-            const SizedBox(height: 4),
-            Text(
-              'End ODM: ${endOdometer.toStringAsFixed(0)} km   •   '
-              'Loaded: ${_loadedWeight?.toStringAsFixed(1) ?? widget.lr.allocatedWeight.toStringAsFixed(1)}T',
-              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: weightController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              autofocus: true,
-              style: AppTextStyles.body,
-              decoration: InputDecoration(
-                labelText: 'Delivered Weight (T)',
-                labelStyle:
-                    AppTextStyles.caption.copyWith(color: AppColors.mutedText),
-                suffixText: 'T',
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.navy),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  final weight =
-                      double.tryParse(weightController.text.trim());
-                  if (weight == null || weight <= 0) {
-                    FerosSnackbar.error('Enter a valid delivered weight');
-                    return;
-                  }
-                  Navigator.of(ctx).pop(_DeliveryResult(weight: weight));
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF16A34A),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                ),
-                child: Text('Confirm Delivery',
-                    style: AppTextStyles.caption.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -383,11 +299,6 @@ class _TripDetailViewState extends State<TripDetailView> {
   }
 }
 
-
-class _DeliveryResult {
-  final double weight;
-  _DeliveryResult({required this.weight});
-}
 
 // ── Section Card ──────────────────────────────────────────────────────────────
 class _SectionCard extends StatelessWidget {
