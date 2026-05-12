@@ -192,7 +192,7 @@ class _TripCard extends StatelessWidget {
                 trip['lrNumber']?.toString() ?? '—',
                 style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
               ),
-              _StatusChip(status: trip['status']?.toString() ?? ''),
+              _StatusChip(status: trip['lrStatus']?.toString() ?? ''),
             ],
           ),
           const SizedBox(height: 8),
@@ -207,7 +207,7 @@ class _TripCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  trip['fromLocation']?.toString() ?? '—',
+                  trip['fromCity']?.toString() ?? '—',
                   style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
                 ),
               ),
@@ -215,7 +215,7 @@ class _TripCard extends StatelessWidget {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  trip['toLocation']?.toString() ?? '—',
+                  trip['toCity']?.toString() ?? '—',
                   style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
                   textAlign: TextAlign.right,
                 ),

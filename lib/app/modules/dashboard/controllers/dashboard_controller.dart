@@ -28,13 +28,18 @@ class DashboardController extends GetxController {
   Future<void> fetchDashboard() async {
     state.value = ViewState.loading;
     try {
-      final res = await _api.get(ApiEndpoints.dashboard);
+      final role = auth.user?.role ?? '';
+      final isFieldRole = role == 'DRIVER' || role == 'CLEANER' ||
+          role == 'SUPERVISOR' || role == 'SERVICE_MEN' || role == 'STORE_KEEPER';
+      final endpoint = isFieldRole ? ApiEndpoints.myDashboard : ApiEndpoints.dashboard;
+
+      final res = await _api.get(endpoint);
       final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
 
-      totalTrips.value       = data['totalTrips']        as int? ?? 0;
-      pendingTrips.value     = data['pendingTrips']       as int? ?? 0;
-      isAttendanceMarked.value = data['attendanceMarked'] as bool? ?? false;
-      unreadNotifications.value = data['unreadNotifications'] as int? ?? 0;
+      totalTrips.value          = data['totalTrips']          as int? ?? 0;
+      pendingTrips.value        = data['pendingTrips']         as int? ?? 0;
+      isAttendanceMarked.value  = data['attendanceMarked']     as bool? ?? false;
+      unreadNotifications.value = data['unreadNotifications']  as int? ?? 0;
 
       final trips = data['upcomingTrips'] as List?;
       upcomingTrip.value = trips != null && trips.isNotEmpty

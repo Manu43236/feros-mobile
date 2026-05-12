@@ -6,6 +6,7 @@ class ApiEndpoints {
 
   // Dashboard
   static const dashboard     = '/dashboard';
+  static const myDashboard   = '/dashboard/my';
   static const expiryAlerts  = '/dashboard/expiry-alerts';
 
   // Vehicles
