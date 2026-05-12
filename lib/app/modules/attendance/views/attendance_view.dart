@@ -1,14 +1,11 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_endpoints.dart';
 import '../../../../core/popups/feros_snackbar.dart';
-import '../../../../core/services/auth_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import 'attendance_sheet.dart';
 
 class AttendanceView extends StatefulWidget {
   const AttendanceView({super.key});
@@ -19,95 +16,93 @@ class AttendanceView extends StatefulWidget {
 
 class _AttendanceViewState extends State<AttendanceView> {
   bool _isLoading = true;
-  bool _isMarking = false;
-  Map<String, dynamic>? _todayRecord;
-
-  File? _selfie;
-  Position? _position;
+  List<Map<String, dynamic>> _records = [];
+  DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
+  int? _selectedDay;
 
   @override
   void initState() {
     super.initState();
-    _fetchTodayStatus();
+    _fetch();
   }
 
-  Future<void> _fetchTodayStatus() async {
+  Future<void> _fetch() async {
     setState(() => _isLoading = true);
     try {
       final api = Get.find<ApiClient>();
-      final res = await api.get(ApiEndpoints.attendanceTodayStatus);
-      final data = (res.data as Map<String, dynamic>)['data'];
-      setState(() => _todayRecord = data as Map<String, dynamic>?);
+      final from = DateTime(_month.year, _month.month, 1);
+      final to = DateTime(_month.year, _month.month + 1, 0);
+      final res = await api.get(
+        ApiEndpoints.myAttendance,
+        queryParameters: {
+          'from': _fmt(from),
+          'to': _fmt(to),
+        },
+      );
+      final raw = (res.data as Map<String, dynamic>)['data'] as List? ?? [];
+      setState(() => _records = raw.cast<Map<String, dynamic>>());
     } catch (_) {
-      setState(() => _todayRecord = null);
+      FerosSnackbar.error('Failed to load attendance');
     }
     setState(() => _isLoading = false);
   }
 
-  Future<void> _takeSelfie() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: ImageSource.camera,
-      preferredCameraDevice: CameraDevice.front,
-      imageQuality: 80,
-    );
-    if (picked != null) setState(() => _selfie = File(picked.path));
+  String _fmt(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  void _prevMonth() {
+    setState(() {
+      _month = DateTime(_month.year, _month.month - 1);
+      _selectedDay = null;
+    });
+    _fetch();
   }
 
-  Future<void> _captureLocation() async {
-    try {
-      LocationPermission perm = await Geolocator.checkPermission();
-      if (perm == LocationPermission.denied) {
-        perm = await Geolocator.requestPermission();
-      }
-      if (perm == LocationPermission.deniedForever ||
-          perm == LocationPermission.denied) return;
-
-      final pos = await Geolocator.getCurrentPosition(
-          locationSettings:
-              const LocationSettings(accuracy: LocationAccuracy.high));
-      setState(() => _position = pos);
-    } catch (_) {
-      // GPS unavailable — optional, continue
-    }
+  void _nextMonth() {
+    final now = DateTime.now();
+    if (_month.year == now.year && _month.month == now.month) return;
+    setState(() {
+      _month = DateTime(_month.year, _month.month + 1);
+      _selectedDay = null;
+    });
+    _fetch();
   }
 
-  Future<void> _markAttendance() async {
-    setState(() => _isMarking = true);
-
-    // Try GPS (optional)
-    await _captureLocation();
-
-    try {
-      final api = Get.find<ApiClient>();
-
-      // Build request body
-      final Map<String, dynamic> body = {};
-      if (_position != null) {
-        body['latitude'] = _position!.latitude;
-        body['longitude'] = _position!.longitude;
-      }
-      // TODO: upload selfie to S3 and include selfieUrl if _selfie != null
-
-      await api.post(ApiEndpoints.attendanceMarkPresent, data: body);
-      FerosSnackbar.success('Attendance marked for today');
-      await _fetchTodayStatus();
-    } catch (e) {
-      final msg = e.toString().contains('already marked')
-          ? 'Already marked for today'
-          : 'Failed to mark attendance';
-      FerosSnackbar.error(msg);
+  Map<int, Map<String, dynamic>> get _recordsByDay {
+    final map = <int, Map<String, dynamic>>{};
+    for (final r in _records) {
+      final dateStr = r['attendanceDate'] as String?;
+      if (dateStr == null) continue;
+      final d = DateTime.tryParse(dateStr);
+      if (d != null) map[d.day] = r;
     }
+    return map;
+  }
 
-    setState(() => _isMarking = false);
+  bool get _isCurrentMonth {
+    final now = DateTime.now();
+    return _month.year == now.year && _month.month == now.month;
+  }
+
+  bool get _todayMarked {
+    final today = DateTime.now().day;
+    return _isCurrentMonth && _recordsByDay.containsKey(today);
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = Get.find<AuthService>().user;
-    final today = DateTime.now();
-    final dateStr =
-        '${today.day} ${_monthName(today.month)} ${today.year}';
+    final byDay = _recordsByDay;
+
+    // Summary counts
+    int present = 0, absent = 0, halfDay = 0, onLeave = 0;
+    for (final r in _records) {
+      final type =
+          (r['attendanceTypeName'] as String? ?? '').toLowerCase();
+      if (type.contains('present')) present++;
+      else if (type.contains('absent')) absent++;
+      else if (type.contains('half')) halfDay++;
+      else if (type.contains('leave')) onLeave++;
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -121,22 +116,33 @@ class _AttendanceViewState extends State<AttendanceView> {
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w600)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _fetchTodayStatus,
-          ),
+          if (_isCurrentMonth && !_todayMarked)
+            TextButton(
+              onPressed: () => showMarkAttendanceSheet(
+                context,
+                onMarked: () {
+                  _fetch();
+                },
+              ),
+              child: const Text('Mark Today',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13)),
+            ),
         ],
       ),
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: AppColors.navy))
           : RefreshIndicator(
-              onRefresh: _fetchTodayStatus,
+              onRefresh: _fetch,
               color: AppColors.navy,
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  // ── Date + User ──────────────────────────────────
+                  // ── Calendar Card ───────────────────────────
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -149,228 +155,360 @@ class _AttendanceViewState extends State<AttendanceView> {
                             offset: Offset(0, 2))
                       ],
                     ),
-                    child: Row(
+                    child: Column(
                       children: [
-                        CircleAvatar(
-                          radius: 24,
-                          backgroundColor: AppColors.navy,
-                          child: Text(
-                            _initials(user?.name ?? ''),
-                            style: AppTextStyles.bodyMedium
-                                .copyWith(color: Colors.white),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        // Month navigator
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(user?.name ?? '—',
-                                style: AppTextStyles.bodyMedium
-                                    .copyWith(color: AppColors.navy)),
-                            Text(dateStr,
-                                style: AppTextStyles.caption
-                                    .copyWith(color: AppColors.mutedText)),
+                            IconButton(
+                              icon: const Icon(Icons.chevron_left,
+                                  color: AppColors.navy),
+                              onPressed: _prevMonth,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                            Text(
+                              _monthLabel(_month),
+                              style: AppTextStyles.bodyMedium
+                                  .copyWith(color: AppColors.navy),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.chevron_right,
+                                  color: _isCurrentMonth
+                                      ? AppColors.border
+                                      : AppColors.navy),
+                              onPressed: _nextMonth,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
                           ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Weekday headers
+                        Row(
+                          children: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+                              .map((d) => Expanded(
+                                    child: Center(
+                                      child: Text(d,
+                                          style: AppTextStyles.caption
+                                              .copyWith(
+                                                  color: AppColors.mutedText,
+                                                  fontWeight:
+                                                      FontWeight.w600)),
+                                    ),
+                                  ))
+                              .toList(),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Calendar grid
+                        _CalendarGrid(
+                          month: _month,
+                          recordsByDay: byDay,
+                          selectedDay: _selectedDay,
+                          onDayTap: (day) =>
+                              setState(() => _selectedDay =
+                                  _selectedDay == day ? null : day),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
 
-                  // ── Status ───────────────────────────────────────
-                  if (_todayRecord != null) ...[
-                    _MarkedCard(record: _todayRecord!),
-                  ] else ...[
-                    // ── Selfie preview ───────────────────────────
-                    GestureDetector(
-                      onTap: _takeSelfie,
-                      child: Container(
-                        width: double.infinity,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: _selfie != null
-                            ? Stack(children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(11),
-                                  child: Image.file(_selfie!,
-                                      width: double.infinity,
-                                      height: 200,
-                                      fit: BoxFit.cover),
-                                ),
-                                Positioned(
-                                  bottom: 8, right: 8,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.navy,
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Text('Retake',
-                                        style: AppTextStyles.caption
-                                            .copyWith(color: Colors.white)),
-                                  ),
-                                ),
-                              ])
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.camera_front_outlined,
-                                      size: 36, color: AppColors.mutedText),
-                                  const SizedBox(height: 8),
-                                  Text('Tap to take selfie (optional)',
-                                      style: AppTextStyles.caption
-                                          .copyWith(color: AppColors.mutedText)),
-                                ],
-                              ),
-                      ),
+                  // ── Summary Row ─────────────────────────────
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: const [
+                        BoxShadow(
+                            color: Color(0x0A000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 2))
+                      ],
                     ),
-                    const SizedBox(height: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _SummaryChip(
+                            label: 'Present',
+                            count: present,
+                            color: const Color(0xFF16A34A)),
+                        _SummaryChip(
+                            label: 'Absent',
+                            count: absent,
+                            color: const Color(0xFFDC2626)),
+                        _SummaryChip(
+                            label: 'Half Day',
+                            count: halfDay,
+                            color: const Color(0xFFD97706)),
+                        _SummaryChip(
+                            label: 'Leave',
+                            count: onLeave,
+                            color: AppColors.navy),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
 
-                    // ── GPS status ───────────────────────────────
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            _position != null
-                                ? Icons.location_on_outlined
-                                : Icons.location_off_outlined,
-                            size: 20,
-                            color: _position != null
-                                ? const Color(0xFF16A34A)
-                                : AppColors.mutedText,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              _position != null
-                                  ? 'Location: ${_position!.latitude.toStringAsFixed(4)}, ${_position!.longitude.toStringAsFixed(4)}'
-                                  : 'Location will be captured when you mark attendance (optional)',
-                              style: AppTextStyles.caption
-                                  .copyWith(color: AppColors.mutedText),
-                            ),
-                          ),
-                        ],
-                      ),
+                  // ── Selected Day Detail ──────────────────────
+                  if (_selectedDay != null) ...[
+                    _DayDetail(
+                      day: _selectedDay!,
+                      month: _month,
+                      record: byDay[_selectedDay],
                     ),
-                    const SizedBox(height: 20),
-
-                    // ── Mark Present Button ──────────────────────
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _isMarking ? null : _markAttendance,
-                        icon: _isMarking
-                            ? const SizedBox(
-                                width: 18, height: 18,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white))
-                            : const Icon(Icons.check_circle_outline, size: 20),
-                        label: Text(
-                          _isMarking ? 'Marking…' : 'Mark Present',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF16A34A),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                    ),
+                    const SizedBox(height: 12),
                   ],
+
+                  // ── Legend ──────────────────────────────────
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 6,
+                    children: [
+                      _Legend(color: const Color(0xFF16A34A), label: 'Present'),
+                      _Legend(
+                          color: const Color(0xFFDC2626), label: 'Absent'),
+                      _Legend(
+                          color: const Color(0xFFD97706), label: 'Half Day'),
+                      _Legend(color: AppColors.navy, label: 'Leave'),
+                    ],
+                  ),
                 ],
               ),
             ),
     );
   }
 
-  String _initials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.isEmpty) return '?';
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  String _monthLabel(DateTime d) {
+    const months = [
+      '', 'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return '${months[d.month]} ${d.year}';
+  }
+}
+
+// ── Calendar Grid ─────────────────────────────────────────────────────────────
+class _CalendarGrid extends StatelessWidget {
+  final DateTime month;
+  final Map<int, Map<String, dynamic>> recordsByDay;
+  final int? selectedDay;
+  final void Function(int) onDayTap;
+
+  const _CalendarGrid({
+    required this.month,
+    required this.recordsByDay,
+    required this.selectedDay,
+    required this.onDayTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final firstDay = DateTime(month.year, month.month, 1);
+    final totalDays = DateTime(month.year, month.month + 1, 0).day;
+    final startOffset = firstDay.weekday - 1; // Mon=0
+    final today = DateTime.now();
+
+    final cells = <Widget>[];
+
+    // Empty cells before day 1
+    for (int i = 0; i < startOffset; i++) {
+      cells.add(const SizedBox());
+    }
+
+    for (int day = 1; day <= totalDays; day++) {
+      final record = recordsByDay[day];
+      final isToday = today.year == month.year &&
+          today.month == month.month &&
+          today.day == day;
+      final isSelected = selectedDay == day;
+      final isFuture = DateTime(month.year, month.month, day)
+          .isAfter(today);
+
+      cells.add(GestureDetector(
+        onTap: isFuture ? null : () => onDayTap(day),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected
+                    ? AppColors.navy
+                    : isToday
+                        ? AppColors.navy.withValues(alpha: 0.1)
+                        : Colors.transparent,
+                border: isToday && !isSelected
+                    ? Border.all(color: AppColors.navy, width: 1.5)
+                    : null,
+              ),
+              child: Center(
+                child: Text(
+                  '$day',
+                  style: AppTextStyles.caption.copyWith(
+                    color: isSelected
+                        ? Colors.white
+                        : isFuture
+                            ? AppColors.border
+                            : AppColors.navy,
+                    fontWeight:
+                        isToday ? FontWeight.w700 : FontWeight.w400,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 3),
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isFuture || record == null
+                    ? Colors.transparent
+                    : _dotColor(
+                        record['attendanceTypeName'] as String? ?? ''),
+              ),
+            ),
+          ],
+        ),
+      ));
+    }
+
+    return GridView.count(
+      crossAxisCount: 7,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      childAspectRatio: 0.85,
+      children: cells,
+    );
+  }
+
+  Color _dotColor(String typeName) {
+    final t = typeName.toLowerCase();
+    if (t.contains('present')) return const Color(0xFF16A34A);
+    if (t.contains('absent')) return const Color(0xFFDC2626);
+    if (t.contains('half')) return const Color(0xFFD97706);
+    if (t.contains('leave')) return AppColors.navy;
+    return AppColors.mutedText;
+  }
+}
+
+// ── Day Detail ────────────────────────────────────────────────────────────────
+class _DayDetail extends StatelessWidget {
+  final int day;
+  final DateTime month;
+  final Map<String, dynamic>? record;
+
+  const _DayDetail(
+      {required this.day, required this.month, required this.record});
+
+  @override
+  Widget build(BuildContext context) {
+    final dateLabel = '$day ${_monthName(month.month)} ${month.year}';
+
+    if (record == null) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.event_busy_outlined,
+                size: 18, color: AppColors.mutedText),
+            const SizedBox(width: 10),
+            Text('$dateLabel — No record',
+                style:
+                    AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+          ],
+        ),
+      );
+    }
+
+    final type = record!['attendanceTypeName'] as String? ?? '—';
+    final status = record!['approvalStatus'] as String? ?? '—';
+    final markedAt = record!['markedAt'] as String?;
+    final dotColor = _dotColor(type);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: dotColor.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle, color: dotColor)),
+              const SizedBox(width: 8),
+              Text(dateLabel,
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: AppColors.navy)),
+              const Spacer(),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: (status == 'APPROVED'
+                          ? const Color(0xFF16A34A)
+                          : const Color(0xFFD97706))
+                      .withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  status == 'APPROVED' ? 'Approved' : 'Pending',
+                  style: AppTextStyles.caption.copyWith(
+                    color: status == 'APPROVED'
+                        ? const Color(0xFF16A34A)
+                        : const Color(0xFFD97706),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(type,
+              style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+          if (markedAt != null) ...[
+            const SizedBox(height: 4),
+            Text('Marked at ${_formatTime(markedAt)}',
+                style: AppTextStyles.caption
+                    .copyWith(color: AppColors.mutedText)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Color _dotColor(String typeName) {
+    final t = typeName.toLowerCase();
+    if (t.contains('present')) return const Color(0xFF16A34A);
+    if (t.contains('absent')) return const Color(0xFFDC2626);
+    if (t.contains('half')) return const Color(0xFFD97706);
+    return AppColors.navy;
   }
 
   String _monthName(int m) => const [
         '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
       ][m];
-}
-
-// ── Already Marked Card ───────────────────────────────────────────────────────
-class _MarkedCard extends StatelessWidget {
-  final Map<String, dynamic> record;
-  const _MarkedCard({required this.record});
-
-  @override
-  Widget build(BuildContext context) {
-    final type = record['attendanceTypeName'] as String? ?? 'PRESENT';
-    final status = record['approvalStatus'] as String? ?? 'PENDING';
-    final markedAt = record['markedAt'] as String?;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFBBF7D0)),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.check_circle, size: 48, color: Color(0xFF16A34A)),
-          const SizedBox(height: 12),
-          Text('Attendance Marked',
-              style: AppTextStyles.heading3
-                  .copyWith(color: const Color(0xFF16A34A))),
-          const SizedBox(height: 4),
-          Text(type,
-              style: AppTextStyles.body
-                  .copyWith(color: AppColors.mutedText)),
-          if (markedAt != null) ...[
-            const SizedBox(height: 4),
-            Text('at ${_formatTime(markedAt)}',
-                style: AppTextStyles.caption
-                    .copyWith(color: AppColors.mutedText)),
-          ],
-          const SizedBox(height: 12),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: status == 'APPROVED'
-                  ? const Color(0xFFEFF6FF)
-                  : const Color(0xFFFFFBEB),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              status == 'APPROVED' ? 'Approved' : 'Pending Approval',
-              style: AppTextStyles.caption.copyWith(
-                color: status == 'APPROVED'
-                    ? AppColors.navy
-                    : const Color(0xFFD97706),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   String _formatTime(String iso) {
     try {
@@ -382,5 +520,54 @@ class _MarkedCard extends StatelessWidget {
     } catch (_) {
       return iso;
     }
+  }
+}
+
+// ── Summary Chip ──────────────────────────────────────────────────────────────
+class _SummaryChip extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+
+  const _SummaryChip(
+      {required this.label, required this.count, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text('$count',
+            style: AppTextStyles.heading3.copyWith(color: color)),
+        const SizedBox(height: 2),
+        Text(label,
+            style:
+                AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+      ],
+    );
+  }
+}
+
+// ── Legend ────────────────────────────────────────────────────────────────────
+class _Legend extends StatelessWidget {
+  final Color color;
+  final String label;
+  const _Legend({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+            width: 8,
+            height: 8,
+            decoration:
+                BoxDecoration(shape: BoxShape.circle, color: color)),
+        const SizedBox(width: 4),
+        Text(label,
+            style:
+                AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+      ],
+    );
   }
 }

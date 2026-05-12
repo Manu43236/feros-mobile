@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../attendance/views/attendance_sheet.dart';
 import '../../payslip/views/payslip_view.dart';
 import '../../shell/controllers/shell_controller.dart';
 import '../controllers/dashboard_controller.dart';
@@ -64,7 +65,10 @@ class _DriverDashboardState extends State<DriverDashboard> {
             const SizedBox(width: 12),
             Expanded(
               child: GestureDetector(
-                onTap: () => Get.find<ShellController>().onTabTapped(2),
+                onTap: c.isAttendanceMarked.value
+                    ? null
+                    : () => showMarkAttendanceSheet(context,
+                        onMarked: c.fetchDashboard),
                 child: _StatCard(
                   label: 'Attendance',
                   value: c.isAttendanceMarked.value ? 'Present ✓' : 'Tap to Mark',
@@ -187,7 +191,8 @@ class _DriverDashboardState extends State<DriverDashboard> {
               child: _QuickAction(
                 icon: Icons.check_circle_outline,
                 label: 'Mark\nAttendance',
-                onTap: () => Get.find<ShellController>().onTabTapped(2),
+                onTap: () => showMarkAttendanceSheet(context,
+                    onMarked: c.fetchDashboard),
               ),
             ),
             const SizedBox(width: 12),
