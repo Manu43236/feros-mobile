@@ -164,10 +164,14 @@ class _TripCard extends StatelessWidget {
           children: [
             // Order number + status
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(trip.orderNumber,
-                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                Expanded(
+                  child: Text(trip.orderNumber,
+                      style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                ),
+                const SizedBox(width: 8),
                 _StatusChip(status: trip.status),
               ],
             ),
@@ -252,6 +256,12 @@ class _StatusChip extends StatelessWidget {
         bg = const Color(0xFFFFFBEB); fg = const Color(0xFFD97706); label = 'Pending'; break;
       case 'CANCELLED':
         bg = const Color(0xFFFEF2F2); fg = const Color(0xFFDC2626); label = 'Cancelled'; break;
+      case 'PARTIALLY_ASSIGNED':
+        bg = const Color(0xFFFFF7ED); fg = const Color(0xFFEA580C); label = 'Partial'; break;
+      case 'PARTIALLY_DELIVERED':
+        bg = const Color(0xFFECFDF5); fg = const Color(0xFF059669); label = 'Part. Delivered'; break;
+      case 'COMPLETED':
+        bg = const Color(0xFFF0FDF4); fg = const Color(0xFF16A34A); label = 'Completed'; break;
       default:
         bg = const Color(0xFFF1F5F9); fg = AppColors.mutedText; label = status; break;
     }

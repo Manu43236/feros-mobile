@@ -69,6 +69,7 @@ class TripsController extends GetxController {
           (t.lrNumber?.toLowerCase().contains(q) ?? false)).toList();
     }
 
+    result.sort((a, b) => b.id.compareTo(a.id));
     filteredTrips.value = result;
   }
 }
