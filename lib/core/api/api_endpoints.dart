@@ -81,6 +81,8 @@ class ApiEndpoints {
   static const attendance                 = '/attendance';
   static const attendanceBulk             = '/attendance/bulk';
   static const myAttendance               = '/attendance/my';
+  static const attendanceMarkPresent      = '/attendance/my/mark-present';
+  static const attendanceTodayStatus      = '/attendance/my/today-status';
   static const attendancePending          = '/attendance/pending';
   static String approveAttendance(id)     => '/attendance/$id/approve';
   static String rejectAttendance(id)      => '/attendance/$id/reject';

@@ -13,6 +13,8 @@ class LrModel {
   final double? loadedWeight;
   final double? deliveredWeight;
   final String lrDate;
+  final double? startOdometer;
+  final double? endOdometer;
 
   LrModel({
     required this.id,
@@ -29,6 +31,8 @@ class LrModel {
     this.loadedWeight,
     this.deliveredWeight,
     required this.lrDate,
+    this.startOdometer,
+    this.endOdometer,
   });
 
   factory LrModel.fromJson(Map<String, dynamic> j) => LrModel(
@@ -46,5 +50,7 @@ class LrModel {
     loadedWeight:    (j['loadedWeight']             as num?)?.toDouble(),
     deliveredWeight: (j['deliveredWeight']          as num?)?.toDouble(),
     lrDate:          j['lrDate']                    as String? ?? '—',
+    startOdometer:   (j['startOdometer']            as num?)?.toDouble(),
+    endOdometer:     (j['endOdometer']              as num?)?.toDouble(),
   );
 }

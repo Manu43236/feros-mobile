@@ -24,6 +24,9 @@ dependencies:
   flutter_image_compress: ^2.4.0
   cached_network_image: ^3.4.1
 
+  # OCR — odometer reading from photo
+  google_mlkit_text_recognition: ^0.13.0
+
   # Location & permissions
   geolocator: ^13.0.2
   permission_handler: ^11.4.0

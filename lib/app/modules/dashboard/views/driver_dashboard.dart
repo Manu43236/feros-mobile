@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../payslip/views/payslip_view.dart';
+import '../../shell/controllers/shell_controller.dart';
 import '../controllers/dashboard_controller.dart';
 
 class DriverDashboard extends StatelessWidget {
@@ -59,7 +61,7 @@ class DriverDashboard extends StatelessWidget {
             Text('Upcoming Trip',
                 style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy)),
             TextButton(
-              onPressed: () {},
+              onPressed: () => Get.find<ShellController>().onTabTapped(1),
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
                 minimumSize: Size.zero,
@@ -86,7 +88,7 @@ class DriverDashboard extends StatelessWidget {
               child: _QuickAction(
                 icon: Icons.check_circle_outline,
                 label: 'Mark\nAttendance',
-                onTap: () {},
+                onTap: () => Get.find<ShellController>().onTabTapped(2),
               ),
             ),
             const SizedBox(width: 12),
@@ -94,7 +96,7 @@ class DriverDashboard extends StatelessWidget {
               child: _QuickAction(
                 icon: Icons.local_shipping_outlined,
                 label: 'My\nTrips',
-                onTap: () {},
+                onTap: () => Get.find<ShellController>().onTabTapped(1),
               ),
             ),
             const SizedBox(width: 12),
@@ -102,7 +104,7 @@ class DriverDashboard extends StatelessWidget {
               child: _QuickAction(
                 icon: Icons.payments_outlined,
                 label: 'My\nPayroll',
-                onTap: () {},
+                onTap: () => Get.to(() => const PayslipView()),
               ),
             ),
           ],
