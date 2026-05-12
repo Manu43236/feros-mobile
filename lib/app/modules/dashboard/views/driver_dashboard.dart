@@ -29,14 +29,14 @@ class DriverDashboard extends StatelessWidget {
             Expanded(
               child: _StatCard(
                 label: 'Attendance',
-                value: controller.isAttendanceMarked.value ? 'Present' : 'Absent',
+                value: controller.isAttendanceMarked.value ? 'Present' : 'Not Marked',
                 icon: Icons.check_circle_outline,
                 borderColor: controller.isAttendanceMarked.value
                     ? const Color(0xFF16A34A)
-                    : const Color(0xFFDC2626),
+                    : AppColors.mutedText,
                 valueColor: controller.isAttendanceMarked.value
                     ? const Color(0xFF16A34A)
-                    : const Color(0xFFDC2626),
+                    : AppColors.mutedText,
               ),
             ),
             const SizedBox(width: 12),
@@ -45,7 +45,7 @@ class DriverDashboard extends StatelessWidget {
                 label: 'Pending',
                 value: '${controller.pendingTrips.value}',
                 icon: Icons.pending_actions_outlined,
-                borderColor: const Color(0xFFD97706),
+                borderColor: AppColors.navy,
               ),
             ),
           ],

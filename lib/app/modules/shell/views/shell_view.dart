@@ -30,8 +30,6 @@ class ShellView extends GetView<ShellController> {
   }
 
   List<Widget> _buildPages(int count) {
-    // Tab 0 is always Dashboard
-    // Remaining tabs are placeholders until their sprints are built
     return List.generate(count, (i) {
       if (i == 0) return const DashboardView();
       return _PlaceholderTab(index: i);
@@ -39,7 +37,7 @@ class ShellView extends GetView<ShellController> {
   }
 }
 
-// ── Navy Bottom Nav ───────────────────────────────────────────────────────────
+// ── Modern Navy Bottom Nav ────────────────────────────────────────────────────
 class _FerosNavBar extends StatelessWidget {
   final List items;
   final int currentIndex;
@@ -57,45 +55,59 @@ class _FerosNavBar extends StatelessWidget {
       decoration: const BoxDecoration(
         color: AppColors.navy,
         boxShadow: [
-          BoxShadow(color: Color(0x33000000), blurRadius: 12, offset: Offset(0, -2)),
+          BoxShadow(
+            color: Color(0x40000000),
+            blurRadius: 20,
+            offset: Offset(0, -4),
+          ),
         ],
       ),
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          height: 62,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           child: Row(
             children: List.generate(items.length, (i) {
               final item = items[i];
               final isActive = i == currentIndex;
               return Expanded(
-                child: InkWell(
+                child: GestureDetector(
                   onTap: () => onTap(i),
-                  splashColor: Colors.white12,
-                  highlightColor: Colors.transparent,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        isActive ? item.activeIcon : item.icon,
-                        size: 22,
-                        color: isActive
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.5),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        item.label,
-                        style: AppTextStyles.navLabel.copyWith(
+                  behavior: HitTestBehavior.opaque,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? Colors.white.withValues(alpha: 0.15)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isActive ? item.activeIcon : item.icon,
+                          size: 22,
                           color: isActive
                               ? Colors.white
-                              : Colors.white.withValues(alpha: 0.5),
-                          fontWeight: isActive
-                              ? FontWeight.w600
-                              : FontWeight.w400,
+                              : Colors.white.withValues(alpha: 0.45),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          item.label,
+                          style: AppTextStyles.navLabel.copyWith(
+                            color: isActive
+                                ? Colors.white
+                                : Colors.white.withValues(alpha: 0.45),
+                            fontWeight: isActive
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -107,7 +119,7 @@ class _FerosNavBar extends StatelessWidget {
   }
 }
 
-// ── Placeholder for unbuilt tabs ──────────────────────────────────────────────
+// ── Placeholder ───────────────────────────────────────────────────────────────
 class _PlaceholderTab extends StatelessWidget {
   final int index;
   const _PlaceholderTab({required this.index});
@@ -120,6 +132,7 @@ class _PlaceholderTab extends StatelessWidget {
         backgroundColor: AppColors.navy,
         title: const Text('Coming Soon', style: TextStyle(color: Colors.white)),
         centerTitle: true,
+        elevation: 0,
       ),
       body: const Center(
         child: Text('This screen is coming in the next sprint'),
