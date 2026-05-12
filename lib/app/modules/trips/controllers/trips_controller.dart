@@ -2,37 +2,36 @@ import 'package:get/get.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_endpoints.dart';
 import '../../../../core/utils/view_state.dart';
-import '../models/trip_model.dart';
+import '../models/lr_model.dart';
 
 class TripsController extends GetxController {
   final _api = Get.find<ApiClient>();
 
   final state = ViewState.initial.obs;
-  final allTrips = <TripModel>[].obs;
-  final filteredTrips = <TripModel>[].obs;
+  final allLrs = <LrModel>[].obs;
+  final filteredLrs = <LrModel>[].obs;
   final selectedFilter = 'All'.obs;
   final searchQuery = ''.obs;
-  final isUpdating = false.obs;
 
-  final filters = ['All', 'PENDING', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'];
+  final filters = ['All', 'CREATED', 'WEIGHT_LOADED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'];
 
   @override
   void onReady() {
     super.onReady();
-    fetchTrips();
+    fetchLrs();
   }
 
-  Future<void> fetchTrips() async {
+  Future<void> fetchLrs() async {
     state.value = ViewState.loading;
     try {
-      final res = await _api.get(ApiEndpoints.orders);
+      final res = await _api.get(ApiEndpoints.lrs);
       final data = res.data as Map<String, dynamic>;
       final list = (data['data'] as List?) ?? [];
-      allTrips.value = list
-          .map((e) => TripModel.fromJson(e as Map<String, dynamic>))
+      allLrs.value = list
+          .map((e) => LrModel.fromJson(e as Map<String, dynamic>))
           .toList();
       _applyFilter();
-      state.value = allTrips.isEmpty ? ViewState.empty : ViewState.success;
+      state.value = allLrs.isEmpty ? ViewState.empty : ViewState.success;
     } catch (e) {
       state.value = ViewState.error;
     }
@@ -49,27 +48,26 @@ class TripsController extends GetxController {
   }
 
   void _applyFilter() {
-    var result = allTrips.toList();
+    var result = allLrs.toList();
 
-    // status filter
     if (selectedFilter.value != 'All') {
       result = result
-          .where((t) => t.status.toUpperCase() == selectedFilter.value)
+          .where((lr) => lr.lrStatus.toUpperCase() == selectedFilter.value)
           .toList();
     }
 
-    // search
     final q = searchQuery.value.toLowerCase();
     if (q.isNotEmpty) {
-      result = result.where((t) =>
-          t.orderNumber.toLowerCase().contains(q) ||
-          t.clientName.toLowerCase().contains(q) ||
-          t.fromLocation.toLowerCase().contains(q) ||
-          t.toLocation.toLowerCase().contains(q) ||
-          (t.lrNumber?.toLowerCase().contains(q) ?? false)).toList();
+      result = result.where((lr) =>
+          lr.lrNumber.toLowerCase().contains(q) ||
+          lr.orderNumber.toLowerCase().contains(q) ||
+          lr.clientName.toLowerCase().contains(q) ||
+          lr.fromCity.toLowerCase().contains(q) ||
+          lr.toCity.toLowerCase().contains(q) ||
+          lr.vehicleNumber.toLowerCase().contains(q)).toList();
     }
 
     result.sort((a, b) => b.id.compareTo(a.id));
-    filteredTrips.value = result;
+    filteredLrs.value = result;
   }
 }
