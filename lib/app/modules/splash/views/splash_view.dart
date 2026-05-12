@@ -36,16 +36,8 @@ class _SplashViewState extends State<SplashView> {
   }
 
   String _roleHome(String? role) {
-    switch (role) {
-      case 'ADMIN':        return Routes.DASHBOARD;
-      case 'OFFICE_STAFF': return Routes.ORDERS;
-      case 'SUPERVISOR':   return Routes.ORDERS;
-      case 'DRIVER':
-      case 'CLEANER':      return Routes.MY_TRIPS;
-      case 'SERVICE_MEN':  return Routes.VEHICLE_SERVICES;
-      case 'STORE_KEEPER': return Routes.INVENTORY;
-      default:             return Routes.LOGIN;
-    }
+    if (role == null) return Routes.LOGIN;
+    return Routes.SHELL;
   }
 
   @override
