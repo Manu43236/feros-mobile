@@ -35,7 +35,6 @@ class DriverDashboard extends StatelessWidget {
           attended: attended,
           actionLabel: 'View Trip Details',
           actionIcon: Icons.arrow_forward,
-          actionColor: const Color(0xFF16A34A),
           onAction: () => _openTrip(context, active),
           onCardTap: () => _openTrip(context, active),
           bottomRow: _BottomNav(controller: controller, attended: attended),
@@ -52,7 +51,6 @@ class DriverDashboard extends StatelessWidget {
           attended: attended,
           actionLabel: 'Start Trip',
           actionIcon: Icons.play_circle_outline,
-          actionColor: const Color(0xFFD97706),
           onAction: () => _startTripFromHome(context, nextReady),
           onCardTap: () => _openTrip(context, nextReady),
           bottomRow: _BottomNav(controller: controller, attended: attended),
@@ -230,7 +228,6 @@ class _HomeState extends StatelessWidget {
   final bool attended;
   final String actionLabel;
   final IconData actionIcon;
-  final Color actionColor;
   final VoidCallback onAction;
   final VoidCallback? onCardTap;
   final Widget bottomRow;
@@ -243,7 +240,6 @@ class _HomeState extends StatelessWidget {
     required this.attended,
     required this.actionLabel,
     required this.actionIcon,
-    required this.actionColor,
     required this.onAction,
     this.onCardTap,
     required this.bottomRow,
@@ -290,32 +286,15 @@ class _HomeState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Trip card — tappable
+            // Trip card with action button inside
             GestureDetector(
               onTap: onCardTap,
-              child: _TripInfoCard(tripData: tripData, statusColor: statusColor),
-            ),
-            const SizedBox(height: 20),
-
-            // Primary action button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: onAction,
-                icon: Icon(actionIcon, size: 24),
-                label: Text(actionLabel,
-                    style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Inter')),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: actionColor,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                ),
+              child: _TripInfoCard(
+                tripData: tripData,
+                statusColor: statusColor,
+                actionLabel: actionLabel,
+                actionIcon: actionIcon,
+                onAction: onAction,
               ),
             ),
             const SizedBox(height: 20),
@@ -332,7 +311,16 @@ class _HomeState extends StatelessWidget {
 class _TripInfoCard extends StatelessWidget {
   final Map<String, dynamic> tripData;
   final Color statusColor;
-  const _TripInfoCard({required this.tripData, required this.statusColor});
+  final String actionLabel;
+  final IconData actionIcon;
+  final VoidCallback onAction;
+  const _TripInfoCard({
+    required this.tripData,
+    required this.statusColor,
+    required this.actionLabel,
+    required this.actionIcon,
+    required this.onAction,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -430,6 +418,29 @@ class _TripInfoCard extends StatelessWidget {
                         .copyWith(color: AppColors.mutedText)),
               ],
             ],
+          ),
+          const SizedBox(height: 16),
+
+          // Action button — inside card
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: onAction,
+              icon: Icon(actionIcon, size: 20),
+              label: Text(actionLabel,
+                  style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Inter')),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: statusColor,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
           ),
         ],
       ),
