@@ -62,7 +62,7 @@ class _TripDetailViewState extends State<TripDetailView> {
         ApiEndpoints.lrById(_lrData!['id']),
         data: {'lrStatus': 'IN_TRANSIT'},
       );
-      setState(() => _lrData = {..._lrData!, 'lrStatus': 'IN_TRANSIT'});
+      setState(() => _lrData = Map.from(_lrData!)..['lrStatus'] = 'IN_TRANSIT');
       FerosSnackbar.success('Trip started');
     } catch (_) {
       FerosSnackbar.error('Failed to start trip');
@@ -199,47 +199,48 @@ class _TripDetailViewState extends State<TripDetailView> {
                   _LrStatusBadge(status: lrStatus ?? 'NO_LR'),
                 if (!_loadingLr && lrStatus == 'CREATED') ...[
                   const SizedBox(height: 12),
-                  if (_lrData?['loadedWeight'] == null)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFFBEB),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFFDE68A)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.hourglass_top_rounded, size: 16, color: Color(0xFFD97706)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Waiting for supervisor to load weight',
-                              style: AppTextStyles.caption.copyWith(color: const Color(0xFFD97706)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isUpdating ? null : _startTrip,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.navy,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        child: _isUpdating
-                            ? const SizedBox(width: 18, height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : Text('Start Trip',
-                                style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
-                      ),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEB),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFFDE68A)),
                     ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.hourglass_top_rounded, size: 16, color: Color(0xFFD97706)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Waiting for supervisor to record loading weight',
+                            style: AppTextStyles.caption.copyWith(color: const Color(0xFFD97706)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                if (!_loadingLr && lrStatus == 'WEIGHT_LOADED') ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isUpdating ? null : _startTrip,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.navy,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: _isUpdating
+                          ? const SizedBox(width: 18, height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : Text('Start Trip',
+                              style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
                 ],
                 if (!_loadingLr && lrStatus == 'IN_TRANSIT') ...[
                   const SizedBox(height: 12),
@@ -367,7 +368,8 @@ class _LrStatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     Color bg; Color fg; String label;
     switch (status.toUpperCase()) {
-      case 'CREATED':     bg = const Color(0xFFFFFBEB); fg = const Color(0xFFD97706);     label = 'LR Created';  break;
+      case 'CREATED':        bg = const Color(0xFFFFFBEB); fg = const Color(0xFFD97706);     label = 'LR Created';     break;
+      case 'WEIGHT_LOADED':  bg = const Color(0xFFF5F3FF); fg = const Color(0xFF7C3AED);     label = 'Weight Loaded';  break;
       case 'IN_TRANSIT':  bg = const Color(0xFFEFF6FF); fg = AppColors.navy;              label = 'In Transit';  break;
       case 'DELIVERED':   bg = const Color(0xFFF0FDF4); fg = const Color(0xFF16A34A);     label = 'Delivered';   break;
       case 'CANCELLED':   bg = const Color(0xFFFEF2F2); fg = const Color(0xFFDC2626);     label = 'Cancelled';   break;
