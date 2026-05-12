@@ -68,14 +68,6 @@ class LoginController extends GetxController {
       final token = payload['token'] as String;
       final user = UserModel.fromJson(payload);
 
-      final pinResetRequired = payload['pinResetRequired'] as bool? ?? false;
-      if (pinResetRequired) {
-        FerosSnackbar.warning(
-          'Your PIN needs to be reset. Please contact your Admin to get a new PIN.',
-        );
-        return;
-      }
-
       await _auth.saveSession(token, user);
       Get.offAllNamed(_auth.roleHome);
     } on UnauthorizedException {
