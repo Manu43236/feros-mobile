@@ -71,7 +71,7 @@ class DriverDashboard extends StatelessWidget {
       title: 'Start Trip — Record ODM',
       hint: 'Start Odometer (km)',
       buttonLabel: 'Start Trip',
-      buttonColor: const Color(0xFFD97706),
+      buttonColor: AppColors.navy,
       instruction: 'Take a photo of the odometer before departure.',
     );
     if (result == null) return;
@@ -433,7 +433,7 @@ class _TripInfoCard extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       fontFamily: 'Inter')),
               style: ElevatedButton.styleFrom(
-                backgroundColor: statusColor,
+                backgroundColor: AppColors.navy,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 14),
