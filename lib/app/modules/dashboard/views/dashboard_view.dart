@@ -8,6 +8,7 @@ import '../../../../core/utils/view_state.dart';
 import '../../../../core/widgets/shimmer_card.dart';
 import '../controllers/dashboard_controller.dart';
 import 'driver_dashboard.dart';
+import 'supervisor_dashboard.dart';
 
 class DashboardView extends StatelessWidget {
   const DashboardView({super.key});
@@ -123,13 +124,16 @@ class DashboardView extends StatelessWidget {
       case 'DRIVER':
       case 'CLEANER':
         return DriverDashboard(controller: controller);
-      default:
-        return Center(
-          child: Text(
-            'Dashboard coming soon for $role',
-            style: AppTextStyles.body,
-          ),
-        );
+      case 'SUPERVISOR':
+        return SupervisorDashboard(controller: controller);
+      case 'OFFICE_STAFF':
+        return OfficeDashboard(controller: controller);
+      case 'SERVICE_MEN':
+        return ServiceMenDashboard(controller: controller);
+      case 'STORE_KEEPER':
+        return StoreKeeperDashboard(controller: controller);
+      default: // ADMIN
+        return AdminDashboard(controller: controller);
     }
   }
 }

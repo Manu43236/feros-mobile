@@ -5,6 +5,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../controllers/shell_controller.dart';
 import '../../dashboard/views/dashboard_view.dart';
 import '../../trips/views/trips_view.dart';
+import '../../profile/views/profile_view.dart';
 import '../../../../core/services/auth_service.dart';
 
 class ShellView extends GetView<ShellController> {
@@ -20,7 +21,7 @@ class ShellView extends GetView<ShellController> {
         backgroundColor: AppColors.background,
         body: IndexedStack(
           index: index,
-          children: _buildPages(items.length),
+          children: _buildPages(),
         ),
         bottomNavigationBar: _FerosNavBar(
           items: items,
@@ -31,16 +32,53 @@ class ShellView extends GetView<ShellController> {
     });
   }
 
-  List<Widget> _buildPages(int count) {
+  List<Widget> _buildPages() {
     final role = Get.find<AuthService>().user?.role ?? '';
-    return List.generate(count, (i) {
-      if (i == 0) return const DashboardView();
-      // Tab 1 = Trips for DRIVER/CLEANER
-      if (i == 1 && (role == 'DRIVER' || role == 'CLEANER')) {
-        return const TripsView();
-      }
-      return _PlaceholderTab(index: i);
-    });
+    switch (role) {
+      case 'DRIVER':
+      case 'CLEANER':
+        return [
+          const DashboardView(),
+          const TripsView(),
+          _ComingSoonTab(title: 'Attendance', icon: Icons.check_circle_outline,   sprint: 2),
+          const ProfileView(),
+        ];
+      case 'SUPERVISOR':
+        return [
+          const DashboardView(),
+          _ComingSoonTab(title: 'Orders', icon: Icons.assignment_outlined,         sprint: 3),
+          _ComingSoonTab(title: 'Staff',  icon: Icons.group_outlined,              sprint: 3),
+          const ProfileView(),
+        ];
+      case 'OFFICE_STAFF':
+        return [
+          const DashboardView(),
+          _ComingSoonTab(title: 'Orders', icon: Icons.assignment_outlined,         sprint: 5),
+          _ComingSoonTab(title: 'LRs',    icon: Icons.receipt_long_outlined,       sprint: 5),
+          const ProfileView(),
+        ];
+      case 'SERVICE_MEN':
+        return [
+          const DashboardView(),
+          _ComingSoonTab(title: 'Services',  icon: Icons.build_outlined,           sprint: 4),
+          _ComingSoonTab(title: 'Breakdown', icon: Icons.car_crash_outlined,       sprint: 4),
+          const ProfileView(),
+        ];
+      case 'STORE_KEEPER':
+        return [
+          const DashboardView(),
+          _ComingSoonTab(title: 'Inventory', icon: Icons.inventory_2_outlined,     sprint: 4),
+          _ComingSoonTab(title: 'Requests',  icon: Icons.list_alt_outlined,        sprint: 4),
+          const ProfileView(),
+        ];
+      default: // ADMIN
+        return [
+          const DashboardView(),
+          _ComingSoonTab(title: 'Orders',   icon: Icons.assignment_outlined,       sprint: 6),
+          _ComingSoonTab(title: 'Vehicles', icon: Icons.directions_bus_outlined,   sprint: 6),
+          const ProfileView(),
+        ];
+    }
   }
 }
 
@@ -125,10 +163,12 @@ class _FerosNavBar extends StatelessWidget {
   }
 }
 
-// ── Placeholder ───────────────────────────────────────────────────────────────
-class _PlaceholderTab extends StatelessWidget {
-  final int index;
-  const _PlaceholderTab({required this.index});
+// ── Coming Soon Tab ───────────────────────────────────────────────────────────
+class _ComingSoonTab extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final int sprint;
+  const _ComingSoonTab({required this.title, required this.icon, required this.sprint});
 
   @override
   Widget build(BuildContext context) {
@@ -136,12 +176,27 @@ class _PlaceholderTab extends StatelessWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.navy,
-        title: const Text('Coming Soon', style: TextStyle(color: Colors.white)),
-        centerTitle: true,
         elevation: 0,
+        automaticallyImplyLeading: false,
+        title: Text(title,
+            style: const TextStyle(
+                color: Colors.white,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w600)),
       ),
-      body: const Center(
-        child: Text('This screen is coming in the next sprint'),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 52, color: AppColors.mutedText),
+            const SizedBox(height: 16),
+            Text(title,
+                style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
+            const SizedBox(height: 8),
+            Text('Coming in Sprint $sprint',
+                style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+          ],
+        ),
       ),
     );
   }

@@ -17,16 +17,17 @@ class ApiClient extends GetxService {
       headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
     ));
 
-    _dio.interceptors.addAll([
-      _AuthInterceptor(),
-      LogInterceptor(
+    _dio.interceptors.add(_AuthInterceptor());
+    assert(() {
+      _dio.interceptors.add(LogInterceptor(
         requestBody: true,
         responseBody: true,
         requestHeader: false,
         responseHeader: false,
         logPrint: (obj) => print('[API] $obj'),
-      ),
-    ]);
+      ));
+      return true;
+    }());
   }
 
   Future<Response> get(String path, {Map<String, dynamic>? params}) async {
