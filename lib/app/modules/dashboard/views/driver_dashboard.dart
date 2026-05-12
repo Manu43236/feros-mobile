@@ -4,6 +4,7 @@ import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_endpoints.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/odometer_sheet.dart';
 import '../../attendance/views/attendance_sheet.dart';
 import '../../payslip/views/payslip_view.dart';
 import '../../shell/controllers/shell_controller.dart';
@@ -49,10 +50,10 @@ class DriverDashboard extends StatelessWidget {
           statusLabel: 'TRIP READY',
           tripData: nextReady,
           attended: attended,
-          actionLabel: 'Go to Trip',
+          actionLabel: 'Start Trip',
           actionIcon: Icons.play_circle_outline,
           actionColor: const Color(0xFFD97706),
-          onAction: () => _openTrip(context, nextReady),
+          onAction: () => _startTripFromHome(context, nextReady),
           onCardTap: () => _openTrip(context, nextReady),
           bottomRow: _BottomNav(controller: controller, attended: attended),
         );
@@ -61,6 +62,35 @@ class DriverDashboard extends StatelessWidget {
       // ── State 1: IDLE ─────────────────────────────────────────
       return _IdleState(controller: controller);
     });
+  }
+
+  void _startTripFromHome(BuildContext context, Map<String, dynamic> tripData) async {
+    final lrId = tripData['lrId'];
+    if (lrId == null) return;
+
+    final result = await showOdometerSheet(
+      context,
+      title: 'Start Trip — Record ODM',
+      hint: 'Start Odometer (km)',
+      buttonLabel: 'Start Trip',
+      buttonColor: const Color(0xFFD97706),
+      instruction: 'Take a photo of the odometer before departure.',
+    );
+    if (result == null) return;
+
+    try {
+      final api = Get.find<ApiClient>();
+      await api.put(ApiEndpoints.lrById(lrId), data: {
+        'lrStatus': 'IN_TRANSIT',
+        'startOdometer': result.odometer,
+      });
+      controller.fetchDashboard(); // refreshes to ON TRIP state
+    } catch (_) {
+      Get.snackbar('Error', 'Failed to start trip',
+          backgroundColor: const Color(0xFFDC2626),
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM);
+    }
   }
 
   void _openTrip(BuildContext context, Map<String, dynamic> tripData) async {
