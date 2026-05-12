@@ -28,16 +28,5 @@ class SplashController extends GetxController {
     }
   }
 
-  String _roleHome(String? role) {
-    switch (role) {
-      case 'ADMIN':        return Routes.DASHBOARD;
-      case 'OFFICE_STAFF': return Routes.ORDERS;
-      case 'SUPERVISOR':   return Routes.ORDERS;
-      case 'DRIVER':
-      case 'CLEANER':      return Routes.MY_TRIPS;
-      case 'SERVICE_MEN':  return Routes.VEHICLE_SERVICES;
-      case 'STORE_KEEPER': return Routes.INVENTORY;
-      default:             return Routes.LOGIN;
-    }
-  }
+  String _roleHome(String? role) => Routes.SHELL;
 }

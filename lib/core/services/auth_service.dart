@@ -20,18 +20,7 @@ class AuthService extends GetxService {
 
   UserModel? get user => currentUser.value;
 
-  String get roleHome {
-    switch (currentUser.value?.role) {
-      case 'ADMIN':        return Routes.DASHBOARD;
-      case 'OFFICE_STAFF': return Routes.ORDERS;
-      case 'SUPERVISOR':   return Routes.ORDERS;
-      case 'DRIVER':
-      case 'CLEANER':      return Routes.MY_TRIPS;
-      case 'SERVICE_MEN':  return Routes.VEHICLE_SERVICES;
-      case 'STORE_KEEPER': return Routes.INVENTORY;
-      default:             return Routes.LOGIN;
-    }
-  }
+  String get roleHome => Routes.SHELL;
 
   Future<void> saveSession(String token, UserModel user) async {
     await _storage.saveToken(token);
@@ -43,5 +32,6 @@ class AuthService extends GetxService {
     await _storage.clearAll();
     currentUser.value = null;
     Get.offAllNamed(Routes.LOGIN);
+
   }
 }
