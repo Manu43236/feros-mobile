@@ -21,6 +21,7 @@ class FerosSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 44,
+      width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppSpacing.inputRadius),

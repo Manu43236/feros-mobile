@@ -40,6 +40,7 @@ class ApiEndpoints {
   static String unassignVehicle(oId, aId) => '/orders/$oId/allocations/$aId';
   static String assignStaff(id)           => '/orders/$id/assign-staff';
   static String unassignStaff(oId, sId)   => '/orders/$oId/staff-allocations/$sId';
+  static String orderStatus(id)           => '/orders/$id/status';
   static String orderPaymentStatus(id)    => '/orders/$id/payment-status';
 
   // LRs

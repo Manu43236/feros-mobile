@@ -31,23 +31,27 @@ class TripModel {
 
   factory TripModel.fromJson(Map<String, dynamic> j) => TripModel(
     id:            j['id'] as int? ?? 0,
-    orderNumber:   j['orderNumber']  as String? ?? '—',
-    status:        j['status']       as String? ?? '—',
-    clientName:    j['clientName']   as String? ??
-                   (j['client'] as Map?)?.get('name') ?? '—',
-    fromLocation:  j['fromLocation'] as String? ??
-                   (j['route'] as Map?)?.get('source') ?? '—',
-    toLocation:    j['toLocation']   as String? ??
-                   (j['route'] as Map?)?.get('destination') ?? '—',
-    vehicleNumber: j['vehicleNumber'] as String? ??
-                   (j['vehicle'] as Map?)?.get('registrationNumber'),
-    lrNumber:      j['lrNumber']     as String?,
-    weight:        (j['weight'] as num?)?.toDouble(),
-    materialType:  j['materialType'] as String?,
-    scheduledDate: j['scheduledDate'] as String? ?? j['orderDate'] as String?,
-    completedDate: j['completedDate'] as String?,
-    driverName:    j['driverName']   as String?,
+    orderNumber:   j['orderNumber']    as String? ?? '—',
+    status:        j['orderStatus']    as String? ?? j['status'] as String? ?? '—',
+    clientName:    j['clientName']     as String? ?? '—',
+    fromLocation:  j['sourceCityName'] as String? ?? j['fromLocation'] as String? ?? '—',
+    toLocation:    j['destinationCityName'] as String? ?? j['toLocation'] as String? ?? '—',
+    vehicleNumber: _firstVehicleNumber(j),
+    lrNumber:      j['lrNumber']       as String?,
+    weight:        (j['totalWeight']   as num?)?.toDouble() ?? (j['weight'] as num?)?.toDouble(),
+    materialType:  j['materialTypeName'] as String? ?? j['materialType'] as String?,
+    scheduledDate: j['orderDate']      as String? ?? j['scheduledDate'] as String?,
+    completedDate: j['completedDate']  as String?,
+    driverName:    j['driverName']     as String?,
   );
+}
+
+String? _firstVehicleNumber(Map<String, dynamic> j) {
+  final allocs = j['vehicleAllocations'] as List?;
+  if (allocs != null && allocs.isNotEmpty) {
+    return (allocs.first as Map<String, dynamic>)['vehicleRegistrationNumber'] as String?;
+  }
+  return j['vehicleNumber'] as String?;
 }
 
 extension _MapGet on Map {

@@ -37,9 +37,13 @@ class _TripDetailViewState extends State<TripDetailView> {
       final api = Get.find<ApiClient>();
       final res = await api.get(ApiEndpoints.lrsByOrder(widget.trip.id));
       final data = res.data as Map<String, dynamic>;
-      final list = data['data'] as List?;
+      final list = (data['data'] as List?)?.cast<Map<String, dynamic>>();
       if (list != null && list.isNotEmpty) {
-        setState(() => _lrData = list.first as Map<String, dynamic>);
+        final active = list.firstWhere(
+          (lr) => lr['lrStatus'] != 'CANCELLED',
+          orElse: () => list.last,
+        );
+        setState(() => _lrData = active);
       }
     } catch (_) {}
     setState(() => _loadingLr = false);
@@ -57,8 +61,8 @@ class _TripDetailViewState extends State<TripDetailView> {
     try {
       final api = Get.find<ApiClient>();
       await api.patch(
-        ApiEndpoints.orderById(widget.trip.id),
-        data: {'status': newStatus},
+        ApiEndpoints.orderStatus(widget.trip.id),
+        queryParameters: {'status': newStatus},
       );
       setState(() => _currentStatus = newStatus);
       FerosSnackbar.success('Status updated to $newStatus');
@@ -89,48 +93,52 @@ class _TripDetailViewState extends State<TripDetailView> {
         children: [
           // ── Status Card ──────────────────────────────────────
           _SectionCard(
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Current Status',
-                          style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-                      const SizedBox(height: 6),
-                      _StatusBadge(status: _currentStatus),
-                    ],
-                  ),
-                ),
-                if (_currentStatus == 'IN_TRANSIT')
+                Text('Current Status',
+                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                const SizedBox(height: 8),
+                _StatusBadge(status: _currentStatus),
+                if (_currentStatus == 'IN_TRANSIT') ...[
+                  const SizedBox(height: 12),
                   _isUpdating
-                      ? const SizedBox(
+                      ? const Center(child: SizedBox(
                           width: 20, height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.navy),
-                        )
-                      : ElevatedButton(
-                          onPressed: () => _updateStatus('DELIVERED'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF16A34A),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ))
+                      : SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => _updateStatus('DELIVERED'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF16A34A),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: Text('Mark Delivered', style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
                           ),
-                          child: Text('Mark Delivered', style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
                         ),
-                if (_currentStatus == 'PENDING')
-                  ElevatedButton(
-                    onPressed: _isUpdating ? null : () => _updateStatus('IN_TRANSIT'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.navy,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ],
+                if (_currentStatus == 'PENDING') ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isUpdating ? null : () => _updateStatus('IN_TRANSIT'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.navy,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: Text('Start Trip', style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
                     ),
-                    child: Text('Start Trip', style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
                   ),
+                ],
               ],
             ),
           ),
@@ -176,9 +184,9 @@ class _TripDetailViewState extends State<TripDetailView> {
                     : Column(
                         children: [
                           InfoRow(label: 'LR Number', value: _lrData!['lrNumber']?.toString() ?? '—'),
-                          InfoRow(label: 'Consignor', value: _lrData!['consignorName']?.toString() ?? '—'),
-                          InfoRow(label: 'Consignee', value: _lrData!['consigneeName']?.toString() ?? '—'),
-                          InfoRow(label: 'LR Status', value: _lrData!['status']?.toString() ?? '—', showDivider: false),
+                          InfoRow(label: 'Client', value: _lrData!['clientName']?.toString() ?? '—'),
+                          InfoRow(label: 'Vehicle', value: _lrData!['vehicleRegistrationNumber']?.toString() ?? '—'),
+                          InfoRow(label: 'LR Status', value: _lrData!['lrStatus']?.toString() ?? '—', showDivider: false),
                         ],
                       ),
           ),

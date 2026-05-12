@@ -53,9 +53,9 @@ class ApiClient extends GetxService {
     }
   }
 
-  Future<Response> patch(String path, {dynamic data}) async {
+  Future<Response> patch(String path, {dynamic data, Map<String, dynamic>? queryParameters}) async {
     try {
-      return await _dio.patch(path, data: data);
+      return await _dio.patch(path, data: data, queryParameters: queryParameters);
     } catch (e) {
       throw ExceptionHandler.handle(e);
     }
