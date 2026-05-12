@@ -16,8 +16,9 @@ class DashboardController extends GetxController {
   final isAttendanceMarked = false.obs;
   final unreadNotifications = 0.obs;
 
-  // Upcoming trips (driver) — full list
-  final upcomingTrips = <Map<String, dynamic>>[].obs;
+  // Driver trip state
+  final activeTrip   = Rxn<Map<String, dynamic>>(); // IN_TRANSIT
+  final upcomingTrips = <Map<String, dynamic>>[].obs; // CREATED / WEIGHT_LOADED
   final upcomingTrip = Rxn<Map<String, dynamic>>();
 
   @override
@@ -41,6 +42,8 @@ class DashboardController extends GetxController {
       pendingTrips.value        = data['pendingTrips']         as int? ?? 0;
       isAttendanceMarked.value  = data['attendanceMarked']     as bool? ?? false;
       unreadNotifications.value = data['unreadNotifications']  as int? ?? 0;
+
+      activeTrip.value = data['activeTrip'] as Map<String, dynamic>?;
 
       final trips = (data['upcomingTrips'] as List?)
               ?.cast<Map<String, dynamic>>() ?? [];
