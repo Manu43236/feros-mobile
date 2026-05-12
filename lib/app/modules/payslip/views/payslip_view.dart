@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_endpoints.dart';
 import '../../../../core/popups/feros_snackbar.dart';
-import '../../../../core/services/auth_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -29,12 +28,8 @@ class _PayslipViewState extends State<PayslipView> {
   Future<void> _fetch() async {
     setState(() => _isLoading = true);
     try {
-      final auth = Get.find<AuthService>();
       final api = Get.find<ApiClient>();
-      final userId = auth.user?.userId;
-      if (userId == null) return;
-
-      final res = await api.get('${ApiEndpoints.payroll}/user/$userId');
+      final res = await api.get('${ApiEndpoints.payroll}/my');
       final raw =
           (res.data as Map<String, dynamic>)['data'] as List? ?? [];
       setState(() {
