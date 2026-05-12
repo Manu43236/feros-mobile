@@ -21,14 +21,12 @@ class TripDetailView extends StatefulWidget {
 
 class _TripDetailViewState extends State<TripDetailView> {
   bool _isUpdating = false;
-  late String _currentStatus;
   Map<String, dynamic>? _lrData;
   bool _loadingLr = true;
 
   @override
   void initState() {
     super.initState();
-    _currentStatus = widget.trip.status;
     _fetchLrDetail();
   }
 
@@ -49,31 +47,127 @@ class _TripDetailViewState extends State<TripDetailView> {
     setState(() => _loadingLr = false);
   }
 
-  Future<void> _updateStatus(String newStatus) async {
+  Future<void> _startTrip() async {
     final confirmed = await FerosDialog.confirm(
-      title: 'Update Status',
-      message: 'Mark this trip as $newStatus?',
-      confirmText: 'Yes, Update',
+      title: 'Start Trip',
+      message: 'Mark this LR as In Transit?',
+      confirmText: 'Start Trip',
     );
     if (!confirmed) return;
 
     setState(() => _isUpdating = true);
     try {
       final api = Get.find<ApiClient>();
-      await api.patch(
-        ApiEndpoints.orderStatus(widget.trip.id),
-        queryParameters: {'status': newStatus},
+      await api.put(
+        ApiEndpoints.lrById(_lrData!['id']),
+        data: {
+          'lrStatus': 'IN_TRANSIT',
+          'loadedAt': DateTime.now().toIso8601String(),
+        },
       );
-      setState(() => _currentStatus = newStatus);
-      FerosSnackbar.success('Status updated to $newStatus');
+      setState(() => _lrData = {..._lrData!, 'lrStatus': 'IN_TRANSIT'});
+      FerosSnackbar.success('Trip started');
     } catch (_) {
-      FerosSnackbar.error('Failed to update status');
+      FerosSnackbar.error('Failed to start trip');
+    }
+    setState(() => _isUpdating = false);
+  }
+
+  Future<void> _markDelivered() async {
+    final weightController = TextEditingController();
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 20, right: 20, top: 20,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Mark Delivered', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy)),
+            const SizedBox(height: 4),
+            Text('Enter the delivered weight to confirm delivery.',
+                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: weightController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: AppTextStyles.body,
+              decoration: InputDecoration(
+                labelText: 'Delivered Weight (T)',
+                labelStyle: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                suffixText: 'T',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.navy),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF16A34A),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: Text('Confirm Delivery',
+                    style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ) ?? false;
+
+    if (!confirmed) return;
+
+    final weightText = weightController.text.trim();
+    if (weightText.isEmpty) {
+      FerosSnackbar.error('Please enter delivered weight');
+      return;
+    }
+    final weight = double.tryParse(weightText);
+    if (weight == null || weight <= 0) {
+      FerosSnackbar.error('Invalid weight');
+      return;
+    }
+
+    setState(() => _isUpdating = true);
+    try {
+      final api = Get.find<ApiClient>();
+      await api.put(
+        ApiEndpoints.lrById(_lrData!['id']),
+        data: {
+          'lrStatus': 'DELIVERED',
+          'deliveredWeight': weight,
+          'deliveredAt': DateTime.now().toIso8601String(),
+        },
+      );
+      setState(() => _lrData = {..._lrData!, 'lrStatus': 'DELIVERED', 'deliveredWeight': weight});
+      FerosSnackbar.success('Delivery confirmed');
+    } catch (_) {
+      FerosSnackbar.error('Failed to confirm delivery');
     }
     setState(() => _isUpdating = false);
   }
 
   @override
   Widget build(BuildContext context) {
+    final lrStatus = _lrData?['lrStatus'] as String?;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -96,38 +190,22 @@ class _TripDetailViewState extends State<TripDetailView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Current Status',
+                Text('LR Status',
                     style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
                 const SizedBox(height: 8),
-                _StatusBadge(status: _currentStatus),
-                if (_currentStatus == 'IN_TRANSIT') ...[
-                  const SizedBox(height: 12),
-                  _isUpdating
-                      ? const Center(child: SizedBox(
-                          width: 20, height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.navy),
-                        ))
-                      : SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () => _updateStatus('DELIVERED'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF16A34A),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            child: Text('Mark Delivered', style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
-                          ),
-                        ),
-                ],
-                if (_currentStatus == 'PENDING') ...[
+                if (_loadingLr)
+                  const SizedBox(
+                    height: 20, width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.navy),
+                  )
+                else
+                  _LrStatusBadge(status: lrStatus ?? 'NO_LR'),
+                if (!_loadingLr && lrStatus == 'CREATED') ...[
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _isUpdating ? null : () => _updateStatus('IN_TRANSIT'),
+                      onPressed: _isUpdating ? null : _startTrip,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.navy,
                         foregroundColor: Colors.white,
@@ -135,7 +213,32 @@ class _TripDetailViewState extends State<TripDetailView> {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      child: Text('Start Trip', style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                      child: _isUpdating
+                          ? const SizedBox(width: 18, height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : Text('Start Trip',
+                              style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+                if (!_loadingLr && lrStatus == 'IN_TRANSIT') ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isUpdating ? null : _markDelivered,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF16A34A),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: _isUpdating
+                          ? const SizedBox(width: 18, height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : Text('Mark Delivered',
+                              style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],
@@ -184,9 +287,14 @@ class _TripDetailViewState extends State<TripDetailView> {
                     : Column(
                         children: [
                           InfoRow(label: 'LR Number', value: _lrData!['lrNumber']?.toString() ?? '—'),
-                          InfoRow(label: 'Client', value: _lrData!['clientName']?.toString() ?? '—'),
                           InfoRow(label: 'Vehicle', value: _lrData!['vehicleRegistrationNumber']?.toString() ?? '—'),
-                          InfoRow(label: 'LR Status', value: _lrData!['lrStatus']?.toString() ?? '—', showDivider: false),
+                          if (_lrData!['loadedWeight'] != null)
+                            InfoRow(label: 'Loaded', value: FerosNumberUtils.formatWeight(
+                                (_lrData!['loadedWeight'] as num).toDouble())),
+                          if (_lrData!['deliveredWeight'] != null)
+                            InfoRow(label: 'Delivered', value: FerosNumberUtils.formatWeight(
+                                (_lrData!['deliveredWeight'] as num).toDouble())),
+                          InfoRow(label: 'LR Date', value: _lrData!['lrDate']?.toString() ?? '—', showDivider: false),
                         ],
                       ),
           ),
@@ -231,19 +339,20 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-class _StatusBadge extends StatelessWidget {
+class _LrStatusBadge extends StatelessWidget {
   final String status;
-  const _StatusBadge({required this.status});
+  const _LrStatusBadge({required this.status});
 
   @override
   Widget build(BuildContext context) {
     Color bg; Color fg; String label;
     switch (status.toUpperCase()) {
-      case 'IN_TRANSIT':  bg = const Color(0xFFEFF6FF); fg = AppColors.navy;              label = 'In Transit'; break;
-      case 'DELIVERED':   bg = const Color(0xFFF0FDF4); fg = const Color(0xFF16A34A);     label = 'Delivered';  break;
-      case 'PENDING':     bg = const Color(0xFFFFFBEB); fg = const Color(0xFFD97706);     label = 'Pending';    break;
-      case 'CANCELLED':   bg = const Color(0xFFFEF2F2); fg = const Color(0xFFDC2626);     label = 'Cancelled';  break;
-      default:            bg = const Color(0xFFF1F5F9); fg = AppColors.mutedText;         label = status;       break;
+      case 'CREATED':     bg = const Color(0xFFFFFBEB); fg = const Color(0xFFD97706);     label = 'LR Created';  break;
+      case 'IN_TRANSIT':  bg = const Color(0xFFEFF6FF); fg = AppColors.navy;              label = 'In Transit';  break;
+      case 'DELIVERED':   bg = const Color(0xFFF0FDF4); fg = const Color(0xFF16A34A);     label = 'Delivered';   break;
+      case 'CANCELLED':   bg = const Color(0xFFFEF2F2); fg = const Color(0xFFDC2626);     label = 'Cancelled';   break;
+      case 'NO_LR':       bg = const Color(0xFFF1F5F9); fg = AppColors.mutedText;         label = 'No LR Yet';   break;
+      default:            bg = const Color(0xFFF1F5F9); fg = AppColors.mutedText;         label = status;        break;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
