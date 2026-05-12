@@ -372,6 +372,14 @@ class _TripInfoCard extends StatelessWidget {
     this.onSecondaryAction,
   });
 
+  String _roleLabel(String? role) {
+    switch (role) {
+      case 'DRIVER':   return 'Driver';
+      case 'CLEANER':  return 'Cleaner';
+      default:         return role ?? '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final from = tripData['fromCity']?.toString() ?? '—';
@@ -379,6 +387,8 @@ class _TripInfoCard extends StatelessWidget {
     final vehicle = tripData['vehicleNumber']?.toString() ?? '—';
     final client = tripData['clientName']?.toString() ?? '—';
     final loadDate = tripData['expectedLoadDate'] as String?;
+    final startedByName = tripData['startedByName'] as String?;
+    final startedByRole = tripData['startedByRole'] as String?;
 
     return Container(
       width: double.infinity,
@@ -469,6 +479,23 @@ class _TripInfoCard extends StatelessWidget {
               ],
             ],
           ),
+          // Started by — audit info
+          if (startedByName != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.verified_user_outlined,
+                    size: 14, color: AppColors.mutedText),
+                const SizedBox(width: 4),
+                Text(
+                  'Started by $startedByName'
+                  '${startedByRole != null ? ' (${_roleLabel(startedByRole)})' : ''}',
+                  style: AppTextStyles.caption
+                      .copyWith(color: AppColors.mutedText),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 16),
 
           // Primary action button

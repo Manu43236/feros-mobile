@@ -15,6 +15,10 @@ class LrModel {
   final String lrDate;
   final double? startOdometer;
   final double? endOdometer;
+  final String? startedByName;
+  final String? startedByRole;
+  final String? completedByName;
+  final String? completedByRole;
 
   LrModel({
     required this.id,
@@ -33,6 +37,10 @@ class LrModel {
     required this.lrDate,
     this.startOdometer,
     this.endOdometer,
+    this.startedByName,
+    this.startedByRole,
+    this.completedByName,
+    this.completedByRole,
   });
 
   factory LrModel.fromJson(Map<String, dynamic> j) => LrModel(
@@ -52,5 +60,9 @@ class LrModel {
     lrDate:          j['lrDate']                    as String? ?? '—',
     startOdometer:   (j['startOdometer']            as num?)?.toDouble(),
     endOdometer:     (j['endOdometer']              as num?)?.toDouble(),
+    startedByName:   j['startedByName']             as String?,
+    startedByRole:   j['startedByRole']             as String?,
+    completedByName: j['completedByName']           as String?,
+    completedByRole: j['completedByRole']           as String?,
   );
 }

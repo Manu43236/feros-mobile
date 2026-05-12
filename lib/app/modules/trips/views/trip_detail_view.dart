@@ -148,6 +148,26 @@ class _TripDetailViewState extends State<TripDetailView> {
                 const SizedBox(height: 8),
                 _LrStatusBadge(status: _lrStatus),
 
+                // Audit trail
+                if (widget.lr.startedByName != null) ...[
+                  const SizedBox(height: 10),
+                  _AuditRow(
+                    icon: Icons.play_circle_outline,
+                    label: 'Started by',
+                    name: widget.lr.startedByName!,
+                    role: widget.lr.startedByRole,
+                  ),
+                ],
+                if (widget.lr.completedByName != null) ...[
+                  const SizedBox(height: 6),
+                  _AuditRow(
+                    icon: Icons.check_circle_outline,
+                    label: 'Completed by',
+                    name: widget.lr.completedByName!,
+                    role: widget.lr.completedByRole,
+                  ),
+                ],
+
                 if (_lrStatus == 'CREATED') ...[
                   const SizedBox(height: 12),
                   _InfoBanner(
@@ -401,6 +421,45 @@ class _LrStatusBadge extends StatelessWidget {
       child: Text(label,
           style: AppTextStyles.bodyMedium
               .copyWith(color: fg, fontWeight: FontWeight.w600)),
+    );
+  }
+}
+
+// ── Audit Row ─────────────────────────────────────────────────────────────────
+class _AuditRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String name;
+  final String? role;
+  const _AuditRow({
+    required this.icon,
+    required this.label,
+    required this.name,
+    this.role,
+  });
+
+  String _roleLabel(String? r) {
+    switch (r) {
+      case 'DRIVER':  return 'Driver';
+      case 'CLEANER': return 'Cleaner';
+      default:        return r ?? '';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: AppColors.mutedText),
+        const SizedBox(width: 6),
+        Text('$label: ',
+            style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+        Text(
+          '$name${role != null ? ' (${_roleLabel(role)})' : ''}',
+          style: AppTextStyles.caption.copyWith(
+              color: AppColors.navy, fontWeight: FontWeight.w600),
+        ),
+      ],
     );
   }
 }
