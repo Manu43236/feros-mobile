@@ -7,12 +7,46 @@ import '../../payslip/views/payslip_view.dart';
 import '../../shell/controllers/shell_controller.dart';
 import '../controllers/dashboard_controller.dart';
 
-class DriverDashboard extends StatelessWidget {
+class DriverDashboard extends StatefulWidget {
   final DashboardController controller;
   const DriverDashboard({super.key, required this.controller});
 
   @override
+  State<DriverDashboard> createState() => _DriverDashboardState();
+}
+
+class _DriverDashboardState extends State<DriverDashboard> {
+  String _dateRange = 'This Week';
+  static const _ranges = ['Today', 'This Week', 'This Month', 'All'];
+
+  List<Map<String, dynamic>> _filtered(List<Map<String, dynamic>> all) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return all.where((t) {
+      final raw = t['expectedLoadDate'] as String?;
+      if (raw == null) return _dateRange == 'All';
+      final d = DateTime.tryParse(raw);
+      if (d == null) return _dateRange == 'All';
+      final day = DateTime(d.year, d.month, d.day);
+
+      switch (_dateRange) {
+        case 'Today':
+          return day == today;
+        case 'This Week':
+          return !day.isBefore(today) &&
+              day.isBefore(today.add(const Duration(days: 7)));
+        case 'This Month':
+          return d.year == now.year && d.month == now.month;
+        default:
+          return true;
+      }
+    }).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final c = widget.controller;
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
@@ -21,44 +55,52 @@ class DriverDashboard extends StatelessWidget {
           children: [
             Expanded(
               child: _StatCard(
-                label: 'Trips Today',
-                value: '${controller.totalTrips.value}',
+                label: 'Total Trips',
+                value: '${c.totalTrips.value}',
                 icon: Icons.local_shipping_outlined,
                 borderColor: AppColors.navy,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _StatCard(
-                label: 'Attendance',
-                value: controller.isAttendanceMarked.value ? 'Present' : 'Not Marked',
-                icon: Icons.check_circle_outline,
-                borderColor: controller.isAttendanceMarked.value
-                    ? const Color(0xFF16A34A)
-                    : AppColors.mutedText,
-                valueColor: controller.isAttendanceMarked.value
-                    ? const Color(0xFF16A34A)
-                    : AppColors.mutedText,
+              child: GestureDetector(
+                onTap: () => Get.find<ShellController>().onTabTapped(2),
+                child: _StatCard(
+                  label: 'Attendance',
+                  value: c.isAttendanceMarked.value ? 'Present ✓' : 'Tap to Mark',
+                  icon: Icons.check_circle_outline,
+                  borderColor: c.isAttendanceMarked.value
+                      ? const Color(0xFF16A34A)
+                      : const Color(0xFFD97706),
+                  valueColor: c.isAttendanceMarked.value
+                      ? const Color(0xFF16A34A)
+                      : const Color(0xFFD97706),
+                ),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _StatCard(
                 label: 'Pending',
-                value: '${controller.pendingTrips.value}',
+                value: '${c.pendingTrips.value}',
                 icon: Icons.pending_actions_outlined,
-                borderColor: AppColors.navy,
+                borderColor: c.pendingTrips.value > 0
+                    ? const Color(0xFFD97706)
+                    : AppColors.navy,
+                valueColor: c.pendingTrips.value > 0
+                    ? const Color(0xFFD97706)
+                    : null,
               ),
             ),
           ],
         )),
         const SizedBox(height: 24),
 
-        // ── Upcoming Trip ──────────────────────────────────────
+        // ── Upcoming Bookings ──────────────────────────────────
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Upcoming Trip',
+            Text('Upcoming Bookings',
                 style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy)),
             TextButton(
               onPressed: () => Get.find<ShellController>().onTabTapped(1),
@@ -73,9 +115,66 @@ class DriverDashboard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 10),
-        Obx(() => controller.upcomingTrip.value != null
-            ? _TripCard(trip: controller.upcomingTrip.value!)
-            : _EmptyTrip()),
+
+        // ── Date Range Chips ───────────────────────────────────
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: _ranges.map((r) {
+              final active = _dateRange == r;
+              return GestureDetector(
+                onTap: () => setState(() => _dateRange = r),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: active ? AppColors.navy : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: active ? AppColors.navy : AppColors.border),
+                  ),
+                  child: Text(r,
+                      style: AppTextStyles.caption.copyWith(
+                        color: active ? Colors.white : AppColors.mutedText,
+                        fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                      )),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // ── Booking List ───────────────────────────────────────
+        Obx(() {
+          final filtered = _filtered(c.upcomingTrips);
+          if (filtered.isEmpty) {
+            return Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: const [
+                  BoxShadow(
+                      color: Color(0x0A000000),
+                      blurRadius: 8,
+                      offset: Offset(0, 2))
+                ],
+              ),
+              child: Center(
+                child: Text('No bookings for $_dateRange',
+                    style:
+                        AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+              ),
+            );
+          }
+          return Column(
+            children: filtered
+                .map((t) => _BookingCard(trip: t))
+                .toList(),
+          );
+        }),
         const SizedBox(height: 24),
 
         // ── Quick Actions ──────────────────────────────────────
@@ -114,6 +213,148 @@ class DriverDashboard extends StatelessWidget {
   }
 }
 
+// ── Booking Card ──────────────────────────────────────────────────────────────
+class _BookingCard extends StatelessWidget {
+  final Map<String, dynamic> trip;
+  const _BookingCard({required this.trip});
+
+  @override
+  Widget build(BuildContext context) {
+    final loadDate = trip['expectedLoadDate'] as String?;
+    final deliveryDate = trip['expectedDeliveryDate'] as String?;
+    final status = trip['lrStatus'] as String? ?? '';
+
+    Color statusColor;
+    String statusLabel;
+    switch (status) {
+      case 'WEIGHT_LOADED':
+        statusColor = const Color(0xFF7C3AED);
+        statusLabel = 'Ready to Start';
+        break;
+      case 'CREATED':
+        statusColor = AppColors.navy;
+        statusLabel = 'Scheduled';
+        break;
+      default:
+        statusColor = AppColors.mutedText;
+        statusLabel = status;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Date row + status
+          Row(
+            children: [
+              const Icon(Icons.calendar_today_outlined,
+                  size: 13, color: AppColors.mutedText),
+              const SizedBox(width: 4),
+              Text(_formatDate(loadDate),
+                  style:
+                      AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+              if (deliveryDate != null) ...[
+                const Text('  →  ',
+                    style: TextStyle(
+                        fontSize: 11, color: AppColors.mutedText)),
+                Text(_formatDate(deliveryDate),
+                    style: AppTextStyles.caption
+                        .copyWith(color: AppColors.mutedText)),
+              ],
+              const Spacer(),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(statusLabel,
+                    style: AppTextStyles.caption.copyWith(
+                        color: statusColor, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Client
+          Text(trip['clientName']?.toString() ?? '—',
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy)),
+          const SizedBox(height: 6),
+
+          // Route
+          Row(
+            children: [
+              const Icon(Icons.radio_button_checked,
+                  size: 11, color: AppColors.navy),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(trip['fromCity']?.toString() ?? '—',
+                    style: AppTextStyles.caption
+                        .copyWith(color: AppColors.mutedText),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 6),
+                child: Icon(Icons.arrow_forward,
+                    size: 11, color: AppColors.mutedText),
+              ),
+              const Icon(Icons.location_on_outlined,
+                  size: 11, color: AppColors.navy),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(trip['toCity']?.toString() ?? '—',
+                    style: AppTextStyles.caption
+                        .copyWith(color: AppColors.mutedText),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+
+          // Vehicle
+          Row(
+            children: [
+              const Icon(Icons.directions_bus_outlined,
+                  size: 13, color: AppColors.mutedText),
+              const SizedBox(width: 4),
+              Text(trip['vehicleNumber']?.toString() ?? '—',
+                  style: AppTextStyles.caption
+                      .copyWith(color: AppColors.mutedText)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(String? raw) {
+    if (raw == null) return '—';
+    try {
+      final d = DateTime.parse(raw);
+      const months = [
+        '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ];
+      return '${d.day} ${months[d.month]}';
+    } catch (_) {
+      return raw;
+    }
+  }
+}
+
 // ── Stat Card ─────────────────────────────────────────────────────────────────
 class _StatCard extends StatelessWidget {
   final String label;
@@ -139,7 +380,8 @@ class _StatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border(left: BorderSide(color: borderColor, width: 3)),
         boxShadow: const [
-          BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
+          BoxShadow(
+              color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -151,8 +393,10 @@ class _StatCard extends StatelessWidget {
             value,
             style: AppTextStyles.bodySemiBold.copyWith(
               color: valueColor ?? AppColors.navy,
-              fontSize: 15,
+              fontSize: 13,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
           Text(label,
@@ -160,133 +404,6 @@ class _StatCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis),
         ],
-      ),
-    );
-  }
-}
-
-// ── Trip Card ─────────────────────────────────────────────────────────────────
-class _TripCard extends StatelessWidget {
-  final Map<String, dynamic> trip;
-  const _TripCard({required this.trip});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // LR + Status
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                trip['lrNumber']?.toString() ?? '—',
-                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
-              ),
-              _StatusChip(status: trip['lrStatus']?.toString() ?? ''),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Client
-          Text(
-            trip['clientName']?.toString() ?? '—',
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy),
-          ),
-          const SizedBox(height: 8),
-          // Route
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  trip['fromCity']?.toString() ?? '—',
-                  style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
-                ),
-              ),
-              const Icon(Icons.arrow_forward, size: 14, color: AppColors.mutedText),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  trip['toCity']?.toString() ?? '—',
-                  style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
-                  textAlign: TextAlign.right,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Divider(height: 1),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () {},
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  backgroundColor: AppColors.navy,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text('View Details',
-                    style: AppTextStyles.caption.copyWith(
-                        color: Colors.white, fontWeight: FontWeight.w600)),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  final String status;
-  const _StatusChip({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.navy.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        status,
-        style: AppTextStyles.caption.copyWith(
-          color: AppColors.navy,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyTrip extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Center(
-        child: Text('No upcoming trips',
-            style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
       ),
     );
   }
@@ -314,7 +431,8 @@ class _QuickAction extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: const [
-            BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
+            BoxShadow(
+                color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
           ],
         ),
         child: Column(

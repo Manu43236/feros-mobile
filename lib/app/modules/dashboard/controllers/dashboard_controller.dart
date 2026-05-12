@@ -16,7 +16,8 @@ class DashboardController extends GetxController {
   final isAttendanceMarked = false.obs;
   final unreadNotifications = 0.obs;
 
-  // Upcoming trip (driver)
+  // Upcoming trips (driver) — full list
+  final upcomingTrips = <Map<String, dynamic>>[].obs;
   final upcomingTrip = Rxn<Map<String, dynamic>>();
 
   @override
@@ -41,10 +42,10 @@ class DashboardController extends GetxController {
       isAttendanceMarked.value  = data['attendanceMarked']     as bool? ?? false;
       unreadNotifications.value = data['unreadNotifications']  as int? ?? 0;
 
-      final trips = data['upcomingTrips'] as List?;
-      upcomingTrip.value = trips != null && trips.isNotEmpty
-          ? trips.first as Map<String, dynamic>
-          : null;
+      final trips = (data['upcomingTrips'] as List?)
+              ?.cast<Map<String, dynamic>>() ?? [];
+      upcomingTrips.value = trips;
+      upcomingTrip.value = trips.isNotEmpty ? trips.first : null;
 
       state.value = ViewState.success;
     } catch (_) {
