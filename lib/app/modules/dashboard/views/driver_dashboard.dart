@@ -36,6 +36,7 @@ class DriverDashboard extends StatelessWidget {
           actionIcon: Icons.arrow_forward,
           actionColor: const Color(0xFF16A34A),
           onAction: () => _openTrip(context, active),
+          onCardTap: () => _openTrip(context, active),
           bottomRow: _BottomNav(controller: controller, attended: attended),
         );
       }
@@ -51,7 +52,8 @@ class DriverDashboard extends StatelessWidget {
           actionLabel: 'Go to Trip',
           actionIcon: Icons.play_circle_outline,
           actionColor: const Color(0xFFD97706),
-          onAction: () => Get.find<ShellController>().onTabTapped(1),
+          onAction: () => _openTrip(context, nextReady),
+          onCardTap: () => _openTrip(context, nextReady),
           bottomRow: _BottomNav(controller: controller, attended: attended),
         );
       }
@@ -200,6 +202,7 @@ class _HomeState extends StatelessWidget {
   final IconData actionIcon;
   final Color actionColor;
   final VoidCallback onAction;
+  final VoidCallback? onCardTap;
   final Widget bottomRow;
 
   const _HomeState({
@@ -212,6 +215,7 @@ class _HomeState extends StatelessWidget {
     required this.actionIcon,
     required this.actionColor,
     required this.onAction,
+    this.onCardTap,
     required this.bottomRow,
   });
 
@@ -256,8 +260,11 @@ class _HomeState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Trip card
-            _TripInfoCard(tripData: tripData, statusColor: statusColor),
+            // Trip card — tappable
+            GestureDetector(
+              onTap: onCardTap,
+              child: _TripInfoCard(tripData: tripData, statusColor: statusColor),
+            ),
             const SizedBox(height: 20),
 
             // Primary action button
