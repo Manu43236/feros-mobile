@@ -29,7 +29,7 @@ class DriverDashboard extends StatelessWidget {
       // ── State 3: ON TRIP ──────────────────────────────────────
       if (active != null) {
         return _HomeState(
-          statusColor: const Color(0xFF16A34A),
+          statusColor: const Color(0xFFD97706),
           statusIcon: Icons.local_shipping,
           statusLabel: 'ON TRIP',
           tripData: active,
