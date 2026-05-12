@@ -64,55 +64,54 @@ class _FerosNavBar extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            children: List.generate(items.length, (i) {
-              final item = items[i];
-              final isActive = i == currentIndex;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => onTap(i),
-                  behavior: HitTestBehavior.opaque,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeInOut,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
+        child: Row(
+          children: List.generate(items.length, (i) {
+            final item = items[i];
+            final isActive = i == currentIndex;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => onTap(i),
+                behavior: HitTestBehavior.opaque,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Active indicator line at top
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOut,
+                      height: 3,
+                      width: isActive ? 32 : 0,
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Icon(
+                      isActive ? item.activeIcon : item.icon,
+                      size: isActive ? 24 : 22,
                       color: isActive
-                          ? Colors.white.withValues(alpha: 0.15)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.45),
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          isActive ? item.activeIcon : item.icon,
-                          size: 22,
-                          color: isActive
-                              ? Colors.white
-                              : Colors.white.withValues(alpha: 0.45),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.label,
-                          style: AppTextStyles.navLabel.copyWith(
-                            color: isActive
-                                ? Colors.white
-                                : Colors.white.withValues(alpha: 0.45),
-                            fontWeight: isActive
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 4),
+                    Text(
+                      item.label,
+                      style: AppTextStyles.navLabel.copyWith(
+                        color: isActive
+                            ? Colors.white
+                            : Colors.white.withValues(alpha: 0.45),
+                        fontWeight: isActive
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                  ],
                 ),
-              );
-            }),
-          ),
+              ),
+            );
+          }),
         ),
       ),
     );
