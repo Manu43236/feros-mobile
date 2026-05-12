@@ -34,7 +34,7 @@ class _AttendanceViewState extends State<AttendanceView> {
       final to = DateTime(_month.year, _month.month + 1, 0);
       final res = await api.get(
         ApiEndpoints.myAttendance,
-        queryParameters: {
+        params: {
           'from': _fmt(from),
           'to': _fmt(to),
         },
