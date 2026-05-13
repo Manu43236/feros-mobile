@@ -1,9 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_endpoints.dart';
 import '../../../../core/popups/feros_snackbar.dart';
+import '../../../../core/services/upload_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
@@ -36,6 +39,7 @@ class _MarkAttendanceSheetState extends State<_MarkAttendanceSheet> {
   Position? _position;
   bool _gettingLocation = false;
   bool _marking = false;
+  File? _selfie;
 
   @override
   void initState() {
@@ -65,13 +69,32 @@ class _MarkAttendanceSheetState extends State<_MarkAttendanceSheet> {
     setState(() => _gettingLocation = false);
   }
 
+  Future<void> _takeSelfie() async {
+    final xFile = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      preferredCameraDevice: CameraDevice.front,
+      imageQuality: 80,
+      maxWidth: 800,
+    );
+    if (xFile != null && mounted) {
+      setState(() => _selfie = File(xFile.path));
+    }
+  }
+
   Future<void> _mark() async {
     setState(() => _marking = true);
     try {
+      String? selfieUrl;
+      if (_selfie != null) {
+        selfieUrl = await Get.find<UploadService>()
+            .uploadFile(_selfie!, folder: 'attendance');
+      }
+
       final api = Get.find<ApiClient>();
       await api.post(ApiEndpoints.attendanceMarkPresent, data: {
         if (_position != null) 'latitude': _position!.latitude,
         if (_position != null) 'longitude': _position!.longitude,
+        'selfieUrl': selfieUrl,
       });
       FerosSnackbar.success('Attendance marked for today');
       if (mounted) Navigator.of(context).pop();
@@ -156,7 +179,83 @@ class _MarkAttendanceSheetState extends State<_MarkAttendanceSheet> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+          // Selfie (optional)
+          GestureDetector(
+            onTap: _marking ? null : _takeSelfie,
+            child: _selfie == null
+                ? Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                          color: AppColors.border, style: BorderStyle.solid),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.camera_front_outlined,
+                            size: 20, color: AppColors.mutedText),
+                        const SizedBox(width: 8),
+                        Text('Take Selfie (Optional)',
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.mutedText)),
+                      ],
+                    ),
+                  )
+                : Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.file(
+                          _selfie!,
+                          width: double.infinity,
+                          height: 140,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: GestureDetector(
+                          onTap: _marking
+                              ? null
+                              : () => setState(() => _selfie = null),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close,
+                                size: 16, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 6,
+                        right: 6,
+                        child: GestureDetector(
+                          onTap: _marking ? null : _takeSelfie,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text('Retake',
+                                style: AppTextStyles.caption
+                                    .copyWith(color: Colors.white)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+          const SizedBox(height: 16),
 
           // Mark button
           SizedBox(
