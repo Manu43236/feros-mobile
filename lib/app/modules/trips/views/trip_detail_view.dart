@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_endpoints.dart';
-import '../../../../core/popups/feros_dialog.dart';
 import '../../../../core/popups/feros_snackbar.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -117,6 +119,25 @@ class _TripDetailViewState extends State<TripDetailView> {
     setState(() => _isUpdating = false);
   }
 
+  // ── View LR PDF ─────────────────────────────────────────────────────────────
+  Future<void> _viewPdf() async {
+    setState(() => _isUpdating = true);
+    try {
+      final api = Get.find<ApiClient>();
+      final bytes = await api.getBytes(ApiEndpoints.lrPdf(widget.lr.id));
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/${widget.lr.lrNumber}.pdf');
+      await file.writeAsBytes(bytes);
+      final result = await OpenFile.open(file.path);
+      if (result.type != ResultType.done) {
+        FerosSnackbar.error('Could not open PDF viewer');
+      }
+    } catch (e) {
+      FerosSnackbar.error('Failed to load PDF');
+    }
+    setState(() => _isUpdating = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -133,6 +154,13 @@ class _TripDetailViewState extends State<TripDetailView> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
           onPressed: () => Get.back(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white),
+            tooltip: 'View LR PDF',
+            onPressed: _isUpdating ? null : _viewPdf,
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

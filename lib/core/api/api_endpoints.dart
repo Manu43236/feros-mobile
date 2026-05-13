@@ -47,6 +47,7 @@ class ApiEndpoints {
   // LRs
   static const lrs                        = '/lrs';
   static String lrById(id)               => '/lrs/$id';
+  static String lrPdf(id)                => '/lrs/$id/pdf';
   static String lrsByOrder(orderId)      => '/lrs/order/$orderId';
   static String lrCheckposts(id)         => '/lrs/$id/checkposts';
   static String lrCharges(id)            => '/lrs/$id/charges';

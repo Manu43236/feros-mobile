@@ -77,6 +77,19 @@ class ApiClient extends GetxService {
       throw ExceptionHandler.handle(e);
     }
   }
+
+  /// Downloads raw bytes (for PDF, images, etc.)
+  Future<List<int>> getBytes(String path) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        path,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return response.data!;
+    } catch (e) {
+      throw ExceptionHandler.handle(e);
+    }
+  }
 }
 
 // ── Auth Interceptor ──────────────────────────────────────────────────────────
