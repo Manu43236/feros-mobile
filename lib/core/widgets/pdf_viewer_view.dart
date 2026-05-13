@@ -3,36 +3,51 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/popups/feros_snackbar.dart';
+import '../theme/app_colors.dart';
+import '../popups/feros_snackbar.dart';
 
-class LrPdfViewerView extends StatefulWidget {
-  final File file;
-  final String lrNumber;
+/// Generic in-app PDF viewer.
+/// Renders PDFs natively (Android PDFRenderer / iOS PDFKit).
+/// Provides a download/share button in the AppBar.
+///
+/// Usage:
+/// ```dart
+/// Get.to(() => PdfViewerView(
+///   file: file,
+///   title: 'Visakhapatnam → Guntur',
+///   subtitle: 'LR-2026-001',    // optional
+/// ));
+/// ```
+class PdfViewerView extends StatefulWidget {
+  final File   file;
   final String title;
+  final String? subtitle;
 
-  const LrPdfViewerView({
+  const PdfViewerView({
     super.key,
     required this.file,
-    required this.lrNumber,
     required this.title,
+    this.subtitle,
   });
 
   @override
-  State<LrPdfViewerView> createState() => _LrPdfViewerViewState();
+  State<PdfViewerView> createState() => _PdfViewerViewState();
 }
 
-class _LrPdfViewerViewState extends State<LrPdfViewerView> {
-  int _totalPages = 0;
-  int _currentPage = 0;
-  bool _pdfReady = false;
+class _PdfViewerViewState extends State<PdfViewerView> {
+  int  _totalPages  = 0;
+  int  _currentPage = 0;
+  bool _pdfReady    = false;
+
   Future<void> _share() async {
     try {
       final xFile = XFile(widget.file.path, mimeType: 'application/pdf');
       await SharePlus.instance.share(
         ShareParams(
           files: [xFile],
-          text: 'LR Document — ${widget.lrNumber}',
+          text: widget.subtitle != null
+              ? '${widget.title} — ${widget.subtitle}'
+              : widget.title,
         ),
       );
     } catch (e) {
@@ -59,14 +74,15 @@ class _LrPdfViewerViewState extends State<LrPdfViewerView> {
                 fontSize: 14,
               ),
             ),
-            Text(
-              widget.lrNumber,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.65),
-                fontFamily: 'Inter',
-                fontSize: 11,
+            if (widget.subtitle != null)
+              Text(
+                widget.subtitle!,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.65),
+                  fontFamily: 'Inter',
+                  fontSize: 11,
+                ),
               ),
-            ),
           ],
         ),
         leading: IconButton(
@@ -108,19 +124,14 @@ class _LrPdfViewerViewState extends State<LrPdfViewerView> {
             autoSpacing: true,
             pageFling: true,
             fitPolicy: FitPolicy.WIDTH,
-            onRender: (pages) {
-              setState(() {
-                _totalPages = pages ?? 0;
-                _pdfReady = true;
-              });
-            },
+            onRender: (pages) => setState(() {
+              _totalPages = pages ?? 0;
+              _pdfReady   = true;
+            }),
             onViewCreated: (controller) {},
-            onPageChanged: (page, total) {
-              setState(() => _currentPage = page ?? 0);
-            },
-            onError: (error) {
-              FerosSnackbar.error('Failed to render PDF');
-            },
+            onPageChanged: (page, total) =>
+                setState(() => _currentPage = page ?? 0),
+            onError: (_) => FerosSnackbar.error('Failed to render PDF'),
           ),
           if (!_pdfReady)
             const Center(

@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
-import 'lr_pdf_viewer_view.dart';
+import '../../../../core/widgets/pdf_viewer_view.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_endpoints.dart';
 import '../../../../core/popups/feros_snackbar.dart';
@@ -128,10 +128,10 @@ class _TripDetailViewState extends State<TripDetailView> {
       final file = File('${dir.path}/${widget.lr.lrNumber}.pdf');
       await file.writeAsBytes(bytes);
       await Get.to(
-        () => LrPdfViewerView(
+        () => PdfViewerView(
           file: file,
-          lrNumber: widget.lr.lrNumber,
           title: '${widget.lr.fromCity} → ${widget.lr.toCity}',
+          subtitle: widget.lr.lrNumber,
         ),
         transition: Transition.cupertino,
       );
