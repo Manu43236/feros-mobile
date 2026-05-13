@@ -25,7 +25,6 @@ class SupervisorShellView extends StatelessWidget {
     final auth = Get.find<AuthService>();
 
     return Obx(() => Scaffold(
-      key: ctrl.scaffoldKey,
       backgroundColor: AppColors.background,
       drawer: _SupervisorDrawer(auth: auth, ctrl: ctrl),
       appBar: _buildAppBar(ctrl, auth),
@@ -52,7 +51,9 @@ class SupervisorShellView extends StatelessWidget {
       backgroundColor: AppColors.navy,
       elevation: 0,
       automaticallyImplyLeading: false,
-      leading: Obx(() => _buildLeading(ctrl, auth)),
+      leading: Builder(
+        builder: (ctx) => _buildLeading(ctx, auth),
+      ),
       title: Obx(() {
         final idx = ctrl.currentIndex.value;
         if (idx == 0) {
@@ -93,9 +94,9 @@ class SupervisorShellView extends StatelessWidget {
     );
   }
 
-  Widget _buildLeading(SupervisorShellController ctrl, AuthService auth) {
+  Widget _buildLeading(BuildContext ctx, AuthService auth) {
     return GestureDetector(
-      onTap: ctrl.openDrawer,
+      onTap: () => Scaffold.of(ctx).openDrawer(),
       child: Padding(
         padding: const EdgeInsets.all(10),
         child: CircleAvatar(
@@ -197,7 +198,7 @@ class _SupervisorDrawer extends StatelessWidget {
                     icon: Icons.person_outline,
                     label: 'My Profile',
                     onTap: () {
-                      ctrl.closeDrawer();
+                      Navigator.of(context).pop();
                       Get.to(() => const ProfileView());
                     },
                   ),
@@ -205,7 +206,7 @@ class _SupervisorDrawer extends StatelessWidget {
                     icon: Icons.payments_outlined,
                     label: 'My Payslip',
                     onTap: () {
-                      ctrl.closeDrawer();
+                      Navigator.of(context).pop();
                       Get.to(() => const PayslipView());
                     },
                   ),
@@ -213,7 +214,7 @@ class _SupervisorDrawer extends StatelessWidget {
                     icon: Icons.calendar_month_outlined,
                     label: 'My Attendance',
                     onTap: () {
-                      ctrl.closeDrawer();
+                      Navigator.of(context).pop();
                       // TODO Sprint 3 Step 6
                       Get.snackbar('Coming Soon',
                           'My Attendance will be available shortly',
@@ -224,7 +225,7 @@ class _SupervisorDrawer extends StatelessWidget {
                     icon: Icons.local_gas_station_outlined,
                     label: 'Fuel Log',
                     onTap: () {
-                      ctrl.closeDrawer();
+                      Navigator.of(context).pop();
                       Get.to(() => const FuelLogView());
                     },
                   ),
@@ -232,7 +233,7 @@ class _SupervisorDrawer extends StatelessWidget {
                     icon: Icons.car_crash_outlined,
                     label: 'Breakdowns',
                     onTap: () {
-                      ctrl.closeDrawer();
+                      Navigator.of(context).pop();
                       Get.to(() => const BreakdownView());
                     },
                   ),
@@ -243,7 +244,7 @@ class _SupervisorDrawer extends StatelessWidget {
                     label: 'Logout',
                     color: AppColors.error,
                     onTap: () async {
-                      ctrl.closeDrawer();
+                      Navigator.of(context).pop();
                       final confirmed = await FerosDialog.confirm(
                         title: 'Logout',
                         message: 'Are you sure you want to logout?',
