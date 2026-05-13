@@ -121,7 +121,6 @@ class _TripDetailViewState extends State<TripDetailView> {
 
   // ── View LR PDF ─────────────────────────────────────────────────────────────
   Future<void> _viewPdf() async {
-    setState(() => _isUpdating = true);
     try {
       final api = Get.find<ApiClient>();
       final bytes = await api.getBytes(ApiEndpoints.lrPdf(widget.lr.id));
@@ -135,7 +134,114 @@ class _TripDetailViewState extends State<TripDetailView> {
     } catch (e) {
       FerosSnackbar.error('Failed to load PDF');
     }
-    setState(() => _isUpdating = false);
+  }
+
+  Future<void> _showPdfBottomSheet() async {
+    bool loading = false;
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Icon + title
+              Row(
+                children: [
+                  Container(
+                    width: 44, height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.picture_as_pdf_outlined,
+                        color: AppColors.navy, size: 22),
+                  ),
+                  const SizedBox(width: 14),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('LR Document',
+                          style: AppTextStyles.bodyMedium
+                              .copyWith(color: AppColors.navy, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 2),
+                      Text(widget.lr.lrNumber,
+                          style: AppTextStyles.caption
+                              .copyWith(color: AppColors.mutedText)),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'View and share the official lorry receipt document.',
+                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+              ),
+              const SizedBox(height: 20),
+              const Divider(height: 1),
+              const SizedBox(height: 20),
+              // Open button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: loading
+                      ? null
+                      : () async {
+                          setSheetState(() => loading = true);
+                          await _viewPdf();
+                          setSheetState(() => loading = false);
+                          if (ctx.mounted) Navigator.pop(ctx);
+                        },
+                  icon: loading
+                      ? const SizedBox(
+                          width: 16, height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.open_in_new, size: 18),
+                  label: Text(loading ? 'Preparing PDF…' : 'Open LR PDF',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                          color: Colors.white, fontWeight: FontWeight.w600)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.navy,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text('Cancel',
+                      style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -145,22 +251,18 @@ class _TripDetailViewState extends State<TripDetailView> {
       appBar: AppBar(
         backgroundColor: AppColors.navy,
         elevation: 0,
-        title: Text(widget.lr.lrNumber,
-            style: const TextStyle(
-                color: Colors.white,
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w600)),
+        title: Text(
+          '${widget.lr.fromCity} → ${widget.lr.toCity}',
+          style: const TextStyle(
+              color: Colors.white,
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w600,
+              fontSize: 15),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
           onPressed: () => Get.back(),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white),
-            tooltip: 'View LR PDF',
-            onPressed: _isUpdating ? null : _viewPdf,
-          ),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -268,6 +370,27 @@ class _TripDetailViewState extends State<TripDetailView> {
           // ── Trip Info ───────────────────────────────────────────
           _SectionCard(
             title: 'Trip Details',
+            action: GestureDetector(
+              onTap: _showPdfBottomSheet,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.picture_as_pdf_outlined,
+                        size: 15, color: AppColors.navy),
+                    const SizedBox(width: 5),
+                    Text('LR PDF',
+                        style: AppTextStyles.caption.copyWith(
+                            color: AppColors.navy, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+            ),
             child: Column(
               children: [
                 InfoRow(label: 'Order',   value: widget.lr.orderNumber),
@@ -351,8 +474,9 @@ class _TripDetailViewState extends State<TripDetailView> {
 // ── Section Card ──────────────────────────────────────────────────────────────
 class _SectionCard extends StatelessWidget {
   final String? title;
+  final Widget? action;
   final Widget child;
-  const _SectionCard({this.title, required this.child});
+  const _SectionCard({this.title, this.action, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -371,8 +495,16 @@ class _SectionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (title != null) ...[
-            Text(title!,
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy)),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(title!,
+                      style: AppTextStyles.bodyMedium
+                          .copyWith(color: AppColors.navy)),
+                ),
+                ?action,
+              ],
+            ),
             const SizedBox(height: 12),
             const Divider(height: 1),
             const SizedBox(height: 8),
