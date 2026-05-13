@@ -36,6 +36,7 @@ class DriverDashboard extends StatelessWidget {
           attended: attended,
           actionLabel: 'Mark as Done',
           actionIcon: Icons.check_circle_outline,
+          actionColor: AppColors.navy,
           onAction: () => _markDoneFromHome(context, active),
           secondaryActionLabel: 'View Trip Details',
           onSecondaryAction: () => _openTrip(context, active),
@@ -46,15 +47,19 @@ class DriverDashboard extends StatelessWidget {
 
       // ── State 2: TRIP READY ───────────────────────────────────
       if (nextReady != null) {
+        final gateBlocked = controller.isAttendanceEnforced.value && !attended;
         return _HomeState(
           statusColor: const Color(0xFFD97706),
           statusIcon: Icons.inventory_2_outlined,
           statusLabel: 'TRIP READY',
           tripData: nextReady,
           attended: attended,
-          actionLabel: 'Start Trip',
-          actionIcon: Icons.play_circle_outline,
-          onAction: () => _startTripFromHome(context, nextReady),
+          actionLabel: gateBlocked ? 'Mark Attendance First' : 'Start Trip',
+          actionIcon: gateBlocked ? Icons.lock_outline : Icons.play_circle_outline,
+          actionColor: gateBlocked ? const Color(0xFFD97706) : AppColors.navy,
+          onAction: gateBlocked
+              ? () => showMarkAttendanceSheet(context, onMarked: controller.fetchDashboard)
+              : () => _startTripFromHome(context, nextReady),
           onCardTap: () => _openTrip(context, nextReady),
           bottomRow: _BottomNav(controller: controller, attended: attended),
         );
@@ -268,6 +273,7 @@ class _HomeState extends StatelessWidget {
   final bool attended;
   final String actionLabel;
   final IconData actionIcon;
+  final Color actionColor;
   final VoidCallback onAction;
   final String? secondaryActionLabel;
   final VoidCallback? onSecondaryAction;
@@ -282,6 +288,7 @@ class _HomeState extends StatelessWidget {
     required this.attended,
     required this.actionLabel,
     required this.actionIcon,
+    required this.actionColor,
     required this.onAction,
     this.secondaryActionLabel,
     this.onSecondaryAction,
@@ -338,6 +345,7 @@ class _HomeState extends StatelessWidget {
                 statusColor: statusColor,
                 actionLabel: actionLabel,
                 actionIcon: actionIcon,
+                actionColor: actionColor,
                 onAction: onAction,
                 secondaryActionLabel: secondaryActionLabel,
                 onSecondaryAction: onSecondaryAction,
@@ -359,6 +367,7 @@ class _TripInfoCard extends StatelessWidget {
   final Color statusColor;
   final String actionLabel;
   final IconData actionIcon;
+  final Color actionColor;
   final VoidCallback onAction;
   final String? secondaryActionLabel;
   final VoidCallback? onSecondaryAction;
@@ -367,6 +376,7 @@ class _TripInfoCard extends StatelessWidget {
     required this.statusColor,
     required this.actionLabel,
     required this.actionIcon,
+    required this.actionColor,
     required this.onAction,
     this.secondaryActionLabel,
     this.onSecondaryAction,
@@ -510,7 +520,7 @@ class _TripInfoCard extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       fontFamily: 'Inter')),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.navy,
+                backgroundColor: actionColor,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 14),

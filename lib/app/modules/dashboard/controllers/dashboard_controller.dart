@@ -14,6 +14,7 @@ class DashboardController extends GetxController {
   final totalTrips = 0.obs;
   final pendingTrips = 0.obs;
   final isAttendanceMarked = false.obs;
+  final isAttendanceEnforced = false.obs;
   final unreadNotifications = 0.obs;
 
   // Driver trip state
@@ -40,8 +41,9 @@ class DashboardController extends GetxController {
 
       totalTrips.value          = data['totalTrips']          as int? ?? 0;
       pendingTrips.value        = data['pendingTrips']         as int? ?? 0;
-      isAttendanceMarked.value  = data['attendanceMarked']     as bool? ?? false;
-      unreadNotifications.value = data['unreadNotifications']  as int? ?? 0;
+      isAttendanceMarked.value   = data['attendanceMarked']    as bool? ?? false;
+      isAttendanceEnforced.value = data['attendanceEnforced']  as bool? ?? false;
+      unreadNotifications.value  = data['unreadNotifications'] as int? ?? 0;
 
       activeTrip.value = data['activeTrip'] as Map<String, dynamic>?;
 
