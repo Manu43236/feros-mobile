@@ -1,18 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/api/api_client.dart';
+import '../../../../core/api/api_endpoints.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/string_utils.dart';
 import '../../../../core/popups/feros_dialog.dart';
 
-class ProfileView extends StatelessWidget {
+class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
 
   @override
+  State<ProfileView> createState() => _ProfileViewState();
+}
+
+class _ProfileViewState extends State<ProfileView> {
+  final _api = Get.find<ApiClient>();
+  final _auth = Get.find<AuthService>();
+
+  int? _totalTrips;
+
+  bool get _showTrips {
+    final role = _auth.user?.role ?? '';
+    return role == 'DRIVER' || role == 'CLEANER';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (_showTrips) _fetchTrips();
+  }
+
+  Future<void> _fetchTrips() async {
+    try {
+      final res = await _api.get(ApiEndpoints.myDashboard);
+      final data =
+          (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      if (mounted) {
+        setState(() => _totalTrips = data['totalTrips'] as int? ?? 0);
+      }
+    } catch (_) {}
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final auth = Get.find<AuthService>();
-    final user = auth.user;
+    final user = _auth.user;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -57,13 +90,13 @@ class ProfileView extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   user?.name ?? '—',
-                  style: AppTextStyles.heading3
-                      .copyWith(color: AppColors.navy),
+                  style:
+                      AppTextStyles.heading3.copyWith(color: AppColors.navy),
                 ),
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEFF6FF),
                     borderRadius: BorderRadius.circular(20),
@@ -71,10 +104,16 @@ class ProfileView extends StatelessWidget {
                   child: Text(
                     _roleLabel(user?.role ?? ''),
                     style: AppTextStyles.caption.copyWith(
-                        color: AppColors.navy,
-                        fontWeight: FontWeight.w600),
+                        color: AppColors.navy, fontWeight: FontWeight.w600),
                   ),
                 ),
+                // ── Trip count stat (Driver / Cleaner only) ────────
+                if (_showTrips) ...[
+                  const SizedBox(height: 20),
+                  const Divider(height: 1, indent: 40, endIndent: 40),
+                  const SizedBox(height: 20),
+                  _TripStat(count: _totalTrips),
+                ],
               ],
             ),
           ),
@@ -120,11 +159,11 @@ class ProfileView extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () => _confirmLogout(context, auth),
+              onPressed: () => _confirmLogout(context),
               icon: const Icon(Icons.logout, size: 18),
               label: Text('Logout',
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.white, fontWeight: FontWeight.w600)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.error,
                 foregroundColor: Colors.white,
@@ -151,15 +190,14 @@ class ProfileView extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmLogout(
-      BuildContext context, AuthService auth) async {
+  Future<void> _confirmLogout(BuildContext context) async {
     final confirmed = await FerosDialog.confirm(
       title: 'Logout',
       message: 'Are you sure you want to logout?',
       confirmText: 'Logout',
       isDestructive: true,
     );
-    if (confirmed) auth.logout();
+    if (confirmed) _auth.logout();
   }
 
   String _roleLabel(String role) {
@@ -173,6 +211,41 @@ class ProfileView extends StatelessWidget {
       case 'ADMIN':        return 'Admin';
       default:             return role;
     }
+  }
+}
+
+// ── Trip Stat ─────────────────────────────────────────────────────────────────
+class _TripStat extends StatelessWidget {
+  final int? count;
+  const _TripStat({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        count == null
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: AppColors.navy),
+              )
+            : Text(
+                '$count',
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 36,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.navy,
+                ),
+              ),
+        const SizedBox(height: 4),
+        Text(
+          'Trips Completed',
+          style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+        ),
+      ],
+    );
   }
 }
 

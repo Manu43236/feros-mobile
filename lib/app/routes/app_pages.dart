@@ -7,6 +7,7 @@ import '../modules/login/bindings/login_binding.dart';
 import '../modules/login/views/login_view.dart';
 import '../modules/shell/bindings/shell_binding.dart';
 import '../modules/shell/views/shell_view.dart';
+import '../modules/notifications/views/notifications_view.dart';
 
 part 'app_routes.dart';
 
@@ -30,6 +31,11 @@ class AppPages {
       name: _Paths.SHELL,
       page: () => const ShellView(),
       binding: ShellBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: _Paths.NOTIFICATIONS,
+      page: () => const NotificationsView(),
       middlewares: [AuthMiddleware()],
     ),
   ];
