@@ -468,16 +468,24 @@ class _DayDetail extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: (status == 'APPROVED'
                           ? const Color(0xFF16A34A)
-                          : const Color(0xFFD97706))
+                          : status == 'REJECTED'
+                              ? const Color(0xFFDC2626)
+                              : const Color(0xFFD97706))
                       .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  status == 'APPROVED' ? 'Approved' : 'Pending',
+                  status == 'APPROVED'
+                      ? 'Approved'
+                      : status == 'REJECTED'
+                          ? 'Rejected'
+                          : 'Pending',
                   style: AppTextStyles.caption.copyWith(
                     color: status == 'APPROVED'
                         ? const Color(0xFF16A34A)
-                        : const Color(0xFFD97706),
+                        : status == 'REJECTED'
+                            ? const Color(0xFFDC2626)
+                            : const Color(0xFFD97706),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
