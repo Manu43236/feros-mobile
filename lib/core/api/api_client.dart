@@ -83,7 +83,10 @@ class ApiClient extends GetxService {
     try {
       final response = await _dio.get<List<int>>(
         path,
-        options: Options(responseType: ResponseType.bytes),
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: {'Accept': 'application/pdf'},
+        ),
       );
       return response.data!;
     } catch (e) {
