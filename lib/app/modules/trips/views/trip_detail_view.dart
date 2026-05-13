@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
+import 'lr_pdf_viewer_view.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_endpoints.dart';
 import '../../../../core/popups/feros_snackbar.dart';
@@ -127,10 +127,14 @@ class _TripDetailViewState extends State<TripDetailView> {
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/${widget.lr.lrNumber}.pdf');
       await file.writeAsBytes(bytes);
-      final result = await OpenFile.open(file.path);
-      if (result.type != ResultType.done) {
-        FerosSnackbar.error('Could not open PDF viewer');
-      }
+      await Get.to(
+        () => LrPdfViewerView(
+          file: file,
+          lrNumber: widget.lr.lrNumber,
+          title: '${widget.lr.fromCity} → ${widget.lr.toCity}',
+        ),
+        transition: Transition.cupertino,
+      );
     } catch (e) {
       FerosSnackbar.error('Failed to load PDF');
     }
