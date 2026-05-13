@@ -158,11 +158,10 @@ class _MarkAttendanceSheetState extends State<_MarkAttendanceSheet> {
                 Expanded(
                   child: Text(
                     _gettingLocation
-                        ? 'Getting your location…'
+                        ? 'Fetching your location…'
                         : _position != null
-                            ? '${_position!.latitude.toStringAsFixed(4)}, '
-                                '${_position!.longitude.toStringAsFixed(4)}'
-                            : 'Location unavailable (will mark without GPS)',
+                            ? 'Location captured successfully'
+                            : 'Location not available — attendance will still be marked',
                     style: AppTextStyles.caption.copyWith(
                       color: _position != null
                           ? const Color(0xFF16A34A)
@@ -209,11 +208,13 @@ class _MarkAttendanceSheetState extends State<_MarkAttendanceSheet> {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: Image.file(
-                          _selfie!,
-                          width: double.infinity,
-                          height: 140,
-                          fit: BoxFit.cover,
+                        child: AspectRatio(
+                          aspectRatio: 3 / 4,
+                          child: Image.file(
+                            _selfie!,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                       Positioned(
