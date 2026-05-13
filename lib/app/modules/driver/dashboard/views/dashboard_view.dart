@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../core/services/auth_service.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/utils/string_utils.dart';
-import '../../../../core/utils/view_state.dart';
-import '../../../../core/widgets/shimmer_card.dart';
-import '../../../routes/app_pages.dart';
-import '../controllers/dashboard_controller.dart';
+import '../../../../../core/services/auth_service.dart';
+import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../../core/utils/string_utils.dart';
+import '../../../../../core/utils/view_state.dart';
+import '../../../../../core/widgets/shimmer_card.dart';
+import '../../../../routes/app_pages.dart';
+import '../../../dashboard/controllers/dashboard_controller.dart';
 import 'driver_dashboard.dart';
-import 'supervisor_dashboard.dart';
+import '../../../supervisor/dashboard/views/supervisor_dashboard.dart';
 
 class DashboardView extends StatelessWidget {
   const DashboardView({super.key});

@@ -1,11 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../core/api/api_client.dart';
-import '../../../../core/api/api_endpoints.dart';
-import '../../../../core/popups/feros_snackbar.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
+import '../../../../../core/api/api_client.dart';
+import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/popups/feros_snackbar.dart';
+import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/theme/app_text_styles.dart';
 import 'attendance_sheet.dart';
 
 class AttendanceView extends StatefulWidget {

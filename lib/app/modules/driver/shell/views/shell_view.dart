@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
+import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/theme/app_text_styles.dart';
 import '../controllers/shell_controller.dart';
 import '../../dashboard/views/dashboard_view.dart';
 import '../../trips/views/trips_view.dart';
 import '../../attendance/views/attendance_view.dart';
-import '../../profile/views/profile_view.dart';
-import '../../../../core/services/auth_service.dart';
+import '../../../profile/views/profile_view.dart';
+import '../../../../../core/services/auth_service.dart';
 
 class ShellView extends GetView<ShellController> {
   const ShellView({super.key});

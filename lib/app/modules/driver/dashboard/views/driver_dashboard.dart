@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../core/api/api_client.dart';
-import '../../../../core/api/api_endpoints.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/delivery_sheet.dart';
-import '../../../../core/widgets/odometer_sheet.dart';
+import '../../../../../core/api/api_client.dart';
+import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../../core/widgets/delivery_sheet.dart';
+import '../../../../../core/widgets/odometer_sheet.dart';
 import '../../attendance/views/attendance_sheet.dart';
-import '../../payslip/views/payslip_view.dart';
+import '../../../payslip/views/payslip_view.dart';
 import '../../shell/controllers/shell_controller.dart';
 import '../../trips/models/lr_model.dart';
 import '../../trips/views/trip_detail_view.dart';
-import '../controllers/dashboard_controller.dart';
+import '../../../dashboard/controllers/dashboard_controller.dart';
 
 class DriverDashboard extends StatelessWidget {
   final DashboardController controller;

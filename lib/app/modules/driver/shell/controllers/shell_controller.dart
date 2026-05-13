@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../core/services/auth_service.dart';
-import '../../../../core/widgets/feros_bottom_nav.dart';
+import '../../../../../core/services/auth_service.dart';
+import '../../../../../core/widgets/feros_bottom_nav.dart';
 
 class ShellController extends GetxController {
   final currentIndex = 0.obs;

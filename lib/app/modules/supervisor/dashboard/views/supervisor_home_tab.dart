@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/dashboard_controller.dart';
-import '../../../../core/utils/view_state.dart';
-import '../../../../core/widgets/shimmer_card.dart';
+import '../../../dashboard/controllers/dashboard_controller.dart';
+import '../../../../../core/utils/view_state.dart';
+import '../../../../../core/widgets/shimmer_card.dart';
 import 'supervisor_dashboard.dart';
 
 /// Home tab body for the Supervisor shell.

@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
-import '../../../../core/api/api_client.dart';
-import '../../../../core/api/api_endpoints.dart';
-import '../../../../core/utils/view_state.dart';
+import '../../../../../core/api/api_client.dart';
+import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/utils/view_state.dart';
 import '../models/lr_model.dart';
 
 class TripsController extends GetxController {

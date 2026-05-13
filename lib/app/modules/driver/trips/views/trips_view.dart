@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/empty_state.dart';
-import '../../../../core/widgets/feros_search_bar.dart';
-import '../../../../core/widgets/shimmer_card.dart';
-import '../../../../core/utils/view_state.dart';
+import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../../core/widgets/empty_state.dart';
+import '../../../../../core/widgets/feros_search_bar.dart';
+import '../../../../../core/widgets/shimmer_card.dart';
+import '../../../../../core/utils/view_state.dart';
 import '../controllers/trips_controller.dart';
 import '../models/lr_model.dart';
 import 'trip_detail_view.dart';

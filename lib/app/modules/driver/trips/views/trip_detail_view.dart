@@ -2,15 +2,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
-import '../../../../core/widgets/pdf_viewer_view.dart';
-import '../../../../core/api/api_client.dart';
-import '../../../../core/api/api_endpoints.dart';
-import '../../../../core/popups/feros_snackbar.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/info_row.dart';
-import '../../../../core/widgets/delivery_sheet.dart';
-import '../../../../core/widgets/odometer_sheet.dart';
+import '../../../../../core/widgets/pdf_viewer_view.dart';
+import '../../../../../core/api/api_client.dart';
+import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/popups/feros_snackbar.dart';
+import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../../core/widgets/info_row.dart';
+import '../../../../../core/widgets/delivery_sheet.dart';
+import '../../../../../core/widgets/odometer_sheet.dart';
 import '../models/lr_model.dart';
 
 class TripDetailView extends StatefulWidget {
