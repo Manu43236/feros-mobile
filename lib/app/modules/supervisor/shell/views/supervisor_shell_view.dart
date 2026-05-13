@@ -16,20 +16,34 @@ import '../../../payslip/views/payslip_view.dart';
 import '../../../fuel_log/views/fuel_log_view.dart';
 import '../../../breakdown/views/breakdown_view.dart';
 
-class SupervisorShellView extends StatelessWidget {
+class SupervisorShellView extends StatefulWidget {
   const SupervisorShellView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final ctrl = Get.put(SupervisorShellController());
-    final auth = Get.find<AuthService>();
+  State<SupervisorShellView> createState() => _SupervisorShellViewState();
+}
 
+class _SupervisorShellViewState extends State<SupervisorShellView> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  late final SupervisorShellController _ctrl;
+  late final AuthService _auth;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = Get.put(SupervisorShellController());
+    _auth = Get.find<AuthService>();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Obx(() => Scaffold(
+      key: _scaffoldKey,
       backgroundColor: AppColors.background,
-      drawer: _SupervisorDrawer(auth: auth, ctrl: ctrl),
-      appBar: _buildAppBar(ctrl, auth),
+      drawer: _SupervisorDrawer(auth: _auth, ctrl: _ctrl),
+      appBar: _buildAppBar(),
       body: IndexedStack(
-        index: ctrl.currentIndex.value,
+        index: _ctrl.currentIndex.value,
         children: const [
           SupervisorHomeTab(),
           _ComingSoon(label: 'Orders',     icon: Icons.assignment_outlined,     sprint: 3),
@@ -38,37 +52,33 @@ class SupervisorShellView extends StatelessWidget {
         ],
       ),
       bottomNavigationBar: _SupervisorNavBar(
-        currentIndex: ctrl.currentIndex.value,
-        onTap: ctrl.onTabTapped,
+        currentIndex: _ctrl.currentIndex.value,
+        onTap: _ctrl.onTabTapped,
       ),
     ));
   }
 
-  PreferredSizeWidget _buildAppBar(
-      SupervisorShellController ctrl, AuthService auth) {
+  PreferredSizeWidget _buildAppBar() {
     final titles = ['Home', 'Orders', 'Trips', 'Attendance'];
     return AppBar(
       backgroundColor: AppColors.navy,
       elevation: 0,
       automaticallyImplyLeading: false,
-      leading: Builder(
-        builder: (ctx) => IconButton(
-          onPressed: () => Scaffold.of(ctx).openDrawer(),
-          icon: CircleAvatar(
-            radius: 17,
-            backgroundColor: Colors.white.withValues(alpha: 0.2),
-            child: Text(
-              FerosStringUtils.initials(auth.user?.name ?? ''),
-              style: AppTextStyles.bodySemiBold
-                  .copyWith(color: Colors.white, fontSize: 12),
-            ),
+      leading: IconButton(
+        onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+        icon: CircleAvatar(
+          radius: 17,
+          backgroundColor: Colors.white.withValues(alpha: 0.2),
+          child: Text(
+            FerosStringUtils.initials(_auth.user?.name ?? ''),
+            style: AppTextStyles.bodySemiBold
+                .copyWith(color: Colors.white, fontSize: 12),
           ),
         ),
       ),
       title: Obx(() {
-        final idx = ctrl.currentIndex.value;
+        final idx = _ctrl.currentIndex.value;
         if (idx == 0) {
-          // Home tab — greeting + name
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -78,7 +88,7 @@ class SupervisorShellView extends StatelessWidget {
                     .copyWith(color: Colors.white.withValues(alpha: 0.7)),
               ),
               Text(
-                auth.user?.name ?? '',
+                _auth.user?.name ?? '',
                 style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
                 overflow: TextOverflow.ellipsis,
               ),
