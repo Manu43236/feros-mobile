@@ -135,126 +135,134 @@ class _MarkAttendanceSheetState extends State<_MarkAttendanceSheet> {
           ),
           const SizedBox(height: 20),
 
-          // GPS status
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.border),
-            ),
+          // Location + Selfie — two side-by-side boxes
+          IntrinsicHeight(
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Icon(
-                  _position != null
-                      ? Icons.location_on_outlined
-                      : Icons.location_searching_outlined,
-                  size: 18,
-                  color: _position != null
-                      ? const Color(0xFF16A34A)
-                      : AppColors.mutedText,
-                ),
-                const SizedBox(width: 10),
+                // ── Location box ──────────────────────────────
                 Expanded(
-                  child: Text(
-                    _gettingLocation
-                        ? 'Fetching your location…'
-                        : _position != null
-                            ? 'Location captured successfully'
-                            : 'Location not available — attendance will still be marked',
-                    style: AppTextStyles.caption.copyWith(
-                      color: _position != null
-                          ? const Color(0xFF16A34A)
-                          : AppColors.mutedText,
-                    ),
-                  ),
-                ),
-                if (_gettingLocation)
-                  const SizedBox(
-                    width: 14, height: 14,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: AppColors.mutedText),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Selfie (optional)
-          GestureDetector(
-            onTap: _marking ? null : _takeSelfie,
-            child: _selfie == null
-                ? Container(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                          color: AppColors.border, style: BorderStyle.solid),
+                      border: Border.all(color: AppColors.border),
                     ),
-                    child: Row(
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.camera_front_outlined,
-                            size: 20, color: AppColors.mutedText),
-                        const SizedBox(width: 8),
-                        Text('Take Selfie (Optional)',
-                            style: AppTextStyles.caption
-                                .copyWith(color: AppColors.mutedText)),
+                        if (_gettingLocation)
+                          const SizedBox(
+                            width: 20, height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: AppColors.mutedText),
+                          )
+                        else
+                          Icon(
+                            _position != null
+                                ? Icons.location_on
+                                : Icons.location_off_outlined,
+                            size: 28,
+                            color: _position != null
+                                ? const Color(0xFF16A34A)
+                                : AppColors.mutedText,
+                          ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _gettingLocation
+                              ? 'Fetching location…'
+                              : _position != null
+                                  ? 'Location\ncaptured'
+                                  : 'Location\nnot available',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.caption.copyWith(
+                            color: _position != null && !_gettingLocation
+                                ? const Color(0xFF16A34A)
+                                : AppColors.mutedText,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ],
                     ),
-                  )
-                : Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: AspectRatio(
-                          aspectRatio: 3 / 4,
-                          child: Image.file(
-                            _selfie!,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: 6,
-                        right: 6,
-                        child: GestureDetector(
-                          onTap: _marking
-                              ? null
-                              : () => setState(() => _selfie = null),
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: Colors.black54,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.close,
-                                size: 16, color: Colors.white),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 6,
-                        right: 6,
-                        child: GestureDetector(
-                          onTap: _marking ? null : _takeSelfie,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text('Retake',
-                                style: AppTextStyles.caption
-                                    .copyWith(color: Colors.white)),
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
+                ),
+                const SizedBox(width: 12),
+
+                // ── Selfie box ────────────────────────────────
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _marking ? null : _takeSelfie,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      clipBehavior: Clip.hardEdge,
+                      child: _selfie == null
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.camera_front_outlined,
+                                    size: 28, color: AppColors.mutedText),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Take Selfie\n(Optional)',
+                                  textAlign: TextAlign.center,
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.mutedText,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Image.file(_selfie!, fit: BoxFit.cover),
+                                Positioned(
+                                  top: 4, right: 4,
+                                  child: GestureDetector(
+                                    onTap: _marking
+                                        ? null
+                                        : () => setState(() => _selfie = null),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(3),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.black54,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.close,
+                                          size: 13, color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 4, right: 4,
+                                  child: GestureDetector(
+                                    onTap: _marking ? null : _takeSelfie,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black54,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text('Retake',
+                                          style: AppTextStyles.caption.copyWith(
+                                              color: Colors.white,
+                                              fontSize: 10)),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
 
