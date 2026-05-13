@@ -130,13 +130,13 @@ class _SupervisorDrawer extends StatelessWidget {
     final user = auth.user;
     return Drawer(
       backgroundColor: Colors.white,
-      child: SafeArea(
-        child: Column(
-          children: [
-            // ── Header ────────────────────────────────────────────────
+      child: Column(
+        children: [
+            // ── Header (extends behind status bar) ────────────────────
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+              padding: EdgeInsets.fromLTRB(
+                  20, MediaQuery.of(context).padding.top + 24, 20, 24),
               color: AppColors.navy,
               child: Row(
                 children: [
@@ -258,18 +258,20 @@ class _SupervisorDrawer extends StatelessWidget {
             ),
 
             // ── Version ───────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Text(
-                'FEROS v1.0.0',
-                style:
-                    AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Text(
+                  'FEROS v1.0.0',
+                  style: AppTextStyles.caption
+                      .copyWith(color: AppColors.mutedText),
+                ),
               ),
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 
