@@ -11,8 +11,8 @@ import '../controllers/supervisor_shell_controller.dart';
 
 // ── Tab bodies (placeholders until each sprint step builds them) ──────────────
 import '../../dashboard/views/supervisor_home_tab.dart';
-import '../../../notifications/views/notifications_view.dart';
-import '../../../profile/views/profile_view.dart';
+import '../../../driver/driver_notifications/views/driver_notifications_view.dart';
+import '../../../driver/driver_profile/views/driver_profile_view.dart';
 import '../../../payslip/views/payslip_view.dart';
 import '../../../fuel_log/views/fuel_log_view.dart';
 import '../../../breakdown/views/breakdown_view.dart';
@@ -130,10 +130,10 @@ class _SupervisorShellViewState extends State<SupervisorShellView> {
         );
       }),
       actions: [
-        // Unread notification dot handled inside NotificationsView
+        // Unread notification dot handled inside DriverNotificationsView
         IconButton(
           icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-          onPressed: () => Get.to(() => const NotificationsView()),
+          onPressed: () => Get.to(() => const DriverNotificationsView()),
         ),
       ],
     );
@@ -237,7 +237,7 @@ class _SupervisorDrawer extends StatelessWidget {
                   label: 'My Profile',
                   onTap: () {
                     Navigator.of(context).pop();
-                    Get.to(() => const ProfileView());
+                    Get.to(() => const DriverProfileView());
                   },
                 ),
                 _DrawerTile(

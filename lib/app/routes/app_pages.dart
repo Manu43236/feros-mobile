@@ -1,3 +1,5 @@
+import 'package:feros/app/modules/driver/driver_shell/bindings/driver_shell_binding.dart';
+import 'package:feros/app/modules/driver/driver_shell/views/driver_shell_view.dart';
 import 'package:get/get.dart';
 
 import '../middleware/auth_middleware.dart';
@@ -5,10 +7,9 @@ import '../modules/splash/bindings/splash_binding.dart';
 import '../modules/splash/views/splash_view.dart';
 import '../modules/login/bindings/login_binding.dart';
 import '../modules/login/views/login_view.dart';
-import '../modules/driver/shell/bindings/shell_binding.dart';
-import '../modules/driver/shell/views/shell_view.dart';
 import '../modules/supervisor/shell/views/supervisor_shell_view.dart';
-import '../modules/notifications/views/notifications_view.dart';
+import '../modules/driver/driver_notifications/views/driver_notifications_view.dart';
+import '../modules/driver/driver_notifications/bindings/driver_notifications_binding.dart';
 
 part 'app_routes.dart';
 
@@ -30,8 +31,8 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.SHELL,
-      page: () => const ShellView(),
-      binding: ShellBinding(),
+      page: () => const DriverShellView(),
+      binding: DriverShellBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
@@ -41,7 +42,8 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.NOTIFICATIONS,
-      page: () => const NotificationsView(),
+      page: () => const DriverNotificationsView(),
+      binding: DriverNotificationsBinding(),
       middlewares: [AuthMiddleware()],
     ),
   ];
