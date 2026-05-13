@@ -52,7 +52,18 @@ class SupervisorShellView extends StatelessWidget {
       elevation: 0,
       automaticallyImplyLeading: false,
       leading: Builder(
-        builder: (ctx) => _buildLeading(ctx, auth),
+        builder: (ctx) => IconButton(
+          onPressed: () => Scaffold.of(ctx).openDrawer(),
+          icon: CircleAvatar(
+            radius: 17,
+            backgroundColor: Colors.white.withValues(alpha: 0.2),
+            child: Text(
+              FerosStringUtils.initials(auth.user?.name ?? ''),
+              style: AppTextStyles.bodySemiBold
+                  .copyWith(color: Colors.white, fontSize: 12),
+            ),
+          ),
+        ),
       ),
       title: Obx(() {
         final idx = ctrl.currentIndex.value;
@@ -91,24 +102,6 @@ class SupervisorShellView extends StatelessWidget {
           onPressed: () => Get.to(() => const NotificationsView()),
         ),
       ],
-    );
-  }
-
-  Widget _buildLeading(BuildContext ctx, AuthService auth) {
-    return GestureDetector(
-      onTap: () => Scaffold.of(ctx).openDrawer(),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: CircleAvatar(
-          radius: 17,
-          backgroundColor: Colors.white.withValues(alpha: 0.2),
-          child: Text(
-            FerosStringUtils.initials(auth.user?.name ?? ''),
-            style: AppTextStyles.bodySemiBold
-                .copyWith(color: Colors.white, fontSize: 12),
-          ),
-        ),
-      ),
     );
   }
 
