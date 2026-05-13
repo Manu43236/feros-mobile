@@ -87,7 +87,11 @@ class _AttendanceViewState extends State<AttendanceView> {
 
   bool get _todayMarked {
     final today = DateTime.now().day;
-    return _isCurrentMonth && _recordsByDay.containsKey(today);
+    if (!_isCurrentMonth) return false;
+    final record = _recordsByDay[today];
+    if (record == null) return false;
+    // REJECTED → allow re-marking
+    return (record['approvalStatus'] as String?) != 'REJECTED';
   }
 
   @override
@@ -99,10 +103,15 @@ class _AttendanceViewState extends State<AttendanceView> {
     for (final r in _records) {
       final type =
           (r['attendanceTypeName'] as String? ?? '').toLowerCase();
-      if (type.contains('present')) present++;
-      else if (type.contains('absent')) absent++;
-      else if (type.contains('half')) halfDay++;
-      else if (type.contains('leave')) onLeave++;
+      if (type.contains('present')) {
+        present++;
+      } else if (type.contains('absent')) {
+        absent++;
+      } else if (type.contains('half')) {
+        halfDay++;
+      } else if (type.contains('leave')) {
+        onLeave++;
+      }
     }
 
     return Scaffold(
@@ -272,13 +281,21 @@ class _AttendanceViewState extends State<AttendanceView> {
                     runSpacing: 6,
                     children: [
                       _Legend(color: const Color(0xFF16A34A), label: 'Present'),
-                      _Legend(
-                          color: const Color(0xFFDC2626), label: 'Absent'),
-                      _Legend(
-                          color: const Color(0xFFD97706), label: 'Half Day'),
+                      _Legend(color: const Color(0xFFDC2626), label: 'Absent'),
+                      _Legend(color: const Color(0xFFD97706), label: 'Half Day'),
                       _Legend(color: AppColors.navy, label: 'Leave'),
                     ],
                   ),
+                  const SizedBox(height: 16),
+
+                  // ── Records List ─────────────────────────────
+                  if (_records.isNotEmpty) ...[
+                    Text('This Month\'s Records',
+                        style: AppTextStyles.bodyMedium
+                            .copyWith(color: AppColors.navy)),
+                    const SizedBox(height: 8),
+                    ..._records.map((r) => _AttendanceListItem(record: r)),
+                  ],
                 ],
               ),
             ),
@@ -627,6 +644,100 @@ class _SummaryChip extends StatelessWidget {
                 AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
       ],
     );
+  }
+}
+
+// ── Attendance List Item ───────────────────────────────────────────────────────
+class _AttendanceListItem extends StatelessWidget {
+  final Map<String, dynamic> record;
+  const _AttendanceListItem({required this.record});
+
+  @override
+  Widget build(BuildContext context) {
+    final dateStr  = record['attendanceDate'] as String? ?? '';
+    final type     = record['attendanceTypeName'] as String? ?? '—';
+    final status   = record['approvalStatus'] as String? ?? 'PENDING';
+    final markedAt = record['markedAt'] as String?;
+
+    Color statusColor;
+    String statusLabel;
+    switch (status) {
+      case 'APPROVED':
+        statusColor = const Color(0xFF16A34A);
+        statusLabel = 'Approved';
+        break;
+      case 'REJECTED':
+        statusColor = const Color(0xFFDC2626);
+        statusLabel = 'Rejected';
+        break;
+      default:
+        statusColor = const Color(0xFFD97706);
+        statusLabel = 'Pending';
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: statusColor.withValues(alpha: 0.25)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x06000000), blurRadius: 4, offset: Offset(0, 1))
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 8, height: 8,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: statusColor),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_formatDate(dateStr),
+                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy)),
+                const SizedBox(height: 2),
+                Text(
+                  type + (markedAt != null ? '  ·  ${_formatTime(markedAt)}' : ''),
+                  style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(statusLabel,
+                style: AppTextStyles.caption.copyWith(
+                    color: statusColor, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(String iso) {
+    try {
+      final d = DateTime.parse(iso);
+      const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return '${d.day} ${months[d.month]} ${d.year}';
+    } catch (_) { return iso; }
+  }
+
+  String _formatTime(String iso) {
+    try {
+      final dt = DateTime.parse(iso).toLocal();
+      final h = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+      final m = dt.minute.toString().padLeft(2, '0');
+      return '$h:$m ${dt.hour < 12 ? 'AM' : 'PM'}';
+    } catch (_) { return iso; }
   }
 }
 
