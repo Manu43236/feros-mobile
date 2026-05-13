@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../core/api/api_client.dart';
@@ -492,7 +493,81 @@ class _DayDetail extends StatelessWidget {
                 style: AppTextStyles.caption
                     .copyWith(color: AppColors.mutedText)),
           ],
+          if (record!['selfieUrl'] != null) ...[
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: () => _showSelfie(context, record!['selfieUrl'] as String),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: CachedNetworkImage(
+                  imageUrl: record!['selfieUrl'] as String,
+                  height: 120,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  placeholder: (ctx, url) => Container(
+                    height: 120,
+                    color: AppColors.background,
+                    child: const Center(
+                      child: SizedBox(
+                        width: 20, height: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: AppColors.mutedText),
+                      ),
+                    ),
+                  ),
+                  errorWidget: (ctx, url, err) => Container(
+                    height: 60,
+                    color: AppColors.background,
+                    child: const Center(
+                      child: Icon(Icons.broken_image_outlined,
+                          color: AppColors.mutedText, size: 24),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.camera_front_outlined,
+                    size: 12, color: AppColors.mutedText),
+                const SizedBox(width: 4),
+                Text('Tap selfie to enlarge',
+                    style: AppTextStyles.caption
+                        .copyWith(color: AppColors.mutedText, fontSize: 11)),
+              ],
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  void _showSelfie(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: GestureDetector(
+          onTap: () => Navigator.of(context).pop(),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: CachedNetworkImage(
+              imageUrl: url,
+              fit: BoxFit.contain,
+              placeholder: (ctx, url) => const SizedBox(
+                width: 60, height: 60,
+                child: Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
+              ),
+              errorWidget: (ctx, url, err) =>
+                  const Icon(Icons.broken_image_outlined,
+                      color: Colors.white, size: 48),
+            ),
+          ),
+        ),
       ),
     );
   }
