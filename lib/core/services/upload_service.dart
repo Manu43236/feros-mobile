@@ -21,6 +21,6 @@ class UploadService extends GetxService {
 
     final response = await _api.postFormData(ApiEndpoints.upload, formData);
     final data = response.data as Map<String, dynamic>;
-    return data['data']['url'] as String;
+    return data['data']['key'] as String;
   }
 }
