@@ -7,7 +7,8 @@ abstract class Routes {
   static const LOGIN = _Paths.LOGIN;
   static const HOME = _Paths.HOME;
   static const DASHBOARD = _Paths.DASHBOARD;
-  static const SHELL = _Paths.SHELL;
+  static const SHELL            = _Paths.SHELL;
+  static const SUPERVISOR_SHELL = _Paths.SUPERVISOR_SHELL;
 
   // Vehicles
   static const VEHICLES = _Paths.VEHICLES;
@@ -64,7 +65,8 @@ abstract class _Paths {
   static const LOGIN = '/login';
   static const HOME = '/home';
   static const DASHBOARD = '/dashboard';
-  static const SHELL = '/shell';
+  static const SHELL            = '/shell';
+  static const SUPERVISOR_SHELL = '/supervisor';
 
   static const VEHICLES = '/vehicles';
   static const VEHICLE_DETAIL = '/vehicles/detail';

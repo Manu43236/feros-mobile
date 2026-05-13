@@ -20,7 +20,14 @@ class AuthService extends GetxService {
 
   UserModel? get user => currentUser.value;
 
-  String get roleHome => Routes.SHELL;
+  String get roleHome {
+    switch (currentUser.value?.role) {
+      case 'SUPERVISOR':
+        return Routes.SUPERVISOR_SHELL;
+      default:
+        return Routes.SHELL;
+    }
+  }
 
   Future<void> saveSession(String token, UserModel user) async {
     await _storage.saveToken(token);
