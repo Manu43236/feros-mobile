@@ -423,8 +423,37 @@ class _ActionButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final busy = controller.isUpdating.value;
-      return Row(
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (status == 'WEIGHT_LOADED')
+            Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.warningLight,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                    color: AppColors.warning.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline,
+                      size: 18, color: AppColors.warning),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Waiting for driver to start the trip. Follow up with the driver.',
+                      style: AppTextStyles.caption.copyWith(
+                          color: AppColors.warning,
+                          fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Row(
+            children: [
           if (status == 'CREATED')
             Expanded(
               child: _ActionBtn(
@@ -458,6 +487,8 @@ class _ActionButtons extends StatelessWidget {
               ),
             ),
           ],
+            ],
+          ),
         ],
       );
     });
