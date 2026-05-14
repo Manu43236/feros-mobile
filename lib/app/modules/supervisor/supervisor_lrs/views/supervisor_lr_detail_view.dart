@@ -441,7 +441,7 @@ class _ActionButtons extends StatelessWidget {
                 ),
               ),
             ),
-          if (status == 'LOADED')
+          if (status == 'WEIGHT_LOADED')
             Expanded(
               child: _ActionBtn(
                 label: 'Start Trip',
@@ -1295,24 +1295,24 @@ InputDecoration _sheetInputDecoration() => InputDecoration(
 
 Color _lrColor(String s) {
   switch (s) {
-    case 'CREATED':    return AppColors.lrCreated;
-    case 'LOADED':     return AppColors.lrLoaded;
-    case 'IN_TRANSIT': return AppColors.lrInTransit;
-    case 'DELIVERED':  return AppColors.lrDelivered;
-    case 'INVOICED':   return AppColors.lrInvoiced;
-    case 'CANCELLED':  return AppColors.error;
-    default:           return AppColors.mutedText;
+    case 'CREATED':       return AppColors.lrCreated;
+    case 'WEIGHT_LOADED': return AppColors.lrLoaded;
+    case 'IN_TRANSIT':    return AppColors.lrInTransit;
+    case 'DELIVERED':     return AppColors.lrDelivered;
+    case 'INVOICED':      return AppColors.lrInvoiced;
+    case 'CANCELLED':     return AppColors.error;
+    default:              return AppColors.mutedText;
   }
 }
 
 String _lrLabel(String s) {
   switch (s) {
-    case 'CREATED':    return 'Created';
-    case 'LOADED':     return 'Loaded';
-    case 'IN_TRANSIT': return 'In Transit';
-    case 'DELIVERED':  return 'Delivered';
-    case 'INVOICED':   return 'Invoiced';
-    case 'CANCELLED':  return 'Cancelled';
-    default:           return s;
+    case 'CREATED':       return 'Created';
+    case 'WEIGHT_LOADED': return 'Weight Loaded';
+    case 'IN_TRANSIT':    return 'In Transit';
+    case 'DELIVERED':     return 'Delivered';
+    case 'INVOICED':      return 'Invoiced';
+    case 'CANCELLED':     return 'Cancelled';
+    default:              return s;
   }
 }

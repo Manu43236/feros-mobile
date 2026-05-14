@@ -71,7 +71,7 @@ class SupervisorLrDetailController extends GetxController {
     isUpdating.value = true;
     try {
       final res = await _api.put(ApiEndpoints.lrById(lrId), data: {
-        'lrStatus': 'LOADED',
+        'lrStatus': 'WEIGHT_LOADED',
         ...data,
       });
       lr.value = (res.data as Map<String, dynamic>)['data']

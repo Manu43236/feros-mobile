@@ -13,7 +13,7 @@ import 'supervisor_create_lr_sheet.dart';
 class SupervisorLrsView extends GetView<SupervisorLrsController> {
   const SupervisorLrsView({super.key});
 
-  static const _statuses = ['ALL', 'CREATED', 'LOADED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'];
+  static const _statuses = ['ALL', 'CREATED', 'WEIGHT_LOADED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'];
 
   @override
   Widget build(BuildContext context) {
@@ -268,9 +268,12 @@ class _LrCard extends StatelessWidget {
     final client   = lr['clientName']                as String? ?? '—';
     final fromCity = lr['fromCity']                  as String? ?? '—';
     final toCity   = lr['toCity']                    as String? ?? '—';
-    final weight   = lr['allocatedWeight'];
-    final lrDate   = lr['lrDate']                    as String?;
-    final orderNum = lr['orderNumber']               as String?;
+    final allocatedWeight = lr['allocatedWeight'];
+    final loadedWeight    = lr['loadedWeight'];
+    final weight          = loadedWeight ?? allocatedWeight;
+    final weightLabel     = loadedWeight != null ? 'Loaded' : 'Alloc.';
+    final lrDate          = lr['lrDate'] as String?;
+    final orderNum        = lr['orderNumber'] as String?;
 
     return GestureDetector(
       onTap: _openDetail,
@@ -383,7 +386,7 @@ class _LrCard extends StatelessWidget {
                         size: 12, color: AppColors.mutedText),
                     const SizedBox(width: 4),
                     Text(
-                      '${weight}T',
+                      '$weightLabel: ${weight}T',
                       style: AppTextStyles.caption
                           .copyWith(color: AppColors.mutedText),
                     ),
@@ -454,26 +457,26 @@ class _LrStatusBadge extends StatelessWidget {
 
 Color _lrColor(String s) {
   switch (s) {
-    case 'ALL':        return AppColors.navy;
-    case 'CREATED':    return AppColors.lrCreated;
-    case 'LOADED':     return AppColors.lrLoaded;
-    case 'IN_TRANSIT': return AppColors.lrInTransit;
-    case 'DELIVERED':  return AppColors.lrDelivered;
-    case 'INVOICED':   return AppColors.lrInvoiced;
-    case 'CANCELLED':  return AppColors.error;
-    default:           return AppColors.mutedText;
+    case 'ALL':           return AppColors.navy;
+    case 'CREATED':       return AppColors.lrCreated;
+    case 'WEIGHT_LOADED': return AppColors.lrLoaded;
+    case 'IN_TRANSIT':    return AppColors.lrInTransit;
+    case 'DELIVERED':     return AppColors.lrDelivered;
+    case 'INVOICED':      return AppColors.lrInvoiced;
+    case 'CANCELLED':     return AppColors.error;
+    default:              return AppColors.mutedText;
   }
 }
 
 String _lrLabel(String s) {
   switch (s) {
-    case 'ALL':        return 'All';
-    case 'CREATED':    return 'Created';
-    case 'LOADED':     return 'Loaded';
-    case 'IN_TRANSIT': return 'In Transit';
-    case 'DELIVERED':  return 'Delivered';
-    case 'INVOICED':   return 'Invoiced';
-    case 'CANCELLED':  return 'Cancelled';
-    default:           return s;
+    case 'ALL':           return 'All';
+    case 'CREATED':       return 'Created';
+    case 'WEIGHT_LOADED': return 'Weight Loaded';
+    case 'IN_TRANSIT':    return 'In Transit';
+    case 'DELIVERED':     return 'Delivered';
+    case 'INVOICED':      return 'Invoiced';
+    case 'CANCELLED':     return 'Cancelled';
+    default:              return s;
   }
 }
