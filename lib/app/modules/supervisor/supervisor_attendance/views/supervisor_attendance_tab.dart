@@ -272,6 +272,7 @@ class _SelfAttendanceCard extends StatelessWidget {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
                     children: [
@@ -412,9 +413,35 @@ class _SelfAttendanceCard extends StatelessWidget {
 }
 
 // ── Search Bar ────────────────────────────────────────────────────────────────
-class _SearchBar extends StatelessWidget {
+class _SearchBar extends StatefulWidget {
   final SupervisorAttendanceController controller;
   const _SearchBar({required this.controller});
+
+  @override
+  State<_SearchBar> createState() => _SearchBarState();
+}
+
+class _SearchBarState extends State<_SearchBar> {
+  final _ctrl = TextEditingController();
+  bool _hasText = false;
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _onChanged(String v) {
+    widget.controller.searchQuery.value = v;
+    final has = v.isNotEmpty;
+    if (has != _hasText) setState(() => _hasText = has);
+  }
+
+  void _clear() {
+    _ctrl.clear();
+    widget.controller.searchQuery.value = '';
+    setState(() => _hasText = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -422,26 +449,26 @@ class _SearchBar extends StatelessWidget {
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       child: TextField(
-        onChanged: (v) => controller.searchQuery.value = v,
+        controller: _ctrl,
+        onChanged: _onChanged,
         style: AppTextStyles.body,
         decoration: InputDecoration(
           hintText: 'Search driver or cleaner…',
           hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
           prefixIcon: const Icon(Icons.search,
               size: 20, color: AppColors.mutedText),
-          suffixIcon: Obx(() => controller.searchQuery.value.isNotEmpty
+          suffixIcon: _hasText
               ? IconButton(
                   icon: const Icon(Icons.clear,
                       size: 18, color: AppColors.mutedText),
-                  onPressed: () => controller.searchQuery.value = '',
+                  onPressed: _clear,
                 )
-              : const SizedBox.shrink()),
+              : null,
           filled: true,
           fillColor: AppColors.background,
           contentPadding: const EdgeInsets.symmetric(vertical: 10),
           border: OutlineInputBorder(
-            borderRadius:
-                BorderRadius.circular(AppSpacing.inputRadius),
+            borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
             borderSide: BorderSide.none,
           ),
         ),
