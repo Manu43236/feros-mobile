@@ -6,12 +6,21 @@ import '../../../../../core/utils/view_state.dart';
 class SupervisorOrdersController extends GetxController {
   final _api = Get.find<ApiClient>();
 
-  final state          = ViewState.loading.obs;
-  final searchQuery    = ''.obs;
-  final selectedFilters = <String>{'ALL'}.obs;
+  static const _pageSize = 20;
 
-  final _allOrders = <Map<String, dynamic>>[].obs;
-  final orders     = <Map<String, dynamic>>[].obs;
+  final state            = ViewState.loading.obs;
+  final searchQuery      = ''.obs;
+  final selectedFilters  = <String>{'ALL'}.obs;
+
+  final orders           = <Map<String, dynamic>>[].obs;
+  final isLoadingMore    = false.obs;
+  final hasMore          = true.obs;
+
+  int _currentPage = 0;
+  int _totalPages  = 1;
+
+  // Debounce timer
+  Worker? _searchWorker;
 
   static const filters = [
     'ALL',
@@ -38,27 +47,66 @@ class SupervisorOrdersController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    fetchOrders();
+    fetchOrders(reset: true);
+
+    // Debounce search
+    _searchWorker = debounce(
+      searchQuery,
+      (_) => fetchOrders(reset: true),
+      time: const Duration(milliseconds: 400),
+    );
   }
 
-  Future<void> fetchOrders() async {
-    state.value = ViewState.loading;
+  @override
+  void onClose() {
+    _searchWorker?.dispose();
+    super.onClose();
+  }
+
+  Future<void> fetchOrders({bool reset = false}) async {
+    if (reset) {
+      _currentPage = 0;
+      _totalPages  = 1;
+      hasMore.value = true;
+      state.value   = ViewState.loading;
+    } else {
+      if (!hasMore.value || isLoadingMore.value) return;
+      isLoadingMore.value = true;
+    }
+
     try {
-      final res  = await _api.get(ApiEndpoints.orders);
-      final list = (res.data as Map<String, dynamic>)['data'] as List;
-      final parsed = list.cast<Map<String, dynamic>>();
-      parsed.sort((a, b) {
-        final aDate = a['createdAt'] as String? ?? '';
-        final bDate = b['createdAt'] as String? ?? '';
-        return bDate.compareTo(aDate);
-      });
-      _allOrders.value = parsed;
-      _apply();
+      final params = <String, dynamic>{
+        'page': _currentPage,
+        'size': _pageSize,
+      };
+      final q = searchQuery.value.trim();
+      if (q.isNotEmpty) params['search'] = q;
+      if (!selectedFilters.contains('ALL')) {
+        params['status'] = selectedFilters.first;
+      }
+
+      final res  = await _api.get(ApiEndpoints.orders, params: params);
+      final page = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+
+      final content = (page['content'] as List).cast<Map<String, dynamic>>();
+      _totalPages   = page['totalPages'] as int? ?? 1;
+      hasMore.value = !((page['last'] as bool?) ?? true);
+
+      if (reset) {
+        orders.value = content;
+      } else {
+        orders.addAll(content);
+      }
+      _currentPage++;
       state.value = ViewState.success;
     } catch (_) {
-      state.value = ViewState.error;
+      if (reset) state.value = ViewState.error;
+    } finally {
+      isLoadingMore.value = false;
     }
   }
+
+  Future<void> loadMore() => fetchOrders(reset: false);
 
   void toggleFilter(String filter) {
     if (filter == 'ALL') {
@@ -74,34 +122,11 @@ class SupervisorOrdersController extends GetxController {
       }
       selectedFilters.assignAll(current);
     }
-    _apply();
+    fetchOrders(reset: true);
   }
 
   void onSearch(String query) {
     searchQuery.value = query;
-    _apply();
-  }
-
-  void _apply() {
-    List<Map<String, dynamic>> result = List.from(_allOrders);
-
-    // Status filter
-    if (!selectedFilters.contains('ALL')) {
-      result = result.where((o) => selectedFilters.contains(o['orderStatus'])).toList();
-    }
-
-    // Search
-    final q = searchQuery.value.trim().toLowerCase();
-    if (q.isNotEmpty) {
-      result = result.where((o) {
-        final num    = (o['orderNumber']  as String? ?? '').toLowerCase();
-        final client = (o['clientName']   as String? ?? '').toLowerCase();
-        final from   = (o['sourceCityName']      as String? ?? '').toLowerCase();
-        final to     = (o['destinationCityName'] as String? ?? '').toLowerCase();
-        return num.contains(q) || client.contains(q) || from.contains(q) || to.contains(q);
-      }).toList();
-    }
-
-    orders.value = result;
+    // debounce worker fires after 400ms
   }
 }

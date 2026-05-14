@@ -13,6 +13,14 @@ class SupervisorOrdersTab extends GetView<SupervisorOrdersController> {
 
   @override
   Widget build(BuildContext context) {
+    final scrollCtrl = ScrollController();
+    scrollCtrl.addListener(() {
+      if (scrollCtrl.position.pixels >=
+          scrollCtrl.position.maxScrollExtent - 200) {
+        controller.loadMore();
+      }
+    });
+
     return Column(
       children: [
         Container(
@@ -31,17 +39,29 @@ class SupervisorOrdersTab extends GetView<SupervisorOrdersController> {
                   child: CircularProgressIndicator(color: AppColors.navy));
             }
             if (controller.state.value == ViewState.error) {
-              return _ErrorState(onRetry: controller.fetchOrders);
+              return _ErrorState(onRetry: () => controller.fetchOrders(reset: true));
             }
             final list = controller.orders;
             if (list.isEmpty) return const _EmptyState();
             return RefreshIndicator(
               color: AppColors.navy,
-              onRefresh: controller.fetchOrders,
+              onRefresh: () => controller.fetchOrders(reset: true),
               child: ListView.builder(
+                controller: scrollCtrl,
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                itemCount: list.length,
-                itemBuilder: (_, i) => _OrderCard(order: list[i]),
+                itemCount: list.length + (controller.hasMore.value ? 1 : 0),
+                itemBuilder: (_, i) {
+                  if (i == list.length) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                            color: AppColors.navy, strokeWidth: 2),
+                      ),
+                    );
+                  }
+                  return _OrderCard(order: list[i]);
+                },
               ),
             );
           }),
