@@ -621,17 +621,19 @@ class _LrsTab extends StatelessWidget {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       itemCount: lrs.length,
-      itemBuilder: (_, i) => _LrCard(lr: lrs[i]),
+      itemBuilder: (_, i) => _LrCard(lr: lrs[i], controller: controller),
     );
   }
 }
 
 class _LrCard extends StatelessWidget {
   final Map<String, dynamic> lr;
-  const _LrCard({required this.lr});
+  final SupervisorOrderDetailController controller;
+  const _LrCard({required this.lr, required this.controller});
 
   @override
   Widget build(BuildContext context) {
+    final lrId      = lr['id'];
     final lrNumber  = lr['lrNumber']                  as String? ?? '—';
     final vehicle   = lr['vehicleRegistrationNumber'] as String? ?? '—';
     final status    = lr['lrStatus']                  as String? ?? '';
@@ -641,6 +643,7 @@ class _LrCard extends StatelessWidget {
     final lrDate    = lr['lrDate']                    as String?;
 
     final statusColor = _lrColor(status);
+    final intId = lrId is int ? lrId : int.tryParse(lrId.toString()) ?? 0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -661,6 +664,44 @@ class _LrCard extends StatelessWidget {
                         color: AppColors.navy,
                         fontWeight: FontWeight.w700)),
               ),
+              // PDF button
+              Obx(() {
+                final isLoading = controller.pdfLoadingId.value == intId;
+                return GestureDetector(
+                  onTap: () => controller.viewLrPdf(
+                      intId, lrNumber, '$fromCity → $toCity'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isLoading)
+                          const SizedBox(
+                            width: 12, height: 12,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: AppColors.navy),
+                          )
+                        else
+                          const Icon(Icons.picture_as_pdf_outlined,
+                              size: 14, color: AppColors.navy),
+                        const SizedBox(width: 4),
+                        Text(
+                          isLoading ? 'Loading…' : 'PDF',
+                          style: AppTextStyles.caption.copyWith(
+                              color: AppColors.navy,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(width: 8),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
