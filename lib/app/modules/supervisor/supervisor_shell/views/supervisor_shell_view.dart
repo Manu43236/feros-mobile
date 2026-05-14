@@ -28,6 +28,7 @@ import '../../supervisor_active_trips/views/supervisor_active_trips_tab.dart';
 import '../../supervisor_attendance/views/supervisor_attendance_tab.dart';
 import '../../supervisor_lrs/views/supervisor_lrs_view.dart';
 import '../../supervisor_lrs/bindings/supervisor_lrs_binding.dart';
+import '../../supervisor_orders/views/supervisor_create_order_view.dart';
 
 class SupervisorShellView extends GetView<SupervisorShellController> {
   const SupervisorShellView({super.key});
@@ -56,6 +57,21 @@ class SupervisorShellView extends GetView<SupervisorShellController> {
             currentIndex: controller.currentIndex.value,
             onTap: controller.onTabTapped,
           ),
+          floatingActionButton: controller.currentIndex.value == 1
+              ? FloatingActionButton.extended(
+                  backgroundColor: AppColors.navy,
+                  foregroundColor: Colors.white,
+                  icon: const Icon(Icons.add),
+                  label: const Text(
+                    'Create Order',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onPressed: () => Get.to(() => const SupervisorCreateOrderView()),
+                )
+              : null,
       ),
     );
   }
