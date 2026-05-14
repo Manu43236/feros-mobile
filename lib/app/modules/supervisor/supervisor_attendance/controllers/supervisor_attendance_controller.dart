@@ -4,12 +4,10 @@ import 'package:intl/intl.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
 import '../../../../../core/popups/feros_snackbar.dart';
-import '../../../../../core/services/auth_service.dart';
 import '../../../../../core/utils/view_state.dart';
 
 class SupervisorAttendanceController extends GetxController {
-  final _api  = Get.find<ApiClient>();
-  final _auth = Get.find<AuthService>();
+  final _api = Get.find<ApiClient>();
 
   final state        = ViewState.loading.obs;
   final selectedDate = DateTime.now().obs;
@@ -25,25 +23,6 @@ class SupervisorAttendanceController extends GetxController {
 
   final isSubmitting = false.obs;
 
-  // ── Self attendance ───────────────────────────────────────────────────────────
-  final selfStatus    = Rxn<Map<String, dynamic>>();
-  final selfSelection = Rxn<int>();
-  final isMarkingSelf = false.obs;
-
-  // ── Search ────────────────────────────────────────────────────────────────────
-  final searchQuery = ''.obs;
-
-  String get supervisorName => _auth.user?.name ?? 'You';
-
-  List<Map<String, dynamic>> get filteredStaff {
-    final q = searchQuery.value.trim().toLowerCase();
-    if (q.isEmpty) return staff;
-    return staff
-        .where((s) =>
-            (s['name'] as String? ?? '').toLowerCase().contains(q))
-        .toList();
-  }
-
   static final _dateFmt  = DateFormat('yyyy-MM-dd');
   static final _labelFmt = DateFormat('dd MMM yyyy, EEE');
 
@@ -58,15 +37,7 @@ class SupervisorAttendanceController extends GetxController {
 
   Future<void> changeDate(DateTime date) async {
     selectedDate.value = date;
-    searchQuery.value  = '';
     await _refreshAttendance();
-    if (_isToday) await _fetchSelfStatus();
-  }
-
-  bool get _isToday {
-    final now = DateTime.now();
-    final d   = selectedDate.value;
-    return d.year == now.year && d.month == now.month && d.day == now.day;
   }
 
   Future<void> fetchAll() async {
@@ -98,46 +69,17 @@ class SupervisorAttendanceController extends GetxController {
         types.where((t) => t['isActive'] as bool? ?? true).toList(),
       );
 
-      // Existing attendance for selected date
+      // Existing attendance for today
       _parseExisting(
         ((results[2].data as Map<String, dynamic>)['data'] as List)
             .cast<Map<String, dynamic>>(),
       );
-
-      // Self status (only meaningful for today)
-      await _fetchSelfStatus();
 
       state.value = ViewState.success;
     } catch (e) {
       debugPrint('[Attendance] fetch error: $e');
       state.value = ViewState.error;
     }
-  }
-
-  Future<void> _fetchSelfStatus() async {
-    try {
-      final res = await _api.get(ApiEndpoints.attendanceTodayStatus);
-      selfStatus.value =
-          (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>?;
-    } catch (_) {
-      selfStatus.value = null;
-    }
-  }
-
-  Future<void> markSelfAttendance() async {
-    if (selfSelection.value == null) return;
-    isMarkingSelf.value = true;
-    try {
-      final res = await _api.post(ApiEndpoints.attendanceMarkPresent,
-          data: {'attendanceTypeId': selfSelection.value});
-      selfStatus.value =
-          (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>?;
-      selfSelection.value = null;
-      FerosSnackbar.success('Your attendance marked');
-    } catch (_) {
-      FerosSnackbar.error('Failed to mark your attendance');
-    }
-    isMarkingSelf.value = false;
   }
 
   Future<void> _refreshAttendance() async {
