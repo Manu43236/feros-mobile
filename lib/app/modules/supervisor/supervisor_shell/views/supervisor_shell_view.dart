@@ -22,6 +22,12 @@ import '../../supervisor_breakdown/views/supervisor_breakdown_view.dart';
 import '../../supervisor_breakdown/bindings/supervisor_breakdown_binding.dart';
 import '../../supervisor_vehicles/views/supervisor_vehicles_view.dart';
 import '../../supervisor_vehicles/bindings/supervisor_vehicles_binding.dart';
+import '../../supervisor_crew/views/supervisor_crew_view.dart';
+import '../../supervisor_crew/bindings/supervisor_crew_binding.dart';
+import '../../supervisor_active_trips/views/supervisor_active_trips_tab.dart';
+import '../../supervisor_attendance/views/supervisor_attendance_tab.dart';
+import '../../supervisor_lrs/views/supervisor_lrs_view.dart';
+import '../../supervisor_lrs/bindings/supervisor_lrs_binding.dart';
 
 class SupervisorShellView extends GetView<SupervisorShellController> {
   const SupervisorShellView({super.key});
@@ -42,16 +48,8 @@ class SupervisorShellView extends GetView<SupervisorShellController> {
             children: const [
               SupervisorHomeTab(),
               SupervisorOrdersTab(),
-              _ComingSoon(
-                label: 'Trips',
-                icon: Icons.local_shipping_outlined,
-                sprint: 3,
-              ),
-              _ComingSoon(
-                label: 'Attendance',
-                icon: Icons.fact_check_outlined,
-                sprint: 3,
-              ),
+              SupervisorActiveTripsTab(),
+              SupervisorAttendanceTab(),
             ],
           ),
           bottomNavigationBar: _SupervisorNavBar(
@@ -279,7 +277,7 @@ class _SupervisorDrawer extends StatelessWidget {
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 const SizedBox(height: 4),
-                _DrawerSectionLabel(label: 'Fleet & Finance'),
+                _DrawerSectionLabel(label: 'Vehicles & Billing'),
                 _DrawerTile(
                   icon: Icons.garage_outlined,
                   label: 'Vehicles',
@@ -293,11 +291,14 @@ class _SupervisorDrawer extends StatelessWidget {
                 ),
                 _DrawerTile(
                   icon: Icons.badge_outlined,
-                  label: 'Drivers',
+                  label: 'Drivers & Cleaners',
                   onTap: () {
                     Navigator.of(context).pop();
-                    Get.snackbar('Coming Soon', 'Drivers will be available shortly',
-                        snackPosition: SnackPosition.BOTTOM);
+                    Get.to(
+                      () => const SupervisorCrewView(),
+                      binding: SupervisorCrewBinding(),
+                      transition: Transition.cupertino,
+                    );
                   },
                 ),
                 _DrawerTile(
@@ -305,17 +306,11 @@ class _SupervisorDrawer extends StatelessWidget {
                   label: 'LRs',
                   onTap: () {
                     Navigator.of(context).pop();
-                    Get.snackbar('Coming Soon', 'LRs will be available shortly',
-                        snackPosition: SnackPosition.BOTTOM);
-                  },
-                ),
-                _DrawerTile(
-                  icon: Icons.receipt_outlined,
-                  label: 'Invoices',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Get.snackbar('Coming Soon', 'Invoices will be available shortly',
-                        snackPosition: SnackPosition.BOTTOM);
+                    Get.to(
+                      () => const SupervisorLrsView(),
+                      binding: SupervisorLrsBinding(),
+                      transition: Transition.cupertino,
+                    );
                   },
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
@@ -486,36 +481,3 @@ class _SupervisorNavBar extends StatelessWidget {
   }
 }
 
-// ── Coming Soon placeholder ───────────────────────────────────────────────────
-class _ComingSoon extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final int sprint;
-  const _ComingSoon({
-    required this.label,
-    required this.icon,
-    required this.sprint,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 52, color: AppColors.mutedText),
-          const SizedBox(height: 16),
-          Text(
-            label,
-            style: AppTextStyles.heading3.copyWith(color: AppColors.navy),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Coming in Sprint $sprint step',
-            style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
-          ),
-        ],
-      ),
-    );
-  }
-}

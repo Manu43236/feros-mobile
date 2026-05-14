@@ -54,7 +54,7 @@ class SupervisorOrderDetailView
 
         final o = controller.order.value!;
         return DefaultTabController(
-          length: 3,
+          length: 2,
           child: Scaffold(
             backgroundColor: AppColors.background,
             body: Column(
@@ -80,9 +80,8 @@ class SupervisorOrderDetailView
                       fontSize: 13,
                     ),
                     tabs: [
-                      Tab(text: 'Assignments'),
+                      Tab(text: 'Vehicles'),
                       Tab(text: 'LRs'),
-                      Tab(text: 'Invoices'),
                     ],
                   ),
                 ),
@@ -92,7 +91,6 @@ class SupervisorOrderDetailView
                     children: [
                       _AssignmentsTab(order: o),
                       _LrsTab(controller: controller),
-                      _InvoicesTab(controller: controller),
                     ],
                   ),
                 ),
@@ -811,228 +809,6 @@ class _LrCard extends StatelessWidget {
 }
 
 // ── Invoices Tab ──────────────────────────────────────────────────────────────
-class _InvoicesTab extends StatelessWidget {
-  final SupervisorOrderDetailController controller;
-  const _InvoicesTab({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    final invoices = controller.invoices;
-    if (invoices.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.receipt_outlined,
-                size: 48, color: AppColors.mutedText),
-            const SizedBox(height: 12),
-            Text('No invoices raised yet',
-                style:
-                    AppTextStyles.body.copyWith(color: AppColors.mutedText)),
-            const SizedBox(height: 4),
-            Text('Invoices appear here once the order is billed',
-                style: AppTextStyles.caption
-                    .copyWith(color: AppColors.mutedText),
-                textAlign: TextAlign.center),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      itemCount: invoices.length,
-      itemBuilder: (_, i) => _InvoiceCard(invoice: invoices[i]),
-    );
-  }
-}
-
-class _InvoiceCard extends StatelessWidget {
-  final Map<String, dynamic> invoice;
-  const _InvoiceCard({required this.invoice});
-
-  @override
-  Widget build(BuildContext context) {
-    final invoiceNumber = invoice['invoiceNumber'] as String? ?? '—';
-    final status        = invoice['invoiceStatus'] as String? ?? '';
-    final invoiceDate   = invoice['invoiceDate']   as String?;
-    final dueDate       = invoice['dueDate']        as String?;
-    final totalAmount   = invoice['totalAmount'];
-    final balanceDue    = invoice['balanceDue'];
-    final amountPaid    = invoice['amountPaid'];
-
-    final statusColor = _invoiceColor(status);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Invoice header ───────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-            decoration: const BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.receipt_outlined,
-                        size: 17, color: AppColors.navy),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Invoice',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                          color: AppColors.navy,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                            color: statusColor.withValues(alpha: 0.3)),
-                      ),
-                      child: Text(_invoiceLabel(status),
-                          style: AppTextStyles.caption.copyWith(
-                              color: statusColor,
-                              fontWeight: FontWeight.w600)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  '#${invoiceNumber.toLowerCase()}',
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.mutedText,
-                    letterSpacing: 0.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // ── Invoice body ─────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Amount row
-                Row(
-                  children: [
-                    Expanded(
-                      child: _AmountCell(
-                          label: 'Total',
-                          value: totalAmount,
-                          color: AppColors.navy),
-                    ),
-                    Expanded(
-                      child: _AmountCell(
-                          label: 'Paid',
-                          value: amountPaid,
-                          color: AppColors.success),
-                    ),
-                    Expanded(
-                      child: _AmountCell(
-                          label: 'Balance',
-                          value: balanceDue,
-                          color: balanceDue != null &&
-                                  double.tryParse(balanceDue.toString())! > 0
-                              ? AppColors.error
-                              : AppColors.success),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                // Dates
-                Row(
-                  children: [
-                    if (invoiceDate != null) ...[
-                      _Chip(Icons.calendar_today_outlined,
-                          'Issued: ${FerosDateUtils.formatDate(invoiceDate)}'),
-                      const SizedBox(width: 12),
-                    ],
-                    if (dueDate != null)
-                      _Chip(Icons.event_outlined,
-                          'Due: ${FerosDateUtils.formatDate(dueDate)}'),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _invoiceColor(String s) {
-    switch (s) {
-      case 'DRAFT':          return AppColors.mutedText;
-      case 'SENT':           return AppColors.info;
-      case 'PARTIALLY_PAID': return AppColors.warning;
-      case 'PAID':           return AppColors.success;
-      case 'OVERDUE':        return AppColors.error;
-      case 'CANCELLED':      return AppColors.error;
-      default:               return AppColors.mutedText;
-    }
-  }
-
-  String _invoiceLabel(String s) {
-    switch (s) {
-      case 'DRAFT':          return 'Draft';
-      case 'SENT':           return 'Sent';
-      case 'PARTIALLY_PAID': return 'Part. Paid';
-      case 'PAID':           return 'Paid';
-      case 'OVERDUE':        return 'Overdue';
-      case 'CANCELLED':      return 'Cancelled';
-      default:               return s;
-    }
-  }
-}
-
-class _AmountCell extends StatelessWidget {
-  final String label;
-  final dynamic value;
-  final Color color;
-  const _AmountCell(
-      {required this.label, required this.value, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final amount = value != null
-        ? '₹${double.tryParse(value.toString())?.toStringAsFixed(0) ?? value}'
-        : '₹0';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style:
-                AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-        const SizedBox(height: 2),
-        Text(amount,
-            style: AppTextStyles.bodyMedium
-                .copyWith(color: color, fontWeight: FontWeight.w700)),
-      ],
-    );
-  }
-}
-
 // ── Shared Widgets ────────────────────────────────────────────────────────────
 class _Chip extends StatelessWidget {
   final IconData icon;

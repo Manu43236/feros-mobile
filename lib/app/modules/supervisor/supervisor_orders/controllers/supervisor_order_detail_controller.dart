@@ -14,7 +14,6 @@ class SupervisorOrderDetailController extends GetxController {
   final state        = ViewState.loading.obs;
   final order        = Rxn<Map<String, dynamic>>();
   final lrs          = <Map<String, dynamic>>[].obs;
-  final invoices     = <Map<String, dynamic>>[].obs;
   final pdfLoadingId = Rxn<int>();
 
   late final int orderId;
@@ -32,7 +31,6 @@ class SupervisorOrderDetailController extends GetxController {
       final results = await Future.wait([
         _api.get(ApiEndpoints.orderById(orderId)),
         _api.get(ApiEndpoints.lrsByOrder(orderId)),
-        _api.get(ApiEndpoints.invoicesByOrder(orderId)),
       ]);
 
       order.value = (results[0].data as Map<String, dynamic>)['data']
@@ -40,10 +38,6 @@ class SupervisorOrderDetailController extends GetxController {
 
       lrs.value = ((results[1].data as Map<String, dynamic>)['data'] as List)
           .cast<Map<String, dynamic>>();
-
-      invoices.value =
-          ((results[2].data as Map<String, dynamic>)['data'] as List)
-              .cast<Map<String, dynamic>>();
 
       state.value = ViewState.success;
     } catch (_) {

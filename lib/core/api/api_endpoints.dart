@@ -73,7 +73,8 @@ class ApiEndpoints {
   static String clientById(id)            => '/clients/$id';
   static String clientStatus(id)          => '/clients/$id/status';
 
-  // Staff
+  // Users / Staff
+  static const users                      = '/users';
   static const staffProfiles              = '/staff/profiles';
   static String staffProfileById(id)      => '/staff/profiles/$id';
   static String staffDocuments(id)        => '/staff/$id/documents';
