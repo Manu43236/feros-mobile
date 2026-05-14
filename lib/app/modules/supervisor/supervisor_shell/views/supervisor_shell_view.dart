@@ -20,6 +20,8 @@ import '../../supervisor_fuel_log/views/supervisor_fuel_log_view.dart';
 import '../../supervisor_fuel_log/bindings/supervisor_fuel_log_binding.dart';
 import '../../supervisor_breakdown/views/supervisor_breakdown_view.dart';
 import '../../supervisor_breakdown/bindings/supervisor_breakdown_binding.dart';
+import '../../supervisor_vehicles/views/supervisor_vehicles_view.dart';
+import '../../supervisor_vehicles/bindings/supervisor_vehicles_binding.dart';
 
 class SupervisorShellView extends GetView<SupervisorShellController> {
   const SupervisorShellView({super.key});
@@ -283,8 +285,10 @@ class _SupervisorDrawer extends StatelessWidget {
                   label: 'Vehicles',
                   onTap: () {
                     Navigator.of(context).pop();
-                    Get.snackbar('Coming Soon', 'Vehicles will be available shortly',
-                        snackPosition: SnackPosition.BOTTOM);
+                    Get.to(
+                      () => const SupervisorVehiclesView(),
+                      binding: SupervisorVehiclesBinding(),
+                    );
                   },
                 ),
                 _DrawerTile(
