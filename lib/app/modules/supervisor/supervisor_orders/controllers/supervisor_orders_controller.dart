@@ -6,7 +6,7 @@ import '../../../../../core/utils/view_state.dart';
 class SupervisorOrdersController extends GetxController {
   final _api = Get.find<ApiClient>();
 
-  static const _pageSize = 5;
+  static const _pageSize = 20;
 
   final state            = ViewState.loading.obs;
   final searchQuery      = ''.obs;
