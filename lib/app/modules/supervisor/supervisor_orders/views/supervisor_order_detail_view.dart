@@ -664,44 +664,6 @@ class _LrCard extends StatelessWidget {
                         color: AppColors.navy,
                         fontWeight: FontWeight.w700)),
               ),
-              // PDF button
-              Obx(() {
-                final isLoading = controller.pdfLoadingId.value == intId;
-                return GestureDetector(
-                  onTap: () => controller.viewLrPdf(
-                      intId, lrNumber, '$fromCity → $toCity'),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isLoading)
-                          const SizedBox(
-                            width: 12, height: 12,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: AppColors.navy),
-                          )
-                        else
-                          const Icon(Icons.picture_as_pdf_outlined,
-                              size: 14, color: AppColors.navy),
-                        const SizedBox(width: 4),
-                        Text(
-                          isLoading ? 'Loading…' : 'PDF',
-                          style: AppTextStyles.caption.copyWith(
-                              color: AppColors.navy,
-                              fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-              const SizedBox(width: 8),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -765,6 +727,35 @@ class _LrCard extends StatelessWidget {
               if (lrDate != null)
                 _Chip(Icons.calendar_today_outlined,
                     FerosDateUtils.formatDate(lrDate)),
+              const Spacer(),
+              Obx(() {
+                final isLoading = controller.pdfLoadingId.value == intId;
+                return GestureDetector(
+                  onTap: () => controller.viewLrPdf(
+                      intId, lrNumber, '$fromCity → $toCity'),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isLoading)
+                        const SizedBox(
+                          width: 12, height: 12,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: AppColors.navy),
+                        )
+                      else
+                        const Icon(Icons.picture_as_pdf_outlined,
+                            size: 14, color: AppColors.navy),
+                      const SizedBox(width: 4),
+                      Text(
+                        isLoading ? 'Loading…' : 'View PDF',
+                        style: AppTextStyles.caption.copyWith(
+                            color: AppColors.navy,
+                            fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                );
+              }),
             ],
           ),
         ],
