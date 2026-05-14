@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:shimmer/shimmer.dart';
+
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
 import '../../../../../core/utils/date_utils.dart';
+import '../../../../../core/popups/feros_dialog.dart';
+import '../../../../../core/widgets/feros_select_field.dart';
 import '../controllers/supervisor_order_detail_controller.dart';
 
 class SupervisorOrderDetailView
@@ -85,11 +90,10 @@ class SupervisorOrderDetailView
                     ],
                   ),
                 ),
-                // Scrollable tab content only
                 Expanded(
                   child: TabBarView(
                     children: [
-                      _AssignmentsTab(order: o),
+                      _AssignmentsTab(order: o, controller: controller),
                       _LrsTab(controller: controller),
                     ],
                   ),
@@ -139,7 +143,6 @@ class _OrderBanner extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Back button row + status badge
               Row(
                 children: [
                   GestureDetector(
@@ -178,8 +181,6 @@ class _OrderBanner extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-
-              // Client name as hero title
               Text(
                 clientName,
                 style: const TextStyle(
@@ -191,8 +192,6 @@ class _OrderBanner extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 3),
-
-              // Order number as small #-prefixed identifier
               Text(
                 '#${orderNumber.toLowerCase()}',
                 style: AppTextStyles.caption.copyWith(
@@ -201,8 +200,6 @@ class _OrderBanner extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-
-              // Route
               Row(
                 children: [
                   const Icon(Icons.radio_button_checked,
@@ -227,8 +224,6 @@ class _OrderBanner extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 14),
-
-              // Stat chips row
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -334,8 +329,7 @@ class _BannerChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
-        border:
-            Border.all(color: Colors.white.withValues(alpha: 0.15)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -361,11 +355,24 @@ class _BannerChip extends StatelessWidget {
   }
 }
 
-
 // ── Assignments Tab ───────────────────────────────────────────────────────────
 class _AssignmentsTab extends StatelessWidget {
   final Map<String, dynamic> order;
-  const _AssignmentsTab({required this.order});
+  final SupervisorOrderDetailController controller;
+  const _AssignmentsTab({required this.order, required this.controller});
+
+  bool get _canAssign => ['PENDING', 'PARTIALLY_ASSIGNED']
+      .contains(order['orderStatus'] as String? ?? '');
+
+  void _openAssignSheet(BuildContext context) {
+    controller.fetchVehicles();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _AssignVehicleSheet(controller: controller),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -373,36 +380,98 @@ class _AssignmentsTab extends StatelessWidget {
             ?.cast<Map<String, dynamic>>() ??
         [];
 
-    if (allocations.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.local_shipping_outlined,
-                size: 48, color: AppColors.mutedText),
-            const SizedBox(height: 12),
-            Text('No vehicles assigned',
-                style:
-                    AppTextStyles.body.copyWith(color: AppColors.mutedText)),
-          ],
+    return Column(
+      children: [
+        Expanded(
+          child: allocations.isEmpty
+              ? _buildEmpty()
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  itemCount: allocations.length,
+                  itemBuilder: (_, i) => _AllocationCard(
+                    allocation: allocations[i],
+                    controller: controller,
+                  ),
+                ),
         ),
-      );
-    }
+        // ── Assign Vehicle button (only for assignable statuses) ────────────
+        if (_canAssign)
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x15000000),
+                  blurRadius: 8,
+                  offset: Offset(0, -3),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              12 + MediaQuery.of(context).padding.bottom,
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () => _openAssignSheet(context),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text(
+                  'Assign Vehicle',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.navy,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      itemCount: allocations.length,
-      itemBuilder: (_, i) => _AllocationCard(allocation: allocations[i]),
+  Widget _buildEmpty() {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.local_shipping_outlined,
+              size: 48, color: AppColors.mutedText),
+          SizedBox(height: 12),
+          Text('No vehicles assigned',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                color: AppColors.mutedText,
+              )),
+        ],
+      ),
     );
   }
 }
 
+// ── Allocation Card ───────────────────────────────────────────────────────────
 class _AllocationCard extends StatelessWidget {
   final Map<String, dynamic> allocation;
-  const _AllocationCard({required this.allocation});
+  final SupervisorOrderDetailController controller;
+  const _AllocationCard(
+      {required this.allocation, required this.controller});
 
   @override
   Widget build(BuildContext context) {
+    final allocationId = allocation['id'] as int? ?? 0;
     final vehicle   = allocation['vehicleRegistrationNumber'] as String? ?? '—';
     final type      = allocation['vehicleTypeName']           as String?;
     final weight    = allocation['allocatedWeight'];
@@ -425,14 +494,12 @@ class _AllocationCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // ── Header ─────────────────────────────────────────────────
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: const BoxDecoration(
               color: AppColors.background,
-              borderRadius:
-                  BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
               children: [
@@ -455,24 +522,53 @@ class _AllocationCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                        color: statusColor.withValues(alpha: 0.3)),
+                    border:
+                        Border.all(color: statusColor.withValues(alpha: 0.3)),
                   ),
                   child: Text(_statusLabel(status),
                       style: AppTextStyles.caption.copyWith(
-                          color: statusColor,
-                          fontWeight: FontWeight.w600)),
+                          color: statusColor, fontWeight: FontWeight.w600)),
                 ),
+                const SizedBox(width: 8),
+                // ── Unassign button ──────────────────────────────────
+                Obx(() {
+                  final isUnassigning =
+                      controller.unassigningId.value == allocationId;
+                  if (isUnassigning) {
+                    return const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: AppColors.error),
+                    );
+                  }
+                  return GestureDetector(
+                    onTap: () async {
+                      final confirmed = await FerosDialog.confirm(
+                        title: 'Unassign Vehicle',
+                        message:
+                            'Remove $vehicle from this order?',
+                        confirmText: 'Unassign',
+                        isDestructive: true,
+                      );
+                      if (confirmed) {
+                        controller.unassignVehicle(allocationId);
+                      }
+                    },
+                    child: const Icon(Icons.delete_outline,
+                        size: 20, color: AppColors.error),
+                  );
+                }),
               ],
             ),
           ),
 
-          // Body
+          // ── Body ───────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.all(14),
             child: Column(
@@ -483,30 +579,72 @@ class _AllocationCard extends StatelessWidget {
                   runSpacing: 6,
                   children: [
                     if (weight != null)
-                      _Chip(Icons.scale_outlined, '${weight}T'),
+                      _InfoChip(Icons.scale_outlined, '${weight}T'),
                     if (loadDate != null)
-                      _Chip(Icons.upload_outlined,
+                      _InfoChip(Icons.upload_outlined,
                           'Load: ${FerosDateUtils.formatDate(loadDate)}'),
                     if (delivDate != null)
-                      _Chip(Icons.download_outlined,
+                      _InfoChip(Icons.download_outlined,
                           'ETA: ${FerosDateUtils.formatDate(delivDate)}'),
                   ],
                 ),
-                if (staffList.isNotEmpty) ...[
+                if (staffList.isNotEmpty || !_isClosed(status)) ...[
                   const SizedBox(height: 12),
                   const Divider(height: 1, color: AppColors.border),
                   const SizedBox(height: 12),
-                  Text('Staff',
-                      style: AppTextStyles.caption.copyWith(
-                          color: AppColors.mutedText,
-                          fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 8),
-                  ...staffList.map((s) => _StaffRow(staff: s)),
+                  Row(
+                    children: [
+                      Text('Staff',
+                          style: AppTextStyles.caption.copyWith(
+                              color: AppColors.mutedText,
+                              fontWeight: FontWeight.w600)),
+                      const Spacer(),
+                      if (!_isClosed(status)) ...[
+                        _StaffButton(
+                          label: '+ Driver',
+                          onTap: () => _openAssignStaffSheet(
+                              context, allocationId, 'DRIVER', 'Driver'),
+                        ),
+                        const SizedBox(width: 8),
+                        _StaffButton(
+                          label: '+ Cleaner',
+                          onTap: () => _openAssignStaffSheet(
+                              context, allocationId, 'CLEANER', 'Cleaner'),
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (staffList.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    ...staffList.map((s) => _StaffRow(
+                          staff: s,
+                          controller: controller,
+                        )),
+                  ],
                 ],
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  bool _isClosed(String s) =>
+      s == 'DELIVERED' || s == 'CANCELLED';
+
+  void _openAssignStaffSheet(
+      BuildContext context, int allocationId, String role, String roleLabel) {
+    controller.fetchStaff();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _AssignStaffSheet(
+        controller:    controller,
+        allocationId:  allocationId,
+        role:          role,
+        roleLabel:     roleLabel,
       ),
     );
   }
@@ -534,14 +672,18 @@ class _AllocationCard extends StatelessWidget {
   }
 }
 
+// ── Staff Row ─────────────────────────────────────────────────────────────────
 class _StaffRow extends StatelessWidget {
   final Map<String, dynamic> staff;
-  const _StaffRow({required this.staff});
+  final SupervisorOrderDetailController controller;
+  const _StaffRow({required this.staff, required this.controller});
 
   @override
   Widget build(BuildContext context) {
+    final staffAllocationId = staff['id'] as int? ?? 0;
     final name = staff['userName'] as String? ?? '—';
     final role = staff['roleName'] as String? ?? '';
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -561,8 +703,8 @@ class _StaffRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name,
-                    style:
-                        AppTextStyles.body.copyWith(color: AppColors.bodyText)),
+                    style: AppTextStyles.body
+                        .copyWith(color: AppColors.bodyText)),
                 if (role.isNotEmpty)
                   Text(_roleLabel(role),
                       style: AppTextStyles.caption
@@ -570,6 +712,31 @@ class _StaffRow extends StatelessWidget {
               ],
             ),
           ),
+          Obx(() {
+            final isUnassigning =
+                controller.unassigningStaffId.value == staffAllocationId;
+            if (isUnassigning) {
+              return const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: AppColors.error),
+              );
+            }
+            return GestureDetector(
+              onTap: () async {
+                final confirmed = await FerosDialog.confirm(
+                  title: 'Unassign ${_roleLabel(role)}',
+                  message: 'Remove $name from this vehicle?',
+                  confirmText: 'Unassign',
+                  isDestructive: true,
+                );
+                if (confirmed) controller.unassignStaff(staffAllocationId);
+              },
+              child: const Icon(Icons.delete_outline,
+                  size: 18, color: AppColors.error),
+            );
+          }),
         ],
       ),
     );
@@ -583,6 +750,509 @@ class _StaffRow extends StatelessWidget {
       case 'SERVICE_MEN': return 'Service Men';
       default:            return r;
     }
+  }
+}
+
+// ── Staff chip button ─────────────────────────────────────────────────────────
+class _StaffButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  const _StaffButton({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.navy.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.navy.withValues(alpha: 0.2)),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.navy,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Assign Vehicle Bottom Sheet ───────────────────────────────────────────────
+class _AssignVehicleSheet extends StatefulWidget {
+  final SupervisorOrderDetailController controller;
+  const _AssignVehicleSheet({required this.controller});
+
+  @override
+  State<_AssignVehicleSheet> createState() => _AssignVehicleSheetState();
+}
+
+class _AssignVehicleSheetState extends State<_AssignVehicleSheet> {
+  Map<String, dynamic>? _selectedVehicle;
+  final _weightCtrl  = TextEditingController();
+  final _remarksCtrl = TextEditingController();
+  DateTime? _loadDate, _delivDate;
+  final Map<String, String> _errors = {};
+
+  @override
+  void dispose() {
+    _weightCtrl.dispose();
+    _remarksCtrl.dispose();
+    super.dispose();
+  }
+
+  bool _validate() {
+    final e = <String, String>{};
+    if (_selectedVehicle == null) e['vehicle'] = 'Select a vehicle';
+    final w = double.tryParse(_weightCtrl.text.trim());
+    if (w == null || w <= 0) e['weight'] = 'Enter a valid weight';
+    setState(() { _errors.clear(); _errors.addAll(e); });
+    return e.isEmpty;
+  }
+
+  Future<void> _submit() async {
+    if (!_validate()) return;
+    final success = await widget.controller.assignVehicle(
+      vehicleId:           _selectedVehicle!['id'] as int,
+      allocatedWeight:     double.parse(_weightCtrl.text.trim()),
+      expectedLoadDate:    _loadDate?.toIso8601String().substring(0, 10),
+      expectedDeliveryDate: _delivDate?.toIso8601String().substring(0, 10),
+      remarks: _remarksCtrl.text.trim().isEmpty
+          ? null
+          : _remarksCtrl.text.trim(),
+    );
+    if (success && mounted) Navigator.of(context).pop();
+  }
+
+  String _vehicleLabel(Map<String, dynamic> v) {
+    final reg  = v['registrationNumber'] as String? ?? '—';
+    final type = v['vehicleTypeName']    as String?;
+    final cap  = v['capacityInTons'];
+    return '$reg'
+        '${type != null ? ' — $type' : ''}'
+        '${cap != null  ? ' (${cap}T)' : ''}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + bottomInset),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Handle ───────────────────────────────────────────────
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+
+          // ── Title ────────────────────────────────────────────────
+          Row(
+            children: [
+              const Icon(Icons.local_shipping_outlined,
+                  color: AppColors.navy, size: 20),
+              const SizedBox(width: 8),
+              Text('Assign Vehicle',
+                  style: AppTextStyles.bodySemiBold
+                      .copyWith(color: AppColors.navy)),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // ── Vehicle selector ─────────────────────────────────────
+          Obx(() => widget.controller.isLoadingVehicles.value
+              ? const _FieldShimmer()
+              : FerosSelectField<Map<String, dynamic>>(
+                  label: 'Vehicle',
+                  title: 'Select Vehicle',
+                  hint: 'Select available vehicle',
+                  isRequired: true,
+                  selectedDisplay: _selectedVehicle != null
+                      ? _vehicleLabel(_selectedVehicle!)
+                      : null,
+                  items: widget.controller.vehicles,
+                  itemLabel: _vehicleLabel,
+                  onSelected: (v) => setState(() => _selectedVehicle = v),
+                  errorText: _errors['vehicle'],
+                  emptyMessage: 'No available vehicles',
+                )),
+          const SizedBox(height: 16),
+
+          // ── Allocated Weight ─────────────────────────────────────
+          _SheetLabel('Allocated Weight (tons)', isRequired: true),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _weightCtrl,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))
+            ],
+            style: AppTextStyles.body,
+            decoration: _deco(hasError: _errors.containsKey('weight')).copyWith(
+              hintText: '20.00',
+              hintStyle: AppTextStyles.hint,
+              suffixText: 'T',
+              suffixStyle:
+                  AppTextStyles.bodyMedium.copyWith(color: AppColors.mutedText),
+            ),
+          ),
+          if (_errors.containsKey('weight'))
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(_errors['weight']!,
+                  style:
+                      AppTextStyles.caption.copyWith(color: AppColors.error)),
+            ),
+          const SizedBox(height: 16),
+
+          // ── Load Date + Delivery Date ────────────────────────────
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _SheetLabel('Load Date'),
+                    const SizedBox(height: 6),
+                    _SheetDateField(
+                      value: _loadDate,
+                      hint: 'Pick date',
+                      onPicked: (d) => setState(() => _loadDate = d),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _SheetLabel('Delivery Date'),
+                    const SizedBox(height: 6),
+                    _SheetDateField(
+                      value: _delivDate,
+                      hint: 'Pick date',
+                      onPicked: (d) => setState(() => _delivDate = d),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // ── Remarks ──────────────────────────────────────────────
+          const _SheetLabel('Remarks'),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _remarksCtrl,
+            style: AppTextStyles.body,
+            decoration: _deco().copyWith(
+              hintText: 'Optional remarks...',
+              hintStyle: AppTextStyles.hint,
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // ── Submit ───────────────────────────────────────────────
+          Obx(() => SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed:
+                      widget.controller.isAssigning.value ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.navy,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: widget.controller.isAssigning.value
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text(
+                          'Assign Vehicle',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _deco({bool hasError = false}) => InputDecoration(
+        filled: true,
+        fillColor: AppColors.background,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(
+              color: hasError ? AppColors.error : AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(
+              color: hasError ? AppColors.error : AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(
+            color: hasError ? AppColors.error : AppColors.navy,
+            width: 1.5,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.error),
+        ),
+      );
+}
+
+// ── Assign Staff Bottom Sheet ─────────────────────────────────────────────────
+class _AssignStaffSheet extends StatefulWidget {
+  final SupervisorOrderDetailController controller;
+  final int    allocationId;
+  final String role;
+  final String roleLabel;
+
+  const _AssignStaffSheet({
+    required this.controller,
+    required this.allocationId,
+    required this.role,
+    required this.roleLabel,
+  });
+
+  @override
+  State<_AssignStaffSheet> createState() => _AssignStaffSheetState();
+}
+
+class _AssignStaffSheetState extends State<_AssignStaffSheet> {
+  Map<String, dynamic>? _selectedStaff;
+  final _remarksCtrl = TextEditingController();
+  DateTime? _startDate, _endDate;
+  final Map<String, String> _errors = {};
+
+  @override
+  void dispose() {
+    _remarksCtrl.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> get _staffList =>
+      widget.role == 'DRIVER'
+          ? widget.controller.drivers
+          : widget.controller.cleaners;
+
+  bool _validate() {
+    final e = <String, String>{};
+    if (_selectedStaff == null) e['staff'] = 'Select a ${widget.roleLabel.toLowerCase()}';
+    setState(() { _errors.clear(); _errors.addAll(e); });
+    return e.isEmpty;
+  }
+
+  Future<void> _submit() async {
+    if (!_validate()) return;
+    final success = await widget.controller.assignStaff(
+      vehicleAllocationId: widget.allocationId,
+      userId:              _selectedStaff!['id'] as int,
+      expectedStartDate:   _startDate?.toIso8601String().substring(0, 10),
+      expectedEndDate:     _endDate?.toIso8601String().substring(0, 10),
+      remarks: _remarksCtrl.text.trim().isEmpty
+          ? null
+          : _remarksCtrl.text.trim(),
+    );
+    if (success && mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final icon = widget.role == 'DRIVER'
+        ? Icons.person_outlined
+        : Icons.cleaning_services_outlined;
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + bottomInset),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Handle ───────────────────────────────────────────────
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+
+          // ── Title ────────────────────────────────────────────────
+          Row(
+            children: [
+              Icon(icon, color: AppColors.navy, size: 20),
+              const SizedBox(width: 8),
+              Text('Assign ${widget.roleLabel}',
+                  style: AppTextStyles.bodySemiBold
+                      .copyWith(color: AppColors.navy)),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // ── Staff selector ───────────────────────────────────────
+          Obx(() => widget.controller.isLoadingStaff.value
+              ? const _FieldShimmer()
+              : FerosSelectField<Map<String, dynamic>>(
+                  label: widget.roleLabel,
+                  title: 'Select ${widget.roleLabel}',
+                  hint: 'Select ${widget.roleLabel.toLowerCase()}',
+                  isRequired: true,
+                  selectedDisplay: _selectedStaff?['name'] as String?,
+                  items: _staffList,
+                  itemLabel: (u) => u['name'] as String? ?? '—',
+                  onSelected: (u) => setState(() => _selectedStaff = u),
+                  errorText: _errors['staff'],
+                  emptyMessage: 'No ${widget.roleLabel.toLowerCase()}s available',
+                )),
+          const SizedBox(height: 16),
+
+          // ── Start Date + End Date ────────────────────────────────
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _SheetLabel('Start Date'),
+                    const SizedBox(height: 6),
+                    _SheetDateField(
+                      value: _startDate,
+                      hint: 'Pick date',
+                      onPicked: (d) => setState(() => _startDate = d),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _SheetLabel('End Date'),
+                    const SizedBox(height: 6),
+                    _SheetDateField(
+                      value: _endDate,
+                      hint: 'Pick date',
+                      onPicked: (d) => setState(() => _endDate = d),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // ── Remarks ──────────────────────────────────────────────
+          const _SheetLabel('Remarks'),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _remarksCtrl,
+            style: AppTextStyles.body,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: AppColors.background,
+              hintText: 'Optional remarks...',
+              hintStyle: AppTextStyles.hint,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide:
+                    const BorderSide(color: AppColors.navy, width: 1.5),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // ── Submit ───────────────────────────────────────────────
+          Obx(() => SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: widget.controller.isAssigningStaff.value
+                      ? null
+                      : _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.navy,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: widget.controller.isAssigningStaff.value
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : Text(
+                          'Assign ${widget.roleLabel}',
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                ),
+              )),
+        ],
+      ),
+    );
   }
 }
 
@@ -647,7 +1317,6 @@ class _LrCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Card header ──────────────────────────────────────────
           Container(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
             decoration: const BoxDecoration(
@@ -687,7 +1356,6 @@ class _LrCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 5),
-                // LR number as small lowercase identifier
                 Text(
                   '#${lrNumber.toLowerCase()}',
                   style: AppTextStyles.caption.copyWith(
@@ -698,14 +1366,11 @@ class _LrCard extends StatelessWidget {
               ],
             ),
           ),
-
-          // ── Card body ────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Route
                 Row(
                   children: [
                     const Icon(Icons.radio_button_checked,
@@ -733,15 +1398,14 @@ class _LrCard extends StatelessWidget {
                 const SizedBox(height: 10),
                 const Divider(height: 1, color: AppColors.border),
                 const SizedBox(height: 10),
-                // Footer: weight + date + PDF button
                 Row(
                   children: [
                     if (weight != null) ...[
-                      _Chip(Icons.scale_outlined, '${weight}T'),
+                      _InfoChip(Icons.scale_outlined, '${weight}T'),
                       const SizedBox(width: 12),
                     ],
                     if (lrDate != null)
-                      _Chip(Icons.calendar_today_outlined,
+                      _InfoChip(Icons.calendar_today_outlined,
                           FerosDateUtils.formatDate(lrDate)),
                     const Spacer(),
                     Obx(() {
@@ -808,12 +1472,11 @@ class _LrCard extends StatelessWidget {
   }
 }
 
-// ── Invoices Tab ──────────────────────────────────────────────────────────────
-// ── Shared Widgets ────────────────────────────────────────────────────────────
-class _Chip extends StatelessWidget {
+// ── Shared small widgets ───────────────────────────────────────────────────────
+class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String label;
-  const _Chip(this.icon, this.label);
+  const _InfoChip(this.icon, this.label);
 
   @override
   Widget build(BuildContext context) {
@@ -825,6 +1488,134 @@ class _Chip extends StatelessWidget {
         Text(label,
             style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
       ],
+    );
+  }
+}
+
+// ── Sheet helpers (label, date field, shimmer) ────────────────────────────────
+class _SheetLabel extends StatelessWidget {
+  final String text;
+  final bool isRequired;
+  const _SheetLabel(this.text, {this.isRequired = false});
+
+  @override
+  Widget build(BuildContext context) => RichText(
+        text: TextSpan(
+          text: text,
+          style: AppTextStyles.label,
+          children: isRequired
+              ? const [
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(
+                      color: AppColors.error,
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )
+                ]
+              : [],
+        ),
+      );
+}
+
+class _SheetDateField extends StatelessWidget {
+  final DateTime? value;
+  final String hint;
+  final void Function(DateTime) onPicked;
+
+  const _SheetDateField({
+    required this.value,
+    required this.hint,
+    required this.onPicked,
+  });
+
+  String _fmt(DateTime d) {
+    const m = [
+      'Jan','Feb','Mar','Apr','May','Jun',
+      'Jul','Aug','Sep','Oct','Nov','Dec'
+    ];
+    return '${d.day} ${m[d.month - 1]} ${d.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        final now = DateTime.now();
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: value ?? now,
+          firstDate: DateTime(2020),
+          lastDate: DateTime(now.year + 5),
+          builder: (ctx, child) => Theme(
+            data: Theme.of(ctx).copyWith(
+              colorScheme: const ColorScheme.light(primary: AppColors.navy),
+            ),
+            child: child!,
+          ),
+        );
+        if (picked != null) onPicked(picked);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.calendar_today_outlined,
+                size: 14, color: AppColors.mutedText),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                value != null ? _fmt(value!) : hint,
+                style: AppTextStyles.body.copyWith(
+                  color:
+                      value != null ? AppColors.bodyText : AppColors.hintText,
+                  fontSize: 13,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FieldShimmer extends StatelessWidget {
+  const _FieldShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: AppColors.shimmerBase,
+      highlightColor: AppColors.shimmerHighlight,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 13,
+            width: 100,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

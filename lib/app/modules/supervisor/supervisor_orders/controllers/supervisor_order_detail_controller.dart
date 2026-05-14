@@ -16,6 +16,19 @@ class SupervisorOrderDetailController extends GetxController {
   final lrs          = <Map<String, dynamic>>[].obs;
   final pdfLoadingId = Rxn<int>();
 
+  // ── Vehicle assignment ─────────────────────────────────────────────────────
+  final vehicles          = <Map<String, dynamic>>[].obs;
+  final isLoadingVehicles = false.obs;
+  final isAssigning       = false.obs;
+  final unassigningId     = Rxn<int>();
+
+  // ── Staff assignment ───────────────────────────────────────────────────────
+  final drivers           = <Map<String, dynamic>>[].obs;
+  final cleaners          = <Map<String, dynamic>>[].obs;
+  final isLoadingStaff    = false.obs;
+  final isAssigningStaff  = false.obs;
+  final unassigningStaffId = Rxn<int>();
+
   late final int orderId;
 
   @override
@@ -45,6 +58,130 @@ class SupervisorOrderDetailController extends GetxController {
     }
   }
 
+  // ── Fetch available vehicles (called lazily when assign sheet opens) ────────
+  Future<void> fetchVehicles() async {
+    isLoadingVehicles.value = true;
+    vehicles.clear();
+    try {
+      final res  = await _api.get(ApiEndpoints.vehicles);
+      final data = ((res.data as Map)['data'] as List? ?? [])
+          .cast<Map<String, dynamic>>();
+      vehicles.value = data
+          .where((v) => v['isActive'] == true && v['isAssigned'] != true)
+          .toList();
+    } catch (_) {
+      FerosSnackbar.error('Failed to load vehicles');
+    }
+    isLoadingVehicles.value = false;
+  }
+
+  // ── Assign vehicle ─────────────────────────────────────────────────────────
+  Future<bool> assignVehicle({
+    required int    vehicleId,
+    required double allocatedWeight,
+    String? expectedLoadDate,
+    String? expectedDeliveryDate,
+    String? remarks,
+  }) async {
+    isAssigning.value = true;
+    try {
+      final body = <String, dynamic>{
+        'vehicleId':       vehicleId,
+        'allocatedWeight': allocatedWeight,
+      };
+      if (expectedLoadDate != null)     body['expectedLoadDate']     = expectedLoadDate;
+      if (expectedDeliveryDate != null) body['expectedDeliveryDate'] = expectedDeliveryDate;
+      if (remarks != null)              body['remarks']              = remarks;
+
+      await _api.post(ApiEndpoints.assignVehicle(orderId), data: body);
+      FerosSnackbar.success('Vehicle assigned successfully');
+      fetchAll();
+      return true;
+    } catch (e) {
+      FerosSnackbar.error(e.toString());
+      return false;
+    } finally {
+      isAssigning.value = false;
+    }
+  }
+
+  // ── Unassign vehicle ───────────────────────────────────────────────────────
+  Future<void> unassignVehicle(int allocationId) async {
+    unassigningId.value = allocationId;
+    try {
+      await _api.delete(ApiEndpoints.unassignVehicle(orderId, allocationId));
+      FerosSnackbar.success('Vehicle unassigned');
+      fetchAll();
+    } catch (e) {
+      FerosSnackbar.error(e.toString());
+    }
+    unassigningId.value = null;
+  }
+
+  // ── Fetch staff (called lazily when assign staff sheet opens) ─────────────
+  Future<void> fetchStaff() async {
+    isLoadingStaff.value = true;
+    drivers.clear();
+    cleaners.clear();
+    try {
+      final res  = await _api.get(ApiEndpoints.users);
+      final data = ((res.data as Map)['data'] as List? ?? [])
+          .cast<Map<String, dynamic>>();
+      final active = data.where(
+          (u) => u['isActive'] == true && u['isAssigned'] != true);
+      drivers.value  = active.where((u) => u['role'] == 'DRIVER').toList();
+      cleaners.value = active.where((u) => u['role'] == 'CLEANER').toList();
+    } catch (_) {
+      FerosSnackbar.error('Failed to load staff');
+    }
+    isLoadingStaff.value = false;
+  }
+
+  // ── Assign staff ───────────────────────────────────────────────────────────
+  Future<bool> assignStaff({
+    required int    vehicleAllocationId,
+    required int    userId,
+    String? expectedStartDate,
+    String? expectedEndDate,
+    String? remarks,
+  }) async {
+    isAssigningStaff.value = true;
+    try {
+      final body = <String, dynamic>{
+        'vehicleAllocationId': vehicleAllocationId,
+        'userId':              userId,
+      };
+      if (expectedStartDate != null) body['expectedStartDate'] = expectedStartDate;
+      if (expectedEndDate != null)   body['expectedEndDate']   = expectedEndDate;
+      if (remarks != null)           body['remarks']           = remarks;
+
+      await _api.post(ApiEndpoints.assignStaff(orderId), data: body);
+      FerosSnackbar.success('Staff assigned successfully');
+      fetchAll();
+      return true;
+    } catch (e) {
+      FerosSnackbar.error(e.toString());
+      return false;
+    } finally {
+      isAssigningStaff.value = false;
+    }
+  }
+
+  // ── Unassign staff ─────────────────────────────────────────────────────────
+  Future<void> unassignStaff(int staffAllocationId) async {
+    unassigningStaffId.value = staffAllocationId;
+    try {
+      await _api.delete(
+          ApiEndpoints.unassignStaff(orderId, staffAllocationId));
+      FerosSnackbar.success('Staff unassigned');
+      fetchAll();
+    } catch (e) {
+      FerosSnackbar.error(e.toString());
+    }
+    unassigningStaffId.value = null;
+  }
+
+  // ── LR PDF ─────────────────────────────────────────────────────────────────
   Future<void> viewLrPdf(int lrId, String lrNumber, String route) async {
     if (pdfLoadingId.value != null) return;
     pdfLoadingId.value = lrId;
