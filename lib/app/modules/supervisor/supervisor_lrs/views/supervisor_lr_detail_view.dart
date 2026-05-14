@@ -37,20 +37,6 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
             ),
           );
         }),
-        actions: [
-          Obx(() => IconButton(
-                icon: controller.pdfLoading.value
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.picture_as_pdf_outlined,
-                        color: Colors.white),
-                onPressed: controller.viewPdf,
-              )),
-        ],
       ),
       body: Obx(() {
         if (controller.state.value == ViewState.loading) {
@@ -98,7 +84,7 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
               const SizedBox(height: 12),
 
               // ── Route + Details Card ───────────────────────────────────
-              _InfoCard(lr: lr),
+              _InfoCard(lr: lr, controller: controller),
               const SizedBox(height: 12),
 
               // ── Driver Card ────────────────────────────────────────────
@@ -232,7 +218,8 @@ class _StatusBanner extends StatelessWidget {
 // ── Info Card ─────────────────────────────────────────────────────────────────
 class _InfoCard extends StatelessWidget {
   final Map<String, dynamic> lr;
-  const _InfoCard({required this.lr});
+  final SupervisorLrDetailController controller;
+  const _InfoCard({required this.lr, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -250,7 +237,7 @@ class _InfoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Vehicle
+          // Vehicle + PDF button
           Row(
             children: [
               const Icon(Icons.local_shipping_outlined,
@@ -270,6 +257,25 @@ class _InfoCard extends StatelessWidget {
                   ],
                 ),
               ),
+              Obx(() => GestureDetector(
+                    onTap: controller.pdfLoading.value ? null : controller.viewPdf,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.navy.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: controller.pdfLoading.value
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: AppColors.navy),
+                            )
+                          : const Icon(Icons.picture_as_pdf_outlined,
+                              size: 18, color: AppColors.navy),
+                    ),
+                  )),
             ],
           ),
           const SizedBox(height: 12),
