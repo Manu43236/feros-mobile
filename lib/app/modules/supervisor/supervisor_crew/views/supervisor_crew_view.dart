@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
@@ -486,6 +487,26 @@ class _CrewCard extends StatelessWidget {
                   ],
                 ),
               ),
+
+              // Call button
+              if (phone.isNotEmpty) ...[
+                const SizedBox(width: 10),
+                GestureDetector(
+                  onTap: () => launchUrl(Uri.parse('tel:$phone')),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: AppColors.success.withValues(alpha: 0.3)),
+                    ),
+                    child: const Icon(Icons.call,
+                        color: AppColors.success, size: 18),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
