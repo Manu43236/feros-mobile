@@ -9,6 +9,7 @@ import '../../../../../core/popups/feros_dialog.dart';
 import '../controllers/supervisor_shell_controller.dart';
 
 import '../../supervisor_dashboard/views/supervisor_home_tab.dart';
+import '../../supervisor_orders/views/supervisor_orders_tab.dart';
 import '../../supervisor_notifications/views/supervisor_notifications_view.dart';
 import '../../supervisor_notifications/bindings/supervisor_notifications_binding.dart';
 import '../../supervisor_profile/views/supervisor_profile_view.dart';
@@ -38,11 +39,7 @@ class SupervisorShellView extends GetView<SupervisorShellController> {
             index: controller.currentIndex.value,
             children: const [
               SupervisorHomeTab(),
-              _ComingSoon(
-                label: 'Orders',
-                icon: Icons.assignment_outlined,
-                sprint: 3,
-              ),
+              SupervisorOrdersTab(),
               _ComingSoon(
                 label: 'Trips',
                 icon: Icons.local_shipping_outlined,
