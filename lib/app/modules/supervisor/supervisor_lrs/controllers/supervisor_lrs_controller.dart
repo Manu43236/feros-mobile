@@ -56,12 +56,13 @@ class SupervisorLrsController extends GetxController {
     }).toList();
   }
 
+  int get totalCount => _allLrs.length;
+
   int countByStatus(String s) =>
       _allLrs.where((lr) => lr['lrStatus'] == s).length;
 
-  void onSearch(String v)  => searchQuery.value  = v;
-  void setFilter(String s) =>
-      statusFilter.value = statusFilter.value == s ? '' : s;
+  void onSearch(String v) => searchQuery.value = v;
+  void setFilter(String s) => statusFilter.value = s;
 
   Future<void> ensureOrdersLoaded() async {
     if (orders.isNotEmpty) return;

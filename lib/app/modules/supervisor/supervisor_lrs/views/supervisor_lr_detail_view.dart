@@ -1300,6 +1300,7 @@ Color _lrColor(String s) {
     case 'IN_TRANSIT': return AppColors.lrInTransit;
     case 'DELIVERED':  return AppColors.lrDelivered;
     case 'INVOICED':   return AppColors.lrInvoiced;
+    case 'CANCELLED':  return AppColors.error;
     default:           return AppColors.mutedText;
   }
 }
@@ -1311,6 +1312,7 @@ String _lrLabel(String s) {
     case 'IN_TRANSIT': return 'In Transit';
     case 'DELIVERED':  return 'Delivered';
     case 'INVOICED':   return 'Invoiced';
+    case 'CANCELLED':  return 'Cancelled';
     default:           return s;
   }
 }

@@ -13,7 +13,7 @@ import 'supervisor_create_lr_sheet.dart';
 class SupervisorLrsView extends GetView<SupervisorLrsController> {
   const SupervisorLrsView({super.key});
 
-  static const _statuses = ['CREATED', 'LOADED', 'IN_TRANSIT', 'DELIVERED'];
+  static const _statuses = ['ALL', 'CREATED', 'LOADED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'];
 
   @override
   Widget build(BuildContext context) {
@@ -74,13 +74,19 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                     child: Row(
                       children: _statuses.map((s) {
-                        final isActive = selected == s;
-                        final count    = controller.countByStatus(s);
+                        final isAll    = s == 'ALL';
+                        final isActive = isAll
+                            ? selected.isEmpty
+                            : selected == s;
                         final color    = _lrColor(s);
+                        final count    = isAll
+                            ? controller.totalCount
+                            : controller.countByStatus(s);
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: GestureDetector(
-                            onTap: () => controller.setFilter(s),
+                            onTap: () =>
+                                controller.setFilter(isAll ? '' : s),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 180),
                               padding: const EdgeInsets.symmetric(
@@ -448,22 +454,26 @@ class _LrStatusBadge extends StatelessWidget {
 
 Color _lrColor(String s) {
   switch (s) {
+    case 'ALL':        return AppColors.navy;
     case 'CREATED':    return AppColors.lrCreated;
     case 'LOADED':     return AppColors.lrLoaded;
     case 'IN_TRANSIT': return AppColors.lrInTransit;
     case 'DELIVERED':  return AppColors.lrDelivered;
     case 'INVOICED':   return AppColors.lrInvoiced;
+    case 'CANCELLED':  return AppColors.error;
     default:           return AppColors.mutedText;
   }
 }
 
 String _lrLabel(String s) {
   switch (s) {
+    case 'ALL':        return 'All';
     case 'CREATED':    return 'Created';
     case 'LOADED':     return 'Loaded';
     case 'IN_TRANSIT': return 'In Transit';
     case 'DELIVERED':  return 'Delivered';
     case 'INVOICED':   return 'Invoiced';
+    case 'CANCELLED':  return 'Cancelled';
     default:           return s;
   }
 }
