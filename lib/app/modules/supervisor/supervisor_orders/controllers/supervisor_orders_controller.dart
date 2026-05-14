@@ -6,11 +6,12 @@ import '../../../../../core/utils/view_state.dart';
 class SupervisorOrdersController extends GetxController {
   final _api = Get.find<ApiClient>();
 
-  final state        = ViewState.initial.obs;
-  final selectedFilter = 'ALL'.obs;
+  final state          = ViewState.loading.obs;
+  final searchQuery    = ''.obs;
+  final selectedFilters = <String>{'ALL'}.obs;
 
-  final _allOrders   = <Map<String, dynamic>>[].obs;
-  final orders       = <Map<String, dynamic>>[].obs;
+  final _allOrders = <Map<String, dynamic>>[].obs;
+  final orders     = <Map<String, dynamic>>[].obs;
 
   static const filters = [
     'ALL',
@@ -35,8 +36,8 @@ class SupervisorOrdersController extends GetxController {
   };
 
   @override
-  void onReady() {
-    super.onReady();
+  void onInit() {
+    super.onInit();
     fetchOrders();
   }
 
@@ -45,26 +46,62 @@ class SupervisorOrdersController extends GetxController {
     try {
       final res  = await _api.get(ApiEndpoints.orders);
       final list = (res.data as Map<String, dynamic>)['data'] as List;
-      _allOrders.value = list.cast<Map<String, dynamic>>();
-      _applyFilter();
+      final parsed = list.cast<Map<String, dynamic>>();
+      parsed.sort((a, b) {
+        final aDate = a['createdAt'] as String? ?? '';
+        final bDate = b['createdAt'] as String? ?? '';
+        return bDate.compareTo(aDate);
+      });
+      _allOrders.value = parsed;
+      _apply();
       state.value = ViewState.success;
     } catch (_) {
       state.value = ViewState.error;
     }
   }
 
-  void setFilter(String filter) {
-    selectedFilter.value = filter;
-    _applyFilter();
+  void toggleFilter(String filter) {
+    if (filter == 'ALL') {
+      selectedFilters.value = {'ALL'};
+    } else {
+      final current = Set<String>.from(selectedFilters);
+      current.remove('ALL');
+      if (current.contains(filter)) {
+        current.remove(filter);
+        if (current.isEmpty) current.add('ALL');
+      } else {
+        current.add(filter);
+      }
+      selectedFilters.value = current;
+    }
+    _apply();
   }
 
-  void _applyFilter() {
-    if (selectedFilter.value == 'ALL') {
-      orders.value = List.from(_allOrders);
-    } else {
-      orders.value = _allOrders
-          .where((o) => o['orderStatus'] == selectedFilter.value)
-          .toList();
+  void onSearch(String query) {
+    searchQuery.value = query;
+    _apply();
+  }
+
+  void _apply() {
+    List<Map<String, dynamic>> result = List.from(_allOrders);
+
+    // Status filter
+    if (!selectedFilters.contains('ALL')) {
+      result = result.where((o) => selectedFilters.contains(o['orderStatus'])).toList();
     }
+
+    // Search
+    final q = searchQuery.value.trim().toLowerCase();
+    if (q.isNotEmpty) {
+      result = result.where((o) {
+        final num    = (o['orderNumber']  as String? ?? '').toLowerCase();
+        final client = (o['clientName']   as String? ?? '').toLowerCase();
+        final from   = (o['sourceCityName']      as String? ?? '').toLowerCase();
+        final to     = (o['destinationCityName'] as String? ?? '').toLowerCase();
+        return num.contains(q) || client.contains(q) || from.contains(q) || to.contains(q);
+      }).toList();
+    }
+
+    orders.value = result;
   }
 }

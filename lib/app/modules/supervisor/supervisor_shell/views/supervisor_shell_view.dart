@@ -112,13 +112,16 @@ class SupervisorShellView extends GetView<SupervisorShellController> {
         );
       }),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-          onPressed: () => Get.to(
-            () => const SupervisorNotificationsView(),
-            binding: SupervisorNotificationsBinding(),
-          ),
-        ),
+        Obx(() {
+          if (controller.currentIndex.value != 0) return const SizedBox.shrink();
+          return IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+            onPressed: () => Get.to(
+              () => const SupervisorNotificationsView(),
+              binding: SupervisorNotificationsBinding(),
+            ),
+          );
+        }),
       ],
     );
   }

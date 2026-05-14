@@ -13,11 +13,20 @@ class SupervisorOrdersTab extends GetView<SupervisorOrdersController> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _FilterBar(controller: controller),
+        Container(
+          color: AppColors.surface,
+          child: Column(
+            children: [
+              _SearchBar(controller: controller),
+              _FilterBar(controller: controller),
+            ],
+          ),
+        ),
         Expanded(
           child: Obx(() {
             if (controller.state.value == ViewState.loading) {
-              return const Center(child: CircularProgressIndicator(color: AppColors.navy));
+              return const Center(
+                  child: CircularProgressIndicator(color: AppColors.navy));
             }
             if (controller.state.value == ViewState.error) {
               return _ErrorState(onRetry: controller.fetchOrders);
@@ -40,6 +49,35 @@ class SupervisorOrdersTab extends GetView<SupervisorOrdersController> {
   }
 }
 
+// ── Search Bar ────────────────────────────────────────────────────────────────
+class _SearchBar extends StatelessWidget {
+  final SupervisorOrdersController controller;
+  const _SearchBar({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: TextField(
+        onChanged: controller.onSearch,
+        style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+        decoration: InputDecoration(
+          hintText: 'Search by order no., client, city...',
+          hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
+          prefixIcon: const Icon(Icons.search, color: AppColors.mutedText, size: 20),
+          filled: true,
+          fillColor: AppColors.background,
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ── Filter Bar ────────────────────────────────────────────────────────────────
 class _FilterBar extends StatelessWidget {
   final SupervisorOrdersController controller;
@@ -47,22 +85,21 @@ class _FilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.surface,
-      padding: const EdgeInsets.symmetric(vertical: 10),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
       child: Obx(() {
-        final selected = controller.selectedFilter.value;
+        final selected = controller.selectedFilters;
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: SupervisorOrdersController.filters.map((f) {
-              final isActive = f == selected;
+              final isActive = selected.contains(f);
               final label = SupervisorOrdersController.filterLabels[f] ?? f;
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: GestureDetector(
-                  onTap: () => controller.setFilter(f),
+                  onTap: () => controller.toggleFilter(f),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
@@ -77,7 +114,8 @@ class _FilterBar extends StatelessWidget {
                       label,
                       style: AppTextStyles.caption.copyWith(
                         color: isActive ? Colors.white : AppColors.mutedText,
-                        fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                        fontWeight:
+                            isActive ? FontWeight.w600 : FontWeight.w400,
                       ),
                     ),
                   ),
@@ -98,17 +136,14 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status     = order['orderStatus'] as String? ?? '';
-    final statusColor = _statusColor(status);
-    final statusLabel = _statusLabel(status);
-
-    final clientName   = order['clientName']         as String? ?? '—';
-    final orderNumber  = order['orderNumber']         as String? ?? '—';
-    final fromCity     = order['sourceCityName']      as String? ?? '—';
-    final toCity       = order['destinationCityName'] as String? ?? '—';
-    final material     = order['materialTypeName']    as String? ?? '—';
-    final weight       = order['totalWeight'];
-    final deliveryDate = order['expectedDeliveryDate'] as String?;
+    final status      = order['orderStatus']          as String? ?? '';
+    final orderNumber = order['orderNumber']          as String? ?? '—';
+    final clientName  = order['clientName']           as String? ?? '—';
+    final fromCity    = order['sourceCityName']       as String? ?? '—';
+    final toCity      = order['destinationCityName']  as String? ?? '—';
+    final material    = order['materialTypeName']     as String? ?? '—';
+    final weight      = order['totalWeight'];
+    final deliveryDate= order['expectedDeliveryDate'] as String?;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -116,11 +151,7 @@ class _OrderCard extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
+          BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: Padding(
@@ -128,58 +159,55 @@ class _OrderCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Row 1: order number + status ────────────────────
+            // ── Order number + status ────────────────────────────
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  orderNumber,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.navy,
-                    fontWeight: FontWeight.w700,
+                Expanded(
+                  child: Text(
+                    orderNumber,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.navy,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-                _StatusBadge(label: statusLabel, color: statusColor),
+                const SizedBox(width: 8),
+                _StatusBadge(status: status),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
 
             // ── Client ──────────────────────────────────────────
             Text(
               clientName,
-              style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+              style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
 
             // ── Route ───────────────────────────────────────────
             Row(
               children: [
-                const Icon(Icons.circle, size: 7, color: AppColors.navy),
+                const Icon(Icons.radio_button_checked,
+                    size: 14, color: AppColors.navy),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text(
-                    fromCity,
-                    style: AppTextStyles.caption.copyWith(color: AppColors.bodyText),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  child: Text(fromCity,
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.bodyText),
+                      overflow: TextOverflow.ellipsis),
                 ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 3),
-              child: Container(width: 1, height: 10, color: AppColors.border),
-            ),
-            Row(
-              children: [
+                const SizedBox(width: 8),
+                const Icon(Icons.arrow_forward, size: 14, color: AppColors.mutedText),
+                const SizedBox(width: 8),
                 const Icon(Icons.location_on, size: 14, color: AppColors.orange),
-                const SizedBox(width: 3),
+                const SizedBox(width: 6),
                 Expanded(
-                  child: Text(
-                    toCity,
-                    style: AppTextStyles.caption.copyWith(color: AppColors.bodyText),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  child: Text(toCity,
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.bodyText),
+                      overflow: TextOverflow.ellipsis),
                 ),
               ],
             ),
@@ -187,24 +215,28 @@ class _OrderCard extends StatelessWidget {
             const Divider(height: 1, color: AppColors.border),
             const SizedBox(height: 10),
 
-            // ── Row 3: material + weight + ETA ──────────────────
+            // ── Material + weight + ETA ──────────────────────────
             Row(
               children: [
-                const Icon(Icons.inventory_2_outlined, size: 14, color: AppColors.mutedText),
+                const Icon(Icons.inventory_2_outlined,
+                    size: 13, color: AppColors.mutedText),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     weight != null ? '$material · ${weight}T' : material,
-                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                    style:
+                        AppTextStyles.caption.copyWith(color: AppColors.mutedText),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 if (deliveryDate != null) ...[
-                  const Icon(Icons.calendar_today_outlined, size: 12, color: AppColors.mutedText),
+                  const Icon(Icons.calendar_today_outlined,
+                      size: 12, color: AppColors.mutedText),
                   const SizedBox(width: 4),
                   Text(
                     FerosDateUtils.formatDate(deliveryDate),
-                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                    style:
+                        AppTextStyles.caption.copyWith(color: AppColors.mutedText),
                   ),
                 ],
               ],
@@ -214,42 +246,17 @@ class _OrderCard extends StatelessWidget {
       ),
     );
   }
-
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'PENDING':             return AppColors.orderPending;
-      case 'PARTIALLY_ASSIGNED':  return AppColors.info;
-      case 'FULLY_ASSIGNED':      return AppColors.lrLoaded;
-      case 'IN_TRANSIT':          return AppColors.lrInTransit;
-      case 'PARTIALLY_DELIVERED': return AppColors.warning;
-      case 'DELIVERED':           return AppColors.orderCompleted;
-      case 'CANCELLED':           return AppColors.orderCancelled;
-      default:                    return AppColors.mutedText;
-    }
-  }
-
-  String _statusLabel(String status) {
-    switch (status) {
-      case 'PENDING':             return 'Pending';
-      case 'PARTIALLY_ASSIGNED':  return 'Part. Assigned';
-      case 'FULLY_ASSIGNED':      return 'Assigned';
-      case 'IN_TRANSIT':          return 'In Transit';
-      case 'PARTIALLY_DELIVERED': return 'Part. Delivered';
-      case 'DELIVERED':           return 'Delivered';
-      case 'CANCELLED':           return 'Cancelled';
-      default:                    return status;
-    }
-  }
 }
 
 // ── Status Badge ──────────────────────────────────────────────────────────────
 class _StatusBadge extends StatelessWidget {
-  final String label;
-  final Color color;
-  const _StatusBadge({required this.label, required this.color});
+  final String status;
+  const _StatusBadge({required this.status});
 
   @override
   Widget build(BuildContext context) {
+    final color = _color(status);
+    final label = _label(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -266,12 +273,37 @@ class _StatusBadge extends StatelessWidget {
       ),
     );
   }
+
+  Color _color(String s) {
+    switch (s) {
+      case 'PENDING':             return AppColors.orderPending;
+      case 'PARTIALLY_ASSIGNED':  return AppColors.info;
+      case 'FULLY_ASSIGNED':      return AppColors.lrLoaded;
+      case 'IN_TRANSIT':          return AppColors.lrInTransit;
+      case 'PARTIALLY_DELIVERED': return AppColors.warning;
+      case 'DELIVERED':           return AppColors.orderCompleted;
+      case 'CANCELLED':           return AppColors.orderCancelled;
+      default:                    return AppColors.mutedText;
+    }
+  }
+
+  String _label(String s) {
+    switch (s) {
+      case 'PENDING':             return 'Pending';
+      case 'PARTIALLY_ASSIGNED':  return 'Part. Assigned';
+      case 'FULLY_ASSIGNED':      return 'Assigned';
+      case 'IN_TRANSIT':          return 'In Transit';
+      case 'PARTIALLY_DELIVERED': return 'Part. Delivered';
+      case 'DELIVERED':           return 'Delivered';
+      case 'CANCELLED':           return 'Cancelled';
+      default:                    return s;
+    }
+  }
 }
 
-// ── Empty State ───────────────────────────────────────────────────────────────
+// ── Empty / Error States ──────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
-
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -280,20 +312,20 @@ class _EmptyState extends StatelessWidget {
         children: [
           const Icon(Icons.assignment_outlined, size: 52, color: AppColors.mutedText),
           const SizedBox(height: 16),
-          Text('No orders found', style: AppTextStyles.heading4.copyWith(color: AppColors.navy)),
+          Text('No orders found',
+              style: AppTextStyles.heading4.copyWith(color: AppColors.navy)),
           const SizedBox(height: 6),
-          Text('Try a different filter', style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+          Text('Try a different filter or search',
+              style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
         ],
       ),
     );
   }
 }
 
-// ── Error State ───────────────────────────────────────────────────────────────
 class _ErrorState extends StatelessWidget {
   final VoidCallback onRetry;
   const _ErrorState({required this.onRetry});
-
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -302,14 +334,16 @@ class _ErrorState extends StatelessWidget {
         children: [
           const Icon(Icons.error_outline, size: 48, color: AppColors.error),
           const SizedBox(height: 12),
-          Text('Failed to load orders', style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+          Text('Failed to load orders',
+              style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: onRetry,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.navy,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('Retry'),
           ),
