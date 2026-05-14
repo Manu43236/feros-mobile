@@ -5,9 +5,8 @@ class ApiEndpoints {
   static const login = '/auth/login';
 
   // Dashboard
-  static const dashboard     = '/dashboard';
-  static const myDashboard   = '/dashboard/my';
-  static const expiryAlerts  = '/dashboard/expiry-alerts';
+  static const dashboard    = '/dashboard';
+  static const expiryAlerts = '/dashboard/expiry-alerts';
 
   // Vehicles
   static const vehicles                   = '/vehicles';

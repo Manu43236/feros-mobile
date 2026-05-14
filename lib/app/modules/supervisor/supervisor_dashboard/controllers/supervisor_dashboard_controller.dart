@@ -8,9 +8,13 @@ class SupervisorDashboardController extends GetxController {
 
   final state = ViewState.initial.obs;
 
-  final totalTrips          = 0.obs;
-  final pendingTrips        = 0.obs;
+  final totalOrders         = 0.obs;
+  final activeOrders        = 0.obs;
+  final pendingAssignments  = 0.obs;
+  final todayPresent        = 0.obs;
   final unreadNotifications = 0.obs;
+
+  final activeTrips = <Map<String, dynamic>>[].obs;
 
   @override
   void onReady() {
@@ -21,12 +25,17 @@ class SupervisorDashboardController extends GetxController {
   Future<void> fetchDashboard() async {
     state.value = ViewState.loading;
     try {
-      final res  = await _api.get(ApiEndpoints.myDashboard);
+      final res  = await _api.get(ApiEndpoints.dashboard);
       final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
 
-      totalTrips.value          = data['totalTrips']          as int? ?? 0;
-      pendingTrips.value        = data['pendingTrips']         as int? ?? 0;
-      unreadNotifications.value = data['unreadNotifications']  as int? ?? 0;
+      totalOrders.value         = data['totalOrders']         as int? ?? 0;
+      activeOrders.value        = data['activeOrders']        as int? ?? 0;
+      pendingAssignments.value  = data['pendingAssignments']  as int? ?? 0;
+      todayPresent.value        = data['todayPresent']        as int? ?? 0;
+      unreadNotifications.value = data['unreadNotifications'] as int? ?? 0;
+
+      activeTrips.value = (data['activeTrips'] as List?)
+              ?.cast<Map<String, dynamic>>() ?? [];
 
       state.value = ViewState.success;
     } catch (_) {

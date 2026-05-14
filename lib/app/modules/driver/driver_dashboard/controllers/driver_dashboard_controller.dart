@@ -1,12 +1,10 @@
 import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
-import '../../../../../core/services/auth_service.dart';
 import '../../../../../core/utils/view_state.dart';
 
 class DriverDashboardController extends GetxController {
-  final _api  = Get.find<ApiClient>();
-  final _auth = Get.find<AuthService>();
+  final _api = Get.find<ApiClient>();
 
   final state = ViewState.initial.obs;
 
@@ -26,12 +24,7 @@ class DriverDashboardController extends GetxController {
   Future<void> fetchDashboard() async {
     state.value = ViewState.loading;
     try {
-      final role = _auth.user?.role ?? '';
-      const fieldRoles = {'DRIVER', 'CLEANER', 'SERVICE_MEN', 'STORE_KEEPER'};
-      final endpoint = fieldRoles.contains(role)
-          ? ApiEndpoints.myDashboard
-          : ApiEndpoints.dashboard;
-      final res  = await _api.get(endpoint);
+      final res  = await _api.get(ApiEndpoints.dashboard);
       final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
 
       isAttendanceMarked.value   = data['attendanceMarked']    as bool? ?? false;

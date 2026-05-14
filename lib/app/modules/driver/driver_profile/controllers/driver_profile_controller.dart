@@ -25,7 +25,7 @@ class DriverProfileController extends GetxController {
 
   Future<void> _fetchTrips() async {
     try {
-      final res  = await _api.get(ApiEndpoints.myDashboard);
+      final res  = await _api.get(ApiEndpoints.dashboard);
       final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
       totalTrips.value = data['totalTrips'] as int? ?? 0;
     } catch (_) {}
