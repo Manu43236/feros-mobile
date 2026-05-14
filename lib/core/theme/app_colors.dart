@@ -53,11 +53,12 @@ class AppColors {
   static const serviceDueSoon    = Color(0xFFF59E0B);
 
   // Status chips — Attendance
-  static const attPresent  = Color(0xFF16A34A);
-  static const attAbsent   = Color(0xFFDC2626);
-  static const attHalfDay  = Color(0xFFF59E0B);
-  static const attLeave    = Color(0xFF2563EB);
-  static const attHoliday  = Color(0xFF7C3AED);
+  static const attPresent   = Color(0xFF16A34A); // green
+  static const attAbsent    = Color(0xFFDC2626); // red
+  static const attHalfDay   = Color(0xFFF59E0B); // amber
+  static const attLeave     = Color(0xFF2563EB); // blue
+  static const attHoliday   = Color(0xFF7C3AED); // purple
+  static const attWeeklyOff = Color(0xFF64748B); // slate
 
   // Shimmer
   static const shimmerBase      = Color(0xFFE2E8F0);

@@ -43,85 +43,17 @@ class SupervisorAttendanceTab extends GetView<SupervisorAttendanceController> {
 
       return Column(
         children: [
-          // ── Date selector bar ────────────────────────────────────────
-          _DateBar(controller: controller),
+          // ── Search bar ───────────────────────────────────────────────
+          _SearchBar(controller: controller),
           const Divider(height: 1, color: AppColors.border),
 
-          // ── Summary row ──────────────────────────────────────────────
-          Obx(() {
-            final total   = controller.staff.length;
-            final marked  = controller.existing.length;
-            final pending = controller.pendingCount;
-            return Container(
-              color: AppColors.surface,
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-              child: Row(
-                children: [
-                  _StatPill(
-                    label: 'Total',
-                    value: total,
-                    color: AppColors.navy,
-                  ),
-                  const SizedBox(width: 8),
-                  _StatPill(
-                    label: 'Marked',
-                    value: marked,
-                    color: AppColors.success,
-                  ),
-                  const SizedBox(width: 8),
-                  _StatPill(
-                    label: 'Remaining',
-                    value: total - marked,
-                    color: AppColors.mutedText,
-                  ),
-                  const Spacer(),
-                  if (pending > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.orange.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                            color: AppColors.orange.withValues(alpha: 0.3)),
-                      ),
-                      child: Text(
-                        '$pending unsaved',
-                        style: AppTextStyles.caption.copyWith(
-                            color: AppColors.orange,
-                            fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                ],
-              ),
-            );
-          }),
+          // ── Date + Stats row ─────────────────────────────────────────
+          _DateStatsBar(controller: controller),
           const Divider(height: 1, color: AppColors.border),
 
           // ── Staff list ───────────────────────────────────────────────
           Expanded(
-            child: controller.staff.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.badge_outlined,
-                            size: 48, color: AppColors.mutedText),
-                        const SizedBox(height: 12),
-                        Text('No drivers or cleaners found',
-                            style: AppTextStyles.body
-                                .copyWith(color: AppColors.mutedText)),
-                      ],
-                    ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.only(bottom: 96),
-                    itemCount: controller.staff.length,
-                    separatorBuilder: (context, i) =>
-                        const Divider(height: 1, color: AppColors.border),
-                    itemBuilder: (context, i) =>
-                        _StaffRow(staff: controller.staff[i]),
-                  ),
+            child: _StaffList(controller: controller),
           ),
 
           // ── Submit button (sticky) ───────────────────────────────────
@@ -179,39 +111,73 @@ class SupervisorAttendanceTab extends GetView<SupervisorAttendanceController> {
   }
 }
 
-// ── Date Bar ──────────────────────────────────────────────────────────────────
-class _DateBar extends StatelessWidget {
+// ── Search Bar ────────────────────────────────────────────────────────────────
+class _SearchBar extends StatefulWidget {
   final SupervisorAttendanceController controller;
-  const _DateBar({required this.controller});
+  const _SearchBar({required this.controller});
+
+  @override
+  State<_SearchBar> createState() => _SearchBarState();
+}
+
+class _SearchBarState extends State<_SearchBar> {
+  final _textCtrl = TextEditingController();
+  bool _hasText = false;
+
+  @override
+  void dispose() {
+    _textCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onChanged(String v) {
+    widget.controller.searchQuery.value = v;
+    final has = v.isNotEmpty;
+    if (has != _hasText) setState(() => _hasText = has);
+  }
+
+  void _clear() {
+    _textCtrl.clear();
+    widget.controller.searchQuery.value = '';
+    setState(() => _hasText = false);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.surface,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      child: Obx(() => GestureDetector(
-            onTap: () => _pickDate(context),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.calendar_today_outlined,
-                    size: 16, color: AppColors.navy),
-                const SizedBox(width: 8),
-                Text(
-                  controller.dateLabel,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.navy,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                const Icon(Icons.keyboard_arrow_down,
-                    size: 18, color: AppColors.navy),
-              ],
-            ),
-          )),
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      child: TextField(
+        controller: _textCtrl,
+        onChanged: _onChanged,
+        style: AppTextStyles.body,
+        decoration: InputDecoration(
+          hintText: 'Search driver or cleaner…',
+          hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
+          prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.mutedText),
+          suffixIcon: _hasText
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 18, color: AppColors.mutedText),
+                  onPressed: _clear,
+                )
+              : null,
+          filled: true,
+          fillColor: AppColors.background,
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
     );
   }
+}
+
+// ── Date + Stats Bar (combined row) ───────────────────────────────────────────
+class _DateStatsBar extends StatelessWidget {
+  final SupervisorAttendanceController controller;
+  const _DateStatsBar({required this.controller});
 
   Future<void> _pickDate(BuildContext context) async {
     final picked = await showDatePicker(
@@ -230,9 +196,114 @@ class _DateBar extends StatelessWidget {
         child: child!,
       ),
     );
-    if (picked != null) {
-      controller.changeDate(picked);
-    }
+    if (picked != null) controller.changeDate(picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final total   = controller.staff.length;
+      final marked  = controller.existing.length;
+      final pending = controller.pendingCount;
+
+      return Container(
+        color: AppColors.surface,
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+        child: Row(
+          children: [
+            // Date picker (left)
+            GestureDetector(
+              onTap: () => _pickDate(context),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.calendar_today_outlined,
+                      size: 15, color: AppColors.navy),
+                  const SizedBox(width: 6),
+                  Text(
+                    controller.dateLabel,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.navy,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.keyboard_arrow_down,
+                      size: 16, color: AppColors.navy),
+                ],
+              ),
+            ),
+            const Spacer(),
+            // Stats (right)
+            _StatPill(label: 'Total',     value: total,          color: AppColors.navy),
+            const SizedBox(width: 12),
+            _StatPill(label: 'Marked',    value: marked,         color: AppColors.success),
+            const SizedBox(width: 12),
+            _StatPill(label: 'Remaining', value: total - marked, color: AppColors.mutedText),
+            if (pending > 0) ...[
+              const SizedBox(width: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.orange.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  '$pending unsaved',
+                  style: AppTextStyles.caption.copyWith(
+                      color: AppColors.orange, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    });
+  }
+}
+
+// ── Staff List ────────────────────────────────────────────────────────────────
+class _StaffList extends StatelessWidget {
+  final SupervisorAttendanceController controller;
+  const _StaffList({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final list = controller.filteredStaff;
+      if (list.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                controller.searchQuery.value.isNotEmpty
+                    ? Icons.search_off_rounded
+                    : Icons.badge_outlined,
+                size: 48,
+                color: AppColors.mutedText,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                controller.searchQuery.value.isNotEmpty
+                    ? 'No staff found'
+                    : 'No drivers or cleaners found',
+                style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+              ),
+            ],
+          ),
+        );
+      }
+      return ListView.separated(
+        padding: const EdgeInsets.only(bottom: 96),
+        itemCount: list.length,
+        separatorBuilder: (context, i) =>
+            const Divider(height: 1, color: AppColors.border),
+        itemBuilder: (context, i) => _StaffRow(staff: list[i]),
+      );
+    });
   }
 }
 
@@ -417,22 +488,24 @@ class _StaffRow extends StatelessWidget {
 
   Color _typeColor(String name) {
     switch (name) {
-      case 'PRESENT':  return AppColors.attPresent;
-      case 'ABSENT':   return AppColors.attAbsent;
-      case 'HALF_DAY': return AppColors.attHalfDay;
-      case 'LEAVE':    return AppColors.attLeave;
-      case 'HOLIDAY':  return AppColors.attHoliday;
-      default:         return AppColors.mutedText;
+      case 'PRESENT':    return AppColors.attPresent;
+      case 'ABSENT':     return AppColors.attAbsent;
+      case 'HALF_DAY':   return AppColors.attHalfDay;
+      case 'LEAVE':      return AppColors.attLeave;
+      case 'HOLIDAY':    return AppColors.attHoliday;
+      case 'WEEKLY_OFF': return AppColors.attWeeklyOff;
+      default:           return AppColors.mutedText;
     }
   }
 
   String _typeLabel(String name) {
     switch (name) {
-      case 'PRESENT':  return 'Present';
-      case 'ABSENT':   return 'Absent';
-      case 'HALF_DAY': return 'Half Day';
-      case 'LEAVE':    return 'Leave';
-      case 'HOLIDAY':  return 'Holiday';
+      case 'PRESENT':    return 'Present';
+      case 'ABSENT':     return 'Absent';
+      case 'HALF_DAY':   return 'Half Day';
+      case 'LEAVE':      return 'Leave';
+      case 'HOLIDAY':    return 'Holiday';
+      case 'WEEKLY_OFF': return 'Weekly Off';
       default:
         return name
             .split('_')

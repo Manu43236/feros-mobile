@@ -22,6 +22,15 @@ class SupervisorAttendanceController extends GetxController {
   final existing        = <int, Map<String, dynamic>>{}.obs;
 
   final isSubmitting = false.obs;
+  final searchQuery  = ''.obs;
+
+  List<Map<String, dynamic>> get filteredStaff {
+    final q = searchQuery.value.trim().toLowerCase();
+    if (q.isEmpty) return staff;
+    return staff
+        .where((s) => (s['name'] as String? ?? '').toLowerCase().contains(q))
+        .toList();
+  }
 
   static final _dateFmt  = DateFormat('yyyy-MM-dd');
   static final _labelFmt = DateFormat('dd MMM yyyy, EEE');
