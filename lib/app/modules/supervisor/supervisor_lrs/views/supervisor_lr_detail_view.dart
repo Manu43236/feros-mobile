@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
 import '../../../../../core/utils/date_utils.dart';
+import '../../../../../core/utils/string_utils.dart';
 import '../../../../../core/widgets/pulsing_dot.dart';
 import '../controllers/supervisor_lr_detail_controller.dart';
 
@@ -97,6 +99,10 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
 
               // ── Route + Details Card ───────────────────────────────────
               _InfoCard(lr: lr),
+              const SizedBox(height: 12),
+
+              // ── Driver Card ────────────────────────────────────────────
+              _DriverCard(lr: lr),
               const SizedBox(height: 12),
 
               // ── Weight Stats Card ──────────────────────────────────────
@@ -332,6 +338,96 @@ class _InfoCard extends StatelessWidget {
                 style: AppTextStyles.body
                     .copyWith(color: AppColors.bodyText)),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+// ── Driver Card ───────────────────────────────────────────────────────────────
+class _DriverCard extends StatelessWidget {
+  final Map<String, dynamic> lr;
+  const _DriverCard({required this.lr});
+
+  @override
+  Widget build(BuildContext context) {
+    final name  = lr['driverName']  as String?;
+    final phone = lr['driverPhone'] as String?;
+
+    if (name == null && phone == null) return const SizedBox.shrink();
+
+    return _Card(
+      child: Row(
+        children: [
+          // Avatar
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: AppColors.navy.withValues(alpha: 0.1),
+            child: Text(
+              FerosStringUtils.initials(name ?? '?'),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.navy,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+
+          // Name + phone
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name ?? '—',
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: AppColors.bodyText),
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    const Icon(Icons.badge_outlined,
+                        size: 13, color: AppColors.mutedText),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Driver',
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.mutedText),
+                    ),
+                    if (phone != null) ...[
+                      const SizedBox(width: 10),
+                      const Icon(Icons.phone_outlined,
+                          size: 13, color: AppColors.mutedText),
+                      const SizedBox(width: 4),
+                      Text(
+                        phone,
+                        style: AppTextStyles.caption
+                            .copyWith(color: AppColors.mutedText),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Call button
+          if (phone != null)
+            GestureDetector(
+              onTap: () => launchUrl(Uri.parse('tel:$phone')),
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                      color: AppColors.success.withValues(alpha: 0.3)),
+                ),
+                child: const Icon(Icons.call,
+                    color: AppColors.success, size: 20),
+              ),
+            ),
         ],
       ),
     );
