@@ -279,7 +279,7 @@ class _SupervisorDrawer extends StatelessWidget {
                 const SizedBox(height: 4),
                 _DrawerSectionLabel(label: 'Fleet & Finance'),
                 _DrawerTile(
-                  icon: Icons.directions_truck_outlined,
+                  icon: Icons.garage_outlined,
                   label: 'Vehicles',
                   onTap: () {
                     Navigator.of(context).pop();
