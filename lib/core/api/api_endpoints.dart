@@ -55,6 +55,7 @@ class ApiEndpoints {
   static const invoices                   = '/invoices';
   static String invoiceById(id)           => '/invoices/$id';
   static String invoicesByClient(cId)     => '/invoices/client/$cId';
+  static String invoicesByOrder(orderId)  => '/invoices/order/$orderId';
   static String invoiceStatus(id)         => '/invoices/$id/status';
   static String invoicePayments(id)       => '/invoices/$id/payments';
 

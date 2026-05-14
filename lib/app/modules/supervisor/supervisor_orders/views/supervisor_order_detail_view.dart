@@ -14,170 +14,252 @@ class SupervisorOrderDetailView
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.navy,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
-          onPressed: Get.back,
-        ),
-        title: Obx(() {
-          final o = controller.order.value;
-          return Text(
-            o != null ? o['orderNumber'] as String? ?? 'Order Detail' : 'Order Detail',
-            style: const TextStyle(
-              color: Colors.white,
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
-          );
-        }),
-      ),
       body: Obx(() {
         if (controller.state.value == ViewState.loading) {
-          return const Center(
-              child: CircularProgressIndicator(color: AppColors.navy));
+          return const Scaffold(
+            backgroundColor: AppColors.background,
+            body: Center(
+                child: CircularProgressIndicator(color: AppColors.navy)),
+          );
         }
         if (controller.state.value == ViewState.error) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-                const SizedBox(height: 12),
-                Text('Failed to load order',
-                    style:
-                        AppTextStyles.body.copyWith(color: AppColors.mutedText)),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: controller.fetchOrder,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.navy,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
+          return Scaffold(
+            backgroundColor: AppColors.background,
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline,
+                      size: 48, color: AppColors.error),
+                  const SizedBox(height: 12),
+                  Text('Failed to load order',
+                      style: AppTextStyles.body
+                          .copyWith(color: AppColors.mutedText)),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: controller.fetchAll,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.navy,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Retry'),
                   ),
-                  child: const Text('Retry'),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         }
 
         final o = controller.order.value!;
-        return RefreshIndicator(
-          color: AppColors.navy,
-          onRefresh: controller.fetchOrder,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-            children: [
-              _StatusBanner(order: o),
-              const SizedBox(height: 16),
-              _OrderInfoSection(order: o),
-              const SizedBox(height: 16),
-              _RouteSection(order: o),
-              const SizedBox(height: 16),
-              _AllocationsSection(order: o),
-              if (_hasNotes(o)) ...[
-                const SizedBox(height: 16),
-                _NotesSection(order: o),
+        return DefaultTabController(
+          length: 3,
+          child: Scaffold(
+            backgroundColor: AppColors.background,
+            body: NestedScrollView(
+              headerSliverBuilder: (context2, _) => [
+                _OrderBannerSliver(order: o),
+                const SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _TabBarDelegate(),
+                ),
               ],
-            ],
+              body: TabBarView(
+                children: [
+                  _AssignmentsTab(order: o),
+                  _LrsTab(controller: controller),
+                  _InvoicesTab(controller: controller),
+                ],
+              ),
+            ),
           ),
         );
       }),
     );
   }
-
-  bool _hasNotes(Map<String, dynamic> o) =>
-      (o['specialInstructions'] as String?)?.isNotEmpty == true ||
-      (o['remarks'] as String?)?.isNotEmpty == true ||
-      (o['ewayBillNumber'] as String?)?.isNotEmpty == true;
 }
 
-// ── Status Banner ─────────────────────────────────────────────────────────────
-class _StatusBanner extends StatelessWidget {
+// ── Banner Sliver ─────────────────────────────────────────────────────────────
+class _OrderBannerSliver extends StatelessWidget {
   final Map<String, dynamic> order;
-  const _StatusBanner({required this.order});
+  const _OrderBannerSliver({required this.order});
 
   @override
   Widget build(BuildContext context) {
-    final status        = order['orderStatus']        as String? ?? '';
-    final paymentStatus = order['orderPaymentStatus'] as String? ?? '';
-    final color         = _orderColor(status);
+    final orderNumber   = order['orderNumber']          as String? ?? '—';
+    final clientName    = order['clientName']           as String? ?? '—';
+    final status        = order['orderStatus']          as String? ?? '';
+    final payStatus     = order['orderPaymentStatus']   as String? ?? '';
+    final fromCity      = order['sourceCityName']       as String? ?? '—';
+    final toCity        = order['destinationCityName']  as String? ?? '—';
+    final totalWeight   = order['totalWeight'];
+    final weightFulfilled = order['totalWeightFulfilled'];
+    final remaining     = order['remainingWeight'];
+    final orderDate     = order['orderDate']            as String?;
+    final eta           = order['expectedDeliveryDate'] as String?;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(2),
-            ),
+    final statusColor = _orderColor(status);
+
+    return SliverToBoxAdapter(
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF1E3A5F), Color(0xFF0F2137)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          const SizedBox(width: 12),
-          Expanded(
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Order Status',
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.mutedText)),
-                const SizedBox(height: 2),
-                Text(_orderLabel(status),
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(color: color, fontWeight: FontWeight.w700)),
+                // Back + order number row
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: Get.back,
+                      child: const Icon(Icons.arrow_back_ios_new,
+                          color: Colors.white, size: 18),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        orderNumber,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                    // Status badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                            color: statusColor.withValues(alpha: 0.5)),
+                      ),
+                      child: Text(
+                        _orderLabel(status),
+                        style: AppTextStyles.caption.copyWith(
+                          color: statusColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Client name
+                Text(
+                  clientName,
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: Colors.white.withValues(alpha: 0.9)),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+
+                // Route
+                Row(
+                  children: [
+                    const Icon(Icons.radio_button_checked,
+                        size: 12, color: Color(0xFF93C5FD)),
+                    const SizedBox(width: 6),
+                    Text(fromCity,
+                        style: AppTextStyles.caption.copyWith(
+                            color: Colors.white.withValues(alpha: 0.7))),
+                    const SizedBox(width: 6),
+                    const Icon(Icons.arrow_forward,
+                        size: 12, color: Color(0xFF93C5FD)),
+                    const SizedBox(width: 6),
+                    const Icon(Icons.location_on,
+                        size: 12, color: Color(0xFFFB923C)),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(toCity,
+                          style: AppTextStyles.caption.copyWith(
+                              color: Colors.white.withValues(alpha: 0.7)),
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Stat chips row
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      if (totalWeight != null)
+                        _BannerChip(
+                          icon: Icons.scale_outlined,
+                          label: '${totalWeight}T total',
+                          sub: weightFulfilled != null
+                              ? '${weightFulfilled}T done'
+                              : null,
+                        ),
+                      if (remaining != null && double.tryParse(remaining.toString())! > 0)
+                        _BannerChip(
+                          icon: Icons.pending_outlined,
+                          label: '${remaining}T left',
+                        ),
+                      if (orderDate != null)
+                        _BannerChip(
+                          icon: Icons.calendar_today_outlined,
+                          label: FerosDateUtils.formatDate(orderDate),
+                          sub: 'Order date',
+                        ),
+                      if (eta != null)
+                        _BannerChip(
+                          icon: Icons.local_shipping_outlined,
+                          label: FerosDateUtils.formatDate(eta),
+                          sub: 'Expected ETA',
+                        ),
+                      _BannerChip(
+                        icon: Icons.payments_outlined,
+                        label: _paymentLabel(payStatus),
+                        color: _paymentColor(payStatus),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text('Payment',
-                  style:
-                      AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-              const SizedBox(height: 2),
-              Text(_paymentLabel(paymentStatus),
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: _paymentColor(paymentStatus),
-                    fontWeight: FontWeight.w600,
-                  )),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Color _orderColor(String s) {
     switch (s) {
-      case 'PENDING':             return AppColors.orderPending;
-      case 'PARTIALLY_ASSIGNED':  return AppColors.info;
-      case 'FULLY_ASSIGNED':      return AppColors.lrLoaded;
-      case 'IN_TRANSIT':          return AppColors.lrInTransit;
-      case 'PARTIALLY_DELIVERED': return AppColors.warning;
-      case 'DELIVERED':           return AppColors.orderCompleted;
-      case 'CANCELLED':           return AppColors.orderCancelled;
-      default:                    return AppColors.mutedText;
+      case 'PENDING':             return const Color(0xFFFBBF24);
+      case 'PARTIALLY_ASSIGNED':  return const Color(0xFF60A5FA);
+      case 'FULLY_ASSIGNED':      return const Color(0xFFA78BFA);
+      case 'IN_TRANSIT':          return const Color(0xFFFB923C);
+      case 'PARTIALLY_DELIVERED': return const Color(0xFFFCD34D);
+      case 'DELIVERED':           return const Color(0xFF4ADE80);
+      case 'CANCELLED':           return const Color(0xFFF87171);
+      default:                    return Colors.white;
     }
   }
 
   String _orderLabel(String s) {
     switch (s) {
       case 'PENDING':             return 'Pending';
-      case 'PARTIALLY_ASSIGNED':  return 'Partially Assigned';
-      case 'FULLY_ASSIGNED':      return 'Fully Assigned';
+      case 'PARTIALLY_ASSIGNED':  return 'Part. Assigned';
+      case 'FULLY_ASSIGNED':      return 'Assigned';
       case 'IN_TRANSIT':          return 'In Transit';
-      case 'PARTIALLY_DELIVERED': return 'Partially Delivered';
+      case 'PARTIALLY_DELIVERED': return 'Part. Delivered';
       case 'DELIVERED':           return 'Delivered';
       case 'CANCELLED':           return 'Cancelled';
       default:                    return s;
@@ -186,126 +268,112 @@ class _StatusBanner extends StatelessWidget {
 
   Color _paymentColor(String s) {
     switch (s) {
-      case 'PAID':         return AppColors.success;
-      case 'PARTIAL':      return AppColors.warning;
-      case 'UNPAID':       return AppColors.error;
-      default:             return AppColors.mutedText;
+      case 'PAID':    return const Color(0xFF4ADE80);
+      case 'PARTIAL': return const Color(0xFFFCD34D);
+      default:        return const Color(0xFFF87171);
     }
   }
 
   String _paymentLabel(String s) {
     switch (s) {
-      case 'PAID':         return 'Paid';
-      case 'PARTIAL':      return 'Partial';
-      case 'UNPAID':       return 'Unpaid';
-      default:             return s;
+      case 'PAID':    return 'Paid';
+      case 'PARTIAL': return 'Part. Paid';
+      default:        return 'Unpaid';
     }
   }
 }
 
-// ── Order Info Section ────────────────────────────────────────────────────────
-class _OrderInfoSection extends StatelessWidget {
-  final Map<String, dynamic> order;
-  const _OrderInfoSection({required this.order});
+class _BannerChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? sub;
+  final Color? color;
+  const _BannerChip(
+      {required this.icon, required this.label, this.sub, this.color});
 
   @override
   Widget build(BuildContext context) {
-    final totalWeight     = order['totalWeight'];
-    final weightFulfilled = order['totalWeightFulfilled'];
-    final remaining       = order['remainingWeight'];
-
-    return _Card(
-      title: 'Order Information',
-      children: [
-        _InfoRow(label: 'Client',        value: order['clientName']           as String? ?? '—'),
-        _InfoRow(label: 'Material',      value: order['materialTypeName']     as String? ?? '—'),
-        _InfoRow(label: 'Order Date',    value: FerosDateUtils.formatDate(order['orderDate'] as String?)),
-        _InfoRow(label: 'Expected ETA',  value: FerosDateUtils.formatDate(order['expectedDeliveryDate'] as String?)),
-        if (totalWeight != null)
-          _InfoRow(label: 'Total Weight', value: '${totalWeight}T'),
-        if (weightFulfilled != null)
-          _InfoRow(label: 'Fulfilled',    value: '${weightFulfilled}T'),
-        if (remaining != null)
-          _InfoRow(label: 'Remaining',    value: '${remaining}T'),
-        _InfoRow(label: 'Created By',    value: order['createdByName']        as String? ?? '—'),
-      ],
-    );
-  }
-}
-
-// ── Route Section ─────────────────────────────────────────────────────────────
-class _RouteSection extends StatelessWidget {
-  final Map<String, dynamic> order;
-  const _RouteSection({required this.order});
-
-  @override
-  Widget build(BuildContext context) {
-    final fromCity    = order['sourceCityName']      as String? ?? '—';
-    final fromState   = order['sourceStateName']     as String? ?? '';
-    final fromAddr    = order['sourceAddress']       as String?;
-    final toCity      = order['destinationCityName'] as String? ?? '—';
-    final toState     = order['destinationStateName']as String? ?? '';
-    final toAddr      = order['destinationAddress']  as String?;
-    final routeName   = order['routeName']           as String?;
-
-    return _Card(
-      title: 'Route',
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Left side — icons + line
-            Column(
-              children: [
-                const Icon(Icons.radio_button_checked, size: 16, color: AppColors.navy),
-                Container(width: 2, height: 36, color: AppColors.border),
-                const Icon(Icons.location_on, size: 16, color: AppColors.orange),
-              ],
-            ),
-            const SizedBox(width: 12),
-            // Right side — from / to
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('$fromCity${fromState.isNotEmpty ? ', $fromState' : ''}',
-                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.bodyText)),
-                  if (fromAddr != null && fromAddr.isNotEmpty)
-                    Text(fromAddr,
-                        style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-                  const SizedBox(height: 28),
-                  Text('$toCity${toState.isNotEmpty ? ', $toState' : ''}',
-                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.bodyText)),
-                  if (toAddr != null && toAddr.isNotEmpty)
-                    Text(toAddr,
-                        style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-                ],
-              ),
-            ),
-          ],
-        ),
-        if (routeName != null && routeName.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          const Divider(height: 1, color: AppColors.border),
-          const SizedBox(height: 12),
-          Row(
+    final c = color ?? Colors.white.withValues(alpha: 0.9);
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+        border:
+            Border.all(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: c),
+          const SizedBox(width: 6),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.route_outlined, size: 16, color: AppColors.mutedText),
-              const SizedBox(width: 8),
-              Text(routeName,
-                  style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+              Text(label,
+                  style: AppTextStyles.caption
+                      .copyWith(color: c, fontWeight: FontWeight.w600)),
+              if (sub != null)
+                Text(sub!,
+                    style: AppTextStyles.caption.copyWith(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 10)),
             ],
           ),
         ],
-      ],
+      ),
     );
   }
 }
 
-// ── Allocations Section ───────────────────────────────────────────────────────
-class _AllocationsSection extends StatelessWidget {
+// ── Tab Bar Delegate ──────────────────────────────────────────────────────────
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  const _TabBarDelegate();
+
+  @override
+  double get minExtent => 48;
+  @override
+  double get maxExtent => 48;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: AppColors.surface,
+      child: const TabBar(
+        labelColor: AppColors.navy,
+        unselectedLabelColor: AppColors.mutedText,
+        indicatorColor: AppColors.navy,
+        indicatorWeight: 2.5,
+        labelStyle: TextStyle(
+          fontFamily: 'Inter',
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontFamily: 'Inter',
+          fontWeight: FontWeight.w400,
+          fontSize: 13,
+        ),
+        tabs: [
+          Tab(text: 'Assignments'),
+          Tab(text: 'LRs'),
+          Tab(text: 'Invoices'),
+        ],
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
+      false;
+}
+
+// ── Assignments Tab ───────────────────────────────────────────────────────────
+class _AssignmentsTab extends StatelessWidget {
   final Map<String, dynamic> order;
-  const _AllocationsSection({required this.order});
+  const _AssignmentsTab({required this.order});
 
   @override
   Widget build(BuildContext context) {
@@ -314,31 +382,25 @@ class _AllocationsSection extends StatelessWidget {
         [];
 
     if (allocations.isEmpty) {
-      return _Card(
-        title: 'Vehicle Allocations',
-        children: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text('No vehicles assigned yet',
-                  style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
-            ),
-          ),
-        ],
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.local_shipping_outlined,
+                size: 48, color: AppColors.mutedText),
+            const SizedBox(height: 12),
+            Text('No vehicles assigned',
+                style:
+                    AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+          ],
+        ),
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Text('Vehicle Allocations',
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.navy, fontWeight: FontWeight.w700)),
-        ),
-        ...allocations.map((a) => _AllocationCard(allocation: a)),
-      ],
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      itemCount: allocations.length,
+      itemBuilder: (_, i) => _AllocationCard(allocation: allocations[i]),
     );
   }
 }
@@ -349,13 +411,13 @@ class _AllocationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vehicle    = allocation['vehicleRegistrationNumber'] as String? ?? '—';
-    final type       = allocation['vehicleTypeName']           as String?;
-    final weight     = allocation['allocatedWeight'];
-    final status     = allocation['allocationStatus']          as String? ?? '';
-    final loadDate   = allocation['expectedLoadDate']          as String?;
-    final delivDate  = allocation['expectedDeliveryDate']      as String?;
-    final staffList  = (allocation['staffAllocations'] as List?)
+    final vehicle   = allocation['vehicleRegistrationNumber'] as String? ?? '—';
+    final type      = allocation['vehicleTypeName']           as String?;
+    final weight    = allocation['allocatedWeight'];
+    final status    = allocation['allocationStatus']          as String? ?? '';
+    final loadDate  = allocation['expectedLoadDate']          as String?;
+    final delivDate = allocation['expectedDeliveryDate']      as String?;
+    final staffList = (allocation['staffAllocations'] as List?)
             ?.cast<Map<String, dynamic>>() ??
         [];
 
@@ -371,13 +433,14 @@ class _AllocationCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Header ────────────────────────────────────────────
+          // Header
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: const BoxDecoration(
               color: AppColors.background,
               borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
+                  BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
               children: [
@@ -389,8 +452,9 @@ class _AllocationCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(vehicle,
-                          style: AppTextStyles.bodyMedium
-                              .copyWith(color: AppColors.navy, fontWeight: FontWeight.w700)),
+                          style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.navy,
+                              fontWeight: FontWeight.w700)),
                       if (type != null)
                         Text(type,
                             style: AppTextStyles.caption
@@ -399,47 +463,43 @@ class _AllocationCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                    border: Border.all(
+                        color: statusColor.withValues(alpha: 0.3)),
                   ),
-                  child: Text(
-                    _statusLabel(status),
-                    style: AppTextStyles.caption.copyWith(
-                      color: statusColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: Text(_statusLabel(status),
+                      style: AppTextStyles.caption.copyWith(
+                          color: statusColor,
+                          fontWeight: FontWeight.w600)),
                 ),
               ],
             ),
           ),
 
-          // ── Body ──────────────────────────────────────────────
+          // Body
           Padding(
             padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 6,
                   children: [
-                    if (weight != null) ...[
+                    if (weight != null)
                       _Chip(Icons.scale_outlined, '${weight}T'),
-                      const SizedBox(width: 8),
-                    ],
                     if (loadDate != null)
                       _Chip(Icons.upload_outlined,
                           'Load: ${FerosDateUtils.formatDate(loadDate)}'),
+                    if (delivDate != null)
+                      _Chip(Icons.download_outlined,
+                          'ETA: ${FerosDateUtils.formatDate(delivDate)}'),
                   ],
                 ),
-                if (delivDate != null) ...[
-                  const SizedBox(height: 6),
-                  _Chip(Icons.download_outlined,
-                      'ETA: ${FerosDateUtils.formatDate(delivDate)}'),
-                ],
-
                 if (staffList.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   const Divider(height: 1, color: AppColors.border),
@@ -491,7 +551,7 @@ class _StaffRow extends StatelessWidget {
     final name = staff['userName'] as String? ?? '—';
     final role = staff['roleName'] as String? ?? '';
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
           CircleAvatar(
@@ -500,9 +560,7 @@ class _StaffRow extends StatelessWidget {
             child: Text(
               name.isNotEmpty ? name[0].toUpperCase() : '?',
               style: AppTextStyles.caption.copyWith(
-                color: AppColors.navy,
-                fontWeight: FontWeight.w700,
-              ),
+                  color: AppColors.navy, fontWeight: FontWeight.w700),
             ),
           ),
           const SizedBox(width: 10),
@@ -536,99 +594,355 @@ class _StaffRow extends StatelessWidget {
   }
 }
 
-// ── Notes Section ─────────────────────────────────────────────────────────────
-class _NotesSection extends StatelessWidget {
-  final Map<String, dynamic> order;
-  const _NotesSection({required this.order});
+// ── LRs Tab ───────────────────────────────────────────────────────────────────
+class _LrsTab extends StatelessWidget {
+  final SupervisorOrderDetailController controller;
+  const _LrsTab({required this.controller});
 
   @override
   Widget build(BuildContext context) {
-    final instructions = order['specialInstructions'] as String?;
-    final remarks      = order['remarks']             as String?;
-    final eWayNumber   = order['ewayBillNumber']      as String?;
-    final eWayDate     = order['ewayBillDate']        as String?;
-    final eWayExpiry   = order['ewayBillValidUpto']   as String?;
+    final lrs = controller.lrs;
+    if (lrs.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.receipt_long_outlined,
+                size: 48, color: AppColors.mutedText),
+            const SizedBox(height: 12),
+            Text('No LRs created yet',
+                style:
+                    AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+          ],
+        ),
+      );
+    }
 
-    return _Card(
-      title: 'Notes & eWay Bill',
-      children: [
-        if (instructions != null && instructions.isNotEmpty)
-          _InfoRow(label: 'Special Instructions', value: instructions),
-        if (remarks != null && remarks.isNotEmpty)
-          _InfoRow(label: 'Remarks', value: remarks),
-        if (eWayNumber != null && eWayNumber.isNotEmpty) ...[
-          _InfoRow(label: 'eWay Bill No.', value: eWayNumber),
-          if (eWayDate != null)
-            _InfoRow(label: 'eWay Date',   value: FerosDateUtils.formatDate(eWayDate)),
-          if (eWayExpiry != null)
-            _InfoRow(label: 'Valid Upto',  value: FerosDateUtils.formatDate(eWayExpiry)),
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      itemCount: lrs.length,
+      itemBuilder: (_, i) => _LrCard(lr: lrs[i]),
+    );
+  }
+}
+
+class _LrCard extends StatelessWidget {
+  final Map<String, dynamic> lr;
+  const _LrCard({required this.lr});
+
+  @override
+  Widget build(BuildContext context) {
+    final lrNumber  = lr['lrNumber']                  as String? ?? '—';
+    final vehicle   = lr['vehicleRegistrationNumber'] as String? ?? '—';
+    final status    = lr['lrStatus']                  as String? ?? '';
+    final fromCity  = lr['fromCity']                  as String? ?? '—';
+    final toCity    = lr['toCity']                    as String? ?? '—';
+    final weight    = lr['allocatedWeight'];
+    final lrDate    = lr['lrDate']                    as String?;
+
+    final statusColor = _lrColor(status);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(lrNumber,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w700)),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border:
+                      Border.all(color: statusColor.withValues(alpha: 0.3)),
+                ),
+                child: Text(_lrLabel(status),
+                    style: AppTextStyles.caption.copyWith(
+                        color: statusColor, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.local_shipping_outlined,
+                  size: 13, color: AppColors.mutedText),
+              const SizedBox(width: 4),
+              Text(vehicle,
+                  style:
+                      AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Icon(Icons.radio_button_checked,
+                  size: 12, color: AppColors.navy),
+              const SizedBox(width: 4),
+              Expanded(
+                  child: Text(fromCity,
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.bodyText),
+                      overflow: TextOverflow.ellipsis)),
+              const SizedBox(width: 8),
+              const Icon(Icons.arrow_forward,
+                  size: 12, color: AppColors.mutedText),
+              const SizedBox(width: 8),
+              const Icon(Icons.location_on,
+                  size: 12, color: AppColors.orange),
+              const SizedBox(width: 4),
+              Expanded(
+                  child: Text(toCity,
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.bodyText),
+                      overflow: TextOverflow.ellipsis)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Divider(height: 1, color: AppColors.border),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              if (weight != null) ...[
+                _Chip(Icons.scale_outlined, '${weight}T'),
+                const SizedBox(width: 12),
+              ],
+              if (lrDate != null)
+                _Chip(Icons.calendar_today_outlined,
+                    FerosDateUtils.formatDate(lrDate)),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+
+  Color _lrColor(String s) {
+    switch (s) {
+      case 'CREATED':       return AppColors.lrCreated;
+      case 'WEIGHT_LOADED': return AppColors.lrLoaded;
+      case 'IN_TRANSIT':    return AppColors.lrInTransit;
+      case 'DELIVERED':     return AppColors.lrDelivered;
+      case 'INVOICED':      return AppColors.lrInvoiced;
+      default:              return AppColors.mutedText;
+    }
+  }
+
+  String _lrLabel(String s) {
+    switch (s) {
+      case 'CREATED':       return 'Created';
+      case 'WEIGHT_LOADED': return 'Loaded';
+      case 'IN_TRANSIT':    return 'In Transit';
+      case 'DELIVERED':     return 'Delivered';
+      case 'INVOICED':      return 'Invoiced';
+      default:              return s;
+    }
+  }
+}
+
+// ── Invoices Tab ──────────────────────────────────────────────────────────────
+class _InvoicesTab extends StatelessWidget {
+  final SupervisorOrderDetailController controller;
+  const _InvoicesTab({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final invoices = controller.invoices;
+    if (invoices.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.receipt_outlined,
+                size: 48, color: AppColors.mutedText),
+            const SizedBox(height: 12),
+            Text('No invoices raised yet',
+                style:
+                    AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+            const SizedBox(height: 4),
+            Text('Invoices appear here once the order is billed',
+                style: AppTextStyles.caption
+                    .copyWith(color: AppColors.mutedText),
+                textAlign: TextAlign.center),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      itemCount: invoices.length,
+      itemBuilder: (_, i) => _InvoiceCard(invoice: invoices[i]),
+    );
+  }
+}
+
+class _InvoiceCard extends StatelessWidget {
+  final Map<String, dynamic> invoice;
+  const _InvoiceCard({required this.invoice});
+
+  @override
+  Widget build(BuildContext context) {
+    final invoiceNumber = invoice['invoiceNumber'] as String? ?? '—';
+    final status        = invoice['invoiceStatus'] as String? ?? '';
+    final invoiceDate   = invoice['invoiceDate']   as String?;
+    final dueDate       = invoice['dueDate']        as String?;
+    final totalAmount   = invoice['totalAmount'];
+    final balanceDue    = invoice['balanceDue'];
+    final amountPaid    = invoice['amountPaid'];
+
+    final statusColor = _invoiceColor(status);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Invoice number + status
+          Row(
+            children: [
+              Expanded(
+                child: Text(invoiceNumber,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w700)),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border:
+                      Border.all(color: statusColor.withValues(alpha: 0.3)),
+                ),
+                child: Text(_invoiceLabel(status),
+                    style: AppTextStyles.caption.copyWith(
+                        color: statusColor, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: AppColors.border),
+          const SizedBox(height: 10),
+
+          // Amount row
+          Row(
+            children: [
+              Expanded(
+                child: _AmountCell(
+                    label: 'Total', value: totalAmount, color: AppColors.navy),
+              ),
+              Expanded(
+                child: _AmountCell(
+                    label: 'Paid',
+                    value: amountPaid,
+                    color: AppColors.success),
+              ),
+              Expanded(
+                child: _AmountCell(
+                    label: 'Balance',
+                    value: balanceDue,
+                    color: balanceDue != null &&
+                            double.tryParse(balanceDue.toString())! > 0
+                        ? AppColors.error
+                        : AppColors.success),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Dates
+          Row(
+            children: [
+              if (invoiceDate != null) ...[
+                _Chip(Icons.calendar_today_outlined,
+                    'Issued: ${FerosDateUtils.formatDate(invoiceDate)}'),
+                const SizedBox(width: 12),
+              ],
+              if (dueDate != null)
+                _Chip(Icons.event_outlined,
+                    'Due: ${FerosDateUtils.formatDate(dueDate)}'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _invoiceColor(String s) {
+    switch (s) {
+      case 'DRAFT':          return AppColors.mutedText;
+      case 'SENT':           return AppColors.info;
+      case 'PARTIALLY_PAID': return AppColors.warning;
+      case 'PAID':           return AppColors.success;
+      case 'OVERDUE':        return AppColors.error;
+      case 'CANCELLED':      return AppColors.error;
+      default:               return AppColors.mutedText;
+    }
+  }
+
+  String _invoiceLabel(String s) {
+    switch (s) {
+      case 'DRAFT':          return 'Draft';
+      case 'SENT':           return 'Sent';
+      case 'PARTIALLY_PAID': return 'Part. Paid';
+      case 'PAID':           return 'Paid';
+      case 'OVERDUE':        return 'Overdue';
+      case 'CANCELLED':      return 'Cancelled';
+      default:               return s;
+    }
+  }
+}
+
+class _AmountCell extends StatelessWidget {
+  final String label;
+  final dynamic value;
+  final Color color;
+  const _AmountCell(
+      {required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final amount = value != null
+        ? '₹${double.tryParse(value.toString())?.toStringAsFixed(0) ?? value}'
+        : '₹0';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style:
+                AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+        const SizedBox(height: 2),
+        Text(amount,
+            style: AppTextStyles.bodyMedium
+                .copyWith(color: color, fontWeight: FontWeight.w700)),
       ],
     );
   }
 }
 
 // ── Shared Widgets ────────────────────────────────────────────────────────────
-class _Card extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-  const _Card({required this.title, required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title,
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.navy, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 12),
-          const Divider(height: 1, color: AppColors.border),
-          const SizedBox(height: 12),
-          ...children,
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  const _InfoRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(label,
-                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-          ),
-          Expanded(
-            child: Text(value,
-                style: AppTextStyles.caption
-                    .copyWith(color: AppColors.bodyText, fontWeight: FontWeight.w500)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _Chip extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -639,7 +953,7 @@ class _Chip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 13, color: AppColors.mutedText),
+        Icon(icon, size: 12, color: AppColors.mutedText),
         const SizedBox(width: 4),
         Text(label,
             style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
