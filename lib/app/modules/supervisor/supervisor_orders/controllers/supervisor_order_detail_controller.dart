@@ -14,7 +14,8 @@ class SupervisorOrderDetailController extends GetxController {
   final state        = ViewState.loading.obs;
   final order        = Rxn<Map<String, dynamic>>();
   final lrs          = <Map<String, dynamic>>[].obs;
-  final pdfLoadingId = Rxn<int>();
+  final pdfLoadingId  = Rxn<int>();
+  final isCreatingLr  = false.obs;
 
   // ── Vehicle assignment ─────────────────────────────────────────────────────
   final vehicles          = <Map<String, dynamic>>[].obs;
@@ -179,6 +180,22 @@ class SupervisorOrderDetailController extends GetxController {
       FerosSnackbar.error(e.toString());
     }
     unassigningStaffId.value = null;
+  }
+
+  // ── Create LR ──────────────────────────────────────────────────────────────
+  Future<bool> createLr(Map<String, dynamic> data) async {
+    isCreatingLr.value = true;
+    try {
+      await _api.post(ApiEndpoints.lrs, data: data);
+      FerosSnackbar.success('LR created successfully');
+      fetchAll();
+      return true;
+    } catch (e) {
+      FerosSnackbar.error(e.toString());
+      return false;
+    } finally {
+      isCreatingLr.value = false;
+    }
   }
 
   // ── LR PDF ─────────────────────────────────────────────────────────────────

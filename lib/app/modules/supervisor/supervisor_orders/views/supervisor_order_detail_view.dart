@@ -94,7 +94,7 @@ class SupervisorOrderDetailView
                   child: TabBarView(
                     children: [
                       _AssignmentsTab(order: o, controller: controller),
-                      _LrsTab(controller: controller),
+                      _LrsTab(order: o, controller: controller),
                     ],
                   ),
                 ),
@@ -600,17 +600,21 @@ class _AllocationCard extends StatelessWidget {
                               fontWeight: FontWeight.w600)),
                       const Spacer(),
                       if (!_isClosed(status)) ...[
-                        _StaffButton(
-                          label: '+ Driver',
-                          onTap: () => _openAssignStaffSheet(
-                              context, allocationId, 'DRIVER', 'Driver'),
-                        ),
-                        const SizedBox(width: 8),
-                        _StaffButton(
-                          label: '+ Cleaner',
-                          onTap: () => _openAssignStaffSheet(
-                              context, allocationId, 'CLEANER', 'Cleaner'),
-                        ),
+                        if (!staffList.any((s) => s['roleName'] == 'DRIVER'))
+                          _StaffButton(
+                            label: '+ Driver',
+                            onTap: () => _openAssignStaffSheet(
+                                context, allocationId, 'DRIVER', 'Driver'),
+                          ),
+                        if (!staffList.any((s) => s['roleName'] == 'DRIVER') &&
+                            !staffList.any((s) => s['roleName'] == 'CLEANER'))
+                          const SizedBox(width: 8),
+                        if (!staffList.any((s) => s['roleName'] == 'CLEANER'))
+                          _StaffButton(
+                            label: '+ Cleaner',
+                            onTap: () => _openAssignStaffSheet(
+                                context, allocationId, 'CLEANER', 'Cleaner'),
+                          ),
                       ],
                     ],
                   ),
@@ -1258,32 +1262,100 @@ class _AssignStaffSheetState extends State<_AssignStaffSheet> {
 
 // ── LRs Tab ───────────────────────────────────────────────────────────────────
 class _LrsTab extends StatelessWidget {
+  final Map<String, dynamic> order;
   final SupervisorOrderDetailController controller;
-  const _LrsTab({required this.controller});
+  const _LrsTab({required this.order, required this.controller});
+
+  List<Map<String, dynamic>> get _allocations =>
+      (order['vehicleAllocations'] as List?)
+          ?.cast<Map<String, dynamic>>() ??
+      [];
+
+  bool get _canCreate => _allocations.isNotEmpty;
+
+  void _openCreateLrSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CreateLrSheet(
+        allocations: _allocations,
+        controller: controller,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final lrs = controller.lrs;
-    if (lrs.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.receipt_long_outlined,
-                size: 48, color: AppColors.mutedText),
-            const SizedBox(height: 12),
-            Text('No LRs created yet',
-                style:
-                    AppTextStyles.body.copyWith(color: AppColors.mutedText)),
-          ],
+    return Column(
+      children: [
+        Expanded(
+          child: lrs.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.receipt_long_outlined,
+                          size: 48, color: AppColors.mutedText),
+                      const SizedBox(height: 12),
+                      Text('No LRs created yet',
+                          style: AppTextStyles.body
+                              .copyWith(color: AppColors.mutedText)),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  itemCount: lrs.length,
+                  itemBuilder: (_, i) =>
+                      _LrCard(lr: lrs[i], controller: controller),
+                ),
         ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      itemCount: lrs.length,
-      itemBuilder: (_, i) => _LrCard(lr: lrs[i], controller: controller),
+        if (_canCreate)
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x15000000),
+                  blurRadius: 8,
+                  offset: Offset(0, -3),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              12 + MediaQuery.of(context).padding.bottom,
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () => _openCreateLrSheet(context),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text(
+                  'Create LR',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.navy,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -1615,6 +1687,254 @@ class _FieldShimmer extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Create LR Bottom Sheet ────────────────────────────────────────────────────
+class _CreateLrSheet extends StatefulWidget {
+  final List<Map<String, dynamic>> allocations;
+  final SupervisorOrderDetailController controller;
+
+  const _CreateLrSheet({
+    required this.allocations,
+    required this.controller,
+  });
+
+  @override
+  State<_CreateLrSheet> createState() => _CreateLrSheetState();
+}
+
+class _CreateLrSheetState extends State<_CreateLrSheet> {
+  Map<String, dynamic>? _selectedAllocation;
+  DateTime _lrDate = DateTime.now();
+  String? _allocationError;
+
+  final _weightCtrl  = TextEditingController();
+  final _remarksCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _weightCtrl.dispose();
+    _remarksCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_selectedAllocation == null) {
+      setState(() => _allocationError = 'Please select a vehicle');
+      return;
+    }
+    setState(() => _allocationError = null);
+
+    final data = <String, dynamic>{
+      'vehicleAllocationId': _selectedAllocation!['id'],
+      'lrDate': _lrDate.toIso8601String().substring(0, 10),
+    };
+    final w = double.tryParse(_weightCtrl.text.trim());
+    if (w != null) data['loadedWeight'] = w;
+    if (_remarksCtrl.text.trim().isNotEmpty) {
+      data['remarks'] = _remarksCtrl.text.trim();
+    }
+
+    final ok = await widget.controller.createLr(data);
+    if (ok && mounted) Navigator.of(context).pop();
+  }
+
+  String _allocationLabel(Map<String, dynamic> a) {
+    final reg  = a['vehicleRegistrationNumber'] as String?
+        ?? a['vehicleNumber'] as String? ?? '—';
+    final type = a['vehicleTypeName'] as String? ?? '';
+    return type.isNotEmpty ? '$reg  ·  $type' : reg;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, scrollCtrl) => Column(
+          children: [
+            // Handle
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 8, 8),
+              child: Row(
+                children: [
+                  Text('Create LR',
+                      style: AppTextStyles.heading4
+                          .copyWith(color: AppColors.navy)),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    onPressed: () => Navigator.of(context).pop(),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            // Body
+            Expanded(
+              child: ListView(
+                controller: scrollCtrl,
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                children: [
+                  // ── Vehicle allocation ────────────────────────────────────
+                  FerosSelectField<Map<String, dynamic>>(
+                    label: 'Vehicle',
+                    title: 'Select Vehicle',
+                    hint: 'Select vehicle allocation',
+                    isRequired: true,
+                    items: widget.allocations,
+                    itemLabel: _allocationLabel,
+                    selectedDisplay: _selectedAllocation != null
+                        ? _allocationLabel(_selectedAllocation!)
+                        : null,
+                    onSelected: (a) =>
+                        setState(() {
+                          _selectedAllocation = a;
+                          _allocationError = null;
+                        }),
+                    errorText: _allocationError,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── LR Date ───────────────────────────────────────────────
+                  _SheetLabel('LR Date'),
+                  const SizedBox(height: 6),
+                  _SheetDateField(
+                    value: _lrDate,
+                    hint: 'Select date',
+                    onPicked: (d) => setState(() => _lrDate = d),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── Loaded Weight ─────────────────────────────────────────
+                  _SheetLabel('Loaded Weight (tonnes)'),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: _weightCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d*\.?\d*')),
+                    ],
+                    style: AppTextStyles.body,
+                    decoration: InputDecoration(
+                      hintText: 'e.g. 10.5',
+                      hintStyle:
+                          AppTextStyles.body.copyWith(color: AppColors.hintText),
+                      filled: true,
+                      fillColor: AppColors.background,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: AppColors.border),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: AppColors.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                            color: AppColors.navy, width: 1.5),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── Remarks ───────────────────────────────────────────────
+                  _SheetLabel('Remarks'),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: _remarksCtrl,
+                    maxLines: 3,
+                    style: AppTextStyles.body,
+                    decoration: InputDecoration(
+                      hintText: 'Optional notes…',
+                      hintStyle:
+                          AppTextStyles.body.copyWith(color: AppColors.hintText),
+                      filled: true,
+                      fillColor: AppColors.background,
+                      contentPadding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: AppColors.border),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: AppColors.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                            color: AppColors.navy, width: 1.5),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // ── Submit ────────────────────────────────────────────────
+                  Obx(() => SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: widget.controller.isCreatingLr.value
+                          ? null
+                          : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.navy,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: widget.controller.isCreatingLr.value
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text(
+                              'Create LR',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                    ),
+                  )),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
