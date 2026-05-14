@@ -94,7 +94,7 @@ class SupervisorOrderDetailView
                   child: TabBarView(
                     children: [
                       _AssignmentsTab(order: o, controller: controller),
-                      _LrsTab(order: o, controller: controller),
+                      _LrsTab(controller: controller),
                     ],
                   ),
                 ),
@@ -626,10 +626,63 @@ class _AllocationCard extends StatelessWidget {
                         )),
                   ],
                 ],
+
+                // ── Create LR button ──────────────────────────────────
+                // Show when: driver assigned + no LR yet + not closed
+                if (staffList.any((s) => s['roleName'] == 'DRIVER') &&
+                    !_isClosed(status))
+                  Obx(() {
+                    final hasLr = controller.lrs.any((lr) {
+                      final id = lr['vehicleAllocationId'];
+                      return id != null &&
+                          (id == allocationId ||
+                              id.toString() == allocationId.toString());
+                    });
+                    if (hasLr) return const SizedBox.shrink();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 12),
+                        const Divider(height: 1, color: AppColors.border),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: () => _openCreateLrSheet(context, allocationId),
+                          icon: const Icon(Icons.receipt_long_outlined, size: 16),
+                          label: const Text(
+                            'Create LR',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.navy,
+                            side: const BorderSide(color: AppColors.navy),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _openCreateLrSheet(BuildContext context, int allocationId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CreateLrSheet(
+        allocationId: allocationId,
+        controller: controller,
       ),
     );
   }
@@ -1262,100 +1315,30 @@ class _AssignStaffSheetState extends State<_AssignStaffSheet> {
 
 // ── LRs Tab ───────────────────────────────────────────────────────────────────
 class _LrsTab extends StatelessWidget {
-  final Map<String, dynamic> order;
   final SupervisorOrderDetailController controller;
-  const _LrsTab({required this.order, required this.controller});
-
-  List<Map<String, dynamic>> get _allocations =>
-      (order['vehicleAllocations'] as List?)
-          ?.cast<Map<String, dynamic>>() ??
-      [];
-
-  bool get _canCreate => _allocations.isNotEmpty;
-
-  void _openCreateLrSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _CreateLrSheet(
-        allocations: _allocations,
-        controller: controller,
-      ),
-    );
-  }
+  const _LrsTab({required this.controller});
 
   @override
   Widget build(BuildContext context) {
     final lrs = controller.lrs;
-    return Column(
-      children: [
-        Expanded(
-          child: lrs.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.receipt_long_outlined,
-                          size: 48, color: AppColors.mutedText),
-                      const SizedBox(height: 12),
-                      Text('No LRs created yet',
-                          style: AppTextStyles.body
-                              .copyWith(color: AppColors.mutedText)),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  itemCount: lrs.length,
-                  itemBuilder: (_, i) =>
-                      _LrCard(lr: lrs[i], controller: controller),
-                ),
+    if (lrs.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.receipt_long_outlined,
+                size: 48, color: AppColors.mutedText),
+            const SizedBox(height: 12),
+            Text('No LRs created yet',
+                style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+          ],
         ),
-        if (_canCreate)
-          Container(
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x15000000),
-                  blurRadius: 8,
-                  offset: Offset(0, -3),
-                ),
-              ],
-            ),
-            padding: EdgeInsets.fromLTRB(
-              16,
-              12,
-              16,
-              12 + MediaQuery.of(context).padding.bottom,
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                onPressed: () => _openCreateLrSheet(context),
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text(
-                  'Create LR',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.navy,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-            ),
-          ),
-      ],
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      itemCount: lrs.length,
+      itemBuilder: (_, i) => _LrCard(lr: lrs[i], controller: controller),
     );
   }
 }
@@ -1694,11 +1677,11 @@ class _FieldShimmer extends StatelessWidget {
 
 // ── Create LR Bottom Sheet ────────────────────────────────────────────────────
 class _CreateLrSheet extends StatefulWidget {
-  final List<Map<String, dynamic>> allocations;
+  final int allocationId;
   final SupervisorOrderDetailController controller;
 
   const _CreateLrSheet({
-    required this.allocations,
+    required this.allocationId,
     required this.controller,
   });
 
@@ -1707,9 +1690,7 @@ class _CreateLrSheet extends StatefulWidget {
 }
 
 class _CreateLrSheetState extends State<_CreateLrSheet> {
-  Map<String, dynamic>? _selectedAllocation;
   DateTime _lrDate = DateTime.now();
-  String? _allocationError;
 
   final _weightCtrl  = TextEditingController();
   final _remarksCtrl = TextEditingController();
@@ -1722,14 +1703,8 @@ class _CreateLrSheetState extends State<_CreateLrSheet> {
   }
 
   Future<void> _submit() async {
-    if (_selectedAllocation == null) {
-      setState(() => _allocationError = 'Please select a vehicle');
-      return;
-    }
-    setState(() => _allocationError = null);
-
     final data = <String, dynamic>{
-      'vehicleAllocationId': _selectedAllocation!['id'],
+      'vehicleAllocationId': widget.allocationId,
       'lrDate': _lrDate.toIso8601String().substring(0, 10),
     };
     final w = double.tryParse(_weightCtrl.text.trim());
@@ -1737,17 +1712,29 @@ class _CreateLrSheetState extends State<_CreateLrSheet> {
     if (_remarksCtrl.text.trim().isNotEmpty) {
       data['remarks'] = _remarksCtrl.text.trim();
     }
-
     final ok = await widget.controller.createLr(data);
     if (ok && mounted) Navigator.of(context).pop();
   }
 
-  String _allocationLabel(Map<String, dynamic> a) {
-    final reg  = a['vehicleRegistrationNumber'] as String?
-        ?? a['vehicleNumber'] as String? ?? '—';
-    final type = a['vehicleTypeName'] as String? ?? '';
-    return type.isNotEmpty ? '$reg  ·  $type' : reg;
-  }
+  InputDecoration _inputDec({String? hint}) => InputDecoration(
+        hintText: hint,
+        hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
+        filled: true,
+        fillColor: AppColors.background,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -1759,9 +1746,9 @@ class _CreateLrSheetState extends State<_CreateLrSheet> {
       ),
       padding: EdgeInsets.only(bottom: bottomInset),
       child: DraggableScrollableSheet(
-        initialChildSize: 0.75,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
         expand: false,
         builder: (_, scrollCtrl) => Column(
           children: [
@@ -1800,26 +1787,6 @@ class _CreateLrSheetState extends State<_CreateLrSheet> {
                 controller: scrollCtrl,
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
                 children: [
-                  // ── Vehicle allocation ────────────────────────────────────
-                  FerosSelectField<Map<String, dynamic>>(
-                    label: 'Vehicle',
-                    title: 'Select Vehicle',
-                    hint: 'Select vehicle allocation',
-                    isRequired: true,
-                    items: widget.allocations,
-                    itemLabel: _allocationLabel,
-                    selectedDisplay: _selectedAllocation != null
-                        ? _allocationLabel(_selectedAllocation!)
-                        : null,
-                    onSelected: (a) =>
-                        setState(() {
-                          _selectedAllocation = a;
-                          _allocationError = null;
-                        }),
-                    errorText: _allocationError,
-                  ),
-                  const SizedBox(height: 20),
-
                   // ── LR Date ───────────────────────────────────────────────
                   _SheetLabel('LR Date'),
                   const SizedBox(height: 6),
@@ -1838,32 +1805,10 @@ class _CreateLrSheetState extends State<_CreateLrSheet> {
                     keyboardType: const TextInputType.numberWithOptions(
                         decimal: true),
                     inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d*\.?\d*')),
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                     ],
                     style: AppTextStyles.body,
-                    decoration: InputDecoration(
-                      hintText: 'e.g. 10.5',
-                      hintStyle:
-                          AppTextStyles.body.copyWith(color: AppColors.hintText),
-                      filled: true,
-                      fillColor: AppColors.background,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 14),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppColors.border),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppColors.border),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                            color: AppColors.navy, width: 1.5),
-                      ),
-                    ),
+                    decoration: _inputDec(hint: 'e.g. 10.5'),
                   ),
                   const SizedBox(height: 20),
 
@@ -1874,27 +1819,7 @@ class _CreateLrSheetState extends State<_CreateLrSheet> {
                     controller: _remarksCtrl,
                     maxLines: 3,
                     style: AppTextStyles.body,
-                    decoration: InputDecoration(
-                      hintText: 'Optional notes…',
-                      hintStyle:
-                          AppTextStyles.body.copyWith(color: AppColors.hintText),
-                      filled: true,
-                      fillColor: AppColors.background,
-                      contentPadding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppColors.border),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppColors.border),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                            color: AppColors.navy, width: 1.5),
-                      ),
-                    ),
+                    decoration: _inputDec(hint: 'Optional notes…'),
                   ),
                   const SizedBox(height: 28),
 
