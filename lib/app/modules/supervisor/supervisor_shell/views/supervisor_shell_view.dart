@@ -276,6 +276,45 @@ class _SupervisorDrawer extends StatelessWidget {
                   },
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
+                const SizedBox(height: 4),
+                _DrawerSectionLabel(label: 'Fleet & Finance'),
+                _DrawerTile(
+                  icon: Icons.directions_truck_outlined,
+                  label: 'Vehicles',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Get.snackbar('Coming Soon', 'Vehicles will be available shortly',
+                        snackPosition: SnackPosition.BOTTOM);
+                  },
+                ),
+                _DrawerTile(
+                  icon: Icons.badge_outlined,
+                  label: 'Drivers',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Get.snackbar('Coming Soon', 'Drivers will be available shortly',
+                        snackPosition: SnackPosition.BOTTOM);
+                  },
+                ),
+                _DrawerTile(
+                  icon: Icons.receipt_long_outlined,
+                  label: 'LRs',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Get.snackbar('Coming Soon', 'LRs will be available shortly',
+                        snackPosition: SnackPosition.BOTTOM);
+                  },
+                ),
+                _DrawerTile(
+                  icon: Icons.receipt_outlined,
+                  label: 'Invoices',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Get.snackbar('Coming Soon', 'Invoices will be available shortly',
+                        snackPosition: SnackPosition.BOTTOM);
+                  },
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
                 const SizedBox(height: 8),
                 _DrawerTile(
                   icon: Icons.logout,
@@ -337,6 +376,28 @@ class _DrawerTile extends StatelessWidget {
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 20),
       minLeadingWidth: 24,
+    );
+  }
+}
+
+// ── Drawer Section Label ──────────────────────────────────────────────────────
+class _DrawerSectionLabel extends StatelessWidget {
+  final String label;
+  const _DrawerSectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+      child: Text(
+        label.toUpperCase(),
+        style: AppTextStyles.caption.copyWith(
+          color: AppColors.mutedText,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+          fontSize: 10,
+        ),
+      ),
     );
   }
 }
