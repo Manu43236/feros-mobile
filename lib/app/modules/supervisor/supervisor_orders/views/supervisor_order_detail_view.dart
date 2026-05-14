@@ -10,6 +10,8 @@ import '../../../../../core/utils/date_utils.dart';
 import '../../../../../core/popups/feros_dialog.dart';
 import '../../../../../core/widgets/feros_select_field.dart';
 import '../controllers/supervisor_order_detail_controller.dart';
+import '../../supervisor_lrs/controllers/supervisor_lr_detail_controller.dart';
+import '../../supervisor_lrs/views/supervisor_lr_detail_view.dart';
 
 class SupervisorOrderDetailView
     extends GetView<SupervisorOrderDetailController> {
@@ -1362,7 +1364,15 @@ class _LrCard extends StatelessWidget {
     final statusColor = _lrColor(status);
     final intId = lrId is int ? lrId : int.tryParse(lrId.toString()) ?? 0;
 
-    return Container(
+    return InkWell(
+      onTap: () => Get.to(
+        () => const SupervisorLrDetailView(),
+        binding: BindingsBuilder(() { Get.put(SupervisorLrDetailController()); }),
+        arguments: intId,
+        transition: Transition.cupertino,
+      ),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -1501,7 +1511,8 @@ class _LrCard extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ), // Container
+    ); // InkWell
   }
 
   Color _lrColor(String s) {
