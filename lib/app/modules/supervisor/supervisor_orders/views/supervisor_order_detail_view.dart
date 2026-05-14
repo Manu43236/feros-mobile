@@ -647,7 +647,6 @@ class _LrCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
@@ -656,107 +655,138 @@ class _LrCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(lrNumber,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.navy,
-                        fontWeight: FontWeight.w700)),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border:
-                      Border.all(color: statusColor.withValues(alpha: 0.3)),
-                ),
-                child: Text(_lrLabel(status),
-                    style: AppTextStyles.caption.copyWith(
-                        color: statusColor, fontWeight: FontWeight.w600)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(Icons.local_shipping_outlined,
-                  size: 13, color: AppColors.mutedText),
-              const SizedBox(width: 4),
-              Text(vehicle,
-                  style:
-                      AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              const Icon(Icons.radio_button_checked,
-                  size: 12, color: AppColors.navy),
-              const SizedBox(width: 4),
-              Expanded(
-                  child: Text(fromCity,
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.bodyText),
-                      overflow: TextOverflow.ellipsis)),
-              const SizedBox(width: 8),
-              const Icon(Icons.arrow_forward,
-                  size: 12, color: AppColors.mutedText),
-              const SizedBox(width: 8),
-              const Icon(Icons.location_on,
-                  size: 12, color: AppColors.orange),
-              const SizedBox(width: 4),
-              Expanded(
-                  child: Text(toCity,
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.bodyText),
-                      overflow: TextOverflow.ellipsis)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          const Divider(height: 1, color: AppColors.border),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              if (weight != null) ...[
-                _Chip(Icons.scale_outlined, '${weight}T'),
-                const SizedBox(width: 12),
-              ],
-              if (lrDate != null)
-                _Chip(Icons.calendar_today_outlined,
-                    FerosDateUtils.formatDate(lrDate)),
-              const Spacer(),
-              Obx(() {
-                final isLoading = controller.pdfLoadingId.value == intId;
-                return GestureDetector(
-                  onTap: () => controller.viewLrPdf(
-                      intId, lrNumber, '$fromCity → $toCity'),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (isLoading)
-                        const SizedBox(
-                          width: 12, height: 12,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: AppColors.navy),
-                        )
-                      else
-                        const Icon(Icons.picture_as_pdf_outlined,
-                            size: 14, color: AppColors.navy),
-                      const SizedBox(width: 4),
-                      Text(
-                        isLoading ? 'Loading…' : 'View PDF',
-                        style: AppTextStyles.caption.copyWith(
+          // ── Card header ──────────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            decoration: const BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.local_shipping_outlined,
+                        size: 17, color: AppColors.navy),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        vehicle,
+                        style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.navy,
-                            fontWeight: FontWeight.w600),
+                            fontWeight: FontWeight.w700),
                       ),
-                    ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                            color: statusColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(_lrLabel(status),
+                          style: AppTextStyles.caption.copyWith(
+                              color: statusColor,
+                              fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                // LR number as small lowercase identifier
+                Text(
+                  '#${lrNumber.toLowerCase()}',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.mutedText,
+                    letterSpacing: 0.4,
                   ),
-                );
-              }),
-            ],
+                ),
+              ],
+            ),
+          ),
+
+          // ── Card body ────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Route
+                Row(
+                  children: [
+                    const Icon(Icons.radio_button_checked,
+                        size: 12, color: AppColors.navy),
+                    const SizedBox(width: 4),
+                    Expanded(
+                        child: Text(fromCity,
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.bodyText),
+                            overflow: TextOverflow.ellipsis)),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.arrow_forward,
+                        size: 12, color: AppColors.mutedText),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.location_on,
+                        size: 12, color: AppColors.orange),
+                    const SizedBox(width: 4),
+                    Expanded(
+                        child: Text(toCity,
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.bodyText),
+                            overflow: TextOverflow.ellipsis)),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                const Divider(height: 1, color: AppColors.border),
+                const SizedBox(height: 10),
+                // Footer: weight + date + PDF button
+                Row(
+                  children: [
+                    if (weight != null) ...[
+                      _Chip(Icons.scale_outlined, '${weight}T'),
+                      const SizedBox(width: 12),
+                    ],
+                    if (lrDate != null)
+                      _Chip(Icons.calendar_today_outlined,
+                          FerosDateUtils.formatDate(lrDate)),
+                    const Spacer(),
+                    Obx(() {
+                      final isLoading =
+                          controller.pdfLoadingId.value == intId;
+                      return GestureDetector(
+                        onTap: () => controller.viewLrPdf(
+                            intId, lrNumber, '$fromCity → $toCity'),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isLoading)
+                              const SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.navy),
+                              )
+                            else
+                              const Icon(Icons.picture_as_pdf_outlined,
+                                  size: 14, color: AppColors.navy),
+                            const SizedBox(width: 4),
+                            Text(
+                              isLoading ? 'Loading…' : 'View PDF',
+                              style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.navy,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -841,7 +871,6 @@ class _InvoiceCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
@@ -850,72 +879,108 @@ class _InvoiceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Invoice number + status
-          Row(
-            children: [
-              Expanded(
-                child: Text(invoiceNumber,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.navy,
-                        fontWeight: FontWeight.w700)),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border:
-                      Border.all(color: statusColor.withValues(alpha: 0.3)),
+          // ── Invoice header ───────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            decoration: const BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.receipt_outlined,
+                        size: 17, color: AppColors.navy),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Invoice',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: AppColors.navy,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                            color: statusColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(_invoiceLabel(status),
+                          style: AppTextStyles.caption.copyWith(
+                              color: statusColor,
+                              fontWeight: FontWeight.w600)),
+                    ),
+                  ],
                 ),
-                child: Text(_invoiceLabel(status),
-                    style: AppTextStyles.caption.copyWith(
-                        color: statusColor, fontWeight: FontWeight.w600)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Divider(height: 1, color: AppColors.border),
-          const SizedBox(height: 10),
-
-          // Amount row
-          Row(
-            children: [
-              Expanded(
-                child: _AmountCell(
-                    label: 'Total', value: totalAmount, color: AppColors.navy),
-              ),
-              Expanded(
-                child: _AmountCell(
-                    label: 'Paid',
-                    value: amountPaid,
-                    color: AppColors.success),
-              ),
-              Expanded(
-                child: _AmountCell(
-                    label: 'Balance',
-                    value: balanceDue,
-                    color: balanceDue != null &&
-                            double.tryParse(balanceDue.toString())! > 0
-                        ? AppColors.error
-                        : AppColors.success),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          // Dates
-          Row(
-            children: [
-              if (invoiceDate != null) ...[
-                _Chip(Icons.calendar_today_outlined,
-                    'Issued: ${FerosDateUtils.formatDate(invoiceDate)}'),
-                const SizedBox(width: 12),
+                const SizedBox(height: 5),
+                Text(
+                  '#${invoiceNumber.toLowerCase()}',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.mutedText,
+                    letterSpacing: 0.4,
+                  ),
+                ),
               ],
-              if (dueDate != null)
-                _Chip(Icons.event_outlined,
-                    'Due: ${FerosDateUtils.formatDate(dueDate)}'),
-            ],
+            ),
+          ),
+
+          // ── Invoice body ─────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Amount row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _AmountCell(
+                          label: 'Total',
+                          value: totalAmount,
+                          color: AppColors.navy),
+                    ),
+                    Expanded(
+                      child: _AmountCell(
+                          label: 'Paid',
+                          value: amountPaid,
+                          color: AppColors.success),
+                    ),
+                    Expanded(
+                      child: _AmountCell(
+                          label: 'Balance',
+                          value: balanceDue,
+                          color: balanceDue != null &&
+                                  double.tryParse(balanceDue.toString())! > 0
+                              ? AppColors.error
+                              : AppColors.success),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Dates
+                Row(
+                  children: [
+                    if (invoiceDate != null) ...[
+                      _Chip(Icons.calendar_today_outlined,
+                          'Issued: ${FerosDateUtils.formatDate(invoiceDate)}'),
+                      const SizedBox(width: 12),
+                    ],
+                    if (dueDate != null)
+                      _Chip(Icons.event_outlined,
+                          'Due: ${FerosDateUtils.formatDate(dueDate)}'),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),

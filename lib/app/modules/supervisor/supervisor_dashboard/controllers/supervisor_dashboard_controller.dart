@@ -17,8 +17,8 @@ class SupervisorDashboardController extends GetxController {
   final activeTrips = <Map<String, dynamic>>[].obs;
 
   @override
-  void onReady() {
-    super.onReady();
+  void onInit() {
+    super.onInit();
     fetchDashboard();
   }
 
