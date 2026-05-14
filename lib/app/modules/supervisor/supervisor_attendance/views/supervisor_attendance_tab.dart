@@ -41,7 +41,9 @@ class SupervisorAttendanceTab extends GetView<SupervisorAttendanceController> {
         );
       }
 
-      return Column(
+      return DefaultTabController(
+        length: 2,
+        child: Column(
         children: [
           // ── Search bar ───────────────────────────────────────────────
           _SearchBar(controller: controller),
@@ -51,9 +53,46 @@ class SupervisorAttendanceTab extends GetView<SupervisorAttendanceController> {
           _DateStatsBar(controller: controller),
           const Divider(height: 1, color: AppColors.border),
 
-          // ── Staff list ───────────────────────────────────────────────
+          // ── Tabs ─────────────────────────────────────────────────────
+          Container(
+            color: AppColors.surface,
+            child: TabBar(
+              labelColor: AppColors.navy,
+              unselectedLabelColor: AppColors.mutedText,
+              indicatorColor: AppColors.navy,
+              indicatorWeight: 2,
+              labelStyle: const TextStyle(
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w400,
+                fontSize: 13,
+              ),
+              tabs: [
+                Obx(() {
+                  final count = controller.remainingStaff.length;
+                  return Tab(text: 'Remaining${count > 0 ? ' ($count)' : ''}');
+                }),
+                Obx(() {
+                  final count = controller.markedStaff.length;
+                  return Tab(text: 'Marked${count > 0 ? ' ($count)' : ''}');
+                }),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: AppColors.border),
+
+          // ── Tab content ──────────────────────────────────────────────
           Expanded(
-            child: _StaffList(controller: controller),
+            child: TabBarView(
+              children: [
+                _RemainingList(controller: controller),
+                _MarkedList(controller: controller),
+              ],
+            ),
           ),
 
           // ── Submit button (sticky) ───────────────────────────────────
@@ -106,6 +145,7 @@ class SupervisorAttendanceTab extends GetView<SupervisorAttendanceController> {
             );
           }),
         ],
+        ),
       );
     });
   }
@@ -202,8 +242,6 @@ class _DateStatsBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final total   = controller.staff.length;
-      final marked  = controller.existing.length;
       final pending = controller.pendingCount;
 
       return Container(
@@ -234,15 +272,8 @@ class _DateStatsBar extends StatelessWidget {
                 ],
               ),
             ),
-            const Spacer(),
-            // Stats (right)
-            _StatPill(label: 'Total',     value: total,          color: AppColors.navy),
-            const SizedBox(width: 12),
-            _StatPill(label: 'Marked',    value: marked,         color: AppColors.success),
-            const SizedBox(width: 12),
-            _StatPill(label: 'Remaining', value: total - marked, color: AppColors.mutedText),
             if (pending > 0) ...[
-              const SizedBox(width: 10),
+              const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -264,15 +295,58 @@ class _DateStatsBar extends StatelessWidget {
   }
 }
 
-// ── Staff List ────────────────────────────────────────────────────────────────
-class _StaffList extends StatelessWidget {
+// ── Remaining List ────────────────────────────────────────────────────────────
+class _RemainingList extends StatelessWidget {
   final SupervisorAttendanceController controller;
-  const _StaffList({required this.controller});
+  const _RemainingList({required this.controller});
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final list = controller.filteredStaff;
+      final list = controller.remainingStaff;
+      if (list.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                controller.searchQuery.value.isNotEmpty
+                    ? Icons.search_off_rounded
+                    : Icons.check_circle_outline,
+                size: 48,
+                color: AppColors.mutedText,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                controller.searchQuery.value.isNotEmpty
+                    ? 'No staff found'
+                    : 'All staff attendance marked',
+                style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+              ),
+            ],
+          ),
+        );
+      }
+      return ListView.separated(
+        padding: const EdgeInsets.only(bottom: 8),
+        itemCount: list.length,
+        separatorBuilder: (_, __) =>
+            const Divider(height: 1, color: AppColors.border),
+        itemBuilder: (_, i) => _StaffRow(staff: list[i]),
+      );
+    });
+  }
+}
+
+// ── Marked List ───────────────────────────────────────────────────────────────
+class _MarkedList extends StatelessWidget {
+  final SupervisorAttendanceController controller;
+  const _MarkedList({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final list = controller.markedStaff;
       if (list.isEmpty) {
         return Center(
           child: Column(
@@ -289,7 +363,7 @@ class _StaffList extends StatelessWidget {
               Text(
                 controller.searchQuery.value.isNotEmpty
                     ? 'No staff found'
-                    : 'No drivers or cleaners found',
+                    : 'No attendance marked yet',
                 style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
               ),
             ],
@@ -297,11 +371,11 @@ class _StaffList extends StatelessWidget {
         );
       }
       return ListView.separated(
-        padding: const EdgeInsets.only(bottom: 96),
+        padding: const EdgeInsets.only(bottom: 8),
         itemCount: list.length,
-        separatorBuilder: (context, i) =>
+        separatorBuilder: (_, __) =>
             const Divider(height: 1, color: AppColors.border),
-        itemBuilder: (context, i) => _StaffRow(staff: list[i]),
+        itemBuilder: (_, i) => _StaffRow(staff: list[i]),
       );
     });
   }
@@ -515,31 +589,3 @@ class _StaffRow extends StatelessWidget {
   }
 }
 
-// ── Stat Pill ─────────────────────────────────────────────────────────────────
-class _StatPill extends StatelessWidget {
-  final String label;
-  final int value;
-  final Color color;
-  const _StatPill({required this.label, required this.value, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          value.toString(),
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: color,
-          ),
-        ),
-        Text(label,
-            style: AppTextStyles.caption.copyWith(
-                color: AppColors.mutedText, fontSize: 10)),
-      ],
-    );
-  }
-}

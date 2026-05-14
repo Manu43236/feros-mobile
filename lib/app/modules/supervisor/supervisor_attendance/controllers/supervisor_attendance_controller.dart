@@ -24,12 +24,26 @@ class SupervisorAttendanceController extends GetxController {
   final isSubmitting = false.obs;
   final searchQuery  = ''.obs;
 
-  List<Map<String, dynamic>> get filteredStaff {
+  List<Map<String, dynamic>> get remainingStaff {
     final q = searchQuery.value.trim().toLowerCase();
-    if (q.isEmpty) return staff;
-    return staff
-        .where((s) => (s['name'] as String? ?? '').toLowerCase().contains(q))
-        .toList();
+    return staff.where((s) {
+      final uid = s['id'];
+      final userId = uid is int ? uid : int.tryParse(uid.toString()) ?? 0;
+      if (isMarked(userId)) return false;
+      if (q.isEmpty) return true;
+      return (s['name'] as String? ?? '').toLowerCase().contains(q);
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> get markedStaff {
+    final q = searchQuery.value.trim().toLowerCase();
+    return staff.where((s) {
+      final uid = s['id'];
+      final userId = uid is int ? uid : int.tryParse(uid.toString()) ?? 0;
+      if (!isMarked(userId)) return false;
+      if (q.isEmpty) return true;
+      return (s['name'] as String? ?? '').toLowerCase().contains(q);
+    }).toList();
   }
 
   static final _dateFmt  = DateFormat('yyyy-MM-dd');
