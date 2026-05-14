@@ -149,6 +149,16 @@ class _OrderBanner extends StatelessWidget {
                     child: const Icon(Icons.arrow_back_ios_new,
                         color: Colors.white, size: 18),
                   ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Order Detail',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(
