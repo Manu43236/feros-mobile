@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
@@ -74,33 +73,21 @@ class SupervisorActiveTripsTab extends GetView<SupervisorActiveTripsController> 
 }
 
 // ── Active Trip Card ───────────────────────────────────────────────────────────
-class _ActiveTripCard extends StatefulWidget {
+class _ActiveTripCard extends StatelessWidget {
   final Map<String, dynamic> lr;
   const _ActiveTripCard({required this.lr});
 
   @override
-  State<_ActiveTripCard> createState() => _ActiveTripCardState();
-}
-
-class _ActiveTripCardState extends State<_ActiveTripCard> {
-  bool _expanded = false;
-
-  SupervisorActiveTripsController get _ctrl =>
-      Get.find<SupervisorActiveTripsController>();
-
-  @override
   Widget build(BuildContext context) {
-    final lrNumber   = widget.lr['lrNumber']                  as String? ?? '—';
-    final vehicle    = widget.lr['vehicleRegistrationNumber'] as String? ?? '—';
-    final vehicleType= widget.lr['vehicleTypeName']           as String?;
-    final fromCity   = widget.lr['fromCity']                  as String? ?? '—';
-    final toCity     = widget.lr['toCity']                    as String? ?? '—';
-    final weight     = widget.lr['allocatedWeight'];
-    final driver     = widget.lr['startedByName']             as String?;
-    final lrDate     = widget.lr['lrDate']                    as String?;
-    final client     = widget.lr['clientName']                as String?;
-    final lrIdRaw    = widget.lr['id'];
-    final lrId = lrIdRaw is int ? lrIdRaw : int.tryParse(lrIdRaw.toString()) ?? 0;
+    final lrNumber   = lr['lrNumber']                  as String? ?? '—';
+    final vehicle    = lr['vehicleRegistrationNumber'] as String? ?? '—';
+    final vehicleType= lr['vehicleTypeName']           as String?;
+    final fromCity   = lr['fromCity']                  as String? ?? '—';
+    final toCity     = lr['toCity']                    as String? ?? '—';
+    final weight     = lr['allocatedWeight'];
+    final driver     = lr['startedByName']             as String?;
+    final lrDate     = lr['lrDate']                    as String?;
+    final client     = lr['clientName']                as String?;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -226,7 +213,7 @@ class _ActiveTripCardState extends State<_ActiveTripCard> {
                 const Divider(height: 1, color: AppColors.border),
                 const SizedBox(height: 10),
 
-                // Footer row: meta + "Proofs" toggle
+                // Footer row: meta
                 Row(
                   children: [
                     if (weight != null) ...[
@@ -240,206 +227,13 @@ class _ActiveTripCardState extends State<_ActiveTripCard> {
                     if (lrDate != null)
                       _Meta(Icons.calendar_today_outlined,
                           FerosDateUtils.formatDate(lrDate)),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () {
-                        if (!_expanded) _ctrl.loadProofs(lrId);
-                        setState(() => _expanded = !_expanded);
-                      },
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('Photos',
-                              style: AppTextStyles.caption.copyWith(
-                                  color: AppColors.navy,
-                                  fontWeight: FontWeight.w600)),
-                          const SizedBox(width: 4),
-                          Icon(
-                            _expanded
-                                ? Icons.keyboard_arrow_up
-                                : Icons.keyboard_arrow_down,
-                            size: 16,
-                            color: AppColors.navy,
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
-
-                // ── Proofs section (expanded) ────────────────────────
-                if (_expanded)
-                  Obx(() {
-                    _ctrl.proofsRefresher.value; // reactive dependency
-                    if (_ctrl.isProofsLoading(lrId)) {
-                      return const Padding(
-                        padding: EdgeInsets.only(top: 16),
-                        child: Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: AppColors.navy),
-                          ),
-                        ),
-                      );
-                    }
-                    final proofs = _ctrl.proofsFor(lrId);
-                    if (proofs.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Text('No photos yet',
-                            style: AppTextStyles.caption
-                                .copyWith(color: AppColors.mutedText)),
-                      );
-                    }
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 12),
-                        const Divider(height: 1, color: AppColors.border),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Photos (${proofs.length})',
-                          style: AppTextStyles.caption.copyWith(
-                              color: AppColors.mutedText,
-                              fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 8),
-                        ...proofs.map((p) => _ProofItem(proof: p)),
-                      ],
-                    );
-                  }),
               ],
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-// ── Proof Item ────────────────────────────────────────────────────────────────
-class _ProofItem extends StatelessWidget {
-  final Map<String, dynamic> proof;
-  const _ProofItem({required this.proof});
-
-  @override
-  Widget build(BuildContext context) {
-    final imageUrl   = proof['imageUrl']       as String?;
-    final userName   = proof['userName']       as String? ?? '—';
-    final capturedAt = proof['capturedAt']     as String?;
-    final isReviewed = proof['isReviewed']     as bool?   ?? false;
-    final reviewedBy = proof['reviewedByName'] as String?;
-    final remarks    = proof['reviewRemarks']  as String?;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Thumbnail
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: imageUrl != null
-                ? CachedNetworkImage(
-                    imageUrl: imageUrl,
-                    width: 56,
-                    height: 56,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => _ThumbPlaceholder(Icons.image_outlined),
-                    errorWidget: (context, url, error) =>
-                        _ThumbPlaceholder(Icons.broken_image_outlined),
-                  )
-                : _ThumbPlaceholder(Icons.image_not_supported_outlined),
-          ),
-          const SizedBox(width: 10),
-
-          // Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(userName,
-                          style: AppTextStyles.caption.copyWith(
-                              color: AppColors.bodyText,
-                              fontWeight: FontWeight.w600),
-                          overflow: TextOverflow.ellipsis),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: (isReviewed
-                                ? AppColors.success
-                                : AppColors.warning)
-                            .withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        isReviewed ? 'Checked' : 'Not Checked',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: isReviewed
-                              ? AppColors.success
-                              : AppColors.warning,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (capturedAt != null) ...[
-                  const SizedBox(height: 3),
-                  Text(FerosDateUtils.formatDateTime(capturedAt),
-                      style: AppTextStyles.caption.copyWith(
-                          color: AppColors.mutedText, fontSize: 10)),
-                ],
-                if (isReviewed && reviewedBy != null) ...[
-                  const SizedBox(height: 2),
-                  Text('By $reviewedBy',
-                      style: AppTextStyles.caption.copyWith(
-                          color: AppColors.mutedText, fontSize: 10)),
-                ],
-                if (remarks != null && remarks.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(remarks,
-                      style: AppTextStyles.caption.copyWith(
-                          color: AppColors.mutedText, fontSize: 10),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ThumbPlaceholder extends StatelessWidget {
-  final IconData icon;
-  const _ThumbPlaceholder(this.icon);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 56,
-      height: 56,
-      color: AppColors.border,
-      child: Icon(icon, size: 20, color: AppColors.mutedText),
     );
   }
 }

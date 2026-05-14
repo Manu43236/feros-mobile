@@ -7,13 +7,8 @@ import '../../../../../core/utils/view_state.dart';
 class SupervisorActiveTripsController extends GetxController {
   final _api = Get.find<ApiClient>();
 
-  final state           = ViewState.loading.obs;
-  final lrs             = <Map<String, dynamic>>[].obs;
-  final proofsRefresher = 0.obs; // incremented to trigger Obx rebuilds
-
-  final _proofsMap     = <int, List<Map<String, dynamic>>>{};
-  final _proofsLoading = <int, bool>{};
-  final _proofsLoaded  = <int, bool>{};
+  final state = ViewState.loading.obs;
+  final lrs   = <Map<String, dynamic>>[].obs;
 
   @override
   void onInit() {
@@ -37,25 +32,4 @@ class SupervisorActiveTripsController extends GetxController {
     }
   }
 
-  List<Map<String, dynamic>> proofsFor(int lrId) => _proofsMap[lrId] ?? [];
-  bool isProofsLoading(int lrId) => _proofsLoading[lrId] ?? false;
-  bool isProofsLoaded(int lrId)  => _proofsLoaded[lrId]  ?? false;
-
-  Future<void> loadProofs(int lrId) async {
-    if (_proofsLoaded[lrId] == true) return;
-    _proofsLoading[lrId] = true;
-    proofsRefresher.value++;
-    try {
-      final res  = await _api.get(ApiEndpoints.tripProofsByLr(lrId));
-      final list = ((res.data as Map<String, dynamic>)['data'] as List)
-          .cast<Map<String, dynamic>>();
-      _proofsMap[lrId]    = list;
-      _proofsLoaded[lrId] = true;
-    } catch (_) {
-      _proofsMap[lrId]    = [];
-      _proofsLoaded[lrId] = true;
-    }
-    _proofsLoading[lrId] = false;
-    proofsRefresher.value++;
-  }
 }
