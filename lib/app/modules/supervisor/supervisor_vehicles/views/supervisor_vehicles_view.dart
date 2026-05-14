@@ -4,6 +4,8 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
 import '../controllers/supervisor_vehicles_controller.dart';
+import '../bindings/supervisor_vehicle_detail_binding.dart';
+import 'supervisor_vehicle_detail_view.dart';
 
 class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
   const SupervisorVehiclesView({super.key});
@@ -179,6 +181,7 @@ class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
                   itemBuilder: (_, i) => _VehicleCard(vehicle: list[i]),
                 ),
               );
+
             }),
           ),
         ],
@@ -194,12 +197,14 @@ class _VehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final id         = vehicle['id'];
     final reg        = vehicle['registrationNumber'] as String? ?? '—';
     final type       = vehicle['vehicleTypeName']    as String?;
     final brand      = vehicle['brandName']          as String?;
     final fuel       = vehicle['fuelTypeName']       as String?;
     final ownership  = vehicle['ownershipTypeName']  as String?;
-    final status     = vehicle['currentStatusName']  as String?;
+    final statusName = vehicle['currentStatusName']  as String?;
+    final statusType = vehicle['currentStatusType']  as String? ?? '';
     final capacity   = vehicle['capacityInTons'];
     final isActive   = vehicle['active']             as bool? ?? true;
 
@@ -209,7 +214,17 @@ class _VehicleCard extends StatelessWidget {
     final fitnessExp = vehicle['fitnessExpiryDate']     as String?;
     final pucExp     = vehicle['pollutionExpiryDate']   as String?;
 
-    return Container(
+    final (statusColor, statusBg) = _statusColors(statusType);
+    final intId = id is int ? id : int.tryParse(id.toString()) ?? 0;
+
+    return GestureDetector(
+      onTap: () => Get.to(
+        () => const SupervisorVehicleDetailView(),
+        binding: SupervisorVehicleDetailBinding(),
+        arguments: intId,
+        transition: Transition.cupertino,
+      ),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -271,18 +286,20 @@ class _VehicleCard extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    if (status != null)
+                    if (statusName != null)
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.navy.withValues(alpha: 0.08),
+                          color: statusBg,
                           borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color: statusColor.withValues(alpha: 0.4)),
                         ),
                         child: Text(
-                          status,
+                          statusName,
                           style: AppTextStyles.caption.copyWith(
-                            color: AppColors.navy,
+                            color: statusColor,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -359,12 +376,24 @@ class _VehicleCard extends StatelessWidget {
           ),
         ],
       ),
+      ), // GestureDetector
     );
   }
 
   bool _hasExpiry(String? rc, String? ins, String? permit, String? fit,
           String? puc) =>
       rc != null || ins != null || permit != null || fit != null || puc != null;
+
+  static (Color, Color) _statusColors(String type) {
+    switch (type) {
+      case 'AVAILABLE': return (const Color(0xFF16A34A), const Color(0xFFF0FDF4));
+      case 'ASSIGNED':  return (const Color(0xFF2563EB), const Color(0xFFEFF6FF));
+      case 'ON_TRIP':   return (const Color(0xFFEA580C), const Color(0xFFFFF7ED));
+      case 'IN_REPAIR': return (const Color(0xFFD97706), const Color(0xFFFFFBEB));
+      case 'BREAKDOWN': return (const Color(0xFFDC2626), const Color(0xFFFEF2F2));
+      default:          return (AppColors.mutedText, AppColors.background);
+    }
+  }
 }
 
 class _InfoChip extends StatelessWidget {
