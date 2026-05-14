@@ -313,13 +313,14 @@ class _StatusBadge extends StatelessWidget {
 
   Color _color(String s) {
     switch (s) {
-      case 'PENDING':             return AppColors.orderPending;
-      case 'PARTIALLY_ASSIGNED':  return AppColors.info;
-      case 'FULLY_ASSIGNED':      return AppColors.lrLoaded;
-      case 'IN_TRANSIT':          return AppColors.lrInTransit;
-      case 'PARTIALLY_DELIVERED': return AppColors.warning;
-      case 'DELIVERED':           return AppColors.orderCompleted;
-      case 'CANCELLED':           return AppColors.orderCancelled;
+      case 'PENDING':             return const Color(0xFFF59E0B); // amber
+      case 'PARTIALLY_ASSIGNED':  return const Color(0xFF2563EB); // blue
+      case 'FULLY_ASSIGNED':      return const Color(0xFF7C3AED); // purple (loaded)
+      case 'IN_TRANSIT':          return const Color(0xFFF97316); // orange
+      case 'PARTIALLY_DELIVERED': return const Color(0xFF0EA5E9); // sky blue
+      case 'DELIVERED':           return const Color(0xFF16A34A); // green
+      case 'COMPLETED':           return const Color(0xFF059669); // emerald
+      case 'CANCELLED':           return const Color(0xFFDC2626); // red
       default:                    return AppColors.mutedText;
     }
   }
@@ -332,6 +333,7 @@ class _StatusBadge extends StatelessWidget {
       case 'IN_TRANSIT':          return 'In Transit';
       case 'PARTIALLY_DELIVERED': return 'Part. Delivered';
       case 'DELIVERED':           return 'Delivered';
+      case 'COMPLETED':           return 'Completed';
       case 'CANCELLED':           return 'Cancelled';
       default:                    return s;
     }
