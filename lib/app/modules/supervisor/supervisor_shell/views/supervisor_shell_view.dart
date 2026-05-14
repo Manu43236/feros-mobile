@@ -16,10 +16,6 @@ import '../../supervisor_profile/views/supervisor_profile_view.dart';
 import '../../supervisor_profile/bindings/supervisor_profile_binding.dart';
 import '../../supervisor_payslip/views/supervisor_payslip_view.dart';
 import '../../supervisor_payslip/bindings/supervisor_payslip_binding.dart';
-import '../../supervisor_fuel_log/views/supervisor_fuel_log_view.dart';
-import '../../supervisor_fuel_log/bindings/supervisor_fuel_log_binding.dart';
-import '../../supervisor_breakdown/views/supervisor_breakdown_view.dart';
-import '../../supervisor_breakdown/bindings/supervisor_breakdown_binding.dart';
 import '../../supervisor_vehicles/views/supervisor_vehicles_view.dart';
 import '../../supervisor_vehicles/bindings/supervisor_vehicles_binding.dart';
 import '../../supervisor_crew/views/supervisor_crew_view.dart';
@@ -254,40 +250,6 @@ class _SupervisorDrawer extends StatelessWidget {
                     Get.to(
                       () => const SupervisorPayslipView(),
                       binding: SupervisorPayslipBinding(),
-                    );
-                  },
-                ),
-                _DrawerTile(
-                  icon: Icons.calendar_month_outlined,
-                  label: 'My Attendance',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Get.snackbar(
-                      'Coming Soon',
-                      'My Attendance will be available shortly',
-                      snackPosition: SnackPosition.BOTTOM,
-                    );
-                  },
-                ),
-                _DrawerTile(
-                  icon: Icons.local_gas_station_outlined,
-                  label: 'Fuel Log',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Get.to(
-                      () => const SupervisorFuelLogView(),
-                      binding: SupervisorFuelLogBinding(),
-                    );
-                  },
-                ),
-                _DrawerTile(
-                  icon: Icons.car_crash_outlined,
-                  label: 'Breakdowns',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Get.to(
-                      () => const SupervisorBreakdownView(),
-                      binding: SupervisorBreakdownBinding(),
                     );
                   },
                 ),
