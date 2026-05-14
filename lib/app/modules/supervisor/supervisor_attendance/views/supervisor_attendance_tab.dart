@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
+import '../../../../../core/theme/app_spacing.dart';
 import '../controllers/supervisor_attendance_controller.dart';
 
 class SupervisorAttendanceTab extends GetView<SupervisorAttendanceController> {
@@ -45,6 +46,14 @@ class SupervisorAttendanceTab extends GetView<SupervisorAttendanceController> {
         children: [
           // ── Date selector bar ────────────────────────────────────────
           _DateBar(controller: controller),
+          const Divider(height: 1, color: AppColors.border),
+
+          // ── Self attendance card ─────────────────────────────────────
+          _SelfAttendanceCard(controller: controller),
+          const Divider(height: 1, color: AppColors.border),
+
+          // ── Search bar ───────────────────────────────────────────────
+          _SearchBar(controller: controller),
           const Divider(height: 1, color: AppColors.border),
 
           // ── Summary row ──────────────────────────────────────────────
@@ -100,28 +109,40 @@ class SupervisorAttendanceTab extends GetView<SupervisorAttendanceController> {
 
           // ── Staff list ───────────────────────────────────────────────
           Expanded(
-            child: controller.staff.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.badge_outlined,
-                            size: 48, color: AppColors.mutedText),
-                        const SizedBox(height: 12),
-                        Text('No drivers or cleaners found',
-                            style: AppTextStyles.body
-                                .copyWith(color: AppColors.mutedText)),
-                      ],
-                    ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.only(bottom: 96),
-                    itemCount: controller.staff.length,
-                    separatorBuilder: (context, i) =>
-                        const Divider(height: 1, color: AppColors.border),
-                    itemBuilder: (context, i) =>
-                        _StaffRow(staff: controller.staff[i]),
+            child: Obx(() {
+              final list = controller.filteredStaff;
+              if (list.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        controller.searchQuery.value.isNotEmpty
+                            ? Icons.search_off_rounded
+                            : Icons.badge_outlined,
+                        size: 48,
+                        color: AppColors.mutedText,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        controller.searchQuery.value.isNotEmpty
+                            ? 'No staff found'
+                            : 'No drivers or cleaners found',
+                        style: AppTextStyles.body
+                            .copyWith(color: AppColors.mutedText),
+                      ),
+                    ],
                   ),
+                );
+              }
+              return ListView.separated(
+                padding: const EdgeInsets.only(bottom: 96),
+                itemCount: list.length,
+                separatorBuilder: (context, i) =>
+                    const Divider(height: 1, color: AppColors.border),
+                itemBuilder: (_, i) => _StaffRow(staff: list[i]),
+              );
+            }),
           ),
 
           // ── Submit button (sticky) ───────────────────────────────────
@@ -176,6 +197,256 @@ class SupervisorAttendanceTab extends GetView<SupervisorAttendanceController> {
         ],
       );
     });
+  }
+}
+
+// ── Self Attendance Card ───────────────────────────────────────────────────────
+class _SelfAttendanceCard extends StatelessWidget {
+  final SupervisorAttendanceController controller;
+  const _SelfAttendanceCard({required this.controller});
+
+  Color _typeColor(String name) {
+    switch (name) {
+      case 'PRESENT':  return AppColors.attPresent;
+      case 'ABSENT':   return AppColors.attAbsent;
+      case 'HALF_DAY': return AppColors.attHalfDay;
+      case 'LEAVE':    return AppColors.attLeave;
+      case 'HOLIDAY':  return AppColors.attHoliday;
+      default:         return AppColors.mutedText;
+    }
+  }
+
+  String _typeLabel(String name) {
+    switch (name) {
+      case 'PRESENT':  return 'Present';
+      case 'ABSENT':   return 'Absent';
+      case 'HALF_DAY': return 'Half Day';
+      case 'LEAVE':    return 'Leave';
+      case 'HOLIDAY':  return 'Holiday';
+      default:
+        return name
+            .split('_')
+            .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
+            .join(' ');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final status      = controller.selfStatus.value;
+      final typeName    = status?['attendanceTypeName'] as String?;
+      final isMarked    = typeName != null;
+      final selected    = controller.selfSelection.value;
+      final isMarking   = controller.isMarkingSelf.value;
+
+      return Container(
+        color: AppColors.navy.withValues(alpha: 0.03),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        child: Row(
+          children: [
+            // Avatar
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: AppColors.navy,
+                borderRadius: BorderRadius.circular(19),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                controller.supervisorName.isNotEmpty
+                    ? controller.supervisorName[0].toUpperCase()
+                    : 'S',
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            // Name + status / chips
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          controller.supervisorName,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.bodyText,
+                              fontWeight: FontWeight.w600),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.navy.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text('You',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.navy,
+                            )),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  if (isMarked)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _typeColor(typeName).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        _typeLabel(typeName),
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: _typeColor(typeName),
+                        ),
+                      ),
+                    )
+                  else
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: controller.attendanceTypes.map((t) {
+                          final tid    = t['id'];
+                          final tName  = t['name'] as String? ?? '';
+                          final typeId = tid is int
+                              ? tid
+                              : int.tryParse(tid.toString()) ?? 0;
+                          final isSel  = selected == typeId;
+                          final color  = _typeColor(tName);
+                          return GestureDetector(
+                            onTap: () => controller.selfSelection.value =
+                                isSel ? null : typeId,
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              margin: const EdgeInsets.only(right: 6),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: isSel ? color : AppColors.background,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                    color: isSel ? color : AppColors.border),
+                              ),
+                              child: Text(
+                                _typeLabel(tName),
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 11,
+                                  fontWeight: isSel
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                  color: isSel
+                                      ? Colors.white
+                                      : AppColors.bodyText,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            // Mark button
+            if (!isMarked) ...[
+              const SizedBox(width: 10),
+              SizedBox(
+                height: 34,
+                child: ElevatedButton(
+                  onPressed: (selected != null && !isMarking)
+                      ? controller.markSelfAttendance
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.navy,
+                    disabledBackgroundColor:
+                        AppColors.navy.withValues(alpha: 0.35),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: isMarking
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Mark',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          )),
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    });
+  }
+}
+
+// ── Search Bar ────────────────────────────────────────────────────────────────
+class _SearchBar extends StatelessWidget {
+  final SupervisorAttendanceController controller;
+  const _SearchBar({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      child: TextField(
+        onChanged: (v) => controller.searchQuery.value = v,
+        style: AppTextStyles.body,
+        decoration: InputDecoration(
+          hintText: 'Search driver or cleaner…',
+          hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
+          prefixIcon: const Icon(Icons.search,
+              size: 20, color: AppColors.mutedText),
+          suffixIcon: Obx(() => controller.searchQuery.value.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear,
+                      size: 18, color: AppColors.mutedText),
+                  onPressed: () => controller.searchQuery.value = '',
+                )
+              : const SizedBox.shrink()),
+          filled: true,
+          fillColor: AppColors.background,
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+          border: OutlineInputBorder(
+            borderRadius:
+                BorderRadius.circular(AppSpacing.inputRadius),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
   }
 }
 
