@@ -62,7 +62,7 @@ class SupervisorOrdersController extends GetxController {
 
   void toggleFilter(String filter) {
     if (filter == 'ALL') {
-      selectedFilters.value = {'ALL'};
+      selectedFilters.assignAll({'ALL'});
     } else {
       final current = Set<String>.from(selectedFilters);
       current.remove('ALL');
@@ -72,7 +72,7 @@ class SupervisorOrdersController extends GetxController {
       } else {
         current.add(filter);
       }
-      selectedFilters.value = current;
+      selectedFilters.assignAll(current);
     }
     _apply();
   }

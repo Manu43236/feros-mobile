@@ -5,6 +5,8 @@ import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
 import '../../../../../core/utils/date_utils.dart';
 import '../controllers/supervisor_orders_controller.dart';
+import '../controllers/supervisor_order_detail_controller.dart';
+import 'supervisor_order_detail_view.dart';
 
 class SupervisorOrdersTab extends GetView<SupervisorOrdersController> {
   const SupervisorOrdersTab({super.key});
@@ -134,6 +136,18 @@ class _OrderCard extends StatelessWidget {
   final Map<String, dynamic> order;
   const _OrderCard({required this.order});
 
+  void _openDetail() {
+    final id = order['id'];
+    if (id == null) return;
+    Get.to(
+      () => const SupervisorOrderDetailView(),
+      binding: BindingsBuilder(() {
+        Get.put(SupervisorOrderDetailController());
+      }),
+      arguments: id is int ? id : int.tryParse(id.toString()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final status      = order['orderStatus']          as String? ?? '';
@@ -145,7 +159,9 @@ class _OrderCard extends StatelessWidget {
     final weight      = order['totalWeight'];
     final deliveryDate= order['expectedDeliveryDate'] as String?;
 
-    return Container(
+    return GestureDetector(
+      onTap: _openDetail,
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -243,6 +259,7 @@ class _OrderCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
