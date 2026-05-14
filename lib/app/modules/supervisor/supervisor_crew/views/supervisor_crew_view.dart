@@ -438,9 +438,24 @@ class _CrewCard extends StatelessWidget {
                         ],
                       ],
                     ),
+                    const SizedBox(height: 4),
+
+                    // Trips count
+                    Row(
+                      children: [
+                        const Icon(Icons.route_outlined,
+                            size: 12, color: AppColors.mutedText),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$trips trip${trips != 1 ? 's' : ''} completed',
+                          style: AppTextStyles.caption
+                              .copyWith(color: AppColors.mutedText),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 6),
 
-                    // Status + trips count
+                    // Status
                     Row(
                       children: [
                         Container(
@@ -473,15 +488,6 @@ class _CrewCard extends StatelessWidget {
                             ),
                           ),
                         ],
-                        const Spacer(),
-                        const Icon(Icons.route_outlined,
-                            size: 12, color: AppColors.mutedText),
-                        const SizedBox(width: 3),
-                        Text(
-                          '$trips trip${trips != 1 ? 's' : ''}',
-                          style: AppTextStyles.caption
-                              .copyWith(color: AppColors.mutedText),
-                        ),
                       ],
                     ),
                   ],
