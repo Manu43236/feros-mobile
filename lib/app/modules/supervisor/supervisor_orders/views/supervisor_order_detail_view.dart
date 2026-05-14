@@ -57,21 +57,46 @@ class SupervisorOrderDetailView
           length: 3,
           child: Scaffold(
             backgroundColor: AppColors.background,
-            body: NestedScrollView(
-              headerSliverBuilder: (context2, _) => [
-                _OrderBannerSliver(order: o),
-                const SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _TabBarDelegate(),
+            body: Column(
+              children: [
+                // Sticky banner
+                _OrderBanner(order: o),
+                // Sticky tab bar
+                Container(
+                  color: AppColors.surface,
+                  child: const TabBar(
+                    labelColor: AppColors.navy,
+                    unselectedLabelColor: AppColors.mutedText,
+                    indicatorColor: AppColors.navy,
+                    indicatorWeight: 2.5,
+                    labelStyle: TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                    unselectedLabelStyle: TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 13,
+                    ),
+                    tabs: [
+                      Tab(text: 'Assignments'),
+                      Tab(text: 'LRs'),
+                      Tab(text: 'Invoices'),
+                    ],
+                  ),
+                ),
+                // Scrollable tab content only
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      _AssignmentsTab(order: o),
+                      _LrsTab(controller: controller),
+                      _InvoicesTab(controller: controller),
+                    ],
+                  ),
                 ),
               ],
-              body: TabBarView(
-                children: [
-                  _AssignmentsTab(order: o),
-                  _LrsTab(controller: controller),
-                  _InvoicesTab(controller: controller),
-                ],
-              ),
             ),
           ),
         );
@@ -80,160 +105,161 @@ class SupervisorOrderDetailView
   }
 }
 
-// ── Banner Sliver ─────────────────────────────────────────────────────────────
-class _OrderBannerSliver extends StatelessWidget {
+// ── Banner ────────────────────────────────────────────────────────────────────
+class _OrderBanner extends StatelessWidget {
   final Map<String, dynamic> order;
-  const _OrderBannerSliver({required this.order});
+  const _OrderBanner({required this.order});
 
   @override
   Widget build(BuildContext context) {
-    final orderNumber   = order['orderNumber']          as String? ?? '—';
-    final clientName    = order['clientName']           as String? ?? '—';
-    final status        = order['orderStatus']          as String? ?? '';
-    final payStatus     = order['orderPaymentStatus']   as String? ?? '';
-    final fromCity      = order['sourceCityName']       as String? ?? '—';
-    final toCity        = order['destinationCityName']  as String? ?? '—';
-    final totalWeight   = order['totalWeight'];
+    final orderNumber     = order['orderNumber']          as String? ?? '—';
+    final clientName      = order['clientName']           as String? ?? '—';
+    final status          = order['orderStatus']          as String? ?? '';
+    final payStatus       = order['orderPaymentStatus']   as String? ?? '';
+    final fromCity        = order['sourceCityName']       as String? ?? '—';
+    final toCity          = order['destinationCityName']  as String? ?? '—';
+    final totalWeight     = order['totalWeight'];
     final weightFulfilled = order['totalWeightFulfilled'];
-    final remaining     = order['remainingWeight'];
-    final orderDate     = order['orderDate']            as String?;
-    final eta           = order['expectedDeliveryDate'] as String?;
+    final remaining       = order['remainingWeight'];
+    final orderDate       = order['orderDate']            as String?;
+    final eta             = order['expectedDeliveryDate'] as String?;
 
     final statusColor = _orderColor(status);
 
-    return SliverToBoxAdapter(
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF1E3A5F), Color(0xFF0F2137)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF1E3A5F), Color(0xFF0F2137)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Back + order number row
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: Get.back,
-                      child: const Icon(Icons.arrow_back_ios_new,
-                          color: Colors.white, size: 18),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        orderNumber,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ),
-                    // Status badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                            color: statusColor.withValues(alpha: 0.5)),
-                      ),
-                      child: Text(
-                        _orderLabel(status),
-                        style: AppTextStyles.caption.copyWith(
-                          color: statusColor,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                // Client name
-                Text(
-                  clientName,
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(color: Colors.white.withValues(alpha: 0.9)),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-
-                // Route
-                Row(
-                  children: [
-                    const Icon(Icons.radio_button_checked,
-                        size: 12, color: Color(0xFF93C5FD)),
-                    const SizedBox(width: 6),
-                    Text(fromCity,
-                        style: AppTextStyles.caption.copyWith(
-                            color: Colors.white.withValues(alpha: 0.7))),
-                    const SizedBox(width: 6),
-                    const Icon(Icons.arrow_forward,
-                        size: 12, color: Color(0xFF93C5FD)),
-                    const SizedBox(width: 6),
-                    const Icon(Icons.location_on,
-                        size: 12, color: Color(0xFFFB923C)),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(toCity,
-                          style: AppTextStyles.caption.copyWith(
-                              color: Colors.white.withValues(alpha: 0.7)),
-                          overflow: TextOverflow.ellipsis),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Stat chips row
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      if (totalWeight != null)
-                        _BannerChip(
-                          icon: Icons.scale_outlined,
-                          label: '${totalWeight}T total',
-                          sub: weightFulfilled != null
-                              ? '${weightFulfilled}T done'
-                              : null,
-                        ),
-                      if (remaining != null && double.tryParse(remaining.toString())! > 0)
-                        _BannerChip(
-                          icon: Icons.pending_outlined,
-                          label: '${remaining}T left',
-                        ),
-                      if (orderDate != null)
-                        _BannerChip(
-                          icon: Icons.calendar_today_outlined,
-                          label: FerosDateUtils.formatDate(orderDate),
-                          sub: 'Order date',
-                        ),
-                      if (eta != null)
-                        _BannerChip(
-                          icon: Icons.local_shipping_outlined,
-                          label: FerosDateUtils.formatDate(eta),
-                          sub: 'Expected ETA',
-                        ),
-                      _BannerChip(
-                        icon: Icons.payments_outlined,
-                        label: _paymentLabel(payStatus),
-                        color: _paymentColor(payStatus),
-                      ),
-                    ],
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Back button row + status badge
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: Get.back,
+                    child: const Icon(Icons.arrow_back_ios_new,
+                        color: Colors.white, size: 18),
                   ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          color: statusColor.withValues(alpha: 0.5)),
+                    ),
+                    child: Text(
+                      _orderLabel(status),
+                      style: AppTextStyles.caption.copyWith(
+                        color: statusColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Client name as hero title
+              Text(
+                clientName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
                 ),
-              ],
-            ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 3),
+
+              // Order number as small #-prefixed identifier
+              Text(
+                '#${orderNumber.toLowerCase()}',
+                style: AppTextStyles.caption.copyWith(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  letterSpacing: 0.4,
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Route
+              Row(
+                children: [
+                  const Icon(Icons.radio_button_checked,
+                      size: 12, color: Color(0xFF93C5FD)),
+                  const SizedBox(width: 6),
+                  Text(fromCity,
+                      style: AppTextStyles.caption.copyWith(
+                          color: Colors.white.withValues(alpha: 0.7))),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.arrow_forward,
+                      size: 12, color: Color(0xFF93C5FD)),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.location_on,
+                      size: 12, color: Color(0xFFFB923C)),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(toCity,
+                        style: AppTextStyles.caption.copyWith(
+                            color: Colors.white.withValues(alpha: 0.7)),
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // Stat chips row
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    if (totalWeight != null)
+                      _BannerChip(
+                        icon: Icons.scale_outlined,
+                        label: '${totalWeight}T total',
+                        sub: weightFulfilled != null
+                            ? '${weightFulfilled}T done'
+                            : null,
+                      ),
+                    if (remaining != null &&
+                        double.tryParse(remaining.toString())! > 0)
+                      _BannerChip(
+                        icon: Icons.pending_outlined,
+                        label: '${remaining}T left',
+                      ),
+                    if (orderDate != null)
+                      _BannerChip(
+                        icon: Icons.calendar_today_outlined,
+                        label: FerosDateUtils.formatDate(orderDate),
+                        sub: 'Order date',
+                      ),
+                    if (eta != null)
+                      _BannerChip(
+                        icon: Icons.local_shipping_outlined,
+                        label: FerosDateUtils.formatDate(eta),
+                        sub: 'Expected ETA',
+                      ),
+                    _BannerChip(
+                      icon: Icons.payments_outlined,
+                      label: _paymentLabel(payStatus),
+                      color: _paymentColor(payStatus),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -327,48 +353,6 @@ class _BannerChip extends StatelessWidget {
   }
 }
 
-// ── Tab Bar Delegate ──────────────────────────────────────────────────────────
-class _TabBarDelegate extends SliverPersistentHeaderDelegate {
-  const _TabBarDelegate();
-
-  @override
-  double get minExtent => 48;
-  @override
-  double get maxExtent => 48;
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: AppColors.surface,
-      child: const TabBar(
-        labelColor: AppColors.navy,
-        unselectedLabelColor: AppColors.mutedText,
-        indicatorColor: AppColors.navy,
-        indicatorWeight: 2.5,
-        labelStyle: TextStyle(
-          fontFamily: 'Inter',
-          fontWeight: FontWeight.w600,
-          fontSize: 13,
-        ),
-        unselectedLabelStyle: TextStyle(
-          fontFamily: 'Inter',
-          fontWeight: FontWeight.w400,
-          fontSize: 13,
-        ),
-        tabs: [
-          Tab(text: 'Assignments'),
-          Tab(text: 'LRs'),
-          Tab(text: 'Invoices'),
-        ],
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
-      false;
-}
 
 // ── Assignments Tab ───────────────────────────────────────────────────────────
 class _AssignmentsTab extends StatelessWidget {
