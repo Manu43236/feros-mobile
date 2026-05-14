@@ -6,16 +6,14 @@ import '../../../../../core/theme/app_text_styles.dart';
 import '../controllers/driver_attendance_controller.dart';
 import 'driver_attendance_sheet.dart';
 
-class DriverAttendanceView extends StatelessWidget {
+class DriverAttendanceView extends GetView<DriverAttendanceController> {
   const DriverAttendanceView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<DriverAttendanceController>(
-      init: DriverAttendanceController(),
-      builder: (ctrl) => Obx(() {
-        final byDay   = ctrl.recordsByDay;
-        final records = ctrl.records;
+    return Obx(() {
+        final byDay   = controller.recordsByDay;
+        final records = controller.records;
 
         int present = 0, absent = 0, halfDay = 0, onLeave = 0;
         for (final r in records) {
@@ -38,11 +36,11 @@ class DriverAttendanceView extends StatelessWidget {
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w600)),
             actions: [
-              if (ctrl.isCurrentMonth && !ctrl.todayMarked)
+              if (controller.isCurrentMonth && !controller.todayMarked)
                 TextButton(
                   onPressed: () => showMarkAttendanceSheet(
                     context,
-                    onMarked: ctrl.fetch,
+                    onMarked: controller.fetch,
                   ),
                   child: const Text('Mark Today',
                       style: TextStyle(
@@ -53,11 +51,11 @@ class DriverAttendanceView extends StatelessWidget {
                 ),
             ],
           ),
-          body: ctrl.isLoading.value
+          body: controller.isLoading.value
               ? const Center(
                   child: CircularProgressIndicator(color: AppColors.navy))
               : RefreshIndicator(
-                  onRefresh: ctrl.fetch,
+                  onRefresh: controller.fetch,
                   color: AppColors.navy,
                   child: ListView(
                     padding: const EdgeInsets.all(16),
@@ -84,21 +82,21 @@ class DriverAttendanceView extends StatelessWidget {
                                 IconButton(
                                   icon: const Icon(Icons.chevron_left,
                                       color: AppColors.navy),
-                                  onPressed: ctrl.prevMonth,
+                                  onPressed: controller.prevMonth,
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(),
                                 ),
                                 Text(
-                                  _monthLabel(ctrl.month.value),
+                                  _monthLabel(controller.month.value),
                                   style: AppTextStyles.bodyMedium
                                       .copyWith(color: AppColors.navy),
                                 ),
                                 IconButton(
                                   icon: Icon(Icons.chevron_right,
-                                      color: ctrl.isCurrentMonth
+                                      color: controller.isCurrentMonth
                                           ? AppColors.border
                                           : AppColors.navy),
-                                  onPressed: ctrl.nextMonth,
+                                  onPressed: controller.nextMonth,
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(),
                                 ),
@@ -125,10 +123,10 @@ class DriverAttendanceView extends StatelessWidget {
 
                             // Calendar grid
                             _CalendarGrid(
-                              month: ctrl.month.value,
+                              month: controller.month.value,
                               recordsByDay: byDay,
-                              selectedDay: ctrl.selectedDay.value,
-                              onDayTap: ctrl.selectDay,
+                              selectedDay: controller.selectedDay.value,
+                              onDayTap: controller.selectDay,
                             ),
                           ],
                         ),
@@ -162,11 +160,11 @@ class DriverAttendanceView extends StatelessWidget {
                       const SizedBox(height: 12),
 
                       // ── Selected Day Detail ────────────────────
-                      if (ctrl.selectedDay.value != null) ...[
+                      if (controller.selectedDay.value != null) ...[
                         _DayDetail(
-                          day: ctrl.selectedDay.value!,
-                          month: ctrl.month.value,
-                          record: byDay[ctrl.selectedDay.value],
+                          day: controller.selectedDay.value!,
+                          month: controller.month.value,
+                          record: byDay[controller.selectedDay.value],
                         ),
                         const SizedBox(height: 12),
                       ],
@@ -196,8 +194,7 @@ class DriverAttendanceView extends StatelessWidget {
                   ),
                 ),
         );
-      }),
-    );
+    });
   }
 
   String _monthLabel(DateTime d) {

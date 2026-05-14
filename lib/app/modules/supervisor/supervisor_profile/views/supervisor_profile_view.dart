@@ -3,10 +3,10 @@ import 'package:get/get.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/string_utils.dart';
-import '../controllers/driver_profile_controller.dart';
+import '../controllers/supervisor_profile_controller.dart';
 
-class DriverProfileView extends GetView<DriverProfileController> {
-  const DriverProfileView({super.key});
+class SupervisorProfileView extends GetView<SupervisorProfileController> {
+  const SupervisorProfileView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,12 +16,12 @@ class DriverProfileView extends GetView<DriverProfileController> {
           appBar: AppBar(
             backgroundColor: AppColors.navy,
             elevation: 0,
-            automaticallyImplyLeading: false,
             title: const Text('Profile',
                 style: TextStyle(
                     color: Colors.white,
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w600)),
+            iconTheme: const IconThemeData(color: Colors.white),
           ),
           body: ListView(
             padding: const EdgeInsets.all(16),
@@ -70,14 +70,6 @@ class DriverProfileView extends GetView<DriverProfileController> {
                             fontWeight: FontWeight.w600),
                       ),
                     ),
-
-                    // Trip count stat (Driver / Cleaner only)
-                    if (controller.showTrips) ...[
-                      const SizedBox(height: 20),
-                      const Divider(height: 1, indent: 40, endIndent: 40),
-                      const SizedBox(height: 20),
-                      Obx(() => _TripStat(count: controller.totalTrips.value)),
-                    ],
                   ],
                 ),
               ),
@@ -164,38 +156,6 @@ class DriverProfileView extends GetView<DriverProfileController> {
       case 'ADMIN':        return 'Admin';
       default:             return role;
     }
-  }
-}
-
-// ── Trip Stat ─────────────────────────────────────────────────────────────────
-class _TripStat extends StatelessWidget {
-  final int? count;
-  const _TripStat({required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        count == null
-            ? const SizedBox(
-                width: 20, height: 20,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: AppColors.navy),
-              )
-            : Text(
-                '$count',
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 36,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.navy,
-                ),
-              ),
-        const SizedBox(height: 4),
-        Text('Trips Completed',
-            style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-      ],
-    );
   }
 }
 

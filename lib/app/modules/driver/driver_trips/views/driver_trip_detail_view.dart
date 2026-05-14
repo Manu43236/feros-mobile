@@ -7,20 +7,18 @@ import '../../../../../core/widgets/delivery_sheet.dart';
 import '../../../../../core/widgets/odometer_sheet.dart';
 import '../controllers/driver_trip_detail_controller.dart';
 
-class DriverTripDetailView extends StatelessWidget {
+class DriverTripDetailView extends GetView<DriverTripDetailController> {
   const DriverTripDetailView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<DriverTripDetailController>(
-      init: DriverTripDetailController(),
-      builder: (ctrl) => Obx(() => Scaffold(
+    return Obx(() => Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: AppColors.navy,
           elevation: 0,
           title: Text(
-            '${ctrl.lr.fromCity} → ${ctrl.lr.toCity}',
+            '${controller.lr.fromCity} → ${controller.lr.toCity}',
             style: const TextStyle(
                 color: Colors.white,
                 fontFamily: 'Inter',
@@ -44,28 +42,28 @@ class DriverTripDetailView extends StatelessWidget {
                       style: AppTextStyles.caption
                           .copyWith(color: AppColors.mutedText)),
                   const SizedBox(height: 8),
-                  _LrStatusBadge(status: ctrl.lrStatus.value),
+                  _LrStatusBadge(status: controller.lrStatus.value),
 
-                  if (ctrl.lr.startedByName != null) ...[
+                  if (controller.lr.startedByName != null) ...[
                     const SizedBox(height: 10),
                     _AuditRow(
                       icon: Icons.play_circle_outline,
                       label: 'Started by',
-                      name: ctrl.lr.startedByName!,
-                      role: ctrl.lr.startedByRole,
+                      name: controller.lr.startedByName!,
+                      role: controller.lr.startedByRole,
                     ),
                   ],
-                  if (ctrl.lr.completedByName != null) ...[
+                  if (controller.lr.completedByName != null) ...[
                     const SizedBox(height: 6),
                     _AuditRow(
                       icon: Icons.check_circle_outline,
                       label: 'Completed by',
-                      name: ctrl.lr.completedByName!,
-                      role: ctrl.lr.completedByRole,
+                      name: controller.lr.completedByName!,
+                      role: controller.lr.completedByRole,
                     ),
                   ],
 
-                  if (ctrl.lrStatus.value == 'CREATED') ...[
+                  if (controller.lrStatus.value == 'CREATED') ...[
                     const SizedBox(height: 12),
                     _InfoBanner(
                       icon: Icons.hourglass_top_rounded,
@@ -77,14 +75,14 @@ class DriverTripDetailView extends StatelessWidget {
                     ),
                   ],
 
-                  if (ctrl.lrStatus.value == 'WEIGHT_LOADED') ...[
+                  if (controller.lrStatus.value == 'WEIGHT_LOADED') ...[
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: ctrl.isUpdating.value
+                        onPressed: controller.isUpdating.value
                             ? null
-                            : () => _onStartTrip(context, ctrl),
+                            : () => _onStartTrip(context, controller),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.navy,
                           foregroundColor: Colors.white,
@@ -93,7 +91,7 @@ class DriverTripDetailView extends StatelessWidget {
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: ctrl.isUpdating.value
+                        child: controller.isUpdating.value
                             ? const SizedBox(
                                 width: 18, height: 18,
                                 child: CircularProgressIndicator(
@@ -106,14 +104,14 @@ class DriverTripDetailView extends StatelessWidget {
                     ),
                   ],
 
-                  if (ctrl.lrStatus.value == 'IN_TRANSIT') ...[
+                  if (controller.lrStatus.value == 'IN_TRANSIT') ...[
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: ctrl.isUpdating.value
+                        onPressed: controller.isUpdating.value
                             ? null
-                            : () => _onMarkDelivered(context, ctrl),
+                            : () => _onMarkDelivered(context, controller),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF16A34A),
                           foregroundColor: Colors.white,
@@ -122,7 +120,7 @@ class DriverTripDetailView extends StatelessWidget {
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: ctrl.isUpdating.value
+                        child: controller.isUpdating.value
                             ? const SizedBox(
                                 width: 18, height: 18,
                                 child: CircularProgressIndicator(
@@ -143,7 +141,7 @@ class DriverTripDetailView extends StatelessWidget {
             _SectionCard(
               title: 'Trip Details',
               action: GestureDetector(
-                onTap: ctrl.viewPdf,
+                onTap: controller.viewPdf,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 5),
@@ -154,7 +152,7 @@ class DriverTripDetailView extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (ctrl.isPdfLoading.value)
+                      if (controller.isPdfLoading.value)
                         const SizedBox(
                           width: 13, height: 13,
                           child: CircularProgressIndicator(
@@ -165,7 +163,7 @@ class DriverTripDetailView extends StatelessWidget {
                             size: 15, color: AppColors.navy),
                       const SizedBox(width: 5),
                       Text(
-                        ctrl.isPdfLoading.value ? 'Loading…' : 'LR PDF',
+                        controller.isPdfLoading.value ? 'Loading…' : 'LR PDF',
                         style: AppTextStyles.caption.copyWith(
                             color: AppColors.navy,
                             fontWeight: FontWeight.w600),
@@ -176,14 +174,14 @@ class DriverTripDetailView extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  InfoRow(label: 'Order',   value: ctrl.lr.orderNumber),
-                  InfoRow(label: 'Client',  value: ctrl.lr.clientName),
-                  InfoRow(label: 'From',    value: ctrl.lr.fromCity),
-                  InfoRow(label: 'To',      value: ctrl.lr.toCity),
-                  InfoRow(label: 'Vehicle', value: ctrl.lr.vehicleNumber),
-                  if (ctrl.lr.vehicleTypeName != null)
-                    InfoRow(label: 'Type',  value: ctrl.lr.vehicleTypeName!),
-                  InfoRow(label: 'LR Date', value: ctrl.lr.lrDate),
+                  InfoRow(label: 'Order',   value: controller.lr.orderNumber),
+                  InfoRow(label: 'Client',  value: controller.lr.clientName),
+                  InfoRow(label: 'From',    value: controller.lr.fromCity),
+                  InfoRow(label: 'To',      value: controller.lr.toCity),
+                  InfoRow(label: 'Vehicle', value: controller.lr.vehicleNumber),
+                  if (controller.lr.vehicleTypeName != null)
+                    InfoRow(label: 'Type',  value: controller.lr.vehicleTypeName!),
+                  InfoRow(label: 'LR Date', value: controller.lr.lrDate),
                 ],
               ),
             ),
@@ -197,19 +195,19 @@ class DriverTripDetailView extends StatelessWidget {
                   InfoRow(
                     label: 'Allocated',
                     value:
-                        '${ctrl.lr.allocatedWeight.toStringAsFixed(1)} T',
+                        '${controller.lr.allocatedWeight.toStringAsFixed(1)} T',
                   ),
-                  if (ctrl.loadedWeight.value != null)
+                  if (controller.loadedWeight.value != null)
                     InfoRow(
                       label: 'Loaded',
                       value:
-                          '${ctrl.loadedWeight.value!.toStringAsFixed(1)} T',
+                          '${controller.loadedWeight.value!.toStringAsFixed(1)} T',
                     ),
-                  ctrl.deliveredWeight.value != null
+                  controller.deliveredWeight.value != null
                       ? InfoRow(
                           label: 'Delivered',
                           value:
-                              '${ctrl.deliveredWeight.value!.toStringAsFixed(1)} T',
+                              '${controller.deliveredWeight.value!.toStringAsFixed(1)} T',
                           showDivider: false,
                         )
                       : const InfoRow(
@@ -228,26 +226,26 @@ class DriverTripDetailView extends StatelessWidget {
                 children: [
                   InfoRow(
                     label: 'Start ODM',
-                    value: ctrl.startOdometer.value != null
-                        ? '${ctrl.startOdometer.value!.toStringAsFixed(0)} km'
+                    value: controller.startOdometer.value != null
+                        ? '${controller.startOdometer.value!.toStringAsFixed(0)} km'
                         : '—',
                   ),
                   InfoRow(
                     label: 'End ODM',
-                    value: ctrl.endOdometer.value != null
-                        ? '${ctrl.endOdometer.value!.toStringAsFixed(0)} km'
+                    value: controller.endOdometer.value != null
+                        ? '${controller.endOdometer.value!.toStringAsFixed(0)} km'
                         : '—',
                     showDivider: false,
                   ),
-                  if (ctrl.startOdometer.value != null &&
-                      ctrl.endOdometer.value != null) ...[
+                  if (controller.startOdometer.value != null &&
+                      controller.endOdometer.value != null) ...[
                     const SizedBox(height: 4),
                     const Divider(height: 1),
                     const SizedBox(height: 8),
                     InfoRow(
                       label: 'Distance',
                       value:
-                          '${(ctrl.endOdometer.value! - ctrl.startOdometer.value!).toStringAsFixed(0)} km',
+                          '${(controller.endOdometer.value! - controller.startOdometer.value!).toStringAsFixed(0)} km',
                       showDivider: false,
                     ),
                   ],
@@ -256,13 +254,12 @@ class DriverTripDetailView extends StatelessWidget {
             ),
           ],
         ),
-      )),
-    );
+    ));
   }
 
   // Sheets stay in the view (need BuildContext); results passed to controller.
   Future<void> _onStartTrip(
-      BuildContext context, DriverTripDetailController ctrl) async {
+      BuildContext context, DriverTripDetailController controller) async {
     final result = await showOdometerSheet(
       context,
       title: 'Start Trip — Record ODM',
@@ -273,11 +270,11 @@ class DriverTripDetailView extends StatelessWidget {
           'Start ODM must be ≥ last recorded reading.',
     );
     if (result == null) return;
-    ctrl.startTrip(result);
+    controller.startTrip(result);
   }
 
   Future<void> _onMarkDelivered(
-      BuildContext context, DriverTripDetailController ctrl) async {
+      BuildContext context, DriverTripDetailController controller) async {
     final odmResult = await showOdometerSheet(
       context,
       title: 'End Trip — Record ODM',
@@ -285,7 +282,7 @@ class DriverTripDetailView extends StatelessWidget {
       buttonLabel: 'Next',
       buttonColor: AppColors.navy,
       instruction: 'Take a photo of the odometer on arrival.\n'
-          'End ODM must be > ${ctrl.startOdometer.value?.toStringAsFixed(0) ?? 'start'} km.',
+          'End ODM must be > ${controller.startOdometer.value?.toStringAsFixed(0) ?? 'start'} km.',
     );
     if (odmResult == null) return;
 
@@ -293,10 +290,10 @@ class DriverTripDetailView extends StatelessWidget {
       context,
       endOdometer: odmResult.odometer,
       loadedWeight:
-          ctrl.loadedWeight.value ?? ctrl.lr.allocatedWeight,
+          controller.loadedWeight.value ?? controller.lr.allocatedWeight,
     );
     if (deliveryResult == null) return;
-    ctrl.markDelivered(odmResult, deliveryResult);
+    controller.markDelivered(odmResult, deliveryResult);
   }
 }
 

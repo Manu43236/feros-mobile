@@ -4,10 +4,10 @@ import 'package:intl/intl.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
-import '../controllers/driver_notifications_controller.dart';
+import '../controllers/supervisor_notifications_controller.dart';
 
-class DriverNotificationsView extends GetView<DriverNotificationsController> {
-  const DriverNotificationsView({super.key});
+class SupervisorNotificationsView extends GetView<SupervisorNotificationsController> {
+  const SupervisorNotificationsView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +39,7 @@ class DriverNotificationsView extends GetView<DriverNotificationsController> {
       ));
   }
 
-  Widget _buildBody(DriverNotificationsController controller) {
+  Widget _buildBody(SupervisorNotificationsController controller) {
     if (controller.state.value == ViewState.loading) {
       return const Center(
           child: CircularProgressIndicator(color: AppColors.navy));

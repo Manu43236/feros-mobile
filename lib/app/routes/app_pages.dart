@@ -7,7 +7,8 @@ import '../modules/splash/bindings/splash_binding.dart';
 import '../modules/splash/views/splash_view.dart';
 import '../modules/login/bindings/login_binding.dart';
 import '../modules/login/views/login_view.dart';
-import '../modules/supervisor/shell/views/supervisor_shell_view.dart';
+import '../modules/supervisor/supervisor_shell/bindings/supervisor_shell_binding.dart';
+import '../modules/supervisor/supervisor_shell/views/supervisor_shell_view.dart';
 import '../modules/driver/driver_notifications/views/driver_notifications_view.dart';
 import '../modules/driver/driver_notifications/bindings/driver_notifications_binding.dart';
 
@@ -38,6 +39,7 @@ class AppPages {
     GetPage(
       name: _Paths.SUPERVISOR_SHELL,
       page: () => const SupervisorShellView(),
+      binding: SupervisorShellBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(

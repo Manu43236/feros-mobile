@@ -9,15 +9,14 @@ import '../../../../../core/utils/view_state.dart';
 import '../controllers/driver_trips_controller.dart';
 import '../models/lr_model.dart';
 import 'driver_trip_detail_view.dart';
+import '../bindings/driver_trip_detail_binding.dart';
 
-class DriverTripsView extends StatelessWidget {
+class DriverTripsView extends GetView<DriverTripsController> {
   const DriverTripsView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<DriverTripsController>(
-      init: DriverTripsController(),
-      builder: (controller) => Scaffold(
+    return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: AppColors.navy,
@@ -73,6 +72,7 @@ class DriverTripsView extends StatelessWidget {
                           () => const DriverTripDetailView(),
                           arguments: lr,
                           transition: Transition.cupertino,
+                          binding: DriverTripDetailBinding(),
                         ),
                       );
                     },
@@ -82,7 +82,6 @@ class DriverTripsView extends StatelessWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }

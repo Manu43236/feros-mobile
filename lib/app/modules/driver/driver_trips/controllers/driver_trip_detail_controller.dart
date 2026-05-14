@@ -5,7 +5,8 @@ import 'package:path_provider/path_provider.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
 import '../../../../../core/popups/feros_snackbar.dart';
-import '../../../../../core/widgets/pdf_viewer_view.dart';
+import '../../../../../core/pdf_viewer/pdf_viewer_view.dart';
+import '../../../../../core/pdf_viewer/pdf_viewer_binding.dart';
 import '../../../../../core/widgets/odometer_sheet.dart';
 import '../../../../../core/widgets/delivery_sheet.dart';
 import '../models/lr_model.dart';
@@ -88,11 +89,13 @@ class DriverTripDetailController extends GetxController {
       final file  = File('${dir.path}/${lr.lrNumber}.pdf');
       await file.writeAsBytes(bytes);
       await Get.to(
-        () => PdfViewerView(
-          file: file,
-          title: '${lr.fromCity} → ${lr.toCity}',
-          subtitle: lr.lrNumber,
-        ),
+        () => const PdfViewerView(),
+        binding: PdfViewerBinding(),
+        arguments: {
+          'file': file,
+          'title': '${lr.fromCity} → ${lr.toCity}',
+          'subtitle': lr.lrNumber,
+        },
         transition: Transition.cupertino,
       );
     } catch (_) {
