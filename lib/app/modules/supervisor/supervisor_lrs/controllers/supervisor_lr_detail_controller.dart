@@ -86,26 +86,7 @@ class SupervisorLrDetailController extends GetxController {
     }
   }
 
-  Future<bool> startTrip(Map<String, dynamic> data) async {
-    isUpdating.value = true;
-    try {
-      final res = await _api.put(ApiEndpoints.lrById(lrId), data: {
-        'lrStatus': 'IN_TRANSIT',
-        ...data,
-      });
-      lr.value = (res.data as Map<String, dynamic>)['data']
-          as Map<String, dynamic>;
-      FerosSnackbar.success('Trip started');
-      isUpdating.value = false;
-      return true;
-    } catch (_) {
-      FerosSnackbar.error('Failed to update');
-      isUpdating.value = false;
-      return false;
-    }
-  }
-
-  Future<bool> markDelivered(Map<String, dynamic> data) async {
+Future<bool> markDelivered(Map<String, dynamic> data) async {
     isUpdating.value = true;
     try {
       final res = await _api.put(ApiEndpoints.lrById(lrId), data: {

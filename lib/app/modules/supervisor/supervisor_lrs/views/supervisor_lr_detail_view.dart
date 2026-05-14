@@ -441,21 +441,6 @@ class _ActionButtons extends StatelessWidget {
                 ),
               ),
             ),
-          if (status == 'WEIGHT_LOADED')
-            Expanded(
-              child: _ActionBtn(
-                label: 'Start Trip',
-                icon: Icons.local_shipping_outlined,
-                color: AppColors.lrInTransit,
-                loading: busy,
-                onTap: () => showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (_) => _StartTripSheet(controller: controller),
-                ),
-              ),
-            ),
           if (status == 'IN_TRANSIT') ...[
             Expanded(
               child: _ActionBtn(
@@ -755,68 +740,6 @@ class _RecordLoadingSheetState extends State<_RecordLoadingSheet> {
         _SheetField(
           controller: _weightCtrl,
           hint: 'e.g. 12.5',
-          keyboard: const TextInputType.numberWithOptions(decimal: true),
-        ),
-        const SizedBox(height: 16),
-        _SheetLabel('Remarks'),
-        const SizedBox(height: 6),
-        _SheetField(
-          controller: _remarksCtrl,
-          hint: 'Optional…',
-          maxLines: 2,
-        ),
-      ],
-    );
-  }
-}
-
-// ── Sheet: Start Trip ─────────────────────────────────────────────────────────
-class _StartTripSheet extends StatefulWidget {
-  final SupervisorLrDetailController controller;
-  const _StartTripSheet({required this.controller});
-  @override
-  State<_StartTripSheet> createState() => _StartTripSheetState();
-}
-
-class _StartTripSheetState extends State<_StartTripSheet> {
-  final _odomCtrl    = TextEditingController();
-  final _remarksCtrl = TextEditingController();
-
-  @override
-  void dispose() {
-    _odomCtrl.dispose();
-    _remarksCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    final odometer = double.tryParse(_odomCtrl.text.trim());
-    if (odometer == null) {
-      Get.snackbar('Required', 'Please enter the start odometer reading',
-          snackPosition: SnackPosition.BOTTOM);
-      return;
-    }
-    final data = <String, dynamic>{'startOdometer': odometer};
-    if (_remarksCtrl.text.trim().isNotEmpty) {
-      data['remarks'] = _remarksCtrl.text.trim();
-    }
-    final ok = await widget.controller.startTrip(data);
-    if (ok && mounted) Navigator.of(context).pop();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return _SimpleSheet(
-      title: 'Start Trip',
-      controller: widget.controller.isUpdating,
-      onSubmit: _submit,
-      submitLabel: 'Start Trip',
-      children: [
-        _SheetLabel('Start Odometer (km) *'),
-        const SizedBox(height: 6),
-        _SheetField(
-          controller: _odomCtrl,
-          hint: 'Current meter reading',
           keyboard: const TextInputType.numberWithOptions(decimal: true),
         ),
         const SizedBox(height: 16),
