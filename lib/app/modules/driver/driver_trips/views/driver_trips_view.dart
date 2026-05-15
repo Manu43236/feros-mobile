@@ -16,72 +16,61 @@ class DriverTripsView extends GetView<DriverTripsController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: AppColors.navy,
-          elevation: 0,
-          automaticallyImplyLeading: false,
-          title: const Text('My Trips',
-              style: TextStyle(color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.w600)),
-          centerTitle: false,
+    return Column(
+      children: [
+        // ── Search ──────────────────────────────────────────
+        Container(
+          color: AppColors.navy,
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: FerosSearchBar(
+            hint: 'Search by LR, order, client, route…',
+            onChanged: controller.onSearch,
+          ),
         ),
-        body: Column(
-          children: [
-            // ── Search ──────────────────────────────────────────
-            Container(
-              color: AppColors.navy,
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: FerosSearchBar(
-                hint: 'Search by LR, order, client, route…',
-                onChanged: controller.onSearch,
-              ),
-            ),
-            _FilterChips(controller: controller),
+        _FilterChips(controller: controller),
 
-            // ── List ────────────────────────────────────────────
-            Expanded(
-              child: Obx(() {
-                if (controller.state.value == ViewState.loading) {
-                  return const ShimmerList(count: 5);
-                }
-                if (controller.state.value == ViewState.error) {
-                  return ErrorState(
-                    message: 'Failed to load trips',
-                    onRetry: controller.fetchLrs,
+        // ── List ────────────────────────────────────────────
+        Expanded(
+          child: Obx(() {
+            if (controller.state.value == ViewState.loading) {
+              return const ShimmerList(count: 5);
+            }
+            if (controller.state.value == ViewState.error) {
+              return ErrorState(
+                message: 'Failed to load trips',
+                onRetry: controller.fetchLrs,
+              );
+            }
+            if (controller.filteredLrs.isEmpty) {
+              return const EmptyState(
+                icon: Icons.local_shipping_outlined,
+                title: 'No trips found',
+                subtitle: 'No LRs match your search or filter',
+              );
+            }
+            return RefreshIndicator(
+              onRefresh: controller.fetchLrs,
+              color: AppColors.navy,
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                itemCount: controller.filteredLrs.length,
+                itemBuilder: (_, i) {
+                  final lr = controller.filteredLrs[i];
+                  return _LrCard(
+                    lr: lr,
+                    onTap: () => Get.to(
+                      () => const DriverTripDetailView(),
+                      arguments: lr,
+                      transition: Transition.cupertino,
+                      binding: DriverTripDetailBinding(),
+                    ),
                   );
-                }
-                if (controller.filteredLrs.isEmpty) {
-                  return const EmptyState(
-                    icon: Icons.local_shipping_outlined,
-                    title: 'No trips found',
-                    subtitle: 'No LRs match your search or filter',
-                  );
-                }
-                return RefreshIndicator(
-                  onRefresh: controller.fetchLrs,
-                  color: AppColors.navy,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                    itemCount: controller.filteredLrs.length,
-                    itemBuilder: (_, i) {
-                      final lr = controller.filteredLrs[i];
-                      return _LrCard(
-                        lr: lr,
-                        onTap: () => Get.to(
-                          () => const DriverTripDetailView(),
-                          arguments: lr,
-                          transition: Transition.cupertino,
-                          binding: DriverTripDetailBinding(),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              }),
-            ),
-          ],
+                },
+              ),
+            );
+          }),
         ),
+      ],
     );
   }
 }

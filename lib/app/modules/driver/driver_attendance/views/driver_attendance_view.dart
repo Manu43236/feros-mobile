@@ -24,42 +24,47 @@ class DriverAttendanceView extends GetView<DriverAttendanceController> {
           else if (type.contains('leave'))  onLeave++;
         }
 
-        return Scaffold(
-          backgroundColor: AppColors.background,
-          appBar: AppBar(
-            backgroundColor: AppColors.navy,
-            elevation: 0,
-            automaticallyImplyLeading: false,
-            title: const Text('Attendance',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w600)),
-            actions: [
-              if (controller.isCurrentMonth && !controller.todayMarked)
-                TextButton(
-                  onPressed: () => showMarkAttendanceSheet(
-                    context,
-                    onMarked: controller.fetch,
-                  ),
-                  child: const Text('Mark Today',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13)),
-                ),
-            ],
-          ),
-          body: controller.isLoading.value
-              ? const Center(
-                  child: CircularProgressIndicator(color: AppColors.navy))
-              : RefreshIndicator(
-                  onRefresh: controller.fetch,
-                  color: AppColors.navy,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
+        return controller.isLoading.value
+            ? const Center(child: CircularProgressIndicator(color: AppColors.navy))
+            : RefreshIndicator(
+                onRefresh: controller.fetch,
+                color: AppColors.navy,
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    // ── Mark Today Banner ──────────────────────
+                    if (controller.isCurrentMonth && !controller.todayMarked) ...[
+                      GestureDetector(
+                        onTap: () => showMarkAttendanceSheet(
+                          context,
+                          onMarked: controller.fetch,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF16A34A),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+                              const SizedBox(width: 10),
+                              const Expanded(
+                                child: Text('Mark Today\'s Attendance',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontFamily: 'Inter',
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14)),
+                              ),
+                              const Icon(Icons.chevron_right, color: Colors.white, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+
                       // ── Calendar Card ──────────────────────────
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -193,7 +198,7 @@ class DriverAttendanceView extends GetView<DriverAttendanceController> {
                     ],
                   ),
                 ),
-        );
+              );
     });
   }
 

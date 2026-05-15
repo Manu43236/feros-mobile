@@ -11,19 +11,7 @@ class DriverProfileView extends GetView<DriverProfileController> {
   @override
   Widget build(BuildContext context) {
     final user = controller.auth.user;
-    return Scaffold(
-          backgroundColor: AppColors.background,
-          appBar: AppBar(
-            backgroundColor: AppColors.navy,
-            elevation: 0,
-            automaticallyImplyLeading: false,
-            title: const Text('Profile',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w600)),
-          ),
-          body: ListView(
+    return ListView(
             padding: const EdgeInsets.all(16),
             children: [
               // ── Avatar + Name ──────────────────────────────────
@@ -149,7 +137,6 @@ class DriverProfileView extends GetView<DriverProfileController> {
               ),
               const SizedBox(height: 8),
             ],
-          ),
     );
   }
 
