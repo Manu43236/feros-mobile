@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
-import '../../../../../core/widgets/feros_search_bar.dart';
 import '../../../../../core/widgets/shimmer_card.dart';
 import '../controllers/store_keeper_dashboard_controller.dart';
 import '../../../driver/driver_attendance/controllers/driver_attendance_controller.dart';
 import '../../../driver/driver_attendance/views/driver_attendance_sheet.dart';
-import 'store_keeper_part_detail_view.dart';
+import '../../../driver/driver_shell/controllers/driver_shell_controller.dart';
 
 class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
   const StoreKeeperDashboardView({super.key});
@@ -21,54 +20,8 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
       return RefreshIndicator(
         onRefresh: controller.fetchAll,
         color: AppColors.navy,
-        child: Obx(() {
-          final items = controller.filteredItems;
-          return Stack(
-            children: [
-              CustomScrollView(
-                slivers: [
-                  // ── Search bar ───────────────────────────────────
-                  SliverToBoxAdapter(
-                    child: Container(
-                      color: AppColors.navy,
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: FerosSearchBar(
-                              hint: 'Search by part name, number, category…',
-                              onChanged: controller.onSearch,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () => _showAddPartSheet(context),
-                            child: Container(
-                              height: 44,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.add, color: Colors.white, size: 18),
-                                  SizedBox(width: 4),
-                                  Text('New Part',
-                                      style: TextStyle(
-                                          fontFamily: 'Inter',
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
+        child: CustomScrollView(
+            slivers: [
                   // ── Mark Attendance banner ───────────────────────
                   SliverToBoxAdapter(
                     child: Obx(() {
@@ -82,7 +35,7 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                           onMarked: attCtrl.fetch,
                         ),
                         child: Container(
-                          margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                          margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
@@ -136,13 +89,13 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                             color: const Color(0xFF16A34A),
                           ),
                           GestureDetector(
-                            onTap: controller.toggleLowStockFilter,
+                            onTap: () =>
+                                Get.find<DriverShellController>().onTabTapped(1),
                             child: _SummaryCard(
                               label: 'Low Stock',
                               value: '${controller.lowStockCount}',
                               icon: Icons.warning_amber_outlined,
                               color: const Color(0xFFDC2626),
-                              isActive: controller.filterLow.value,
                             ),
                           ),
                           _SummaryCard(
@@ -156,120 +109,16 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                     ),
                   ),
 
-                  // ── Low stock banner ─────────────────────────────
-                  if (controller.filterLow.value)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFEF2F2),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFFECACA)),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.warning_amber_outlined,
-                                  size: 16, color: Color(0xFFDC2626)),
-                              const SizedBox(width: 8),
-                              const Expanded(
-                                child: Text('Showing low stock items only',
-                                    style: TextStyle(
-                                        fontFamily: 'Inter',
-                                        fontSize: 12,
-                                        color: Color(0xFFDC2626))),
-                              ),
-                              GestureDetector(
-                                onTap: controller.toggleLowStockFilter,
-                                child: const Text('Clear',
-                                    style: TextStyle(
-                                        fontFamily: 'Inter',
-                                        fontSize: 12,
-                                        color: Color(0xFFDC2626),
-                                        decoration: TextDecoration.underline)),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                  // ── Stock list ───────────────────────────────────
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                    sliver: items.isEmpty
-                        ? SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 40),
-                              child: Column(
-                                children: [
-                                  const Icon(Icons.inventory_2_outlined,
-                                      size: 52, color: AppColors.border),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    controller.filterLow.value
-                                        ? 'No low stock items'
-                                        : 'No stock records found',
-                                    style: AppTextStyles.body
-                                        .copyWith(color: AppColors.mutedText),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (_, i) => _StockCard(
-                                item: items[i],
-                                onTap: () => Get.to(
-                                  () => StoreKeeperPartDetailView(item: items[i]),
-                                  transition: Transition.cupertino,
-                                ),
-                              ),
-                              childCount: items.length,
-                            ),
-                          ),
+                  // ── Low Stock Alerts ─────────────────────────────
+                  SliverToBoxAdapter(
+                    child: _LowStockAlerts(controller: controller),
                   ),
+
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 ],
               ),
-
-              // ── FAB ───────────────────────────────────────────────
-              Positioned(
-                right: 16,
-                bottom: 24,
-                child: FloatingActionButton.extended(
-                  onPressed: () => _showStockInSheet(context),
-                  backgroundColor: AppColors.navy,
-                  icon: const Icon(Icons.add, color: Colors.white),
-                  label: Text('Stock In',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                          color: Colors.white, fontWeight: FontWeight.w600)),
-                ),
-              ),
-            ],
-          );
-        }),
       );
     });
-  }
-
-  void _showStockInSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => StockInSheet(controller: controller),
-    );
-  }
-
-  void _showAddPartSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _AddPartSheet(controller: controller),
-    );
   }
 }
 
@@ -1066,6 +915,102 @@ class _AddPartSheetState extends State<_AddPartSheet> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Low Stock Alerts section ───────────────────────────────────────────────────
+class _LowStockAlerts extends StatelessWidget {
+  final StoreKeeperDashboardController controller;
+  const _LowStockAlerts({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final lowItems = controller.stockItems
+        .where((i) => i['isLowStock'] == true)
+        .take(5)
+        .toList();
+
+    if (lowItems.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.warning_amber_outlined,
+                  size: 16, color: Color(0xFFDC2626)),
+              const SizedBox(width: 6),
+              Text('Low Stock Alerts',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                      color: const Color(0xFFDC2626),
+                      fontWeight: FontWeight.w700)),
+              const Spacer(),
+              GestureDetector(
+                onTap: () =>
+                    Get.find<DriverShellController>().onTabTapped(1),
+                child: Text('View All',
+                    style: AppTextStyles.caption.copyWith(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...lowItems.map((item) {
+            final name = item['partName'] as String? ?? '—';
+            final qty  = (item['quantity'] as num? ?? 0).toInt();
+            final min  = (item['minStockLevel'] as num? ?? 0).toInt();
+            final unit = item['unit'] as String? ?? '';
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7F7),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFECACA)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_outlined,
+                      size: 14, color: Color(0xFFDC2626)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(name,
+                        style: AppTextStyles.body
+                            .copyWith(color: AppColors.navy),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                  const SizedBox(width: 8),
+                  Text('$qty / $min $unit',
+                      style: AppTextStyles.caption.copyWith(
+                          color: const Color(0xFFDC2626),
+                          fontWeight: FontWeight.w600)),
+                ],
+              ),
+            );
+          }),
+          if (controller.lowStockCount > 5)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: GestureDetector(
+                onTap: () =>
+                    Get.find<DriverShellController>().onTabTapped(1),
+                child: Text(
+                  '+${controller.lowStockCount - 5} more low stock items',
+                  style: AppTextStyles.caption.copyWith(
+                      color: AppColors.mutedText,
+                      decoration: TextDecoration.underline),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -5,8 +5,23 @@ import '../../../../../core/api/api_endpoints.dart';
 class StoreKeeperRequestsController extends GetxController {
   final _api = Get.find<ApiClient>();
 
-  final isLoading = true.obs;
-  final requests  = <Map<String, dynamic>>[].obs;
+  final isLoading   = true.obs;
+  final requests    = <Map<String, dynamic>>[].obs;
+  final searchQuery = ''.obs;
+
+  List<Map<String, dynamic>> get filteredRequests {
+    final q = searchQuery.value.trim().toLowerCase();
+    if (q.isEmpty) return requests.toList();
+    return requests.where((r) {
+      final name = (r['partName']         as String? ?? '').toLowerCase();
+      final by   = (r['requestedByName']  as String? ?? '').toLowerCase();
+      final veh  = (r['vehicleNumber']    as String? ?? '').toLowerCase();
+      return name.contains(q) || by.contains(q) || veh.contains(q);
+    }).toList();
+  }
+
+  int get pendingCount =>
+      requests.where((r) => r['status'] == 'REQUESTED').length;
 
   @override
   void onInit() {
@@ -17,7 +32,7 @@ class StoreKeeperRequestsController extends GetxController {
   Future<void> fetchRequests() async {
     isLoading.value = true;
     try {
-      final res = await _api.get(ApiEndpoints.partRequestsPending);
+      final res = await _api.get(ApiEndpoints.partRequestsAll);
       requests.value = List<Map<String, dynamic>>.from(res.data['data'] ?? []);
     } catch (_) {
     } finally {
@@ -25,13 +40,15 @@ class StoreKeeperRequestsController extends GetxController {
     }
   }
 
+  void onSearch(String q) => searchQuery.value = q;
+
   Future<bool> approveRequest(int servicePartId, int quantityApproved) async {
     try {
       await _api.put(
         ApiEndpoints.approveServicePart(servicePartId),
         data: {'status': 'APPROVED', 'quantityApproved': quantityApproved},
       );
-      requests.removeWhere((r) => r['servicePartId'] == servicePartId);
+      await fetchRequests();
       return true;
     } catch (_) {
       return false;
@@ -44,7 +61,7 @@ class StoreKeeperRequestsController extends GetxController {
         ApiEndpoints.approveServicePart(servicePartId),
         data: {'status': 'REJECTED', 'rejectionReason': reason},
       );
-      requests.removeWhere((r) => r['servicePartId'] == servicePartId);
+      await fetchRequests();
       return true;
     } catch (_) {
       return false;

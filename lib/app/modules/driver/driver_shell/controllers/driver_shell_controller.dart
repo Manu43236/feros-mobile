@@ -28,8 +28,8 @@ class DriverShellController extends GetxController {
         ];
       case 'STORE_KEEPER':
         return const [
-          NavItem(label: 'Dashboard',  icon: Icons.dashboard_outlined,       activeIcon: Icons.dashboard,         route: '/shell'),
-          NavItem(label: 'Requests',   icon: Icons.pending_actions_outlined, activeIcon: Icons.pending_actions,   route: '/shell'),
+          NavItem(label: 'Home',       icon: Icons.home_outlined,            activeIcon: Icons.home,              route: '/shell'),
+          NavItem(label: 'Inventory',  icon: Icons.inventory_2_outlined,     activeIcon: Icons.inventory_2,       route: '/shell'),
           NavItem(label: 'Attendance', icon: Icons.check_circle_outline,     activeIcon: Icons.check_circle,      route: '/shell'),
           NavItem(label: 'Profile',    icon: Icons.person_outline,           activeIcon: Icons.person,            route: '/shell'),
         ];

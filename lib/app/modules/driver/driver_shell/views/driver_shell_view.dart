@@ -1,7 +1,7 @@
 import 'package:feros/app/modules/driver/driver_dashboard/views/driver_dashboard_view.dart';
 import 'package:feros/app/modules/driver/driver_shell/controllers/driver_shell_controller.dart';
 import 'package:feros/app/modules/store_keeper/store_keeper_dashboard/views/store_keeper_dashboard_view.dart';
-import 'package:feros/app/modules/store_keeper/store_keeper_requests/views/store_keeper_requests_view.dart';
+import 'package:feros/app/modules/store_keeper/store_keeper_inventory/views/store_keeper_inventory_view.dart';
 import 'package:feros/app/modules/store_keeper/store_keeper_profile/views/store_keeper_profile_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -168,7 +168,7 @@ class DriverShellView extends GetView<DriverShellController> {
       case 'STORE_KEEPER':
         return [
           const StoreKeeperDashboardView(),
-          const StoreKeeperRequestsView(),
+          const StoreKeeperInventoryView(),
           DriverAttendanceView(),
           const StoreKeeperProfileView(),
         ];
