@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/popups/feros_snackbar.dart';
 import '../../../../../core/utils/view_state.dart';
 
 class SupervisorDashboardController extends GetxController {
@@ -52,6 +54,11 @@ class SupervisorDashboardController extends GetxController {
 
   final unreadNotifications = 0.obs;
 
+  // Self attendance
+  final selfAttendance  = Rxn<Map<String, dynamic>>();   // null = not marked
+  final attendanceTypes = <Map<String, dynamic>>[].obs;
+  final isSelfMarking   = false.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -61,8 +68,12 @@ class SupervisorDashboardController extends GetxController {
   Future<void> fetchDashboard() async {
     state.value = ViewState.loading;
     try {
-      final res  = await _api.get(ApiEndpoints.dashboard);
-      final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      final results = await Future.wait([
+        _api.get(ApiEndpoints.dashboard),
+        _api.get(ApiEndpoints.attendanceTypes),
+      ]);
+
+      final data = (results[0].data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
 
       final o = (data['orders']     as Map<String, dynamic>?) ?? {};
       final v = (data['vehicles']   as Map<String, dynamic>?) ?? {};
@@ -109,9 +120,43 @@ class SupervisorDashboardController extends GetxController {
 
       unreadNotifications.value = data['unreadNotifications'] as int? ?? 0;
 
+      // Attendance types
+      final typesData = (results[1].data as Map<String, dynamic>)['data'] as List?;
+      if (typesData != null) {
+        attendanceTypes.assignAll(
+          typesData.cast<Map<String, dynamic>>()
+              .where((t) => t['isActive'] as bool? ?? true)
+              .toList(),
+        );
+      }
+
+      // Self attendance today
+      try {
+        final todayRes = await _api.get(ApiEndpoints.attendanceTodayStatus);
+        final todayData = (todayRes.data as Map<String, dynamic>)['data'];
+        selfAttendance.value = todayData as Map<String, dynamic>?;
+      } catch (_) {
+        selfAttendance.value = null;
+      }
+
       state.value = ViewState.success;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[Dashboard] $e');
       state.value = ViewState.error;
     }
+  }
+
+  Future<void> markSelf(int typeId) async {
+    isSelfMarking.value = true;
+    try {
+      final res = await _api.post(ApiEndpoints.myAttendance,
+          data: {'attendanceTypeId': typeId});
+      selfAttendance.value =
+          (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>?;
+      FerosSnackbar.success('Attendance marked');
+    } catch (e) {
+      FerosSnackbar.error('Failed to mark attendance');
+    }
+    isSelfMarking.value = false;
   }
 }
