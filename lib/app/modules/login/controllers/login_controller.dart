@@ -33,6 +33,7 @@ class LoginController extends GetxController {
   }
 
   void onPinDigitEntered(int index, String value) {
+    if (isClosed) return;
     if (value.isNotEmpty && index < 3) {
       pinFocusNodes[index + 1].requestFocus();
     }
@@ -42,7 +43,10 @@ class LoginController extends GetxController {
     pinError.value = null;
   }
 
-  void onPhoneChanged(String _) => phoneError.value = null;
+  void onPhoneChanged(String _) {
+    if (isClosed) return;
+    phoneError.value = null;
+  }
 
   Future<void> login() async {
     // Validate
@@ -81,7 +85,7 @@ class LoginController extends GetxController {
     } catch (e) {
       FerosSnackbar.error('Something went wrong. Please try again.');
     } finally {
-      isLoading.value = false;
+      if (!isClosed) isLoading.value = false;
     }
   }
 }
