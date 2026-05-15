@@ -111,10 +111,16 @@ class _AuthInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401) {
       final storage = Get.find<StorageService>();
-      await storage.clearAll();
-      Get.offAllNamed('/login');
-      handler.reject(err);
-      return;
+      final token = await storage.getToken();
+      if (token != null) {
+        // Session expired — clear and force back to login
+        await storage.clearAll();
+        Get.offAllNamed('/login');
+        handler.reject(err);
+        return;
+      }
+      // No token means user is on login screen with wrong credentials
+      // Just let the error propagate normally
     }
     handler.next(err);
   }

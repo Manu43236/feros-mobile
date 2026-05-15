@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_endpoints.dart';
@@ -11,26 +12,44 @@ class LoginController extends GetxController {
   final _api  = Get.find<ApiClient>();
   final _auth = Get.find<AuthService>();
 
+  final phoneController = TextEditingController();
+  final List<TextEditingController> pinControllers =
+      List.generate(4, (_) => TextEditingController());
+  final List<FocusNode> pinFocusNodes =
+      List.generate(4, (_) => FocusNode());
+
   final isLoading  = false.obs;
   final phoneError = RxnString();
   final pinError   = RxnString();
 
-  Future<void> login({required String phone, required String pin}) async {
-    final phoneVal = FerosValidators.phone(phone);
-    if (phoneVal != null) {
-      phoneError.value = phoneVal;
-      return;
-    }
-    if (pin.length < 4) {
-      pinError.value = 'Enter your 4-digit PIN';
-      return;
-    }
+  String get _pin => pinControllers.map((c) => c.text).join();
+
+  @override
+  void onClose() {
+    phoneController.dispose();
+    for (final c in pinControllers) c.dispose();
+    for (final f in pinFocusNodes)  f.dispose();
+    super.onClose();
+  }
+
+  void onPinDigitEntered(int index, String value) {
+    if (value.isNotEmpty && index < 3) pinFocusNodes[index + 1].requestFocus();
+    if (value.isEmpty   && index > 0)  pinFocusNodes[index - 1].requestFocus();
+    pinError.value = null;
+  }
+
+  void onPhoneChanged(String _) => phoneError.value = null;
+
+  Future<void> login() async {
+    final phoneVal = FerosValidators.phone(phoneController.text.trim());
+    if (phoneVal != null) { phoneError.value = phoneVal; return; }
+    if (_pin.length < 4)  { pinError.value = 'Enter your 4-digit PIN'; return; }
 
     isLoading.value = true;
     try {
       final response = await _api.post(ApiEndpoints.login, data: {
-        'phone': phone,
-        'pin':   pin,
+        'phone': phoneController.text.trim(),
+        'pin':   _pin,
       });
 
       final data    = response.data as Map<String, dynamic>;
