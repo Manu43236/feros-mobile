@@ -5,6 +5,8 @@ import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/widgets/feros_search_bar.dart';
 import '../../../../../core/widgets/shimmer_card.dart';
 import '../controllers/store_keeper_dashboard_controller.dart';
+import '../../../driver/driver_attendance/controllers/driver_attendance_controller.dart';
+import '../../../driver/driver_attendance/views/driver_attendance_sheet.dart';
 import 'store_keeper_part_detail_view.dart';
 
 class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
@@ -65,6 +67,48 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                         ],
                       ),
                     ),
+                  ),
+
+                  // ── Mark Attendance banner ───────────────────────
+                  SliverToBoxAdapter(
+                    child: Obx(() {
+                      final attCtrl = Get.find<DriverAttendanceController>();
+                      if (!attCtrl.isCurrentMonth || attCtrl.todayMarked) {
+                        return const SizedBox.shrink();
+                      }
+                      return GestureDetector(
+                        onTap: () => showMarkAttendanceSheet(
+                          context,
+                          onMarked: attCtrl.fetch,
+                        ),
+                        child: Container(
+                          margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF16A34A),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.check_circle_outline,
+                                  color: Colors.white, size: 20),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text("Mark Today's Attendance",
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontFamily: 'Inter',
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14)),
+                              ),
+                              Icon(Icons.chevron_right,
+                                  color: Colors.white, size: 20),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
                   ),
 
                   // ── Summary cards ────────────────────────────────
