@@ -23,7 +23,7 @@ class DriverShellView extends GetView<DriverShellController> {
 
       return Scaffold(
         backgroundColor: AppColors.background,
-        appBar: _buildAppBar(index, items),
+        appBar: _buildAppBar(),
         body: IndexedStack(
           index: index,
           children: _buildPages(),
@@ -37,79 +37,88 @@ class DriverShellView extends GetView<DriverShellController> {
     });
   }
 
-  PreferredSizeWidget _buildAppBar(int index, List items) {
+  PreferredSizeWidget _buildAppBar() {
     final auth = Get.find<AuthService>();
     return AppBar(
       backgroundColor: AppColors.navy,
       elevation: 0,
       automaticallyImplyLeading: false,
-      leading: CircleAvatar(
-        radius: 17,
-        backgroundColor: Colors.white.withValues(alpha: 0.2),
-        child: Text(
-          FerosStringUtils.initials(auth.user?.name ?? ''),
-          style: AppTextStyles.bodySemiBold.copyWith(
-            color: Colors.white,
-            fontSize: 12,
+      leading: IconButton(
+        onPressed: () => controller.onTabTapped(controller.navItems.length - 1),
+        icon: CircleAvatar(
+          radius: 17,
+          backgroundColor: Colors.white.withValues(alpha: 0.2),
+          child: Text(
+            FerosStringUtils.initials(auth.user?.name ?? ''),
+            style: AppTextStyles.bodySemiBold.copyWith(
+              color: Colors.white,
+              fontSize: 12,
+            ),
           ),
         ),
       ),
-      title: index == 0
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _greeting(),
-                  style: AppTextStyles.caption.copyWith(
-                    color: Colors.white.withValues(alpha: 0.7),
-                  ),
+      title: Obx(() {
+        final idx = controller.currentIndex.value;
+        if (idx == 0) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _greeting(),
+                style: AppTextStyles.caption.copyWith(
+                  color: Colors.white.withValues(alpha: 0.7),
                 ),
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        auth.user?.name ?? '',
-                        style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        FerosStringUtils.roleLabel(auth.user?.role),
-                        style: AppTextStyles.caption.copyWith(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 10,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            )
-          : Text(
-              items[index].label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
               ),
-            ),
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      auth.user?.name ?? '',
+                      style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      FerosStringUtils.roleLabel(auth.user?.role),
+                      style: AppTextStyles.caption.copyWith(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        }
+        return Text(
+          controller.navItems[idx].label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+        );
+      }),
       actions: [
-        if (index == 0)
-          IconButton(
+        Obx(() {
+          if (controller.currentIndex.value != 0) return const SizedBox.shrink();
+          return IconButton(
             icon: const Icon(Icons.notifications_outlined, color: Colors.white),
             onPressed: () => Get.to(
               () => const DriverNotificationsView(),
               binding: DriverNotificationsBinding(),
             ),
-          ),
+          );
+        }),
       ],
     );
   }
@@ -261,31 +270,18 @@ class _ComingSoonTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.navy,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: Text(title,
-            style: const TextStyle(
-                color: Colors.white,
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w600)),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 52, color: AppColors.mutedText),
-            const SizedBox(height: 16),
-            Text(title,
-                style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
-            const SizedBox(height: 8),
-            Text('Coming in Sprint $sprint',
-                style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
-          ],
-        ),
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 52, color: AppColors.mutedText),
+          const SizedBox(height: 16),
+          Text(title,
+              style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
+          const SizedBox(height: 8),
+          Text('Coming in Sprint $sprint',
+              style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+        ],
       ),
     );
   }
