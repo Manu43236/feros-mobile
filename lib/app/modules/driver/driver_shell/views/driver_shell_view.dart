@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../../core/utils/string_utils.dart';
+import '../../../../../core/services/auth_service.dart';
 import '../../driver_trips/views/driver_trips_view.dart';
 import '../../driver_attendance/views/driver_attendance_view.dart';
 import '../../driver_profile/views/driver_profile_view.dart';
-import '../../../../../core/services/auth_service.dart';
+import '../../driver_notifications/views/driver_notifications_view.dart';
+import '../../driver_notifications/bindings/driver_notifications_binding.dart';
 
 class DriverShellView extends GetView<DriverShellController> {
   const DriverShellView({super.key});
@@ -20,6 +23,7 @@ class DriverShellView extends GetView<DriverShellController> {
 
       return Scaffold(
         backgroundColor: AppColors.background,
+        appBar: _buildAppBar(index, items),
         body: IndexedStack(
           index: index,
           children: _buildPages(),
@@ -31,6 +35,90 @@ class DriverShellView extends GetView<DriverShellController> {
         ),
       );
     });
+  }
+
+  PreferredSizeWidget _buildAppBar(int index, List items) {
+    final auth = Get.find<AuthService>();
+    return AppBar(
+      backgroundColor: AppColors.navy,
+      elevation: 0,
+      automaticallyImplyLeading: false,
+      leading: CircleAvatar(
+        radius: 17,
+        backgroundColor: Colors.white.withValues(alpha: 0.2),
+        child: Text(
+          FerosStringUtils.initials(auth.user?.name ?? ''),
+          style: AppTextStyles.bodySemiBold.copyWith(
+            color: Colors.white,
+            fontSize: 12,
+          ),
+        ),
+      ),
+      title: index == 0
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _greeting(),
+                  style: AppTextStyles.caption.copyWith(
+                    color: Colors.white.withValues(alpha: 0.7),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        auth.user?.name ?? '',
+                        style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        FerosStringUtils.roleLabel(auth.user?.role),
+                        style: AppTextStyles.caption.copyWith(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : Text(
+              items[index].label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+      actions: [
+        if (index == 0)
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+            onPressed: () => Get.to(
+              () => const DriverNotificationsView(),
+              binding: DriverNotificationsBinding(),
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _greeting() {
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Good Morning,';
+    if (h < 17) return 'Good Afternoon,';
+    return 'Good Evening,';
   }
 
   List<Widget> _buildPages() {
