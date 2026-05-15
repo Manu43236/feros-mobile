@@ -1300,8 +1300,8 @@ class _FuelTabBodyState extends State<_FuelTabBody>
       // Summary calculations
       final tankCap     = v['fuelTankCapacity'];
       final currentFuel = v['currentFuelLevel'];
-      final fuelPct     = (tankCap != null && currentFuel != null)
-          ? ((currentFuel as num) / (tankCap as num) * 100).round()
+      final fuelPct     = (tankCap != null && currentFuel != null && (tankCap as num) > 0)
+          ? ((currentFuel as num) / (tankCap as num) * 100).round().clamp(0, 100)
           : null;
 
       final validMileage = logs
