@@ -2,7 +2,8 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   // Auth
-  static const login = '/auth/login';
+  static const login      = '/auth/login';
+  static const changePin  = '/auth/change-pin';
 
   // Dashboard
   static const dashboard    = '/dashboard';

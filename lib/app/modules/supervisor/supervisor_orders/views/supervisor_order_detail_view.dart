@@ -67,7 +67,7 @@ class SupervisorOrderDetailView
             body: Column(
               children: [
                 // Sticky banner
-                _OrderBanner(order: o),
+                _OrderBanner(order: o, controller: controller),
                 // Sticky tab bar
                 Container(
                   color: AppColors.surface,
@@ -111,8 +111,9 @@ class SupervisorOrderDetailView
 
 // ── Banner ────────────────────────────────────────────────────────────────────
 class _OrderBanner extends StatelessWidget {
-  final Map<String, dynamic> order;
-  const _OrderBanner({required this.order});
+  final Map<String, dynamic>          order;
+  final SupervisorOrderDetailController controller;
+  const _OrderBanner({required this.order, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -264,11 +265,87 @@ class _OrderBanner extends StatelessWidget {
                   ],
                 ),
               ),
+              // ── Status action buttons ──────────────────────────
+              Obx(() {
+                final nextStatuses = _nextStatuses(status);
+                if (nextStatuses.isEmpty) return const SizedBox.shrink();
+                final isLoading = controller.isUpdatingStatus.value;
+                return Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Row(
+                    children: nextStatuses.map((s) {
+                      final isDestructive = s == 'CANCELLED';
+                      return Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                              right: s == nextStatuses.last ? 0 : 8),
+                          child: ElevatedButton(
+                            onPressed: isLoading
+                                ? null
+                                : () => controller.updateStatus(s),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isDestructive
+                                  ? AppColors.error
+                                  : AppColors.orange,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: isLoading
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white),
+                                  )
+                                : Text(
+                                    _statusActionLabel(s),
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                );
+              }),
             ],
           ),
         ),
       ),
     );
+  }
+
+  List<String> _nextStatuses(String s) {
+    switch (s) {
+      case 'PENDING':
+        return ['ACTIVE', 'CANCELLED'];
+      case 'ACTIVE':
+      case 'PARTIALLY_ASSIGNED':
+      case 'FULLY_ASSIGNED':
+        return ['COMPLETED', 'CANCELLED'];
+      case 'IN_TRANSIT':
+      case 'PARTIALLY_DELIVERED':
+        return ['COMPLETED'];
+      default:
+        return [];
+    }
+  }
+
+  String _statusActionLabel(String s) {
+    switch (s) {
+      case 'ACTIVE':    return 'Activate';
+      case 'COMPLETED': return 'Mark Complete';
+      case 'CANCELLED': return 'Cancel Order';
+      default:          return s;
+    }
   }
 
   Color _orderColor(String s) {

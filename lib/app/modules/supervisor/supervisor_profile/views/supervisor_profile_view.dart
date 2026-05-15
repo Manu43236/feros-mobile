@@ -4,6 +4,7 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/string_utils.dart';
 import '../controllers/supervisor_profile_controller.dart';
+import 'change_pin_view.dart';
 
 class SupervisorProfileView extends GetView<SupervisorProfileController> {
   const SupervisorProfileView({super.key});
@@ -107,6 +108,30 @@ class SupervisorProfileView extends GetView<SupervisorProfileController> {
                       value: '#${user?.userId ?? '—'}',
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // ── Change PIN ────────────────────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [
+                    BoxShadow(
+                        color: Color(0x0A000000),
+                        blurRadius: 8,
+                        offset: Offset(0, 2)),
+                  ],
+                ),
+                child: ListTile(
+                  leading: const Icon(Icons.lock_outline,
+                      color: AppColors.navy, size: 22),
+                  title: Text('Change PIN',
+                      style: AppTextStyles.body.copyWith(color: AppColors.navy)),
+                  trailing: const Icon(Icons.chevron_right,
+                      color: AppColors.mutedText),
+                  onTap: () => Get.to(() => const ChangePinView()),
                 ),
               ),
               const SizedBox(height: 24),

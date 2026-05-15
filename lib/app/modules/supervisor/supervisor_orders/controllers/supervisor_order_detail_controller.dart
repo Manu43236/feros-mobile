@@ -198,6 +198,28 @@ class SupervisorOrderDetailController extends GetxController {
     }
   }
 
+  // ── Order status ───────────────────────────────────────────────────────────
+  final isUpdatingStatus = false.obs;
+
+  Future<bool> updateStatus(String newStatus) async {
+    isUpdatingStatus.value = true;
+    try {
+      final res = await _api.patch(
+        ApiEndpoints.orderStatus(orderId),
+        queryParameters: {'status': newStatus},
+      );
+      order.value = (res.data as Map<String, dynamic>)['data']
+          as Map<String, dynamic>;
+      FerosSnackbar.success('Order status updated');
+      return true;
+    } catch (e) {
+      FerosSnackbar.error(e.toString());
+      return false;
+    } finally {
+      isUpdatingStatus.value = false;
+    }
+  }
+
   // ── LR PDF ─────────────────────────────────────────────────────────────────
   Future<void> viewLrPdf(int lrId, String lrNumber, String route) async {
     if (pdfLoadingId.value != null) return;

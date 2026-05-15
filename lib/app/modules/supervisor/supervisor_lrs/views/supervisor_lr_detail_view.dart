@@ -124,6 +124,19 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
                 _EmptySection(label: 'No charges recorded')
               else
                 ...controller.charges.map((c) => _ChargeCard(charge: c)),
+              const SizedBox(height: 16),
+
+              // ── Trip Proofs ─────────────────────────────────────────────
+              _SectionHeader(
+                title: 'Trip Proofs',
+                count: controller.proofs.length,
+              ),
+              const SizedBox(height: 8),
+              if (controller.proofs.isEmpty)
+                _EmptySection(label: 'No proofs submitted yet')
+              else
+                ...controller.proofs.map(
+                    (p) => _ProofCard(proof: p, controller: controller)),
             ],
           ),
         );
@@ -656,9 +669,9 @@ class _ActionBtn extends StatelessWidget {
 class _SectionHeader extends StatelessWidget {
   final String title;
   final int count;
-  final VoidCallback onAdd;
+  final VoidCallback? onAdd;
   const _SectionHeader(
-      {required this.title, required this.count, required this.onAdd});
+      {required this.title, required this.count, this.onAdd});
 
   @override
   Widget build(BuildContext context) {
@@ -679,8 +692,9 @@ class _SectionHeader extends StatelessWidget {
                   color: AppColors.navy, fontWeight: FontWeight.w700)),
         ),
         const Spacer(),
-        GestureDetector(
-          onTap: onAdd,
+        if (onAdd != null)
+          GestureDetector(
+          onTap: onAdd!,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -1370,5 +1384,208 @@ String _lrLabel(String s) {
     case 'INVOICED':      return 'Invoiced';
     case 'CANCELLED':     return 'Cancelled';
     default:              return s;
+  }
+}
+
+// ── Proof Card ────────────────────────────────────────────────────────────────
+class _ProofCard extends StatelessWidget {
+  final Map<String, dynamic>          proof;
+  final SupervisorLrDetailController  controller;
+  const _ProofCard({required this.proof, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final id          = proof['id'] as int? ?? 0;
+    final imageUrl    = proof['imageUrl']    as String?;
+    final userName    = proof['userName']    as String? ?? '—';
+    final capturedAt  = proof['capturedAt']  as String?;
+    final isReviewed  = proof['isReviewed']  as bool?  ?? false;
+    final reviewedBy  = proof['reviewedByName'] as String?;
+    final remarks     = proof['reviewRemarks']  as String?;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image
+          if (imageUrl != null)
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(10)),
+              child: Image.network(
+                imageUrl,
+                height: 180,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  height: 180,
+                  color: AppColors.background,
+                  child: const Icon(Icons.broken_image_outlined,
+                      color: AppColors.mutedText, size: 40),
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.person_outline,
+                        size: 14, color: AppColors.mutedText),
+                    const SizedBox(width: 4),
+                    Text(userName,
+                        style: AppTextStyles.caption
+                            .copyWith(color: AppColors.mutedText)),
+                    const Spacer(),
+                    if (capturedAt != null)
+                      Text(
+                        FerosDateUtils.formatDateTime(capturedAt),
+                        style: AppTextStyles.caption
+                            .copyWith(color: AppColors.mutedText),
+                      ),
+                  ],
+                ),
+                if (isReviewed) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                          color: AppColors.success.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.check_circle_outline,
+                            size: 14, color: AppColors.success),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Reviewed by ${reviewedBy ?? '—'}${remarks != null && remarks.isNotEmpty ? ' · "$remarks"' : ''}',
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.success),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  const SizedBox(height: 8),
+                  Obx(() {
+                    final isLoading = controller.isReviewingId.value == id;
+                    return SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: isLoading
+                            ? null
+                            : () => _showReviewSheet(context, id),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.navy,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white),
+                              )
+                            : Text('Mark as Reviewed',
+                                style: AppTextStyles.caption.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600)),
+                      ),
+                    );
+                  }),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReviewSheet(BuildContext context, int proofId) {
+    final remarksCtrl = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Review Proof',
+                  style: AppTextStyles.heading4
+                      .copyWith(color: AppColors.navy)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: remarksCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Remarks (optional)',
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        const BorderSide(color: AppColors.navy),
+                  ),
+                ),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    await controller.reviewProof(proofId,
+                        remarks: remarksCtrl.text.trim());
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.navy,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('Confirm Review',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -25,6 +25,10 @@ import '../../supervisor_attendance/views/supervisor_attendance_tab.dart';
 import '../../supervisor_lrs/views/supervisor_lrs_view.dart';
 import '../../supervisor_lrs/bindings/supervisor_lrs_binding.dart';
 import '../../supervisor_orders/views/supervisor_create_order_view.dart';
+import '../../supervisor_my_attendance/views/supervisor_my_attendance_view.dart';
+import '../../supervisor_my_attendance/bindings/supervisor_my_attendance_binding.dart';
+import '../../supervisor_breakdown/views/supervisor_breakdown_view.dart';
+import '../../supervisor_breakdown/bindings/supervisor_breakdown_binding.dart';
 
 class SupervisorShellView extends GetView<SupervisorShellController> {
   const SupervisorShellView({super.key});
@@ -271,6 +275,28 @@ class _SupervisorDrawer extends StatelessWidget {
                     Get.to(
                       () => const SupervisorPayslipView(),
                       binding: SupervisorPayslipBinding(),
+                    );
+                  },
+                ),
+                _DrawerTile(
+                  icon: Icons.calendar_month_outlined,
+                  label: 'My Attendance',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Get.to(
+                      () => const SupervisorMyAttendanceView(),
+                      binding: SupervisorMyAttendanceBinding(),
+                    );
+                  },
+                ),
+                _DrawerTile(
+                  icon: Icons.car_crash_outlined,
+                  label: 'Report Breakdown',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Get.to(
+                      () => const SupervisorBreakdownView(),
+                      binding: SupervisorBreakdownBinding(),
                     );
                   },
                 ),

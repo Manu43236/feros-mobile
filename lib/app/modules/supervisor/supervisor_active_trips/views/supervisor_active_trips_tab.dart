@@ -6,6 +6,8 @@ import '../../../../../core/utils/view_state.dart';
 import '../../../../../core/utils/date_utils.dart';
 import '../../../../../core/widgets/pulsing_dot.dart';
 import '../controllers/supervisor_active_trips_controller.dart';
+import '../../supervisor_lrs/controllers/supervisor_lr_detail_controller.dart';
+import '../../supervisor_lrs/views/supervisor_lr_detail_view.dart';
 
 class SupervisorActiveTripsTab extends GetView<SupervisorActiveTripsController> {
   const SupervisorActiveTripsTab({super.key});
@@ -65,7 +67,19 @@ class SupervisorActiveTripsTab extends GetView<SupervisorActiveTripsController> 
         child: ListView.builder(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           itemCount: controller.lrs.length,
-          itemBuilder: (_, i) => _ActiveTripCard(lr: controller.lrs[i]),
+          itemBuilder: (_, i) => _ActiveTripCard(
+              lr: controller.lrs[i],
+              onTap: () {
+                final id = controller.lrs[i]['id'] as int?;
+                if (id == null) return;
+                Get.to(
+                  () => const SupervisorLrDetailView(),
+                  arguments: id,
+                  binding: BindingsBuilder(() {
+                    Get.put(SupervisorLrDetailController());
+                  }),
+                );
+              }),
         ),
       );
     });
@@ -75,7 +89,8 @@ class SupervisorActiveTripsTab extends GetView<SupervisorActiveTripsController> 
 // ── Active Trip Card ───────────────────────────────────────────────────────────
 class _ActiveTripCard extends StatelessWidget {
   final Map<String, dynamic> lr;
-  const _ActiveTripCard({required this.lr});
+  final VoidCallback onTap;
+  const _ActiveTripCard({required this.lr, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +104,9 @@ class _ActiveTripCard extends StatelessWidget {
     final lrDate     = lr['lrDate']                    as String?;
     final client     = lr['clientName']                as String?;
 
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -234,7 +251,7 @@ class _ActiveTripCard extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ));
   }
 }
 

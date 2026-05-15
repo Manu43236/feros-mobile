@@ -18,10 +18,12 @@ class SupervisorLrDetailController extends GetxController {
   final charges     = <Map<String, dynamic>>[].obs;
   final chargeTypes = <Map<String, dynamic>>[].obs;
 
-  final isUpdating       = false.obs;
+  final isUpdating        = false.obs;
   final isAddingCheckpost = false.obs;
-  final isAddingCharge   = false.obs;
-  final pdfLoading       = false.obs;
+  final isAddingCharge    = false.obs;
+  final pdfLoading        = false.obs;
+  final proofs            = <Map<String, dynamic>>[].obs;
+  final isReviewingId     = Rxn<int>();
 
   late final int lrId;
 
@@ -39,6 +41,7 @@ class SupervisorLrDetailController extends GetxController {
         _api.get(ApiEndpoints.lrById(lrId)),
         _api.get(ApiEndpoints.lrCheckposts(lrId)),
         _api.get(ApiEndpoints.lrCharges(lrId)),
+        _api.get(ApiEndpoints.tripProofsByLr(lrId)),
       ]);
       lr.value = (results[0].data as Map<String, dynamic>)['data']
           as Map<String, dynamic>;
@@ -48,11 +51,32 @@ class SupervisorLrDetailController extends GetxController {
       charges.assignAll(
           ((results[2].data as Map<String, dynamic>)['data'] as List)
               .cast<Map<String, dynamic>>());
+      proofs.assignAll(
+          ((results[3].data as Map<String, dynamic>)['data'] as List)
+              .cast<Map<String, dynamic>>());
       state.value = ViewState.success;
     } catch (e) {
       debugPrint('[LR Detail] $e');
       state.value = ViewState.error;
     }
+  }
+
+  Future<void> reviewProof(int proofId, {String? remarks}) async {
+    isReviewingId.value = proofId;
+    try {
+      final res = await _api.put(
+        ApiEndpoints.reviewTripProof(proofId),
+        data: {'reviewRemarks': remarks ?? ''},
+      );
+      final updated = (res.data as Map<String, dynamic>)['data']
+          as Map<String, dynamic>;
+      final idx = proofs.indexWhere((p) => p['id'] == proofId);
+      if (idx != -1) proofs[idx] = updated;
+      FerosSnackbar.success('Proof reviewed');
+    } catch (_) {
+      FerosSnackbar.error('Failed to review proof');
+    }
+    isReviewingId.value = null;
   }
 
   Future<void> ensureChargeTypesLoaded() async {
