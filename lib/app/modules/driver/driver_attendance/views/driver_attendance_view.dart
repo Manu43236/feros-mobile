@@ -197,7 +197,6 @@ class DriverAttendanceView extends GetView<DriverAttendanceController> {
                       ],
                     ],
                   ),
-                ),
               );
     });
   }
