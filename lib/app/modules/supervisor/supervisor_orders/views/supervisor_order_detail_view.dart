@@ -12,6 +12,8 @@ import '../../../../../core/widgets/feros_select_field.dart';
 import '../controllers/supervisor_order_detail_controller.dart';
 import '../../supervisor_lrs/controllers/supervisor_lr_detail_controller.dart';
 import '../../supervisor_lrs/views/supervisor_lr_detail_view.dart';
+import '../../supervisor_vehicles/bindings/supervisor_vehicle_detail_binding.dart';
+import '../../supervisor_vehicles/views/supervisor_vehicle_detail_view.dart';
 
 class SupervisorOrderDetailView
     extends GetView<SupervisorOrderDetailController> {
@@ -550,7 +552,8 @@ class _AllocationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final allocationId = allocation['id'] as int? ?? 0;
+    final allocationId = allocation['id']        as int? ?? 0;
+    final vehicleId    = allocation['vehicleId'] as int?;
     final vehicle   = allocation['vehicleRegistrationNumber'] as String? ?? '—';
     final type      = allocation['vehicleTypeName']           as String?;
     final weight    = allocation['allocatedWeight'];
@@ -560,6 +563,7 @@ class _AllocationCard extends StatelessWidget {
     final staffList = (allocation['staffAllocations'] as List?)
             ?.cast<Map<String, dynamic>>() ??
         [];
+    final isLocked  = status == 'IN_TRANSIT' || status == 'DELIVERED';
 
     final statusColor = _statusColor(status);
 
@@ -574,7 +578,13 @@ class _AllocationCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Header ─────────────────────────────────────────────────
-          Container(
+          GestureDetector(
+            onTap: vehicleId == null ? null : () => Get.to(
+              () => const SupervisorVehicleDetailView(),
+              binding: SupervisorVehicleDetailBinding(),
+              arguments: vehicleId,
+            ),
+            child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: const BoxDecoration(
               color: AppColors.background,
@@ -614,38 +624,43 @@ class _AllocationCard extends StatelessWidget {
                           color: statusColor, fontWeight: FontWeight.w600)),
                 ),
                 const SizedBox(width: 8),
-                // ── Unassign button ──────────────────────────────────
-                Obx(() {
-                  final isUnassigning =
-                      controller.unassigningId.value == allocationId;
-                  if (isUnassigning) {
-                    return const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: AppColors.error),
-                    );
-                  }
-                  return GestureDetector(
-                    onTap: () async {
-                      final confirmed = await FerosDialog.confirm(
-                        title: 'Unassign Vehicle',
-                        message:
-                            'Remove $vehicle from this order?',
-                        confirmText: 'Unassign',
-                        isDestructive: true,
+                if (vehicleId != null)
+                  const Icon(Icons.chevron_right,
+                      size: 18, color: AppColors.mutedText),
+                // ── Unassign button (hidden when trip active) ────────
+                if (!isLocked) ...[
+                  const SizedBox(width: 4),
+                  Obx(() {
+                    final isUnassigning =
+                        controller.unassigningId.value == allocationId;
+                    if (isUnassigning) {
+                      return const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: AppColors.error),
                       );
-                      if (confirmed) {
-                        controller.unassignVehicle(allocationId);
-                      }
-                    },
-                    child: const Icon(Icons.delete_outline,
-                        size: 20, color: AppColors.error),
-                  );
-                }),
+                    }
+                    return GestureDetector(
+                      onTap: () async {
+                        final confirmed = await FerosDialog.confirm(
+                          title: 'Unassign Vehicle',
+                          message: 'Remove $vehicle from this order?',
+                          confirmText: 'Unassign',
+                          isDestructive: true,
+                        );
+                        if (confirmed) {
+                          controller.unassignVehicle(allocationId);
+                        }
+                      },
+                      child: const Icon(Icons.delete_outline,
+                          size: 20, color: AppColors.error),
+                    );
+                  }),
+                ],
               ],
             ),
-          ),
+          )),
 
           // ── Body ───────────────────────────────────────────────────
           Padding(
@@ -702,6 +717,7 @@ class _AllocationCard extends StatelessWidget {
                     ...staffList.map((s) => _StaffRow(
                           staff: s,
                           controller: controller,
+                          locked: isLocked,
                         )),
                   ],
                 ],
@@ -812,7 +828,8 @@ class _AllocationCard extends StatelessWidget {
 class _StaffRow extends StatelessWidget {
   final Map<String, dynamic> staff;
   final SupervisorOrderDetailController controller;
-  const _StaffRow({required this.staff, required this.controller});
+  final bool locked;
+  const _StaffRow({required this.staff, required this.controller, this.locked = false});
 
   @override
   Widget build(BuildContext context) {
@@ -848,31 +865,32 @@ class _StaffRow extends StatelessWidget {
               ],
             ),
           ),
-          Obx(() {
-            final isUnassigning =
-                controller.unassigningStaffId.value == staffAllocationId;
-            if (isUnassigning) {
-              return const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: AppColors.error),
-              );
-            }
-            return GestureDetector(
-              onTap: () async {
-                final confirmed = await FerosDialog.confirm(
-                  title: 'Unassign ${_roleLabel(role)}',
-                  message: 'Remove $name from this vehicle?',
-                  confirmText: 'Unassign',
-                  isDestructive: true,
+          if (!locked)
+            Obx(() {
+              final isUnassigning =
+                  controller.unassigningStaffId.value == staffAllocationId;
+              if (isUnassigning) {
+                return const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: AppColors.error),
                 );
-                if (confirmed) controller.unassignStaff(staffAllocationId);
-              },
-              child: const Icon(Icons.delete_outline,
-                  size: 18, color: AppColors.error),
-            );
-          }),
+              }
+              return GestureDetector(
+                onTap: () async {
+                  final confirmed = await FerosDialog.confirm(
+                    title: 'Unassign ${_roleLabel(role)}',
+                    message: 'Remove $name from this vehicle?',
+                    confirmText: 'Unassign',
+                    isDestructive: true,
+                  );
+                  if (confirmed) controller.unassignStaff(staffAllocationId);
+                },
+                child: const Icon(Icons.delete_outline,
+                    size: 18, color: AppColors.error),
+              );
+            }),
         ],
       ),
     );

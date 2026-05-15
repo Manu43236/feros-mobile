@@ -8,6 +8,8 @@ import '../../../../../core/utils/date_utils.dart';
 import '../../../../../core/utils/string_utils.dart';
 import '../../../../../core/widgets/pulsing_dot.dart';
 import '../controllers/supervisor_lr_detail_controller.dart';
+import '../../supervisor_vehicles/bindings/supervisor_vehicle_detail_binding.dart';
+import '../../supervisor_vehicles/views/supervisor_vehicle_detail_view.dart';
 
 class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
   const SupervisorLrDetailView({super.key});
@@ -236,6 +238,7 @@ class _InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final vehicleId  = lr['vehicleId']                 as int?;
     final vehicle    = lr['vehicleRegistrationNumber'] as String? ?? '—';
     final vehicleType= lr['vehicleTypeName']           as String?;
     final fromCity   = lr['fromCity']                  as String? ?? '—';
@@ -257,17 +260,34 @@ class _InfoCard extends StatelessWidget {
                   size: 18, color: AppColors.navy),
               const SizedBox(width: 8),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(vehicle,
-                        style: AppTextStyles.bodyMedium
-                            .copyWith(color: AppColors.bodyText)),
-                    if (vehicleType != null)
-                      Text(vehicleType,
-                          style: AppTextStyles.caption
-                              .copyWith(color: AppColors.mutedText)),
-                  ],
+                child: GestureDetector(
+                  onTap: vehicleId == null ? null : () => Get.to(
+                    () => const SupervisorVehicleDetailView(),
+                    binding: SupervisorVehicleDetailBinding(),
+                    arguments: vehicleId,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(vehicle,
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                    color: AppColors.navy,
+                                    fontWeight: FontWeight.w600)),
+                            if (vehicleType != null)
+                              Text(vehicleType,
+                                  style: AppTextStyles.caption
+                                      .copyWith(color: AppColors.mutedText)),
+                          ],
+                        ),
+                      ),
+                      if (vehicleId != null)
+                        const Icon(Icons.chevron_right,
+                            size: 16, color: AppColors.mutedText),
+                    ],
+                  ),
                 ),
               ),
               Obx(() => GestureDetector(
