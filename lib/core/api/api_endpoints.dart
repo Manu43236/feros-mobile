@@ -108,6 +108,7 @@ class ApiEndpoints {
   static String sparePartById(id)         => '/inventory/spare-parts/$id';
   static const stock                      = '/inventory/stock';
   static const stockIn                    = '/inventory/stock-in';
+  static const stockOut                   = '/inventory/stock-out';
   static const inventoryTransactions      = '/inventory/transactions';
   static const partRequestsAll            = '/inventory/service-parts';
   static const partRequestsPending        = '/inventory/service-parts/pending';

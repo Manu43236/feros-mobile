@@ -8,8 +8,8 @@ import '../../../driver/driver_attendance/controllers/driver_attendance_controll
 import '../../../driver/driver_attendance/views/driver_attendance_sheet.dart';
 import '../../../driver/driver_shell/controllers/driver_shell_controller.dart';
 import '../../store_keeper_inventory/controllers/store_keeper_inventory_controller.dart';
-import '../../store_keeper_inventory/controllers/store_keeper_inventory_controller.dart';
 import '../../store_keeper_requests/controllers/store_keeper_requests_controller.dart';
+import '../views/store_keeper_part_detail_view.dart';
 
 class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
   const StoreKeeperDashboardView({super.key});
@@ -145,7 +145,22 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _QuickActionButton(
+                        icon: Icons.remove_circle_outline,
+                        label: 'Write-off',
+                        color: const Color(0xFFDC2626),
+                        onTap: () => showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) =>
+                              _StockOutSheet(controller: controller),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: _QuickActionButton(
                         icon: Icons.add_circle_outline,
@@ -631,6 +646,307 @@ class StockInSheetState extends State<StockInSheet> {
                                 child: CircularProgressIndicator(
                                     strokeWidth: 2, color: Colors.white))
                             : Text('Add Stock',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPartPicker(BuildContext context, List<Map<String, dynamic>> parts) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _PartPickerSheet(
+        parts: parts,
+        onSelected: (p) {
+          setState(() => _selectedPart = p);
+          Navigator.of(context).pop();
+        },
+      ),
+    );
+  }
+}
+
+// ── Stock Out Sheet ───────────────────────────────────────────────────────────
+class _StockOutSheet extends StatefulWidget {
+  final StoreKeeperDashboardController controller;
+  const _StockOutSheet({required this.controller});
+
+  @override
+  State<_StockOutSheet> createState() => _StockOutSheetState();
+}
+
+class _StockOutSheetState extends State<_StockOutSheet> {
+  Map<String, dynamic>? _selectedPart;
+  String _type        = 'DAMAGE';
+  final _qtyCtrl      = TextEditingController(text: '1');
+  final _notesCtrl    = TextEditingController();
+  bool _submitting    = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _qtyCtrl.dispose();
+    _notesCtrl.dispose();
+    super.dispose();
+  }
+
+  int? get _availableQty {
+    if (_selectedPart == null) return null;
+    final partId = _selectedPart!['id'] as int?;
+    if (partId == null) return null;
+    final stock = widget.controller.stockItems.firstWhereOrNull(
+      (s) => s['sparePartId'] == partId,
+    );
+    return stock != null ? (stock['quantity'] as num? ?? 0).toInt() : null;
+  }
+
+  Future<void> _submit() async {
+    final qty = int.tryParse(_qtyCtrl.text.trim()) ?? 0;
+    if (_selectedPart == null) {
+      setState(() => _error = 'Please select a spare part');
+      return;
+    }
+    if (qty < 1) {
+      setState(() => _error = 'Quantity must be at least 1');
+      return;
+    }
+    final avail = _availableQty;
+    if (avail != null && qty > avail) {
+      setState(() => _error = 'Only $avail units available in stock');
+      return;
+    }
+    setState(() { _submitting = true; _error = null; });
+
+    final ok = await widget.controller.submitStockOut(
+      sparePartId: _selectedPart!['id'] as int,
+      quantity: qty,
+      type: _type,
+      notes: _notesCtrl.text.trim(),
+    );
+
+    if (!mounted) return;
+    setState(() => _submitting = false);
+
+    if (ok) {
+      Navigator.of(context).pop();
+      Get.snackbar('Recorded', 'Stock write-off recorded',
+          backgroundColor: const Color(0xFFDC2626),
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(16));
+    } else {
+      setState(() => _error = 'Failed to record. Please try again.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final parts   = widget.controller.spareParts;
+    final avail   = _availableQty;
+    final isDamage = _type == 'DAMAGE';
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+              child: Row(
+                children: [
+                  const Icon(Icons.remove_circle_outline, color: Color(0xFFDC2626), size: 20),
+                  const SizedBox(width: 8),
+                  Text('Write-off / Stock Out',
+                      style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_error != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(children: [
+                          const Icon(Icons.error_outline, size: 16, color: Color(0xFFDC2626)),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(_error!,
+                              style: AppTextStyles.caption.copyWith(color: const Color(0xFFDC2626)))),
+                        ]),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // Spare Part picker
+                    _SheetLabel('Spare Part *'),
+                    const SizedBox(height: 6),
+                    GestureDetector(
+                      onTap: () => _showPartPicker(context, parts.toList()),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _selectedPart != null
+                                    ? '${_selectedPart!['name']}'
+                                        '${_selectedPart!['partNumber'] != null ? ' (${_selectedPart!['partNumber']})' : ''}'
+                                    : 'Select spare part…',
+                                style: AppTextStyles.body.copyWith(
+                                    color: _selectedPart != null
+                                        ? AppColors.navy
+                                        : AppColors.mutedText),
+                              ),
+                            ),
+                            const Icon(Icons.arrow_drop_down, color: AppColors.mutedText),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (avail != null) ...[
+                      const SizedBox(height: 4),
+                      Text('Available: $avail units',
+                          style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                    ],
+                    const SizedBox(height: 16),
+
+                    // Type toggle
+                    _SheetLabel('Type *'),
+                    const SizedBox(height: 6),
+                    Container(
+                      decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(10)),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => _type = 'DAMAGE'),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: isDamage ? const Color(0xFFDC2626) : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.broken_image_outlined, size: 15,
+                                        color: isDamage ? Colors.white : AppColors.mutedText),
+                                    const SizedBox(width: 6),
+                                    Text('Damage / Loss',
+                                        style: AppTextStyles.bodyMedium.copyWith(
+                                            color: isDamage ? Colors.white : AppColors.mutedText)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => _type = 'ADJUSTMENT'),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: !isDamage ? const Color(0xFFD97706) : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.tune_outlined, size: 15,
+                                        color: !isDamage ? Colors.white : AppColors.mutedText),
+                                    const SizedBox(width: 6),
+                                    Text('Adjustment',
+                                        style: AppTextStyles.bodyMedium.copyWith(
+                                            color: !isDamage ? Colors.white : AppColors.mutedText)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Quantity
+                    _SheetLabel('Quantity *'),
+                    const SizedBox(height: 6),
+                    _SheetTextField(
+                      controller: _qtyCtrl,
+                      hint: '1',
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Notes
+                    _SheetLabel('Notes'),
+                    const SizedBox(height: 6),
+                    _SheetTextField(
+                        controller: _notesCtrl,
+                        hint: 'e.g. Found damaged during inspection…',
+                        maxLines: 2),
+                    const SizedBox(height: 24),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _submitting ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isDamage
+                              ? const Color(0xFFDC2626)
+                              : const Color(0xFFD97706),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: _submitting
+                            ? const SizedBox(
+                                width: 20, height: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))
+                            : Text('Confirm Write-off',
                                 style: AppTextStyles.bodyMedium.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w600)),
@@ -1558,7 +1874,7 @@ class _LowStockAlerts extends StatelessWidget {
             final min  = (item['minStockLevel'] as num? ?? 0).toInt();
             final unit = item['unit'] as String? ?? '';
             return GestureDetector(
-              onTap: onViewAll,
+              onTap: () => Get.to(() => StoreKeeperPartDetailView(item: item)),
               child: Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding:

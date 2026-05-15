@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
+import '../../store_keeper_dashboard/controllers/store_keeper_dashboard_controller.dart';
 
 class StoreKeeperRequestsController extends GetxController {
   final _api = Get.find<ApiClient>();
@@ -49,6 +50,7 @@ class StoreKeeperRequestsController extends GetxController {
         data: {'status': 'APPROVED', 'quantityApproved': quantityApproved},
       );
       await fetchRequests();
+      _syncDashboardCount();
       return true;
     } catch (_) {
       return false;
@@ -62,9 +64,16 @@ class StoreKeeperRequestsController extends GetxController {
         data: {'status': 'REJECTED', 'rejectionReason': reason},
       );
       await fetchRequests();
+      _syncDashboardCount();
       return true;
     } catch (_) {
       return false;
     }
+  }
+
+  void _syncDashboardCount() {
+    try {
+      Get.find<StoreKeeperDashboardController>().fetchPendingCount();
+    } catch (_) {}
   }
 }

@@ -39,7 +39,7 @@ class StoreKeeperDashboardController extends GetxController {
 
   Future<void> fetchAll() async {
     isLoading.value = true;
-    await Future.wait([_fetchStock(), _fetchPendingCount(), _fetchSpareParts()]);
+    await Future.wait([_fetchStock(), fetchPendingCount(), _fetchSpareParts()]);
     isLoading.value = false;
   }
 
@@ -50,7 +50,7 @@ class StoreKeeperDashboardController extends GetxController {
     } catch (_) {}
   }
 
-  Future<void> _fetchPendingCount() async {
+  Future<void> fetchPendingCount() async {
     try {
       final res = await _api.get(ApiEndpoints.partRequestsPending);
       final list = res.data['data'] as List? ?? [];
@@ -105,6 +105,26 @@ class StoreKeeperDashboardController extends GetxController {
         if (category?.isNotEmpty ?? false) 'category': category,
         'unit': unit,
         'minStockLevel': minStockLevel,
+      });
+      await fetchAll();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> submitStockOut({
+    required int sparePartId,
+    required int quantity,
+    required String type,
+    String? notes,
+  }) async {
+    try {
+      await _api.post(ApiEndpoints.stockOut, data: {
+        'sparePartId': sparePartId,
+        'quantity': quantity,
+        'type': type,
+        if (notes?.isNotEmpty ?? false) 'notes': notes,
       });
       await fetchAll();
       return true;
