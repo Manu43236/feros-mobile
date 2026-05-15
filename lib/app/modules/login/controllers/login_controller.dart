@@ -75,7 +75,7 @@ class LoginController extends GetxController {
       await _auth.saveSession(token, user);
       Get.offAllNamed(_auth.roleHome);
     } on UnauthorizedException {
-      FerosSnackbar.error('Invalid phone number or PIN');
+      pinError.value = 'Invalid phone number or PIN';
     } on PaymentRequiredException {
       FerosSnackbar.warning('Subscription expired. Contact your administrator.');
     } on NetworkException {
