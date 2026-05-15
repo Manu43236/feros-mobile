@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_endpoints.dart';
@@ -9,53 +8,20 @@ import '../../../../core/services/auth_service.dart';
 import '../../../../core/utils/validators.dart';
 
 class LoginController extends GetxController {
-  final _api = Get.find<ApiClient>();
+  final _api  = Get.find<ApiClient>();
   final _auth = Get.find<AuthService>();
 
-  final phoneController = TextEditingController();
-  final List<TextEditingController> pinControllers =
-      List.generate(4, (_) => TextEditingController());
-  final List<FocusNode> pinFocusNodes =
-      List.generate(4, (_) => FocusNode());
-
-  final isLoading = false.obs;
+  final isLoading  = false.obs;
   final phoneError = RxnString();
-  final pinError = RxnString();
+  final pinError   = RxnString();
 
-  String get _pin => pinControllers.map((c) => c.text).join();
-
-  @override
-  void onClose() {
-    phoneController.dispose();
-    for (final c in pinControllers) c.dispose();
-    for (final f in pinFocusNodes) f.dispose();
-    super.onClose();
-  }
-
-  void onPinDigitEntered(int index, String value) {
-    if (isClosed) return;
-    if (value.isNotEmpty && index < 3) {
-      pinFocusNodes[index + 1].requestFocus();
-    }
-    if (value.isEmpty && index > 0) {
-      pinFocusNodes[index - 1].requestFocus();
-    }
-    pinError.value = null;
-  }
-
-  void onPhoneChanged(String _) {
-    if (isClosed) return;
-    phoneError.value = null;
-  }
-
-  Future<void> login() async {
-    // Validate
-    final phoneVal = FerosValidators.phone(phoneController.text.trim());
+  Future<void> login({required String phone, required String pin}) async {
+    final phoneVal = FerosValidators.phone(phone);
     if (phoneVal != null) {
       phoneError.value = phoneVal;
       return;
     }
-    if (_pin.length < 4) {
+    if (pin.length < 4) {
       pinError.value = 'Enter your 4-digit PIN';
       return;
     }
@@ -63,14 +29,14 @@ class LoginController extends GetxController {
     isLoading.value = true;
     try {
       final response = await _api.post(ApiEndpoints.login, data: {
-        'phone': phoneController.text.trim(),
-        'pin': _pin,
+        'phone': phone,
+        'pin':   pin,
       });
 
-      final data = response.data as Map<String, dynamic>;
+      final data    = response.data as Map<String, dynamic>;
       final payload = data['data'] as Map<String, dynamic>;
-      final token = payload['token'] as String;
-      final user = UserModel.fromJson(payload);
+      final token   = payload['token'] as String;
+      final user    = UserModel.fromJson(payload);
 
       await _auth.saveSession(token, user);
       Get.offAllNamed(_auth.roleHome);

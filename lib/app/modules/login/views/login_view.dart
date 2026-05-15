@@ -5,8 +5,41 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../controllers/login_controller.dart';
 
-class LoginView extends GetView<LoginController> {
+class LoginView extends StatefulWidget {
   const LoginView({super.key});
+
+  @override
+  State<LoginView> createState() => _LoginViewState();
+}
+
+class _LoginViewState extends State<LoginView> {
+  late final LoginController _ctrl;
+
+  final _phoneCtrl    = TextEditingController();
+  final _pinCtrls     = List.generate(4, (_) => TextEditingController());
+  final _pinNodes     = List.generate(4, (_) => FocusNode());
+
+  String get _pin => _pinCtrls.map((c) => c.text).join();
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = Get.find<LoginController>();
+  }
+
+  @override
+  void dispose() {
+    _phoneCtrl.dispose();
+    for (final c in _pinCtrls)  c.dispose();
+    for (final f in _pinNodes)  f.dispose();
+    super.dispose();
+  }
+
+  void _onPinDigitEntered(int index, String value) {
+    if (value.isNotEmpty && index < 3) _pinNodes[index + 1].requestFocus();
+    if (value.isEmpty   && index > 0)  _pinNodes[index - 1].requestFocus();
+    _ctrl.pinError.value = null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,9 +93,9 @@ class LoginView extends GetView<LoginController> {
                             color: AppColors.navy, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     Obx(() => _PhoneField(
-                          controller: controller.phoneController,
-                          error: controller.phoneError.value,
-                          onChanged: controller.onPhoneChanged,
+                          controller: _phoneCtrl,
+                          error: _ctrl.phoneError.value,
+                          onChanged: (_) => _ctrl.phoneError.value = null,
                         )),
                     const SizedBox(height: 20),
 
@@ -72,10 +105,10 @@ class LoginView extends GetView<LoginController> {
                             color: AppColors.navy, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     Obx(() => _PinRow(
-                          controllers: controller.pinControllers,
-                          focusNodes: controller.pinFocusNodes,
-                          error: controller.pinError.value,
-                          onChanged: controller.onPinDigitEntered,
+                          controllers: _pinCtrls,
+                          focusNodes: _pinNodes,
+                          error: _ctrl.pinError.value,
+                          onChanged: _onPinDigitEntered,
                         )),
                     const SizedBox(height: 8),
 
@@ -101,9 +134,12 @@ class LoginView extends GetView<LoginController> {
                           width: double.infinity,
                           height: 52,
                           child: ElevatedButton(
-                            onPressed: controller.isLoading.value
+                            onPressed: _ctrl.isLoading.value
                                 ? null
-                                : controller.login,
+                                : () => _ctrl.login(
+                                      phone: _phoneCtrl.text.trim(),
+                                      pin: _pin,
+                                    ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.navy,
                               foregroundColor: Colors.white,
@@ -114,7 +150,7 @@ class LoginView extends GetView<LoginController> {
                               ),
                               elevation: 0,
                             ),
-                            child: controller.isLoading.value
+                            child: _ctrl.isLoading.value
                                 ? const SizedBox(
                                     width: 22,
                                     height: 22,
