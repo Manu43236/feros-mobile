@@ -1,5 +1,8 @@
 import 'package:feros/app/modules/driver/driver_dashboard/views/driver_dashboard_view.dart';
 import 'package:feros/app/modules/driver/driver_shell/controllers/driver_shell_controller.dart';
+import 'package:feros/app/modules/store_keeper/store_keeper_dashboard/views/store_keeper_dashboard_view.dart';
+import 'package:feros/app/modules/store_keeper/store_keeper_requests/views/store_keeper_requests_view.dart';
+import 'package:feros/app/modules/store_keeper/store_keeper_profile/views/store_keeper_profile_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -164,10 +167,9 @@ class DriverShellView extends GetView<DriverShellController> {
         ];
       case 'STORE_KEEPER':
         return [
-          const DriverDashboardView(),
-          _ComingSoonTab(title: 'Inventory', icon: Icons.inventory_2_outlined,     sprint: 4),
-          _ComingSoonTab(title: 'Requests',  icon: Icons.list_alt_outlined,        sprint: 4),
-          const DriverProfileView(),
+          const StoreKeeperDashboardView(),
+          const StoreKeeperRequestsView(),
+          const StoreKeeperProfileView(),
         ];
       default: // ADMIN
         return [
