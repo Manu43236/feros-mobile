@@ -30,9 +30,39 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                     child: Container(
                       color: AppColors.navy,
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: FerosSearchBar(
-                        hint: 'Search by part name, number, category…',
-                        onChanged: controller.onSearch,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: FerosSearchBar(
+                              hint: 'Search by part name, number, category…',
+                              onChanged: controller.onSearch,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () => _showAddPartSheet(context),
+                            child: Container(
+                              height: 44,
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.add, color: Colors.white, size: 18),
+                                  SizedBox(width: 4),
+                                  Text('New Part',
+                                      style: TextStyle(
+                                          fontFamily: 'Inter',
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -188,6 +218,15 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
       builder: (_) => StockInSheet(controller: controller),
     );
   }
+
+  void _showAddPartSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _AddPartSheet(controller: controller),
+    );
+  }
 }
 
 // ── Summary Card ──────────────────────────────────────────────────────────────
@@ -302,20 +341,30 @@ class _StockCard extends StatelessWidget {
                   Row(
                     children: [
                       if (partNumber != null) ...[
-                        Text(partNumber,
-                            style: AppTextStyles.caption
-                                .copyWith(color: AppColors.mutedText)),
-                        const SizedBox(width: 8),
-                        Container(width: 3, height: 3,
-                            decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: AppColors.border)),
-                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(partNumber,
+                              style: AppTextStyles.caption
+                                  .copyWith(color: AppColors.mutedText),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
+                        ),
+                        if (category != null) ...[
+                          const SizedBox(width: 6),
+                          Container(width: 3, height: 3,
+                              decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppColors.border)),
+                          const SizedBox(width: 6),
+                        ],
                       ],
                       if (category != null)
-                        Text(category,
-                            style: AppTextStyles.caption
-                                .copyWith(color: AppColors.mutedText)),
+                        Flexible(
+                          child: Text(category,
+                              style: AppTextStyles.caption
+                                  .copyWith(color: AppColors.mutedText),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -325,19 +374,24 @@ class _StockCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             // Qty + status
-            Column(
+            SizedBox(
+              width: 72,
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('$qty',
-                    style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: isLow
-                            ? const Color(0xFFDC2626)
-                            : const Color(0xFF16A34A))),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('$qty',
+                      style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: isLow
+                              ? const Color(0xFFDC2626)
+                              : const Color(0xFF16A34A))),
+                ),
                 Text(unit,
                     style: AppTextStyles.caption
                         .copyWith(color: AppColors.mutedText, fontSize: 11)),
@@ -370,6 +424,7 @@ class _StockCard extends StatelessWidget {
                   ),
               ],
             ),
+            ), // SizedBox(width: 72)
             const SizedBox(width: 4),
             const Icon(Icons.chevron_right, size: 16, color: AppColors.mutedText),
           ],
@@ -787,6 +842,186 @@ class _SheetTextField extends StatelessWidget {
             borderSide: const BorderSide(color: AppColors.navy)),
         filled: true,
         fillColor: AppColors.background,
+      ),
+    );
+  }
+}
+
+// ── Add New Part Sheet ────────────────────────────────────────────────────────
+class _AddPartSheet extends StatefulWidget {
+  final StoreKeeperDashboardController controller;
+  const _AddPartSheet({required this.controller});
+
+  @override
+  State<_AddPartSheet> createState() => _AddPartSheetState();
+}
+
+class _AddPartSheetState extends State<_AddPartSheet> {
+  final _nameCtrl     = TextEditingController();
+  final _partNumCtrl  = TextEditingController();
+  final _categoryCtrl = TextEditingController();
+  final _unitCtrl     = TextEditingController();
+  final _minCtrl      = TextEditingController(text: '1');
+  bool _submitting    = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _partNumCtrl.dispose();
+    _categoryCtrl.dispose();
+    _unitCtrl.dispose();
+    _minCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final name = _nameCtrl.text.trim();
+    final unit = _unitCtrl.text.trim();
+    final min  = int.tryParse(_minCtrl.text.trim()) ?? 0;
+    if (name.isEmpty) {
+      setState(() => _error = 'Part name is required');
+      return;
+    }
+    if (unit.isEmpty) {
+      setState(() => _error = 'Unit is required (e.g. Pieces, Litres)');
+      return;
+    }
+    setState(() { _submitting = true; _error = null; });
+
+    final ok = await widget.controller.submitNewPart(
+      name: name,
+      partNumber: _partNumCtrl.text.trim(),
+      category: _categoryCtrl.text.trim(),
+      unit: unit,
+      minStockLevel: min,
+    );
+
+    if (!mounted) return;
+    setState(() => _submitting = false);
+
+    if (ok) {
+      Navigator.of(context).pop();
+      Get.snackbar('Part Added', '$name added to inventory',
+          backgroundColor: const Color(0xFF16A34A),
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(16));
+    } else {
+      setState(() => _error = 'Failed to add part. Please try again.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                  color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+              child: Row(
+                children: [
+                  const Icon(Icons.add_circle_outline, color: AppColors.navy, size: 20),
+                  const SizedBox(width: 8),
+                  Text('Add New Part',
+                      style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_error != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(children: [
+                          const Icon(Icons.error_outline, size: 16, color: Color(0xFFDC2626)),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(_error!,
+                              style: AppTextStyles.caption.copyWith(color: const Color(0xFFDC2626)))),
+                        ]),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    _SheetLabel('Part Name *'),
+                    const SizedBox(height: 6),
+                    _SheetTextField(controller: _nameCtrl, hint: 'e.g. Engine Oil Filter'),
+                    const SizedBox(height: 16),
+                    Row(children: [
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        _SheetLabel('Part Number'),
+                        const SizedBox(height: 6),
+                        _SheetTextField(controller: _partNumCtrl, hint: 'Optional'),
+                      ])),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        _SheetLabel('Category'),
+                        const SizedBox(height: 6),
+                        _SheetTextField(controller: _categoryCtrl, hint: 'e.g. Engine'),
+                      ])),
+                    ]),
+                    const SizedBox(height: 16),
+                    Row(children: [
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        _SheetLabel('Unit *'),
+                        const SizedBox(height: 6),
+                        _SheetTextField(controller: _unitCtrl, hint: 'e.g. Pieces'),
+                      ])),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        _SheetLabel('Min Stock Level'),
+                        const SizedBox(height: 6),
+                        _SheetTextField(controller: _minCtrl, hint: '1',
+                            keyboardType: TextInputType.number),
+                      ])),
+                    ]),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _submitting ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.navy,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: _submitting
+                            ? const SizedBox(width: 20, height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : Text('Add Part',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                    color: Colors.white, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

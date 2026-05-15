@@ -91,6 +91,28 @@ class StoreKeeperDashboardController extends GetxController {
     }
   }
 
+  Future<bool> submitNewPart({
+    required String name,
+    String? partNumber,
+    String? category,
+    required String unit,
+    int minStockLevel = 1,
+  }) async {
+    try {
+      await _api.post(ApiEndpoints.spareParts, data: {
+        'name': name,
+        if (partNumber?.isNotEmpty ?? false) 'partNumber': partNumber,
+        if (category?.isNotEmpty ?? false) 'category': category,
+        'unit': unit,
+        'minStockLevel': minStockLevel,
+      });
+      await fetchAll();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<List<Map<String, dynamic>>> fetchTransactions(int sparePartId) async {
     try {
       final res = await _api.get('${ApiEndpoints.inventoryTransactions}/part/$sparePartId');

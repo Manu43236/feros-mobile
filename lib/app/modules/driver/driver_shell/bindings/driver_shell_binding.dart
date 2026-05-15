@@ -19,6 +19,7 @@ class DriverShellBinding extends Bindings {
     if (role == 'STORE_KEEPER') {
       StoreKeeperDashboardBinding().dependencies();
       StoreKeeperRequestsBinding().dependencies();
+      DriverAttendanceBinding().dependencies();
       StoreKeeperProfileBinding().dependencies();
     } else {
       DriverDashboardBinding().dependencies();

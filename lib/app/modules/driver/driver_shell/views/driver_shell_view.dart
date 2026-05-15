@@ -169,6 +169,7 @@ class DriverShellView extends GetView<DriverShellController> {
         return [
           const StoreKeeperDashboardView(),
           const StoreKeeperRequestsView(),
+          DriverAttendanceView(),
           const StoreKeeperProfileView(),
         ];
       default: // ADMIN
