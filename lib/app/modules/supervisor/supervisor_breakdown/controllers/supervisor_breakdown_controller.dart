@@ -17,14 +17,37 @@ class SupervisorBreakdownController extends GetxController {
   final isGettingLocation = false.obs;
   final isSubmitting      = false.obs;
 
+  final vehicles          = <Map<String, dynamic>>[].obs;
+  final selectedVehicle   = Rxn<Map<String, dynamic>>();
+  final isLoadingVehicles = false.obs;
+
   static const types     = ['MECHANICAL', 'ELECTRICAL', 'TYRE', 'ACCIDENT', 'OTHER'];
   static const durations = ['SHORT', 'LONG'];
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadVehicles();
+  }
 
   @override
   void onClose() {
     reasonCtrl.dispose();
     notesCtrl.dispose();
     super.onClose();
+  }
+
+  Future<void> _loadVehicles() async {
+    isLoadingVehicles.value = true;
+    try {
+      final res  = await _api.get(ApiEndpoints.vehicles);
+      final list = ((res.data as Map<String, dynamic>)['data'] as List)
+          .cast<Map<String, dynamic>>();
+      vehicles.assignAll(list.where((v) => v['isActive'] == true).toList());
+    } catch (_) {
+      FerosSnackbar.error('Failed to load vehicles');
+    }
+    isLoadingVehicles.value = false;
   }
 
   Future<void> getLocation() async {
@@ -50,14 +73,20 @@ class SupervisorBreakdownController extends GetxController {
   }
 
   Future<void> submit() async {
+    final vehicle = selectedVehicle.value;
+    if (vehicle == null) {
+      FerosSnackbar.error('Please select a vehicle');
+      return;
+    }
     if (reasonCtrl.text.trim().isEmpty) {
       FerosSnackbar.error('Please describe the breakdown reason');
       return;
     }
     isSubmitting.value = true;
     try {
-      final pos = position.value;
-      await _api.post(ApiEndpoints.myBreakdown, data: {
+      final pos       = position.value;
+      final vehicleId = vehicle['id'] as int;
+      await _api.post(ApiEndpoints.vehicleBreakdownById(vehicleId), data: {
         'breakdownType':     breakdownType.value,
         'breakdownDuration': breakdownDuration.value,
         'breakdownDate':     DateTime.now().toIso8601String(),
@@ -69,7 +98,8 @@ class SupervisorBreakdownController extends GetxController {
       FerosSnackbar.success('Breakdown reported');
       reasonCtrl.clear();
       notesCtrl.clear();
-      position.value = null;
+      position.value        = null;
+      selectedVehicle.value = null;
     } catch (_) {
       FerosSnackbar.error('Failed to report breakdown');
     }

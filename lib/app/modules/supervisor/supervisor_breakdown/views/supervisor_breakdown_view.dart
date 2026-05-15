@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../../core/widgets/feros_select_field.dart';
 import '../controllers/supervisor_breakdown_controller.dart';
 
 class SupervisorBreakdownView extends GetView<SupervisorBreakdownController> {
@@ -62,6 +63,26 @@ class SupervisorBreakdownView extends GetView<SupervisorBreakdownController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ── Vehicle Picker ───────────────────────────────
+                Obx(() => FerosSelectField<Map<String, dynamic>>(
+                  label: 'Vehicle',
+                  title: 'Select Vehicle',
+                  hint: 'Search by registration or type…',
+                  isRequired: true,
+                  selectedDisplay: controller.selectedVehicle.value != null
+                      ? '${controller.selectedVehicle.value!['registrationNumber'] ?? ''}'
+                          '${controller.selectedVehicle.value!['vehicleTypeName'] != null ? ' · ${controller.selectedVehicle.value!['vehicleTypeName']}' : ''}'
+                      : null,
+                  items: controller.vehicles,
+                  itemLabel: (v) =>
+                      '${v['registrationNumber'] ?? ''}'
+                      '${v['vehicleTypeName'] != null ? ' · ${v['vehicleTypeName']}' : ''}',
+                  onSelected: (v) => controller.selectedVehicle.value = v,
+                  isLoading: controller.isLoadingVehicles.value,
+                  emptyMessage: 'No active vehicles found',
+                )),
+                const SizedBox(height: 16),
+
                 Text('Breakdown Type',
                     style: AppTextStyles.label.copyWith(color: AppColors.navy)),
                 const SizedBox(height: 8),
