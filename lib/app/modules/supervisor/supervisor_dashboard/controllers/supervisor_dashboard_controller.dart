@@ -1,5 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide FormData, MultipartFile;
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
 import '../../../../../core/popups/feros_snackbar.dart';
@@ -146,17 +147,41 @@ class SupervisorDashboardController extends GetxController {
     }
   }
 
-  Future<void> markSelf(int typeId) async {
+  Future<bool> markSelf(
+    int typeId, {
+    String? filePath,
+    double? latitude,
+    double? longitude,
+  }) async {
     isSelfMarking.value = true;
     try {
-      final res = await _api.post(ApiEndpoints.myAttendance,
-          data: {'attendanceTypeId': typeId});
+      String? selfieKey;
+      if (filePath != null) {
+        final formData = FormData.fromMap({
+          'file': await MultipartFile.fromFile(filePath, filename: 'selfie.jpg'),
+          'folder': 'attendance',
+        });
+        final uploadRes = await _api.postFormData(ApiEndpoints.upload, formData);
+        selfieKey = ((uploadRes.data as Map<String, dynamic>)['data']
+            as Map<String, dynamic>?)?['key'] as String?;
+      }
+
+      final body = <String, dynamic>{'attendanceTypeId': typeId};
+      if (selfieKey  != null) body['selfieUrl']  = selfieKey;
+      if (latitude   != null) body['latitude']   = latitude;
+      if (longitude  != null) body['longitude']  = longitude;
+
+      final res = await _api.post(ApiEndpoints.myAttendance, data: body);
       selfAttendance.value =
           (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>?;
-      FerosSnackbar.success('Attendance marked');
+      FerosSnackbar.success('Attendance submitted for approval');
+      return true;
     } catch (e) {
+      debugPrint('[markSelf] $e');
       FerosSnackbar.error('Failed to mark attendance');
+      return false;
+    } finally {
+      isSelfMarking.value = false;
     }
-    isSelfMarking.value = false;
   }
 }

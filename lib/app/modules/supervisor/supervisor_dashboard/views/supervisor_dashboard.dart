@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/theme/app_spacing.dart';
@@ -445,41 +448,57 @@ class _StatItem {
   const _StatItem(this.label, this.value, this.color);
 }
 
+// ── Helpers shared by card + sheet ────────────────────────────────────────────
+Color _attTypeColor(String name) {
+  final n = name.toUpperCase();
+  if (n.contains('PRESENT') && !n.contains('HALF')) return AppColors.attPresent;
+  if (n.contains('ABSENT'))  return AppColors.attAbsent;
+  if (n.contains('HALF'))    return AppColors.attHalfDay;
+  if (n.contains('LEAVE'))   return AppColors.attLeave;
+  if (n.contains('HOLIDAY')) return AppColors.attHoliday;
+  if (n.contains('WEEK') || n.contains('OFF')) return AppColors.attWeeklyOff;
+  return AppColors.mutedText;
+}
+
+String _attTypeLabel(String name) {
+  final n = name.toUpperCase();
+  if (n.contains('PRESENT') && !n.contains('HALF')) return 'Present';
+  if (n.contains('ABSENT'))  return 'Absent';
+  if (n.contains('HALF'))    return 'Half Day';
+  if (n.contains('LEAVE'))   return 'Leave';
+  if (n.contains('HOLIDAY')) return 'Holiday';
+  if (n.contains('WEEK') || n.contains('OFF')) return 'Weekly Off';
+  return name.split('_')
+      .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
+      .join(' ');
+}
+
 // ── Self Attendance Card ───────────────────────────────────────────────────────
 class _SelfAttendanceCard extends StatelessWidget {
   final SupervisorDashboardController controller;
   const _SelfAttendanceCard({required this.controller});
 
-  Color _typeColor(String name) {
-    final n = name.toUpperCase();
-    if (n.contains('PRESENT') && !n.contains('HALF')) return AppColors.attPresent;
-    if (n.contains('ABSENT'))  return AppColors.attAbsent;
-    if (n.contains('HALF'))    return AppColors.attHalfDay;
-    if (n.contains('LEAVE'))   return AppColors.attLeave;
-    if (n.contains('HOLIDAY')) return AppColors.attHoliday;
-    if (n.contains('WEEK') || n.contains('OFF')) return AppColors.attWeeklyOff;
-    return AppColors.mutedText;
-  }
-
-  String _typeLabel(String name) {
-    final n = name.toUpperCase();
-    if (n.contains('PRESENT') && !n.contains('HALF')) return 'Present';
-    if (n.contains('ABSENT'))  return 'Absent';
-    if (n.contains('HALF'))    return 'Half Day';
-    if (n.contains('LEAVE'))   return 'Leave';
-    if (n.contains('HOLIDAY')) return 'Holiday';
-    if (n.contains('WEEK') || n.contains('OFF')) return 'Weekly Off';
-    return name.split('_')
-        .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
-        .join(' ');
+  void _openSheet(BuildContext context, Map<String, dynamic> t) {
+    final tid    = t['id'];
+    final typeId = tid is int ? tid : int.tryParse(tid.toString()) ?? 0;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _SelfieSheet(
+        typeId: typeId,
+        typeName: t['name'] as String? ?? '',
+        controller: controller,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final marked      = controller.selfAttendance.value;
-      final types       = controller.attendanceTypes;
-      final isMarking   = controller.isSelfMarking.value;
+      final marked    = controller.selfAttendance.value;
+      final types     = controller.attendanceTypes;
+      final isMarking = controller.isSelfMarking.value;
 
       return Container(
         decoration: BoxDecoration(
@@ -494,7 +513,6 @@ class _SelfAttendanceCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Row(
               children: [
                 Container(
@@ -514,104 +532,379 @@ class _SelfAttendanceCard extends StatelessWidget {
                           fontWeight: FontWeight.w600)),
                 ),
                 Text('Today',
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.mutedText)),
+                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: AppColors.border),
+            const SizedBox(height: 12),
 
             if (marked != null) ...[
-              // Already marked — show status badge
-              const Divider(height: 1, color: AppColors.border),
-              const SizedBox(height: 12),
+              // Already marked — show type + approval status
               Row(
                 children: [
-                  const Icon(Icons.check_circle_outline,
-                      size: 16, color: AppColors.attPresent),
-                  const SizedBox(width: 6),
-                  Text('Attendance marked',
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.mutedText)),
-                  const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _typeColor(marked['attendanceTypeName']
-                                  as String? ?? '')
-                              .withValues(alpha: 0.1),
+                      color: _attTypeColor(marked['attendanceTypeName'] as String? ?? '')
+                          .withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      _typeLabel(
-                          marked['attendanceTypeName'] as String? ?? ''),
+                      _attTypeLabel(marked['attendanceTypeName'] as String? ?? ''),
                       style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: _typeColor(
-                            marked['attendanceTypeName'] as String? ?? ''),
+                        fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w600,
+                        color: _attTypeColor(marked['attendanceTypeName'] as String? ?? ''),
                       ),
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  _ApprovalBadge(
+                      status: marked['approvalStatus'] as String? ?? 'PENDING'),
                 ],
               ),
+            ] else if (isMarking) ...[
+              const Center(
+                child: SizedBox(
+                  width: 20, height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.navy),
+                ),
+              ),
             ] else ...[
-              // Not marked — show type chips
-              const Divider(height: 1, color: AppColors.border),
+              Text('Tap to mark your attendance',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
               const SizedBox(height: 10),
-              Text('Mark your attendance',
-                  style: AppTextStyles.caption
-                      .copyWith(color: AppColors.mutedText)),
-              const SizedBox(height: 10),
-              if (isMarking)
-                const Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: AppColors.navy),
-                  ),
-                )
-              else
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: types.map((t) {
-                    final tid   = t['id'];
-                    final tName = t['name'] as String? ?? '';
-                    final typeId = tid is int
-                        ? tid
-                        : int.tryParse(tid.toString()) ?? 0;
-                    final color = _typeColor(tName);
-                    return GestureDetector(
-                      onTap: () => controller.markSelf(typeId),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                              color: color.withValues(alpha: 0.35)),
-                        ),
-                        child: Text(
-                          _typeLabel(tName),
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: color,
-                          ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: types.map((t) {
+                  final tName = t['name'] as String? ?? '';
+                  final color = _attTypeColor(tName);
+                  return GestureDetector(
+                    onTap: () => _openSheet(context, t),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: color.withValues(alpha: 0.35)),
+                      ),
+                      child: Text(
+                        _attTypeLabel(tName),
+                        style: TextStyle(
+                          fontFamily: 'Inter', fontSize: 12,
+                          fontWeight: FontWeight.w500, color: color,
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
+                    ),
+                  );
+                }).toList(),
+              ),
             ],
           ],
         ),
       );
     });
+  }
+}
+
+// ── Approval Badge ─────────────────────────────────────────────────────────────
+class _ApprovalBadge extends StatelessWidget {
+  final String status;
+  const _ApprovalBadge({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final isPending  = status == 'PENDING';
+    final isApproved = status == 'APPROVED';
+    final color = isPending ? AppColors.warning : isApproved
+        ? AppColors.attPresent : AppColors.error;
+    final icon  = isPending ? Icons.hourglass_top_rounded
+        : isApproved ? Icons.check_circle_outline : Icons.cancel_outlined;
+    final label = isPending ? 'Pending Approval' : isApproved ? 'Approved' : 'Rejected';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: color),
+          const SizedBox(width: 4),
+          Text(label,
+              style: TextStyle(
+                fontFamily: 'Inter', fontSize: 10,
+                fontWeight: FontWeight.w600, color: color,
+              )),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Selfie + Location Sheet ────────────────────────────────────────────────────
+class _SelfieSheet extends StatefulWidget {
+  final int typeId;
+  final String typeName;
+  final SupervisorDashboardController controller;
+  const _SelfieSheet({
+    required this.typeId,
+    required this.typeName,
+    required this.controller,
+  });
+
+  @override
+  State<_SelfieSheet> createState() => _SelfieSheetState();
+}
+
+class _SelfieSheetState extends State<_SelfieSheet> {
+  XFile?    _selfie;
+  Position? _position;
+  bool      _locating   = false;
+  bool      _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLocation();
+  }
+
+  Future<void> _fetchLocation() async {
+    setState(() => _locating = true);
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) { setState(() => _locating = false); return; }
+
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.denied ||
+          perm == LocationPermission.deniedForever) {
+        setState(() => _locating = false);
+        return;
+      }
+      final pos = await Geolocator.getCurrentPosition(
+          locationSettings:
+              const LocationSettings(accuracy: LocationAccuracy.high));
+      if (mounted) setState(() { _position = pos; _locating = false; });
+    } catch (_) {
+      if (mounted) setState(() => _locating = false);
+    }
+  }
+
+  Future<void> _takeSelfie() async {
+    final img = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      preferredCameraDevice: CameraDevice.front,
+      imageQuality: 70,
+    );
+    if (img != null && mounted) setState(() => _selfie = img);
+  }
+
+  Future<void> _submit() async {
+    if (_selfie == null) return;
+    setState(() => _submitting = true);
+    final ok = await widget.controller.markSelf(
+      widget.typeId,
+      filePath: _selfie!.path,
+      latitude:  _position?.latitude,
+      longitude: _position?.longitude,
+    );
+    if (mounted) {
+      setState(() => _submitting = false);
+      if (ok) Get.back();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final typeColor = _attTypeColor(widget.typeName);
+    final typeLabel = _attTypeLabel(widget.typeName);
+    final canSubmit = _selfie != null && !_submitting;
+
+    return Container(
+      margin: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 60),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40, height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.border,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text('Mark Attendance',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.bodyText,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16)),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: typeColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(typeLabel,
+                      style: TextStyle(
+                        fontFamily: 'Inter', fontSize: 12,
+                        fontWeight: FontWeight.w600, color: typeColor,
+                      )),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Selfie section
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: GestureDetector(
+              onTap: _takeSelfie,
+              child: Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: _selfie != null ? typeColor : AppColors.border,
+                    width: _selfie != null ? 2 : 1,
+                  ),
+                ),
+                child: _selfie != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(13),
+                        child: Image.file(File(_selfie!.path), fit: BoxFit.cover),
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.camera_alt_outlined,
+                              size: 36, color: AppColors.mutedText),
+                          const SizedBox(height: 8),
+                          Text('Tap to take selfie',
+                              style: AppTextStyles.body
+                                  .copyWith(color: AppColors.mutedText)),
+                          const SizedBox(height: 4),
+                          Text('(Required)',
+                              style: AppTextStyles.caption
+                                  .copyWith(color: AppColors.hintText)),
+                        ],
+                      ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Location status
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _locating
+                        ? Icons.gps_not_fixed
+                        : _position != null
+                            ? Icons.gps_fixed
+                            : Icons.location_off_outlined,
+                    size: 16,
+                    color: _locating
+                        ? AppColors.warning
+                        : _position != null
+                            ? AppColors.attPresent
+                            : AppColors.mutedText,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _locating
+                          ? 'Getting location…'
+                          : _position != null
+                              ? '${_position!.latitude.toStringAsFixed(5)}, '
+                                '${_position!.longitude.toStringAsFixed(5)}'
+                              : 'Location unavailable',
+                      style: AppTextStyles.caption.copyWith(
+                        color: _position != null
+                            ? AppColors.bodyText
+                            : AppColors.mutedText,
+                      ),
+                    ),
+                  ),
+                  if (!_locating && _position == null)
+                    GestureDetector(
+                      onTap: _fetchLocation,
+                      child: Text('Retry',
+                          style: AppTextStyles.caption.copyWith(
+                              color: AppColors.navy,
+                              fontWeight: FontWeight.w600)),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Submit
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+                20, 0, 20, MediaQuery.of(context).padding.bottom + 16),
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: canSubmit ? _submit : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.navy,
+                  disabledBackgroundColor:
+                      AppColors.navy.withValues(alpha: 0.4),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: _submitting
+                    ? const SizedBox(
+                        width: 20, height: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Submit Attendance',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        )),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
