@@ -9,43 +9,75 @@ import '../../store_keeper_dashboard/views/store_keeper_dashboard_view.dart'
     show StockInSheet;
 import '../../store_keeper_dashboard/views/store_keeper_part_detail_view.dart';
 import '../../store_keeper_requests/controllers/store_keeper_requests_controller.dart';
+import '../controllers/store_keeper_inventory_controller.dart';
 
-class StoreKeeperInventoryView extends StatelessWidget {
+class StoreKeeperInventoryView extends StatefulWidget {
   const StoreKeeperInventoryView({super.key});
 
   @override
+  State<StoreKeeperInventoryView> createState() =>
+      _StoreKeeperInventoryViewState();
+}
+
+class _StoreKeeperInventoryViewState extends State<StoreKeeperInventoryView>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  late final StoreKeeperInventoryController _invCtrl;
+  Worker? _worker;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _invCtrl = Get.find<StoreKeeperInventoryController>();
+    _worker = ever(_invCtrl.selectedTab, (int tab) {
+      if (_tabController.index != tab) {
+        _tabController.animateTo(tab);
+      }
+    });
+    // sync initial value
+    final initial = _invCtrl.selectedTab.value;
+    if (initial != 0) _tabController.index = initial;
+  }
+
+  @override
+  void dispose() {
+    _worker?.dispose();
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
-          // Tab bar
-          Container(
-            color: Colors.white,
-            child: TabBar(
-              labelColor: AppColors.navy,
-              unselectedLabelColor: AppColors.mutedText,
-              indicatorColor: AppColors.navy,
-              indicatorWeight: 2.5,
-              labelStyle: AppTextStyles.bodyMedium
-                  .copyWith(fontWeight: FontWeight.w600),
-              unselectedLabelStyle: AppTextStyles.bodyMedium,
-              tabs: const [
-                Tab(text: 'Parts'),
-                Tab(text: 'Requests'),
-              ],
-            ),
+    return Column(
+      children: [
+        Container(
+          color: Colors.white,
+          child: TabBar(
+            controller: _tabController,
+            labelColor: AppColors.navy,
+            unselectedLabelColor: AppColors.mutedText,
+            indicatorColor: AppColors.navy,
+            indicatorWeight: 2.5,
+            labelStyle:
+                AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+            unselectedLabelStyle: AppTextStyles.bodyMedium,
+            tabs: const [
+              Tab(text: 'Parts'),
+              Tab(text: 'Requests'),
+            ],
           ),
-          const Expanded(
-            child: TabBarView(
-              children: [
-                _PartsTab(),
-                _RequestsTab(),
-              ],
-            ),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: const [
+              _PartsTab(),
+              _RequestsTab(),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

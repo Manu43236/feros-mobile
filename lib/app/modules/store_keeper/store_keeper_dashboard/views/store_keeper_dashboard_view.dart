@@ -7,9 +7,17 @@ import '../controllers/store_keeper_dashboard_controller.dart';
 import '../../../driver/driver_attendance/controllers/driver_attendance_controller.dart';
 import '../../../driver/driver_attendance/views/driver_attendance_sheet.dart';
 import '../../../driver/driver_shell/controllers/driver_shell_controller.dart';
+import '../../store_keeper_inventory/controllers/store_keeper_inventory_controller.dart';
+import '../../store_keeper_inventory/controllers/store_keeper_inventory_controller.dart';
+import '../../store_keeper_requests/controllers/store_keeper_requests_controller.dart';
 
 class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
   const StoreKeeperDashboardView({super.key});
+
+  void _goToInventory({int tab = 0}) {
+    Get.find<StoreKeeperInventoryController>().selectedTab.value = tab;
+    Get.find<DriverShellController>().onTabTapped(1);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,102 +29,158 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
         onRefresh: controller.fetchAll,
         color: AppColors.navy,
         child: CustomScrollView(
-            slivers: [
-                  // ── Mark Attendance banner ───────────────────────
-                  SliverToBoxAdapter(
-                    child: Obx(() {
-                      final attCtrl = Get.find<DriverAttendanceController>();
-                      if (!attCtrl.isCurrentMonth || attCtrl.todayMarked) {
-                        return const SizedBox.shrink();
-                      }
-                      return GestureDetector(
-                        onTap: () => showMarkAttendanceSheet(
-                          context,
-                          onMarked: attCtrl.fetch,
-                        ),
-                        child: Container(
-                          margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF16A34A),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.check_circle_outline,
-                                  color: Colors.white, size: 20),
-                              SizedBox(width: 10),
-                              Expanded(
-                                child: Text("Mark Today's Attendance",
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontFamily: 'Inter',
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14)),
-                              ),
-                              Icon(Icons.chevron_right,
-                                  color: Colors.white, size: 20),
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
+          slivers: [
+            // ── Attendance banner ────────────────────────────
+            SliverToBoxAdapter(
+              child: Obx(() {
+                final attCtrl = Get.find<DriverAttendanceController>();
+                if (!attCtrl.isCurrentMonth || attCtrl.todayMarked) {
+                  return const SizedBox.shrink();
+                }
+                return GestureDetector(
+                  onTap: () => showMarkAttendanceSheet(
+                    context,
+                    onMarked: attCtrl.fetch,
                   ),
-
-                  // ── Summary cards ────────────────────────────────
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: GridView.count(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 2.2,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: [
-                          _SummaryCard(
-                            label: 'Total Parts',
-                            value: '${controller.totalItems}',
-                            icon: Icons.inventory_2_outlined,
-                            color: AppColors.navy,
-                          ),
-                          _SummaryCard(
-                            label: 'In Stock',
-                            value: '${controller.inStockCount}',
-                            icon: Icons.check_circle_outline,
-                            color: const Color(0xFF16A34A),
-                          ),
-                          GestureDetector(
-                            onTap: () =>
-                                Get.find<DriverShellController>().onTabTapped(1),
-                            child: _SummaryCard(
-                              label: 'Low Stock',
-                              value: '${controller.lowStockCount}',
-                              icon: Icons.warning_amber_outlined,
-                              color: const Color(0xFFDC2626),
-                            ),
-                          ),
-                          _SummaryCard(
-                            label: 'Pending Requests',
-                            value: '${controller.pendingCount.value}',
-                            icon: Icons.pending_actions_outlined,
-                            color: const Color(0xFFD97706),
-                          ),
-                        ],
-                      ),
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF16A34A),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.check_circle_outline,
+                            color: Colors.white, size: 20),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text("Mark Today's Attendance",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontFamily: 'Inter',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14)),
+                        ),
+                        Icon(Icons.chevron_right,
+                            color: Colors.white, size: 20),
+                      ],
                     ),
                   ),
+                );
+              }),
+            ),
 
-                  // ── Low Stock Alerts ─────────────────────────────
-                  SliverToBoxAdapter(
-                    child: _LowStockAlerts(controller: controller),
-                  ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                ],
+            // ── Summary cards ────────────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 2.2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    GestureDetector(
+                      onTap: () => _goToInventory(tab: 0),
+                      child: _SummaryCard(
+                        label: 'Total Parts',
+                        value: '${controller.totalItems}',
+                        icon: Icons.inventory_2_outlined,
+                        color: AppColors.navy,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => _goToInventory(tab: 0),
+                      child: _SummaryCard(
+                        label: 'In Stock',
+                        value: '${controller.inStockCount}',
+                        icon: Icons.check_circle_outline,
+                        color: const Color(0xFF16A34A),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => _goToInventory(tab: 0),
+                      child: _SummaryCard(
+                        label: 'Low Stock',
+                        value: '${controller.lowStockCount}',
+                        icon: Icons.warning_amber_outlined,
+                        color: const Color(0xFFDC2626),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => _goToInventory(tab: 1),
+                      child: _SummaryCard(
+                        label: 'Pending Requests',
+                        value: '${controller.pendingCount.value}',
+                        icon: Icons.pending_actions_outlined,
+                        color: const Color(0xFFD97706),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+            ),
+
+            // ── Quick Actions ────────────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _QuickActionButton(
+                        icon: Icons.add_box_outlined,
+                        label: 'Stock In',
+                        color: AppColors.navy,
+                        onTap: () => showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) =>
+                              StockInSheet(controller: controller),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _QuickActionButton(
+                        icon: Icons.add_circle_outline,
+                        label: 'New Part',
+                        color: const Color(0xFF0891B2),
+                        onTap: () => showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) =>
+                              _AddNewPartSheet(controller: controller),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ── Recent Requests ──────────────────────────────
+            SliverToBoxAdapter(
+              child: _RecentRequests(onViewAll: () => _goToInventory(tab: 1)),
+            ),
+
+            // ── Low Stock Alerts ─────────────────────────────
+            SliverToBoxAdapter(
+              child: _LowStockAlerts(
+                controller: controller,
+                onViewAll: () => _goToInventory(tab: 0),
+              ),
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+          ],
+        ),
       );
     });
   }
@@ -920,10 +984,538 @@ class _AddPartSheetState extends State<_AddPartSheet> {
   }
 }
 
+// ── Quick Action Button ────────────────────────────────────────────────────────
+class _QuickActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _QuickActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.25)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20, color: color),
+            const SizedBox(width: 8),
+            Text(label,
+                style: AppTextStyles.bodyMedium.copyWith(
+                    color: color, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Recent Requests ────────────────────────────────────────────────────────────
+class _RecentRequests extends StatelessWidget {
+  final VoidCallback onViewAll;
+  const _RecentRequests({required this.onViewAll});
+
+  @override
+  Widget build(BuildContext context) {
+    final reqCtrl = Get.find<StoreKeeperRequestsController>();
+    return Obx(() {
+      if (reqCtrl.isLoading.value) return const SizedBox.shrink();
+      final recent = reqCtrl.requests.take(3).toList();
+      if (recent.isEmpty) return const SizedBox.shrink();
+
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.pending_actions_outlined,
+                    size: 16, color: AppColors.navy),
+                const SizedBox(width: 6),
+                Text('Recent Requests',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.navy, fontWeight: FontWeight.w700)),
+                const Spacer(),
+                GestureDetector(
+                  onTap: onViewAll,
+                  child: Text('View All',
+                      style: AppTextStyles.caption.copyWith(
+                          color: AppColors.navy,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ...recent.map((req) => _RecentRequestTile(
+                  request: req,
+                  onViewAll: onViewAll,
+                  reqCtrl: reqCtrl,
+                )),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+class _RecentRequestTile extends StatelessWidget {
+  final Map<String, dynamic> request;
+  final VoidCallback onViewAll;
+  final StoreKeeperRequestsController reqCtrl;
+  const _RecentRequestTile({
+    required this.request,
+    required this.onViewAll,
+    required this.reqCtrl,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final partName = request['partName']           as String? ?? '—';
+    final qty      = (request['requestedQuantity'] as num? ?? 0).toInt();
+    final by       = request['requestedByName']    as String?;
+    final status   = request['status']             as String? ?? 'REQUESTED';
+    final isPending = status == 'REQUESTED';
+    final isApproved = status == 'APPROVED';
+
+    final Color badgeColor;
+    final Color badgeText;
+    final String badgeLabel;
+    if (isPending) {
+      badgeColor = const Color(0xFFFEF3C7);
+      badgeText  = const Color(0xFFD97706);
+      badgeLabel = 'Pending';
+    } else if (isApproved) {
+      badgeColor = const Color(0xFFDCFCE7);
+      badgeText  = const Color(0xFF16A34A);
+      badgeLabel = 'Approved';
+    } else {
+      badgeColor = const Color(0xFFFEE2E2);
+      badgeText  = const Color(0xFFDC2626);
+      badgeLabel = 'Rejected';
+    }
+
+    return GestureDetector(
+      onTap: () {
+        if (isPending) {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => _ApproveRejectSheet(
+              request: request,
+              controller: reqCtrl,
+            ),
+          );
+        } else {
+          onViewAll();
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.border),
+          boxShadow: const [
+            BoxShadow(
+                color: Color(0x08000000),
+                blurRadius: 4,
+                offset: Offset(0, 2)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(partName,
+                      style: AppTextStyles.body
+                          .copyWith(color: AppColors.navy),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                  if (by != null) ...[
+                    const SizedBox(height: 2),
+                    Text(by,
+                        style: AppTextStyles.caption
+                            .copyWith(color: AppColors.mutedText),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                      color: badgeColor,
+                      borderRadius: BorderRadius.circular(20)),
+                  child: Text(badgeLabel,
+                      style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: badgeText)),
+                ),
+                const SizedBox(height: 4),
+                Text('$qty units',
+                    style: AppTextStyles.caption
+                        .copyWith(color: AppColors.mutedText)),
+              ],
+            ),
+            const SizedBox(width: 6),
+            Icon(
+              isPending ? Icons.touch_app_outlined : Icons.arrow_forward_ios,
+              size: 14,
+              color: AppColors.mutedText,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Approve / Reject Sheet (inline for home page) ─────────────────────────────
+class _ApproveRejectSheet extends StatefulWidget {
+  final Map<String, dynamic> request;
+  final StoreKeeperRequestsController controller;
+  const _ApproveRejectSheet({required this.request, required this.controller});
+
+  @override
+  State<_ApproveRejectSheet> createState() => _ApproveRejectSheetState();
+}
+
+class _ApproveRejectSheetState extends State<_ApproveRejectSheet> {
+  bool _isApprove  = true;
+  bool _submitting = false;
+  String? _error;
+  late final TextEditingController _qtyCtrl;
+  final _reasonCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    final requested =
+        (widget.request['requestedQuantity'] as num? ?? 1).toInt();
+    _qtyCtrl = TextEditingController(text: '$requested');
+  }
+
+  @override
+  void dispose() {
+    _qtyCtrl.dispose();
+    _reasonCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final id = widget.request['servicePartId'] as int? ?? 0;
+    setState(() { _submitting = true; _error = null; });
+    bool ok;
+    String msg;
+    if (_isApprove) {
+      final qty = int.tryParse(_qtyCtrl.text.trim()) ?? 0;
+      if (qty < 1) {
+        setState(() { _submitting = false; _error = 'Quantity must be at least 1'; });
+        return;
+      }
+      ok  = await widget.controller.approveRequest(id, qty);
+      msg = 'Approved — $qty units issued';
+    } else {
+      final reason = _reasonCtrl.text.trim();
+      if (reason.isEmpty) {
+        setState(() { _submitting = false; _error = 'Please provide a reason'; });
+        return;
+      }
+      ok  = await widget.controller.rejectRequest(id, reason);
+      msg = 'Request rejected';
+    }
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    if (ok) {
+      Navigator.of(context).pop();
+      Get.snackbar('Done', msg,
+          backgroundColor:
+              _isApprove ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(16));
+    } else {
+      setState(() => _error = 'Failed to process. Please try again.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final partName    = widget.request['partName']           as String? ?? '—';
+    final requestedQty = (widget.request['requestedQuantity'] as num? ?? 0).toInt();
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(partName,
+                            style: AppTextStyles.heading3
+                                .copyWith(color: AppColors.navy),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                        Text('Requested: $requestedQty units',
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.mutedText)),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: const Icon(Icons.close,
+                        color: AppColors.mutedText, size: 22),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_error != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(8)),
+                        child: Row(children: [
+                          const Icon(Icons.error_outline,
+                              size: 16, color: Color(0xFFDC2626)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                              child: Text(_error!,
+                                  style: AppTextStyles.caption.copyWith(
+                                      color: const Color(0xFFDC2626)))),
+                        ]),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    Container(
+                      decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(10)),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(
+                                  () { _isApprove = true; _error = null; }),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: _isApprove
+                                      ? const Color(0xFF16A34A)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.check_circle_outline,
+                                        size: 16,
+                                        color: _isApprove
+                                            ? Colors.white
+                                            : AppColors.mutedText),
+                                    const SizedBox(width: 6),
+                                    Text('Approve',
+                                        style: AppTextStyles.bodyMedium.copyWith(
+                                            color: _isApprove
+                                                ? Colors.white
+                                                : AppColors.mutedText)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(
+                                  () { _isApprove = false; _error = null; }),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: !_isApprove
+                                      ? const Color(0xFFDC2626)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.cancel_outlined,
+                                        size: 16,
+                                        color: !_isApprove
+                                            ? Colors.white
+                                            : AppColors.mutedText),
+                                    const SizedBox(width: 6),
+                                    Text('Reject',
+                                        style: AppTextStyles.bodyMedium.copyWith(
+                                            color: !_isApprove
+                                                ? Colors.white
+                                                : AppColors.mutedText)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    if (_isApprove) ...[
+                      Text('Quantity to Approve',
+                          style: AppTextStyles.caption.copyWith(
+                              color: AppColors.mutedText,
+                              fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: _qtyCtrl,
+                        keyboardType: TextInputType.number,
+                        style: AppTextStyles.body.copyWith(color: AppColors.navy),
+                        decoration: InputDecoration(
+                          hintText: '$requestedQty',
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  const BorderSide(color: AppColors.border)),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  const BorderSide(color: AppColors.navy)),
+                          filled: true,
+                          fillColor: AppColors.background,
+                        ),
+                      ),
+                    ],
+                    if (!_isApprove) ...[
+                      Text('Rejection Reason *',
+                          style: AppTextStyles.caption.copyWith(
+                              color: AppColors.mutedText,
+                              fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: _reasonCtrl,
+                        maxLines: 3,
+                        style: AppTextStyles.body.copyWith(color: AppColors.navy),
+                        decoration: InputDecoration(
+                          hintText: 'e.g. Insufficient stock…',
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  const BorderSide(color: AppColors.border)),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                  color: Color(0xFFDC2626))),
+                          filled: true,
+                          fillColor: AppColors.background,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _submitting ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isApprove
+                              ? const Color(0xFF16A34A)
+                              : const Color(0xFFDC2626),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: _submitting
+                            ? const SizedBox(
+                                width: 20, height: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))
+                            : Text(
+                                _isApprove
+                                    ? 'Confirm Approval'
+                                    : 'Confirm Rejection',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── Low Stock Alerts section ───────────────────────────────────────────────────
 class _LowStockAlerts extends StatelessWidget {
   final StoreKeeperDashboardController controller;
-  const _LowStockAlerts({required this.controller});
+  final VoidCallback onViewAll;
+  const _LowStockAlerts({required this.controller, required this.onViewAll});
 
   @override
   Widget build(BuildContext context) {
@@ -950,8 +1542,7 @@ class _LowStockAlerts extends StatelessWidget {
                       fontWeight: FontWeight.w700)),
               const Spacer(),
               GestureDetector(
-                onTap: () =>
-                    Get.find<DriverShellController>().onTabTapped(1),
+                onTap: onViewAll,
                 child: Text('View All',
                     style: AppTextStyles.caption.copyWith(
                         color: AppColors.navy,
@@ -966,33 +1557,39 @@ class _LowStockAlerts extends StatelessWidget {
             final qty  = (item['quantity'] as num? ?? 0).toInt();
             final min  = (item['minStockLevel'] as num? ?? 0).toInt();
             final unit = item['unit'] as String? ?? '';
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF7F7),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFFECACA)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.warning_amber_outlined,
-                      size: 14, color: Color(0xFFDC2626)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(name,
-                        style: AppTextStyles.body
-                            .copyWith(color: AppColors.navy),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                  ),
-                  const SizedBox(width: 8),
-                  Text('$qty / $min $unit',
-                      style: AppTextStyles.caption.copyWith(
-                          color: const Color(0xFFDC2626),
-                          fontWeight: FontWeight.w600)),
-                ],
+            return GestureDetector(
+              onTap: onViewAll,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7F7),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFFECACA)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber_outlined,
+                        size: 14, color: Color(0xFFDC2626)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(name,
+                          style: AppTextStyles.body
+                              .copyWith(color: AppColors.navy),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                    const SizedBox(width: 8),
+                    Text('$qty / $min $unit',
+                        style: AppTextStyles.caption.copyWith(
+                            color: const Color(0xFFDC2626),
+                            fontWeight: FontWeight.w600)),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_forward_ios,
+                        size: 10, color: Color(0xFFDC2626)),
+                  ],
+                ),
               ),
             );
           }),
@@ -1000,8 +1597,7 @@ class _LowStockAlerts extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: GestureDetector(
-                onTap: () =>
-                    Get.find<DriverShellController>().onTabTapped(1),
+                onTap: onViewAll,
                 child: Text(
                   '+${controller.lowStockCount - 5} more low stock items',
                   style: AppTextStyles.caption.copyWith(
@@ -1014,4 +1610,225 @@ class _LowStockAlerts extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Add New Part Sheet (for Quick Action on home) ─────────────────────────────
+class _AddNewPartSheet extends StatefulWidget {
+  final StoreKeeperDashboardController controller;
+  const _AddNewPartSheet({required this.controller});
+
+  @override
+  State<_AddNewPartSheet> createState() => _AddNewPartSheetState();
+}
+
+class _AddNewPartSheetState extends State<_AddNewPartSheet> {
+  final _nameCtrl     = TextEditingController();
+  final _partNumCtrl  = TextEditingController();
+  final _categoryCtrl = TextEditingController();
+  final _minCtrl      = TextEditingController(text: '1');
+  String _unit        = 'PCS';
+  bool _submitting    = false;
+  String? _error;
+
+  static const _units = ['PCS', 'LITRE', 'KG', 'METRE', 'SET', 'BOX', 'PAIR'];
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _partNumCtrl.dispose();
+    _categoryCtrl.dispose();
+    _minCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) {
+      setState(() => _error = 'Part name is required');
+      return;
+    }
+    setState(() { _submitting = true; _error = null; });
+    final ok = await widget.controller.submitNewPart(
+      name: name,
+      partNumber: _partNumCtrl.text.trim(),
+      category: _categoryCtrl.text.trim(),
+      unit: _unit,
+      minStockLevel: int.tryParse(_minCtrl.text.trim()) ?? 1,
+    );
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    if (ok) {
+      Navigator.of(context).pop();
+      Get.snackbar('Done', '$name added to inventory',
+          backgroundColor: const Color(0xFF16A34A),
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(16));
+    } else {
+      setState(() => _error = 'Failed to add part. Please try again.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+              child: Row(
+                children: [
+                  Text('Add New Part',
+                      style: AppTextStyles.heading3
+                          .copyWith(color: AppColors.navy)),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: const Icon(Icons.close,
+                        color: AppColors.mutedText, size: 22),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_error != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(8)),
+                        child: Row(children: [
+                          const Icon(Icons.error_outline,
+                              size: 16, color: Color(0xFFDC2626)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                              child: Text(_error!,
+                                  style: AppTextStyles.caption.copyWith(
+                                      color: const Color(0xFFDC2626)))),
+                        ]),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    _label('Part Name *'),
+                    _field(_nameCtrl, 'e.g. Engine Oil Filter'),
+                    const SizedBox(height: 14),
+                    _label('Part Number'),
+                    _field(_partNumCtrl, 'e.g. OF-2201'),
+                    const SizedBox(height: 14),
+                    _label('Category'),
+                    _field(_categoryCtrl, 'e.g. Filters'),
+                    const SizedBox(height: 14),
+                    _label('Unit *'),
+                    DropdownButtonFormField<String>(
+                      value: _unit,
+                      onChanged: (v) => setState(() => _unit = v!),
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide:
+                                const BorderSide(color: AppColors.border)),
+                        focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide:
+                                const BorderSide(color: AppColors.navy)),
+                        filled: true,
+                        fillColor: AppColors.background,
+                      ),
+                      items: _units
+                          .map((u) =>
+                              DropdownMenuItem(value: u, child: Text(u)))
+                          .toList(),
+                    ),
+                    const SizedBox(height: 14),
+                    _label('Min Stock Level'),
+                    _field(_minCtrl, '1', type: TextInputType.number),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _submitting ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.navy,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: _submitting
+                            ? const SizedBox(
+                                width: 20, height: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))
+                            : Text('Add Part',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _label(String t) => Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Text(t,
+            style: AppTextStyles.caption.copyWith(
+                color: AppColors.mutedText, fontWeight: FontWeight.w600)),
+      );
+
+  Widget _field(TextEditingController c, String hint,
+          {TextInputType type = TextInputType.text}) =>
+      TextField(
+        controller: c,
+        keyboardType: type,
+        style: AppTextStyles.body.copyWith(color: AppColors.navy),
+        decoration: InputDecoration(
+          hintText: hint,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          border:
+              OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.border)),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.navy)),
+          filled: true,
+          fillColor: AppColors.background,
+        ),
+      );
 }

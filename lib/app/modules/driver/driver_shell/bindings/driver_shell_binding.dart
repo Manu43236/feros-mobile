@@ -8,6 +8,7 @@ import '../../driver_profile/bindings/driver_profile_binding.dart';
 import '../../../store_keeper/store_keeper_dashboard/bindings/store_keeper_dashboard_binding.dart';
 import '../../../store_keeper/store_keeper_requests/bindings/store_keeper_requests_binding.dart';
 import '../../../store_keeper/store_keeper_profile/bindings/store_keeper_profile_binding.dart';
+import '../../../store_keeper/store_keeper_inventory/controllers/store_keeper_inventory_controller.dart';
 
 class DriverShellBinding extends Bindings {
   @override
@@ -17,6 +18,8 @@ class DriverShellBinding extends Bindings {
     final role = Get.find<AuthService>().user?.role ?? '';
 
     if (role == 'STORE_KEEPER') {
+      Get.lazyPut<StoreKeeperInventoryController>(
+          () => StoreKeeperInventoryController());
       StoreKeeperDashboardBinding().dependencies();
       StoreKeeperRequestsBinding().dependencies();
       DriverAttendanceBinding().dependencies();
