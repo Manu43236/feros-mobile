@@ -12,6 +12,7 @@ class SupervisorDashboardController extends GetxController {
   final orderTotal     = 0.obs;
   final orderPending   = 0.obs;
   final orderActive    = 0.obs;
+  final orderCompleted = 0.obs;
   final orderDelivered = 0.obs;
   final orderCancelled = 0.obs;
 
@@ -73,6 +74,7 @@ class SupervisorDashboardController extends GetxController {
       orderTotal.value     = o['total']     as int? ?? 0;
       orderPending.value   = o['pending']   as int? ?? 0;
       orderActive.value    = o['active']    as int? ?? 0;
+      orderCompleted.value = o['completed'] as int? ?? 0;
       orderDelivered.value = o['delivered'] as int? ?? 0;
       orderCancelled.value = o['cancelled'] as int? ?? 0;
 

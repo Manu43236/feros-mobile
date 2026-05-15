@@ -105,10 +105,31 @@ class SupervisorShellView extends GetView<SupervisorShellController> {
                   color: Colors.white.withValues(alpha: 0.7),
                 ),
               ),
-              Text(
-                auth.user?.name ?? '',
-                style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
-                overflow: TextOverflow.ellipsis,
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      auth.user?.name ?? '',
+                      style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Supervisor',
+                      style: AppTextStyles.caption.copyWith(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           );

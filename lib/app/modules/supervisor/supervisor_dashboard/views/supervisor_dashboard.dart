@@ -40,7 +40,8 @@ class SupervisorDashboard extends StatelessWidget {
               _StatRow(stats: [
                 _StatItem('Active',    controller.orderActive.value,    AppColors.orderActive),
                 _StatItem('Pending',   controller.orderPending.value,   AppColors.orderPending),
-                _StatItem('Delivered', controller.orderDelivered.value, AppColors.orderCompleted),
+                _StatItem('Completed', controller.orderCompleted.value, AppColors.orderCompleted),
+                _StatItem('Delivered', controller.orderDelivered.value, AppColors.lrDelivered),
                 _StatItem('Cancelled', controller.orderCancelled.value, AppColors.orderCancelled),
               ]),
             ],
