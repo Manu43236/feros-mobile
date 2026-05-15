@@ -4,316 +4,438 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/theme/app_spacing.dart';
 import '../controllers/supervisor_dashboard_controller.dart';
+import '../../supervisor_shell/controllers/supervisor_shell_controller.dart';
+import '../../supervisor_vehicles/views/supervisor_vehicles_view.dart';
+import '../../supervisor_vehicles/bindings/supervisor_vehicles_binding.dart';
+import '../../supervisor_crew/views/supervisor_crew_view.dart';
+import '../../supervisor_crew/bindings/supervisor_crew_binding.dart';
+import '../../supervisor_lrs/views/supervisor_lrs_view.dart';
+import '../../supervisor_lrs/bindings/supervisor_lrs_binding.dart';
 
 class SupervisorDashboard extends StatelessWidget {
   final SupervisorDashboardController controller;
   const SupervisorDashboard({super.key, required this.controller});
 
+  void _goToTab(int index) =>
+      Get.find<SupervisorShellController>().onTabTapped(index);
+
   @override
   Widget build(BuildContext context) {
     return Obx(() => ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 32),
       children: [
-        // ── Stat Cards ─────────────────────────────────────────────
-        Row(
-          children: [
-            Expanded(
-              child: _StatCard(
-                label: 'Total Orders',
-                value: '${controller.totalOrders.value}',
-                icon: Icons.assignment_outlined,
-                borderColor: AppColors.navy,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _StatCard(
-                label: 'Active Orders',
-                value: '${controller.activeOrders.value}',
-                icon: Icons.local_shipping_outlined,
-                borderColor: const Color(0xFFD97706),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _StatCard(
-                label: 'Pending',
-                value: '${controller.pendingAssignments.value}',
-                icon: Icons.pending_actions_outlined,
-                borderColor: AppColors.error,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
 
-        // ── Attendance + Notifications ─────────────────────────────
-        Row(
-          children: [
-            Expanded(
-              child: _StatCard(
-                label: 'Present Today',
-                value: '${controller.todayPresent.value}',
-                icon: Icons.fact_check_outlined,
-                borderColor: const Color(0xFF16A34A),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _StatCard(
-                label: 'Notifications',
-                value: '${controller.unreadNotifications.value}',
-                icon: Icons.notifications_outlined,
-                borderColor: const Color(0xFF7C3AED),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-
-        // ── Active Trips ───────────────────────────────────────────
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Active Trips',
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy)),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: const Color(0xFFD97706).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '${controller.activeTrips.length} IN TRANSIT',
-                style: AppTextStyles.caption.copyWith(
-                  color: const Color(0xFFD97706),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-
-        if (controller.activeTrips.isEmpty)
-          _EmptySection(
-            icon: Icons.local_shipping_outlined,
-            label: 'No active trips',
-          )
-        else
-          ...controller.activeTrips.map((trip) => _ActiveTripCard(trip: trip)),
-
-        const SizedBox(height: 24),
-
-        // ── Pending Assignments ────────────────────────────────────
-        if (controller.pendingAssignments.value > 0) ...[
-          Row(
+        // ── Orders ─────────────────────────────────────────────────
+        _SectionCard(
+          icon: Icons.assignment_outlined,
+          title: 'Orders',
+          accentColor: AppColors.navy,
+          onTap: () => _goToTab(1),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.warning_amber_outlined,
-                  size: 16, color: Color(0xFFD97706)),
-              const SizedBox(width: 6),
-              Text(
-                '${controller.pendingAssignments.value} order(s) waiting for vehicle assignment',
-                style: AppTextStyles.caption.copyWith(
-                  color: const Color(0xFFD97706),
-                ),
-              ),
+              _TotalBadge(value: controller.orderTotal.value, color: AppColors.navy),
+              const SizedBox(height: 12),
+              _StatRow(stats: [
+                _StatItem('Active',    controller.orderActive.value,    AppColors.orderActive),
+                _StatItem('Pending',   controller.orderPending.value,   AppColors.orderPending),
+                _StatItem('Delivered', controller.orderDelivered.value, AppColors.orderCompleted),
+                _StatItem('Cancelled', controller.orderCancelled.value, AppColors.orderCancelled),
+              ]),
             ],
           ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                // Navigate to Orders tab — tab index 1
-                // Will wire up when shell is connected
-              },
-              icon: const Icon(Icons.assignment_outlined, size: 18),
-              label: const Text('View Pending Orders'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.navy,
-                side: const BorderSide(color: AppColors.navy),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
+        ),
+        const SizedBox(height: 14),
+
+        // ── Assignments ────────────────────────────────────────────
+        _SectionHeader(
+          icon: Icons.people_alt_outlined,
+          title: 'Assignments',
+          accentColor: AppColors.orange,
+        ),
+        const SizedBox(height: 8),
+
+        // Vehicles sub-card
+        _SubCard(
+          icon: Icons.garage_outlined,
+          label: 'Vehicles',
+          total: controller.vehicleTotal.value,
+          color: AppColors.navy,
+          onTap: () => Get.to(
+            () => const SupervisorVehiclesView(),
+            binding: SupervisorVehiclesBinding(),
+            transition: Transition.cupertino,
           ),
-          const SizedBox(height: 24),
-        ],
+          stats: [
+            _StatItem('Available', controller.vehicleAvailable.value, AppColors.success),
+            _StatItem('On Trip',   controller.vehicleOnTrip.value,    AppColors.lrInTransit),
+            _StatItem('Breakdown', controller.vehicleBreakdown.value, AppColors.error),
+            _StatItem('Inactive',  controller.vehicleInactive.value,  AppColors.mutedText),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        // Drivers sub-card
+        _SubCard(
+          icon: Icons.drive_eta_outlined,
+          label: 'Drivers',
+          total: controller.driverTotal.value,
+          color: AppColors.info,
+          onTap: () => Get.to(
+            () => const SupervisorCrewView(),
+            binding: SupervisorCrewBinding(),
+            transition: Transition.cupertino,
+          ),
+          stats: [
+            _StatItem('Available', controller.driverAvailable.value, AppColors.success),
+            _StatItem('On Trip',   controller.driverOnTrip.value,    AppColors.lrInTransit),
+            _StatItem('Present',   controller.driverPresent.value,   AppColors.attPresent),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        // Cleaners sub-card
+        _SubCard(
+          icon: Icons.cleaning_services_outlined,
+          label: 'Cleaners',
+          total: controller.cleanerTotal.value,
+          color: AppColors.lrLoaded,
+          onTap: () => Get.to(
+            () => const SupervisorCrewView(),
+            binding: SupervisorCrewBinding(),
+            transition: Transition.cupertino,
+          ),
+          stats: [
+            _StatItem('Available', controller.cleanerAvailable.value, AppColors.success),
+            _StatItem('On Trip',   controller.cleanerOnTrip.value,    AppColors.lrInTransit),
+            _StatItem('Present',   controller.cleanerPresent.value,   AppColors.attPresent),
+          ],
+        ),
+        const SizedBox(height: 14),
+
+        // ── LRs ────────────────────────────────────────────────────
+        _SectionCard(
+          icon: Icons.receipt_long_outlined,
+          title: 'LRs',
+          accentColor: AppColors.lrInTransit,
+          onTap: () => Get.to(
+            () => const SupervisorLrsView(),
+            binding: SupervisorLrsBinding(),
+            transition: Transition.cupertino,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _TotalBadge(value: controller.lrTotal.value, color: AppColors.lrInTransit),
+              const SizedBox(height: 12),
+              _StatRow(stats: [
+                _StatItem('Created',    controller.lrCreated.value,   AppColors.lrCreated),
+                _StatItem('Loaded',     controller.lrLoaded.value,    AppColors.lrLoaded),
+                _StatItem('In Transit', controller.lrInTransit.value, AppColors.lrInTransit),
+                _StatItem('Delivered',  controller.lrDelivered.value, AppColors.lrDelivered),
+              ]),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // ── Attendance ─────────────────────────────────────────────
+        _SectionCard(
+          icon: Icons.fact_check_outlined,
+          title: 'Attendance (Today)',
+          accentColor: AppColors.attPresent,
+          onTap: () => _goToTab(3),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _TotalBadge(
+                  value: controller.attTotal.value,
+                  color: AppColors.attPresent,
+                  label: 'Marked'),
+              const SizedBox(height: 12),
+              _StatRow(stats: [
+                _StatItem('Present',  controller.attPresent.value,   AppColors.attPresent),
+                _StatItem('Absent',   controller.attAbsent.value,    AppColors.attAbsent),
+                _StatItem('Half Day', controller.attHalfDay.value,   AppColors.attHalfDay),
+                _StatItem('Week Off', controller.attWeeklyOff.value, AppColors.attWeeklyOff),
+              ]),
+            ],
+          ),
+        ),
       ],
     ));
   }
 }
 
-// ── Active Trip Card ───────────────────────────────────────────────────────────
-class _ActiveTripCard extends StatelessWidget {
-  final Map<String, dynamic> trip;
-  const _ActiveTripCard({required this.trip});
-
-  @override
-  Widget build(BuildContext context) {
-    final from    = trip['fromCity']?.toString() ?? '—';
-    final to      = trip['toCity']?.toString() ?? '—';
-    final vehicle = trip['vehicleNumber']?.toString() ?? '—';
-    final client  = trip['clientName']?.toString() ?? '—';
-    final eta     = trip['expectedDeliveryDate'] as String?;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border(
-          left: BorderSide(color: const Color(0xFFD97706), width: 3),
-        ),
-        boxShadow: const [
-          BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF7ED),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.local_shipping,
-                size: 20, color: Color(0xFFD97706)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(client,
-                    style: AppTextStyles.bodySemiBold
-                        .copyWith(color: AppColors.navy, fontSize: 13)),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Text(from,
-                        style: AppTextStyles.caption
-                            .copyWith(color: AppColors.mutedText)),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4),
-                      child: Icon(Icons.arrow_forward,
-                          size: 12, color: AppColors.mutedText),
-                    ),
-                    Text(to,
-                        style: AppTextStyles.caption
-                            .copyWith(color: const Color(0xFFD97706),
-                                fontWeight: FontWeight.w600)),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(vehicle,
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.mutedText)),
-              ],
-            ),
-          ),
-          if (eta != null)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text('ETA',
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.mutedText, fontSize: 10)),
-                Text(_fmtDate(eta),
-                    style: AppTextStyles.caption.copyWith(
-                        color: AppColors.navy, fontWeight: FontWeight.w600)),
-              ],
-            ),
-        ],
-      ),
-    );
-  }
-
-  String _fmtDate(String raw) {
-    try {
-      final d = DateTime.parse(raw);
-      const m = ['', 'Jan','Feb','Mar','Apr','May','Jun',
-                      'Jul','Aug','Sep','Oct','Nov','Dec'];
-      return '${d.day} ${m[d.month]}';
-    } catch (_) {
-      return raw;
-    }
-  }
-}
-
-// ── Stat Card ──────────────────────────────────────────────────────────────────
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
+// ── Section Card (tappable, full card) ────────────────────────────────────────
+class _SectionCard extends StatelessWidget {
   final IconData icon;
-  final Color borderColor;
-
-  const _StatCard({
-    required this.label,
-    required this.value,
+  final String title;
+  final Color accentColor;
+  final VoidCallback onTap;
+  final Widget child;
+  const _SectionCard({
     required this.icon,
-    required this.borderColor,
+    required this.title,
+    required this.accentColor,
+    required this.onTap,
+    required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border(left: BorderSide(color: borderColor, width: 3)),
-        boxShadow: const [
-          BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18, color: borderColor),
-          const SizedBox(height: 8),
-          Text(value,
-              style: AppTextStyles.bodySemiBold
-                  .copyWith(color: AppColors.navy, fontSize: 18)),
-          const SizedBox(height: 2),
-          Text(label,
-              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
-        ],
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.border),
+            boxShadow: const [
+              BoxShadow(color: Color(0x08000000), blurRadius: 8, offset: Offset(0, 2)),
+            ],
+            color: AppColors.surface,
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: accentColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icon, size: 16, color: accentColor),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(title,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.bodyText,
+                            fontWeight: FontWeight.w600)),
+                  ),
+                  Icon(Icons.chevron_right, size: 18, color: AppColors.mutedText),
+                ],
+              ),
+              const SizedBox(height: 14),
+              child,
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-// ── Empty Section ──────────────────────────────────────────────────────────────
-class _EmptySection extends StatelessWidget {
+// ── Section Header (non-tappable label for grouped sub-cards) ─────────────────
+class _SectionHeader extends StatelessWidget {
   final IconData icon;
-  final String label;
-  const _EmptySection({required this.icon, required this.label});
+  final String title;
+  final Color accentColor;
+  const _SectionHeader({required this.icon, required this.title, required this.accentColor});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: accentColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Icon(icon, size: 15, color: accentColor),
+        ),
+        const SizedBox(width: 8),
+        Text(title,
+            style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.bodyText, fontWeight: FontWeight.w600)),
+      ],
+    );
+  }
+}
+
+// ── Sub Card (vehicle / driver / cleaner) ─────────────────────────────────────
+class _SubCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int total;
+  final Color color;
+  final VoidCallback onTap;
+  final List<_StatItem> stats;
+  const _SubCard({
+    required this.icon,
+    required this.label,
+    required this.total,
+    required this.color,
+    required this.onTap,
+    required this.stats,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 32, color: AppColors.mutedText),
-          const SizedBox(height: 8),
-          Text(label,
-              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-        ],
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+            color: AppColors.surface,
+          ),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Row(
+            children: [
+              // Icon + label + total
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, size: 16, color: color),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: AppTextStyles.caption.copyWith(
+                          color: AppColors.mutedText)),
+                  Text('$total',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                      )),
+                ],
+              ),
+              const SizedBox(width: 14),
+              const VerticalDivider(width: 1, thickness: 1, color: AppColors.border),
+              const SizedBox(width: 14),
+              // Stats
+              Expanded(
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 6,
+                  children: stats.map((s) => _MiniStat(item: s)).toList(),
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right, size: 16, color: AppColors.mutedText),
+            ],
+          ),
+        ),
       ),
     );
   }
+}
+
+// ── Total Badge ───────────────────────────────────────────────────────────────
+class _TotalBadge extends StatelessWidget {
+  final int value;
+  final Color color;
+  final String label;
+  const _TotalBadge({required this.value, required this.color, this.label = 'Total'});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text('$value',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              color: color,
+            )),
+        const SizedBox(width: 6),
+        Text(label,
+            style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+      ],
+    );
+  }
+}
+
+// ── Stat Row ─────────────────────────────────────────────────────────────────
+class _StatRow extends StatelessWidget {
+  final List<_StatItem> stats;
+  const _StatRow({required this.stats});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: stats
+          .expand((s) => [_StatCell(item: s), const SizedBox(width: 16)])
+          .toList()
+        ..removeLast(),
+    );
+  }
+}
+
+class _StatCell extends StatelessWidget {
+  final _StatItem item;
+  const _StatCell({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('${item.value}',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: item.color,
+            )),
+        Text(item.label,
+            style: AppTextStyles.caption.copyWith(
+                color: AppColors.mutedText, fontSize: 10)),
+      ],
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  final _StatItem item;
+  const _MiniStat({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('${item.value}',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: item.color,
+            )),
+        Text(item.label,
+            style: AppTextStyles.caption.copyWith(
+                color: AppColors.mutedText, fontSize: 9)),
+      ],
+    );
+  }
+}
+
+// ── Data class ────────────────────────────────────────────────────────────────
+class _StatItem {
+  final String label;
+  final int value;
+  final Color color;
+  const _StatItem(this.label, this.value, this.color);
 }
