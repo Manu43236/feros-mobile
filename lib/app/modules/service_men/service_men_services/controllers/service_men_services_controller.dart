@@ -98,6 +98,17 @@ class ServiceMenServicesController extends GetxController {
     }
   }
 
+  Future<Map<String, dynamic>?> fetchServiceById(int id) async {
+    try {
+      final res = await _api.get(ApiEndpoints.vehicleServiceById(id));
+      final updated = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      _updateLocal(id, updated);
+      return updated;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<List<Map<String, dynamic>>> fetchServiceParts(int serviceId) async {
     try {
       final res = await _api.get(ApiEndpoints.servicePartsByService(serviceId));
