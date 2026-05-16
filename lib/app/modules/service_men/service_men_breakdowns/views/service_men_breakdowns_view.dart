@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../../../../../../core/api/api_client.dart';
+import '../../../../../../core/api/api_endpoints.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../core/widgets/shimmer_card.dart';
@@ -17,8 +19,10 @@ class ServiceMenBreakdownsView
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      return Column(
+      return Stack(
         children: [
+          Column(
+          children: [
           // ── Filter Chips ────────────────────────────────────
           Container(
             color: Colors.white,
@@ -137,14 +141,71 @@ class ServiceMenBreakdownsView
                                     _showLogServiceSheet(context, b),
                                 onViewService: () =>
                                     _navigateToLinkedService(b),
+                                onResolve: () =>
+                                    _showResolveConfirm(context, b),
                               );
                             },
                           ),
                   ),
           ),
+          ],
+          ), // Column
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: FloatingActionButton.extended(
+              onPressed: () => _showReportBreakdownSheet(context),
+              backgroundColor: AppColors.navy,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: Text('Report',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.white, fontWeight: FontWeight.w600)),
+            ),
+          ),
         ],
-      );
+      ); // Stack
     });
+  }
+
+  void _showReportBreakdownSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ReportBreakdownSheet(controller: controller),
+    );
+  }
+
+  void _showResolveConfirm(BuildContext context, Map<String, dynamic> b) {
+    final vehicleId   = b['vehicleId'] as int?;
+    final breakdownId = b['id']        as int?;
+    if (vehicleId == null || breakdownId == null) return;
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Resolve Breakdown?'),
+        content: const Text(
+            'Mark this breakdown as resolved and return the vehicle to service.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await controller.resolveBreakdown(vehicleId, breakdownId);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Resolve'),
+          ),
+        ],
+      ),
+    );
   }
 
   String _filterLabel(String f) {
@@ -211,10 +272,12 @@ class _BreakdownCard extends StatelessWidget {
   final Map<String, dynamic> breakdown;
   final VoidCallback onLogService;
   final VoidCallback onViewService;
+  final VoidCallback onResolve;
   const _BreakdownCard({
     required this.breakdown,
     required this.onLogService,
     required this.onViewService,
+    required this.onResolve,
   });
 
   @override
@@ -356,40 +419,434 @@ class _BreakdownCard extends StatelessWidget {
             const SizedBox(height: 14),
             const Divider(height: 1),
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: isInRepair
-                  ? ElevatedButton.icon(
-                      onPressed: onViewService,
-                      icon: const Icon(Icons.arrow_forward_rounded,
-                          size: 16),
-                      label: const Text('View Service'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFF7ED),
-                        foregroundColor: const Color(0xFFC2410C),
-                        elevation: 0,
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                      ),
-                    )
-                  : OutlinedButton.icon(
+            if (isInRepair)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: onViewService,
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                  label: const Text('View Service'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFF7ED),
+                    foregroundColor: const Color(0xFFC2410C),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
                       onPressed: onLogService,
                       icon: const Icon(Icons.build_outlined, size: 16),
                       label: const Text('Log Service'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.navy,
                         side: const BorderSide(color: AppColors.navy),
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8)),
                       ),
                     ),
-            ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onResolve,
+                      icon: const Icon(Icons.check_circle_outline, size: 16),
+                      label: const Text('Resolve'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.success,
+                        side: BorderSide(color: AppColors.success),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+// ── Report Breakdown Sheet ─────────────────────────────────────────────────────
+class _ReportBreakdownSheet extends StatefulWidget {
+  final ServiceMenBreakdownsController controller;
+  const _ReportBreakdownSheet({required this.controller});
+
+  @override
+  State<_ReportBreakdownSheet> createState() => _ReportBreakdownSheetState();
+}
+
+class _ReportBreakdownSheetState extends State<_ReportBreakdownSheet> {
+  final _api = Get.find<ApiClient>();
+
+  List<Map<String, dynamic>> _vehicles      = [];
+  bool                       _loadingVehicles = true;
+  Map<String, dynamic>?      _selectedVehicle;
+
+  String _type     = 'MECHANICAL';
+  String _duration = 'SHORT';
+  final  _reasonCtrl   = TextEditingController();
+  final  _locationCtrl = TextEditingController();
+  final  _notesCtrl    = TextEditingController();
+  bool   _submitting   = false;
+  String? _error;
+
+  static const _types = [
+    ('MECHANICAL', 'Mechanical'),
+    ('TYRE',       'Tyre'),
+    ('ENGINE',     'Engine'),
+    ('ELECTRICAL', 'Electrical'),
+    ('ACCIDENT',   'Accident'),
+    ('OTHER',      'Other'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVehicles();
+  }
+
+  Future<void> _loadVehicles() async {
+    try {
+      final res  = await _api.get(ApiEndpoints.vehicles);
+      final list = ((res.data as Map<String, dynamic>)['data'] as List)
+          .cast<Map<String, dynamic>>();
+      if (mounted) setState(() { _vehicles = list; _loadingVehicles = false; });
+    } catch (_) {
+      if (mounted) setState(() => _loadingVehicles = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _reasonCtrl.dispose();
+    _locationCtrl.dispose();
+    _notesCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_selectedVehicle == null) {
+      setState(() => _error = 'Please select a vehicle');
+      return;
+    }
+    if (_reasonCtrl.text.trim().isEmpty) {
+      setState(() => _error = 'Reason is required');
+      return;
+    }
+    setState(() { _submitting = true; _error = null; });
+    final ok = await widget.controller.reportBreakdown(
+      vehicleId:         _selectedVehicle!['id'] as int,
+      breakdownType:     _type,
+      breakdownDuration: _duration,
+      reason:            _reasonCtrl.text.trim(),
+      location:          _locationCtrl.text.trim(),
+      notes:             _notesCtrl.text.trim(),
+    );
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    if (ok) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_outlined,
+                      color: AppColors.error, size: 20),
+                  const SizedBox(width: 8),
+                  Text('Report Breakdown',
+                      style:
+                          AppTextStyles.heading3.copyWith(color: AppColors.navy)),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_error != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(_error!,
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.error)),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    // Vehicle picker
+                    Text('Vehicle',
+                        style: AppTextStyles.label
+                            .copyWith(color: AppColors.navy)),
+                    const SizedBox(height: 6),
+                    _loadingVehicles
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                                color: AppColors.navy, strokeWidth: 2))
+                        : DropdownButtonFormField<Map<String, dynamic>>(
+                            value: _selectedVehicle,
+                            hint: Text('Select vehicle',
+                                style: AppTextStyles.caption
+                                    .copyWith(color: AppColors.mutedText)),
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide:
+                                    const BorderSide(color: AppColors.navy),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                            ),
+                            items: _vehicles.map((v) {
+                              return DropdownMenuItem(
+                                value: v,
+                                child: Text(
+                                    v['registrationNumber'] as String? ?? '—',
+                                    style: AppTextStyles.body),
+                              );
+                            }).toList(),
+                            onChanged: (v) =>
+                                setState(() => _selectedVehicle = v),
+                          ),
+                    const SizedBox(height: 16),
+
+                    // Breakdown type
+                    Text('Breakdown Type',
+                        style: AppTextStyles.label
+                            .copyWith(color: AppColors.navy)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: _types.map((t) {
+                        final sel = _type == t.$1;
+                        return GestureDetector(
+                          onTap: () => setState(() => _type = t.$1),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: sel
+                                  ? AppColors.navy
+                                  : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: sel
+                                      ? AppColors.navy
+                                      : AppColors.border),
+                            ),
+                            child: Text(t.$2,
+                                style: AppTextStyles.caption.copyWith(
+                                  color: sel
+                                      ? Colors.white
+                                      : AppColors.bodyText,
+                                  fontWeight: sel
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                )),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Severity
+                    Text('Severity',
+                        style: AppTextStyles.label
+                            .copyWith(color: AppColors.navy)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _DurationChip(
+                          label: 'Minor (SHORT)',
+                          selected: _duration == 'SHORT',
+                          onTap: () => setState(() => _duration = 'SHORT'),
+                        ),
+                        const SizedBox(width: 8),
+                        _DurationChip(
+                          label: 'Major (LONG)',
+                          selected: _duration == 'LONG',
+                          onTap: () => setState(() => _duration = 'LONG'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Reason
+                    Text('Reason *',
+                        style: AppTextStyles.label
+                            .copyWith(color: AppColors.navy)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _reasonCtrl,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        hintText: 'Describe the breakdown…',
+                        hintStyle: AppTextStyles.caption
+                            .copyWith(color: AppColors.mutedText),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide:
+                              const BorderSide(color: AppColors.navy),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Location
+                    Text('Location (optional)',
+                        style: AppTextStyles.label
+                            .copyWith(color: AppColors.navy)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _locationCtrl,
+                      decoration: InputDecoration(
+                        hintText: 'e.g. Workshop Bay 3',
+                        hintStyle: AppTextStyles.caption
+                            .copyWith(color: AppColors.mutedText),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide:
+                              const BorderSide(color: AppColors.navy),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Notes
+                    Text('Notes (optional)',
+                        style: AppTextStyles.label
+                            .copyWith(color: AppColors.navy)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _notesCtrl,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        hintText: 'Additional details…',
+                        hintStyle: AppTextStyles.caption
+                            .copyWith(color: AppColors.mutedText),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide:
+                              const BorderSide(color: AppColors.navy),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _submitting ? null : _submit,
+                        icon: _submitting
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.warning_amber_rounded, size: 20),
+                        label: Text(
+                          _submitting ? 'Reporting…' : 'Report Breakdown',
+                          style: AppTextStyles.bodyMedium
+                              .copyWith(color: Colors.white),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.error,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DurationChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _DurationChip(
+      {required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.navy : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+                color: selected ? AppColors.navy : AppColors.border),
+          ),
+          child: Center(
+            child: Text(label,
+                style: AppTextStyles.caption.copyWith(
+                  color: selected ? Colors.white : AppColors.bodyText,
+                  fontWeight:
+                      selected ? FontWeight.w600 : FontWeight.w400,
+                )),
+          ),
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../../../../../../core/api/api_client.dart';
 import '../../../../../../core/api/api_endpoints.dart';
 import '../../../../../../core/popups/feros_snackbar.dart';
@@ -83,6 +84,33 @@ class ServiceMenBreakdownsController extends GetxController {
       final msg = _extractMessage(e);
       FerosSnackbar.error(msg ?? 'Failed to create service');
       return null;
+    }
+  }
+
+  Future<bool> reportBreakdown({
+    required int vehicleId,
+    required String breakdownType,
+    required String breakdownDuration,
+    required String reason,
+    String? location,
+    String? notes,
+  }) async {
+    try {
+      await _api.post(ApiEndpoints.vehicleBreakdownById(vehicleId), data: {
+        'breakdownType':     breakdownType,
+        'breakdownDuration': breakdownDuration,
+        'breakdownDate':     DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(DateTime.now()),
+        'reason':            reason,
+        if (location != null && location.isNotEmpty) 'location': location,
+        if (notes    != null && notes.isNotEmpty)    'notes':    notes,
+      });
+      await fetchBreakdowns();
+      FerosSnackbar.success('Breakdown reported');
+      return true;
+    } catch (e) {
+      final msg = _extractMessage(e);
+      FerosSnackbar.error(msg ?? 'Failed to report breakdown');
+      return false;
     }
   }
 
