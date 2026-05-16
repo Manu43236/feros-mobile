@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../core/widgets/feros_search_bar.dart';
+import '../../../../../../core/widgets/feros_select_field.dart';
 import '../../../../../../core/widgets/shimmer_card.dart';
 import '../../store_keeper_dashboard/controllers/store_keeper_dashboard_controller.dart';
 import '../../store_keeper_dashboard/views/store_keeper_dashboard_view.dart'
@@ -617,12 +619,129 @@ class _AddPartSheetState extends State<_AddPartSheet> {
 }
 
 // ── Requests Tab ───────────────────────────────────────────────────────────────
-class _RequestsTab extends StatelessWidget {
+class _RequestsTab extends StatefulWidget {
   const _RequestsTab();
 
   @override
+  State<_RequestsTab> createState() => _RequestsTabState();
+}
+
+class _RequestsTabState extends State<_RequestsTab> {
+  int _segment = 0; // 0 = Spare Parts, 1 = Tires
+  late final StoreKeeperRequestsController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = Get.find<StoreKeeperRequestsController>();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final ctrl = Get.find<StoreKeeperRequestsController>();
+    return Column(
+      children: [
+        // ── Segmented toggle ─────────────────────────────────────
+        Obx(() => Container(
+          color: Colors.white,
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+          child: Row(
+            children: [
+              _SegmentBtn(
+                label: 'Spare Parts',
+                count: _ctrl.pendingCount,
+                selected: _segment == 0,
+                onTap: () => setState(() => _segment = 0),
+              ),
+              const SizedBox(width: 10),
+              _SegmentBtn(
+                label: 'Tires',
+                count: _ctrl.pendingTireCount,
+                selected: _segment == 1,
+                onTap: () => setState(() => _segment = 1),
+              ),
+            ],
+          ),
+        )),
+        const Divider(height: 1),
+
+        // ── Content ──────────────────────────────────────────────
+        Expanded(
+          child: _segment == 0
+              ? _SparePartsContent(ctrl: _ctrl)
+              : _TiresContent(ctrl: _ctrl),
+        ),
+      ],
+    );
+  }
+}
+
+class _SegmentBtn extends StatelessWidget {
+  final String label;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+  const _SegmentBtn(
+      {required this.label,
+      required this.count,
+      required this.selected,
+      required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.navy : AppColors.background,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                label,
+                style: AppTextStyles.bodyMedium.copyWith(
+                    color: selected ? Colors.white : AppColors.mutedText,
+                    fontWeight:
+                        selected ? FontWeight.w600 : FontWeight.w400),
+              ),
+              if (count > 0) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? AppColors.orange
+                        : AppColors.orange.withOpacity(0.85),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text('$count',
+                      style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white)),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Spare Parts content ────────────────────────────────────────────────────────
+class _SparePartsContent extends StatelessWidget {
+  final StoreKeeperRequestsController ctrl;
+  const _SparePartsContent({required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
     return Obx(() {
       if (ctrl.isLoading.value) return const ShimmerList(count: 5);
       return RefreshIndicator(
@@ -632,27 +751,26 @@ class _RequestsTab extends StatelessWidget {
           final items = ctrl.filteredRequests;
           return CustomScrollView(
             slivers: [
-              // Search
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                   child: FerosSearchBar(
                     hint: 'Search by part, requester, vehicle…',
                     onChanged: ctrl.onSearch,
                   ),
                 ),
               ),
-
               if (items.isEmpty)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 60),
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.pending_actions_outlined,
                             size: 52, color: AppColors.border),
                         const SizedBox(height: 12),
-                        Text('No requests found',
+                        Text('No spare part requests',
                             style: AppTextStyles.body
                                 .copyWith(color: AppColors.mutedText)),
                       ],
@@ -661,18 +779,24 @@ class _RequestsTab extends StatelessWidget {
                 )
               else
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (_, i) {
                         final req = items[i];
-                        final status =
-                            req['status'] as String? ?? 'REQUESTED';
-                        final isPending = status == 'REQUESTED';
+                        final isPending =
+                            (req['status'] as String? ?? 'REQUESTED') ==
+                                'REQUESTED';
                         return _RequestCard(
                           request: req,
                           onTap: isPending
-                              ? () => _showActionSheet(context, req, ctrl)
+                              ? () => showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (_) => _ApproveRejectSheet(
+                                        request: req, controller: ctrl),
+                                  )
                               : null,
                         );
                       },
@@ -686,15 +810,62 @@ class _RequestsTab extends StatelessWidget {
       );
     });
   }
+}
 
-  void _showActionSheet(BuildContext context, Map<String, dynamic> req,
-      StoreKeeperRequestsController ctrl) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _ApproveRejectSheet(request: req, controller: ctrl),
-    );
+// ── Tires content ──────────────────────────────────────────────────────────────
+class _TiresContent extends StatelessWidget {
+  final StoreKeeperRequestsController ctrl;
+  const _TiresContent({required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      if (ctrl.isLoadingTireRequests.value) return const ShimmerList(count: 5);
+      return RefreshIndicator(
+        onRefresh: ctrl.fetchTireRequests,
+        color: AppColors.navy,
+        child: Obx(() {
+          final tires = ctrl.tireRequests;
+          if (tires.isEmpty) {
+            return ListView(
+              children: [
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.55,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.tire_repair_outlined,
+                          size: 52, color: AppColors.border),
+                      const SizedBox(height: 12),
+                      Text('No pending tire requests',
+                          style: AppTextStyles.body
+                              .copyWith(color: AppColors.mutedText)),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+            itemCount: tires.length,
+            itemBuilder: (_, i) {
+              final req = tires[i];
+              return _TireRequestCard(
+                req: req,
+                onTap: () => showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => _TireApproveRejectSheet(
+                      request: req, controller: ctrl),
+                ),
+              );
+            },
+          );
+        }),
+      );
+    });
   }
 }
 
@@ -936,7 +1107,10 @@ class _RequestCard extends StatelessWidget {
         'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
       ];
-      return '${d.day} ${months[d.month]}';
+      final h = d.hour % 12 == 0 ? 12 : d.hour % 12;
+      final min = d.minute.toString().padLeft(2, '0');
+      final ampm = d.hour >= 12 ? 'PM' : 'AM';
+      return '${d.day} ${months[d.month]}, $h:$min $ampm';
     } catch (_) {
       return iso;
     }
@@ -1275,6 +1449,444 @@ class _ApproveRejectSheetState extends State<_ApproveRejectSheet> {
                           elevation: 0,
                           padding:
                               const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: _submitting
+                            ? const SizedBox(
+                                width: 20, height: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))
+                            : Text(
+                                _isApprove
+                                    ? 'Confirm Approval'
+                                    : 'Confirm Rejection',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Tire Request Card ──────────────────────────────────────────────────────────
+class _TireRequestCard extends StatelessWidget {
+  final Map<String, dynamic> req;
+  final VoidCallback onTap;
+  const _TireRequestCard({required this.req, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final vehicle   = req['vehicleRegistrationNumber'] as String? ?? '—';
+    final position  = req['positionCode']              as String? ?? '—';
+    final by        = req['requestedByName']           as String? ?? '—';
+    final notes     = req['notes']                     as String?;
+    final createdAt = req['createdAt']                 as String? ?? '';
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFFED7AA)),
+          boxShadow: const [
+            BoxShadow(
+                color: Color(0x0A000000), blurRadius: 6, offset: Offset(0, 2)),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text('PENDING',
+                        style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFFD97706))),
+                  ),
+                  const Spacer(),
+                  Text(_fmtDateTime(createdAt),
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.mutedText)),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    const Icon(Icons.directions_bus_outlined,
+                        size: 14, color: AppColors.mutedText),
+                    const SizedBox(width: 6),
+                    Text(vehicle,
+                        style: AppTextStyles.bodyMedium
+                            .copyWith(color: AppColors.navy)),
+                    const SizedBox(width: 8),
+                    Text('· $position',
+                        style: AppTextStyles.caption
+                            .copyWith(color: AppColors.mutedText)),
+                  ]),
+                  const SizedBox(height: 6),
+                  Row(children: [
+                    const Icon(Icons.person_outline,
+                        size: 13, color: AppColors.mutedText),
+                    const SizedBox(width: 4),
+                    Text('Requested by $by',
+                        style: AppTextStyles.caption
+                            .copyWith(color: AppColors.mutedText)),
+                  ]),
+                  if (notes != null) ...[
+                    const SizedBox(height: 4),
+                    Text('Notes: $notes',
+                        style: AppTextStyles.caption
+                            .copyWith(color: AppColors.mutedText)),
+                  ],
+                  const SizedBox(height: 10),
+                  Row(children: [
+                    const Spacer(),
+                    Text('Tap to Approve / Reject',
+                        style: AppTextStyles.caption.copyWith(
+                            color: AppColors.navy,
+                            fontWeight: FontWeight.w600)),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_forward_ios,
+                        size: 10, color: AppColors.navy),
+                  ]),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _fmtDateTime(String iso) {
+    try {
+      final d = DateTime.parse(iso).toLocal();
+      const m = [
+        '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ];
+      final h = d.hour % 12 == 0 ? 12 : d.hour % 12;
+      final min = d.minute.toString().padLeft(2, '0');
+      final ampm = d.hour >= 12 ? 'PM' : 'AM';
+      return '${d.day} ${m[d.month]}, $h:$min $ampm';
+    } catch (_) {
+      return iso;
+    }
+  }
+}
+
+// ── Tire Approve / Reject Sheet ───────────────────────────────────────────────
+class _TireApproveRejectSheet extends StatefulWidget {
+  final Map<String, dynamic> request;
+  final StoreKeeperRequestsController controller;
+  const _TireApproveRejectSheet(
+      {required this.request, required this.controller});
+
+  @override
+  State<_TireApproveRejectSheet> createState() =>
+      _TireApproveRejectSheetState();
+}
+
+class _TireApproveRejectSheetState extends State<_TireApproveRejectSheet> {
+  bool _isApprove  = true;
+  bool _submitting = false;
+  String? _error;
+
+  final _reasonCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _reasonCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    setState(() { _submitting = true; _error = null; });
+    final id = widget.request['id'] as int? ?? 0;
+    bool ok;
+
+    if (_isApprove) {
+      ok = await widget.controller.approveTireRequest(id);
+    } else {
+      final reason = _reasonCtrl.text.trim();
+      if (reason.isEmpty) {
+        setState(() {
+          _submitting = false;
+          _error = 'Please provide a rejection reason';
+        });
+        return;
+      }
+      ok = await widget.controller.rejectTireRequest(id, reason);
+    }
+
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    if (ok) {
+      Navigator.of(context).pop();
+      Get.snackbar(
+        'Done',
+        _isApprove ? 'Tire issued and fitted' : 'Request rejected',
+        backgroundColor:
+            _isApprove ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+    } else {
+      setState(() => _error = 'Failed to process. Please try again.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final vehicle  = widget.request['vehicleRegistrationNumber'] as String? ?? '—';
+    final position = widget.request['positionCode']              as String? ?? '—';
+    final by       = widget.request['requestedByName']           as String? ?? '—';
+
+    return Padding(
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('$vehicle · $position',
+                            style: AppTextStyles.heading3
+                                .copyWith(color: AppColors.navy)),
+                        const SizedBox(height: 2),
+                        Text('Requested by $by',
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.mutedText)),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: const Icon(Icons.close,
+                        color: AppColors.mutedText, size: 22),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_error != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(children: [
+                          const Icon(Icons.error_outline,
+                              size: 16, color: Color(0xFFDC2626)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(_error!,
+                                style: AppTextStyles.caption
+                                    .copyWith(color: const Color(0xFFDC2626))),
+                          ),
+                        ]),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // Approve / Reject toggle
+                    Container(
+                      decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(10)),
+                      child: Row(children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setState(
+                                () { _isApprove = true; _error = null; }),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: _isApprove
+                                    ? const Color(0xFF16A34A)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.check_circle_outline,
+                                      size: 16,
+                                      color: _isApprove
+                                          ? Colors.white
+                                          : AppColors.mutedText),
+                                  const SizedBox(width: 6),
+                                  Text('Approve',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                          color: _isApprove
+                                              ? Colors.white
+                                              : AppColors.mutedText)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setState(
+                                () { _isApprove = false; _error = null; }),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: !_isApprove
+                                    ? const Color(0xFFDC2626)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.cancel_outlined,
+                                      size: 16,
+                                      color: !_isApprove
+                                          ? Colors.white
+                                          : AppColors.mutedText),
+                                  const SizedBox(width: 6),
+                                  Text('Reject',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                          color: !_isApprove
+                                              ? Colors.white
+                                              : AppColors.mutedText)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ]),
+                    ),
+                    const SizedBox(height: 20),
+
+                    if (_isApprove) ...[
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFBBF7D0)),
+                        ),
+                        child: Row(children: [
+                          const Icon(Icons.info_outline,
+                              size: 16, color: Color(0xFF16A34A)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'A tire will be automatically selected from stock (FIFO).',
+                              style: AppTextStyles.caption
+                                  .copyWith(color: const Color(0xFF16A34A)),
+                            ),
+                          ),
+                        ]),
+                      ),
+                    ],
+
+                    if (!_isApprove) ...[
+                      Text('Rejection Reason *',
+                          style: AppTextStyles.caption.copyWith(
+                              color: AppColors.mutedText,
+                              fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: _reasonCtrl,
+                        maxLines: 3,
+                        style: AppTextStyles.body.copyWith(color: AppColors.navy),
+                        decoration: InputDecoration(
+                          hintText: 'e.g. No matching tires in stock…',
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  const BorderSide(color: AppColors.border)),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                  color: Color(0xFFDC2626))),
+                          filled: true,
+                          fillColor: AppColors.background,
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _submitting ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isApprove
+                              ? const Color(0xFF16A34A)
+                              : const Color(0xFFDC2626),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10)),
                         ),

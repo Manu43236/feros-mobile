@@ -28,8 +28,6 @@ class StoreKeeperRequestsController extends GetxController {
   // ── Tire Requests ────────────────────────────────────────────────────────────
   final isLoadingTireRequests = true.obs;
   final tireRequests          = <Map<String, dynamic>>[].obs;
-  final isLoadingAvailTires   = false.obs;
-  final availableTires        = <Map<String, dynamic>>[].obs;
 
   int get pendingTireCount =>
       tireRequests.where((r) => r['status'] == 'PENDING').length;
@@ -64,16 +62,6 @@ class StoreKeeperRequestsController extends GetxController {
     }
   }
 
-  Future<void> fetchAvailableTires() async {
-    isLoadingAvailTires.value = true;
-    try {
-      final res = await _api.get(ApiEndpoints.tiresAvailable);
-      availableTires.value =
-          List<Map<String, dynamic>>.from(res.data['data'] ?? []);
-    } catch (_) {}
-    isLoadingAvailTires.value = false;
-  }
-
   void onSearch(String q) => searchQuery.value = q;
 
   Future<bool> approveRequest(int servicePartId, int quantityApproved) async {
@@ -104,15 +92,9 @@ class StoreKeeperRequestsController extends GetxController {
     }
   }
 
-  Future<bool> approveTireRequest(int id, int tireId, {double? fittedAtKm}) async {
+  Future<bool> approveTireRequest(int id) async {
     try {
-      await _api.patch(
-        ApiEndpoints.approveTireRequest(id),
-        data: {
-          'tireId': tireId,
-          if (fittedAtKm != null) 'fittedAtKm': fittedAtKm,
-        },
-      );
+      await _api.patch(ApiEndpoints.approveTireRequest(id));
       await fetchTireRequests();
       return true;
     } catch (_) {

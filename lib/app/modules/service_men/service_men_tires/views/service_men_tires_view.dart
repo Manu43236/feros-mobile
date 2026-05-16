@@ -308,7 +308,10 @@ class _TireRequestCard extends StatelessWidget {
         '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
       ];
-      return '${d.day} ${months[d.month]}';
+      final h = d.hour % 12 == 0 ? 12 : d.hour % 12;
+      final min = d.minute.toString().padLeft(2, '0');
+      final ampm = d.hour >= 12 ? 'PM' : 'AM';
+      return '${d.day} ${months[d.month]}, $h:$min $ampm';
     } catch (_) {
       return iso;
     }
