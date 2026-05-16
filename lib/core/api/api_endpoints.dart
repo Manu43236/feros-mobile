@@ -20,6 +20,7 @@ class ApiEndpoints {
   static String startService(id)          => '/vehicle-services/$id/start';
   static String completeService(id)       => '/vehicle-services/$id/complete';
   static String cancelService(id)         => '/vehicle-services/$id/cancel';
+  static String completeTask(serviceId, taskId) => '/vehicle-services/$serviceId/tasks/$taskId/complete';
   static const fuelLogs                   = '/fuel-logs';
   static String fuelLogById(id)           => '/fuel-logs/$id';
   static const meterReadings              = '/meter-readings';
@@ -167,6 +168,15 @@ class ApiEndpoints {
   static const reportInvoiceAging      = '/reports/invoice-aging';
   static const reportTopClients        = '/reports/top-clients';
   static const reportStockLevels       = '/reports/stock-levels';
+
+  // Tires
+  static const tires                   = '/tires';
+  static const tiresAvailable          = '/tires/available';
+  static String tireHistory(id)        => '/tires/$id/history';
+  static const tirePositionsCurrent    = '/tire-positions/current';
+  static const tireFittings            = '/tire-fittings';
+  static String tireFittingRemove(id)  => '/tire-fittings/$id/remove';
+  static const tireRotations           = '/tire-rotations';
 
   // Upload
   static const upload                  = '/upload';

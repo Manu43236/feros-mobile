@@ -3,6 +3,10 @@ import 'package:feros/app/modules/driver/driver_shell/controllers/driver_shell_c
 import 'package:feros/app/modules/store_keeper/store_keeper_dashboard/views/store_keeper_dashboard_view.dart';
 import 'package:feros/app/modules/store_keeper/store_keeper_inventory/views/store_keeper_inventory_view.dart';
 import 'package:feros/app/modules/store_keeper/store_keeper_profile/views/store_keeper_profile_view.dart';
+import 'package:feros/app/modules/service_men/service_men_dashboard/views/service_men_dashboard_view.dart';
+import 'package:feros/app/modules/service_men/service_men_services/views/service_men_services_view.dart';
+import 'package:feros/app/modules/service_men/service_men_profile/views/service_men_profile_view.dart';
+import 'package:feros/app/modules/supervisor/supervisor_breakdown/views/supervisor_breakdown_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -160,10 +164,10 @@ class DriverShellView extends GetView<DriverShellController> {
         ];
       case 'SERVICE_MEN':
         return [
-          const DriverDashboardView(),
-          _ComingSoonTab(title: 'Services',  icon: Icons.build_outlined,           sprint: 4),
-          _ComingSoonTab(title: 'Breakdown', icon: Icons.car_crash_outlined,       sprint: 4),
-          const DriverProfileView(),
+          const ServiceMenDashboardView(),
+          const ServiceMenServicesView(),
+          const SupervisorBreakdownView(),
+          const ServiceMenProfileView(),
         ];
       case 'STORE_KEEPER':
         return [
