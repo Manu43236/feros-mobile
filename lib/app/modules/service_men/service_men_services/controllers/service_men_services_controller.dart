@@ -83,11 +83,7 @@ class ServiceMenServicesController extends GetxController {
 
   Future<List<int>?> downloadInvoicePdf(int invoiceId) async {
     try {
-      final res = await _api.get(
-        ApiEndpoints.serviceInvoicePdf(invoiceId),
-        options: {'responseType': 'bytes'},
-      );
-      return (res.data as List<dynamic>).cast<int>();
+      return await _api.getBytes(ApiEndpoints.serviceInvoicePdf(invoiceId));
     } catch (_) {
       FerosSnackbar.error('Failed to load PDF');
       return null;
