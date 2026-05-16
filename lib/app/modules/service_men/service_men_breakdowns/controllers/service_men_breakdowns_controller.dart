@@ -59,7 +59,7 @@ class ServiceMenBreakdownsController extends GetxController {
     }
   }
 
-  Future<bool> createServiceFromBreakdown({
+  Future<Map<String, dynamic>?> createServiceFromBreakdown({
     required int vehicleId,
     required int breakdownId,
     required String serviceType,
@@ -67,7 +67,7 @@ class ServiceMenBreakdownsController extends GetxController {
     String? notes,
   }) async {
     try {
-      await _api.post(ApiEndpoints.vehicleServices, data: {
+      final res = await _api.post(ApiEndpoints.vehicleServices, data: {
         'vehicleId':    vehicleId,
         'triggeredBy':  'BREAKDOWN',
         'breakdownId':  breakdownId,
@@ -76,12 +76,13 @@ class ServiceMenBreakdownsController extends GetxController {
         if (notes != null && notes.isNotEmpty) 'notes': notes,
         'tasks': <Map<String, dynamic>>[],
       });
-      FerosSnackbar.success('Service record created');
-      return true;
+      // Refresh breakdowns list so the card flips to IN_REPAIR
+      await fetchBreakdowns();
+      return (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
     } catch (e) {
       final msg = _extractMessage(e);
       FerosSnackbar.error(msg ?? 'Failed to create service');
-      return false;
+      return null;
     }
   }
 

@@ -5,6 +5,8 @@ import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../core/widgets/shimmer_card.dart';
 import '../controllers/service_men_breakdowns_controller.dart';
+import '../../service_men_services/controllers/service_men_services_controller.dart';
+import '../../service_men_services/views/service_men_service_detail_view.dart';
 
 class ServiceMenBreakdownsView
     extends GetView<ServiceMenBreakdownsController> {
@@ -564,16 +566,23 @@ class _LogServiceSheetState extends State<_LogServiceSheet> {
   Future<void> _submit() async {
     setState(() => _submitting = true);
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final ok = await widget.controller.createServiceFromBreakdown(
+    final newService = await widget.controller.createServiceFromBreakdown(
       vehicleId:   widget.vehicleId,
       breakdownId: widget.breakdownId,
       serviceType: _serviceType,
       serviceDate: today,
       notes:       _notesCtrl.text.trim(),
     );
-    if (mounted) {
-      setState(() => _submitting = false);
-      if (ok) Navigator.pop(context);
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    if (newService != null) {
+      // Refresh the services list so the new service appears there too
+      if (Get.isRegistered<ServiceMenServicesController>()) {
+        Get.find<ServiceMenServicesController>().fetchServices();
+      }
+      // Dismiss sheet then navigate to new service so they can start it
+      Navigator.pop(context);
+      Get.to(() => ServiceMenServiceDetailView(service: newService));
     }
   }
 }

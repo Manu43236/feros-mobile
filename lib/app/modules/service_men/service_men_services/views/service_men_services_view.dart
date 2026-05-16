@@ -113,6 +113,8 @@ class _ServiceCard extends StatelessWidget {
     final statusColor = _statusColor(displayStatus);
     final tasks = (service['tasks'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     final completedTasks = tasks.where((t) => t['status'] == 'COMPLETED').length;
+    final triggeredBy = service['triggeredBy'] as String? ?? '';
+    final isBreakdown = triggeredBy == 'BREAKDOWN';
 
     return GestureDetector(
       onTap: onTap,
@@ -121,6 +123,9 @@ class _ServiceCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
+          border: isBreakdown
+              ? Border.all(color: const Color(0xFFFECACA), width: 1.2)
+              : null,
           boxShadow: const [
             BoxShadow(
                 color: Color(0x0A000000),
@@ -140,6 +145,22 @@ class _ServiceCard extends StatelessWidget {
                         .copyWith(color: AppColors.navy),
                   ),
                 ),
+                if (isBreakdown)
+                  Container(
+                    margin: const EdgeInsets.only(right: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '⚡ Breakdown',
+                      style: AppTextStyles.caption.copyWith(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
