@@ -5,8 +5,6 @@ import '../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../core/widgets/shimmer_card.dart';
 import '../controllers/service_men_dashboard_controller.dart';
 import '../../service_men_services/views/service_men_service_detail_view.dart';
-import '../../service_men_tires/views/service_men_tires_view.dart';
-import '../../service_men_tires/bindings/service_men_tires_binding.dart';
 import '../../../driver/driver_shell/controllers/driver_shell_controller.dart';
 
 class ServiceMenDashboardView extends GetView<ServiceMenDashboardController> {
@@ -63,7 +61,7 @@ class ServiceMenDashboardView extends GetView<ServiceMenDashboardController> {
             Row(
               children: [
                 _QuickAction(
-                  label: 'View Services',
+                  label: 'Services',
                   icon: Icons.build_outlined,
                   color: AppColors.navy,
                   onTap: () => Get.find<DriverShellController>().onTabTapped(1),
@@ -71,19 +69,16 @@ class ServiceMenDashboardView extends GetView<ServiceMenDashboardController> {
                 const SizedBox(width: 12),
                 _QuickAction(
                   label: 'Tire Work',
-                  icon: Icons.circle_outlined,
+                  icon: Icons.tire_repair_outlined,
                   color: const Color(0xFF7C3AED),
-                  onTap: () => Get.to(
-                    () => const ServiceMenTiresView(),
-                    binding: ServiceMenTiresBinding(),
-                  ),
+                  onTap: () => Get.find<DriverShellController>().onTabTapped(2),
                 ),
                 const SizedBox(width: 12),
                 _QuickAction(
-                  label: 'Breakdown',
-                  icon: Icons.car_crash_outlined,
+                  label: 'Breakdowns',
+                  icon: Icons.warning_amber_outlined,
                   color: AppColors.error,
-                  onTap: () => Get.find<DriverShellController>().onTabTapped(2),
+                  onTap: () => Get.find<DriverShellController>().onTabTapped(3),
                 ),
               ],
             ),

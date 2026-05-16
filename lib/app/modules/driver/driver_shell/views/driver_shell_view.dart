@@ -6,7 +6,10 @@ import 'package:feros/app/modules/store_keeper/store_keeper_profile/views/store_
 import 'package:feros/app/modules/service_men/service_men_dashboard/views/service_men_dashboard_view.dart';
 import 'package:feros/app/modules/service_men/service_men_services/views/service_men_services_view.dart';
 import 'package:feros/app/modules/service_men/service_men_profile/views/service_men_profile_view.dart';
-import 'package:feros/app/modules/supervisor/supervisor_breakdown/views/supervisor_breakdown_view.dart';
+import 'package:feros/app/modules/service_men/service_men_tires/views/service_men_tires_view.dart';
+import 'package:feros/app/modules/service_men/service_men_breakdowns/views/service_men_breakdowns_view.dart';
+import 'package:feros/app/modules/service_men/service_men_breakdowns/controllers/service_men_breakdowns_controller.dart';
+import 'package:feros/app/modules/service_men/service_men_breakdowns/bindings/service_men_breakdowns_binding.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -163,10 +166,15 @@ class DriverShellView extends GetView<DriverShellController> {
           const DriverProfileView(),
         ];
       case 'SERVICE_MEN':
+        // Eagerly register breakdowns controller so it's ready when tab opens
+        if (!Get.isRegistered<ServiceMenBreakdownsController>()) {
+          ServiceMenBreakdownsBinding().dependencies();
+        }
         return [
           const ServiceMenDashboardView(),
           const ServiceMenServicesView(),
-          const SupervisorBreakdownView(),
+          const ServiceMenTiresView(),
+          const ServiceMenBreakdownsView(),
           const ServiceMenProfileView(),
         ];
       case 'STORE_KEEPER':

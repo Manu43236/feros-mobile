@@ -76,6 +76,16 @@ class ServiceMenServicesController extends GetxController {
     }
   }
 
+  Future<List<Map<String, dynamic>>> fetchServiceParts(int serviceId) async {
+    try {
+      final res = await _api.get(ApiEndpoints.servicePartsByService(serviceId));
+      return ((res.data as Map<String, dynamic>)['data'] as List)
+          .cast<Map<String, dynamic>>();
+    } catch (_) {
+      return [];
+    }
+  }
+
   Future<bool> requestPart({
     required int serviceId,
     required int sparePartId,
