@@ -36,33 +36,29 @@ class _ServiceMenTiresViewState extends State<ServiceMenTiresView>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.navy,
-        elevation: 0,
-        title: const Text('Tire Work',
-            style: TextStyle(
-                color: Colors.white,
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w600)),
-        iconTheme: const IconThemeData(color: Colors.white),
-        bottom: TabBar(
-          controller: _tab,
-          indicatorColor: AppColors.orange,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white60,
-          labelStyle: const TextStyle(
-              fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600),
-          tabs: const [
-            Tab(text: 'Tire Work'),
-            Tab(text: 'My Requests'),
-          ],
+    return Column(
+      children: [
+        // ── Tab Bar ───────────────────────────────────────────
+        Container(
+          color: AppColors.navy,
+          child: TabBar(
+            controller: _tab,
+            indicatorColor: AppColors.orange,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white60,
+            labelStyle: const TextStyle(
+                fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600),
+            tabs: const [
+              Tab(text: 'Tire Work'),
+              Tab(text: 'My Requests'),
+            ],
+          ),
         ),
-      ),
-      body: TabBarView(
-        controller: _tab,
-        children: [
+        // ── Body ─────────────────────────────────────────────
+        Expanded(
+          child: TabBarView(
+            controller: _tab,
+            children: [
           // ── Tab 1: Tire Work ───────────────────────────────
           Obx(() => ListView(
             padding: const EdgeInsets.all(16),
@@ -113,6 +109,8 @@ class _ServiceMenTiresViewState extends State<ServiceMenTiresView>
           _MyRequestsTab(controller: _ctrl),
         ],
       ),
+        ),
+      ],
     );
   }
 }

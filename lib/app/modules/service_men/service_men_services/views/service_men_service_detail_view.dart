@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../core/widgets/feros_select_field.dart';
@@ -9,6 +12,7 @@ import '../../../../../../core/api/api_endpoints.dart';
 import '../../../../../../core/api/api_client.dart';
 import '../../../../../../core/popups/feros_snackbar.dart';
 import '../controllers/service_men_services_controller.dart';
+import 'service_men_bill_preview_view.dart';
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 String? _fmtDate(dynamic d) {
@@ -106,17 +110,24 @@ class _ServiceMenServiceDetailViewState
 
   List<Map<String, dynamic>> _parts = [];
   bool _loadingParts = true;
+  Map<String, dynamic>? _invoice;
 
   @override
   void initState() {
     super.initState();
     _service = Map<String, dynamic>.from(widget.service);
     _loadParts();
+    if (_status == 'COMPLETED') _loadInvoice();
   }
 
   Future<void> _loadParts() async {
     final parts = await _ctrl.fetchServiceParts(_service['id'] as int);
     if (mounted) setState(() { _parts = parts; _loadingParts = false; });
+  }
+
+  Future<void> _loadInvoice() async {
+    final inv = await _ctrl.fetchInvoice(_service['id'] as int);
+    if (mounted) setState(() => _invoice = inv);
   }
 
   List<Map<String, dynamic>> get _tasks =>
@@ -172,99 +183,38 @@ class _ServiceMenServiceDetailViewState
     );
   }
 
-  void _showCompleteSheet() {
-    final notesCtrl = TextEditingController();
-    final odoCtrl   = TextEditingController();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(
-          left: 24, right: 24, top: 24,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Complete Service',
-                style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
-            const SizedBox(height: 20),
-            Text('Odometer Reading (optional)',
-                style: AppTextStyles.label.copyWith(color: AppColors.navy)),
-            const SizedBox(height: 6),
-            TextField(
-              controller: odoCtrl,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: InputDecoration(
-                hintText: 'e.g. 45000',
-                hintStyle:
-                    AppTextStyles.caption.copyWith(color: AppColors.mutedText),
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.navy),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text('Completion Notes (optional)',
-                style: AppTextStyles.label.copyWith(color: AppColors.navy)),
-            const SizedBox(height: 6),
-            TextField(
-              controller: notesCtrl,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: 'Any remarks about the service…',
-                hintStyle:
-                    AppTextStyles.caption.copyWith(color: AppColors.mutedText),
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.navy),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () async {
-                  Navigator.pop(context);
-                  final today =
-                      DateTime.now().toIso8601String().substring(0, 10);
-                  final odo = int.tryParse(odoCtrl.text.trim());
-                  final ok = await _ctrl.completeService(
-                    _service['id'] as int,
-                    completedDate: today,
-                    odometer: odo,
-                  );
-                  if (ok && mounted) {
-                    final updated = _ctrl.services
-                        .firstWhereOrNull((s) => s['id'] == _service['id']);
-                    if (updated != null) setState(() => _service = updated);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.success,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-                child: Text('Mark Complete',
-                    style:
-                        AppTextStyles.bodyMedium.copyWith(color: Colors.white)),
-              ),
-            ),
-          ],
-        ),
+  Future<void> _openBillPreview() async {
+    final result = await Get.to(
+        () => ServiceMenBillPreviewView(service: _service));
+    if (result != null && result is Map<String, dynamic> && mounted) {
+      setState(() => _service = result);
+      _loadInvoice(); // fetch the newly created invoice
+    }
+  }
+
+  Future<Directory?> _tempDir() async {
+    try {
+      return await getTemporaryDirectory();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<File?> _writePdf(Directory dir, String name, List<int> bytes) async {
+    try {
+      final file = File('${dir.path}/$name.pdf');
+      await file.writeAsBytes(bytes, flush: true);
+      return file;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _sharePdf(File file) {
+    SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path, mimeType: 'application/pdf')],
+        subject: 'Service Invoice',
       ),
     );
   }
@@ -928,6 +878,100 @@ class _ServiceMenServiceDetailViewState
                   ),
                 if (notes != null) const SizedBox(height: 12),
 
+                // ── Invoice ──────────────────────────────────────────────
+                if (_status == 'COMPLETED') ...[
+                  _Section(
+                    title: 'Service Invoice',
+                    child: _invoice == null
+                        ? const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: AppColors.navy),
+                              ),
+                            ),
+                          )
+                        : Column(
+                            children: [
+                              _InfoRow('Invoice No',
+                                  _invoice!['invoiceNumber'] as String? ?? '—'),
+                              _InfoRow(
+                                'Type',
+                                (_invoice!['invoiceType'] as String?) == 'INTERNAL'
+                                    ? 'Internal'
+                                    : 'External (Vendor)',
+                              ),
+                              if (_invoice!['totalAmount'] != null)
+                                _InfoRow(
+                                  'Total Amount',
+                                  '₹${(_invoice!['totalAmount'] as num).toStringAsFixed(2)}',
+                                ),
+                              if (_invoice!['vendorAmount'] != null &&
+                                  _invoice!['invoiceType'] == 'EXTERNAL')
+                                _InfoRow(
+                                  'Vendor Amount',
+                                  '₹${(_invoice!['vendorAmount'] as num).toStringAsFixed(2)}',
+                                ),
+                              if (_invoice!['gstAmount'] != null &&
+                                  _invoice!['invoiceType'] == 'INTERNAL')
+                                _InfoRow(
+                                  'GST',
+                                  '₹${(_invoice!['gstAmount'] as num).toStringAsFixed(2)}',
+                                ),
+                              _InfoRow(
+                                'Payment',
+                                (_invoice!['paymentStatus'] as String?) == 'PAID'
+                                    ? 'Paid'
+                                    : 'Pending',
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: () async {
+                                    final invoiceId =
+                                        _invoice!['id'] as int?;
+                                    if (invoiceId == null) return;
+                                    final bytes = await _ctrl
+                                        .downloadInvoicePdf(invoiceId);
+                                    if (bytes == null || !mounted) return;
+                                    // Save to temp file and share
+                                    final dir = await _tempDir();
+                                    if (dir == null) return;
+                                    final file = await _writePdf(
+                                        dir,
+                                        _invoice!['invoiceNumber']
+                                                as String? ??
+                                            'invoice',
+                                        bytes);
+                                    if (file != null && mounted) {
+                                      _sharePdf(file);
+                                    }
+                                  },
+                                  icon: const Icon(Icons.picture_as_pdf,
+                                      size: 18),
+                                  label: const Text('Download / Share PDF'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.navy,
+                                    side: const BorderSide(
+                                        color: AppColors.navy),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(8)),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
                 const SizedBox(height: 80), // space for sticky button
               ],
             ),
@@ -970,7 +1014,7 @@ class _ServiceMenServiceDetailViewState
                   : SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: _showCompleteSheet,
+                        onPressed: _openBillPreview,
                         icon: const Icon(Icons.check_circle_outline,
                             size: 20),
                         label: Text('Complete Service',

@@ -47,20 +47,50 @@ class ServiceMenServicesController extends GetxController {
     }
   }
 
-  Future<bool> completeService(int id,
-      {required String completedDate, int? odometer}) async {
+  Future<Map<String, dynamic>?> completeService(
+    int id, {
+    required String completedDate,
+    int? odometer,
+    double? labourCharges,
+    double? vendorAmount,
+    String? vendorInvoiceNo,
+  }) async {
     try {
-      final res = await _api.put(ApiEndpoints.completeService(id), data: {
-        'completedDate': completedDate,
-        if (odometer != null) 'odometer': odometer,
-      });
+      final data = <String, dynamic>{'completedDate': completedDate};
+      if (odometer != null) data['odometer'] = odometer;
+      if (labourCharges != null) data['labourCharges'] = labourCharges;
+      if (vendorAmount != null) data['vendorAmount'] = vendorAmount;
+      if (vendorInvoiceNo != null && vendorInvoiceNo.isNotEmpty) data['vendorInvoiceNo'] = vendorInvoiceNo;
+      final res = await _api.put(ApiEndpoints.completeService(id), data: data);
       final updated = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
       _updateLocal(id, updated);
       FerosSnackbar.success('Service completed');
-      return true;
+      return updated;
     } catch (_) {
       FerosSnackbar.error('Failed to complete service');
-      return false;
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchInvoice(int serviceId) async {
+    try {
+      final res = await _api.get(ApiEndpoints.serviceInvoiceByService(serviceId));
+      return (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<List<int>?> downloadInvoicePdf(int invoiceId) async {
+    try {
+      final res = await _api.get(
+        ApiEndpoints.serviceInvoicePdf(invoiceId),
+        options: {'responseType': 'bytes'},
+      );
+      return (res.data as List<dynamic>).cast<int>();
+    } catch (_) {
+      FerosSnackbar.error('Failed to load PDF');
+      return null;
     }
   }
 

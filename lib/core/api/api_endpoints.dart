@@ -22,6 +22,13 @@ class ApiEndpoints {
   static String cancelService(id)         => '/vehicle-services/$id/cancel';
   static String completeTask(serviceId, taskId) => '/vehicle-services/$serviceId/tasks/$taskId/complete';
   static String addServiceTask(serviceId)       => '/vehicle-services/$serviceId/tasks';
+
+  // Service Invoices
+  static const serviceInvoices                  = '/service-invoices';
+  static String serviceInvoiceById(id)          => '/service-invoices/$id';
+  static String serviceInvoiceByService(id)     => '/service-invoices/service/$id';
+  static String serviceInvoiceMarkPaid(id)      => '/service-invoices/$id/mark-paid';
+  static String serviceInvoicePdf(id)           => '/service-invoices/$id/pdf';
   static const fuelLogs                   = '/fuel-logs';
   static String fuelLogById(id)           => '/fuel-logs/$id';
   static const meterReadings              = '/meter-readings';

@@ -12,7 +12,7 @@ import '../../../store_keeper/store_keeper_inventory/controllers/store_keeper_in
 import '../../../service_men/service_men_dashboard/bindings/service_men_dashboard_binding.dart';
 import '../../../service_men/service_men_services/bindings/service_men_services_binding.dart';
 import '../../../service_men/service_men_profile/bindings/service_men_profile_binding.dart';
-import '../../../supervisor/supervisor_breakdown/controllers/supervisor_breakdown_controller.dart';
+import '../../../service_men/service_men_tires/bindings/service_men_tires_binding.dart';
 
 class DriverShellBinding extends Bindings {
   @override
@@ -31,8 +31,7 @@ class DriverShellBinding extends Bindings {
     } else if (role == 'SERVICE_MEN') {
       ServiceMenDashboardBinding().dependencies();
       ServiceMenServicesBinding().dependencies();
-      Get.lazyPut<SupervisorBreakdownController>(
-          () => SupervisorBreakdownController());
+      ServiceMenTiresBinding().dependencies();
       ServiceMenProfileBinding().dependencies();
     } else {
       DriverDashboardBinding().dependencies();
