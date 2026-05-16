@@ -971,7 +971,10 @@ class _ServiceMenServiceDetailViewState
                       offset: Offset(0, -2))
                 ],
               ),
-              child: _status == 'OPEN'
+              // OPEN + INTERNAL → Start Service
+              // OPEN + OEM/3rd Party → skip start, go straight to Complete
+              // IN_PROGRESS → Complete Service
+              child: _status == 'OPEN' && serviceType == 'INTERNAL'
                   ? SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(

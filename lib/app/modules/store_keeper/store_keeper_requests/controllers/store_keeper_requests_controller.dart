@@ -117,7 +117,9 @@ class StoreKeeperRequestsController extends GetxController {
 
   void _syncDashboardCount() {
     try {
-      Get.find<StoreKeeperDashboardController>().fetchPendingCount();
+      final dash = Get.find<StoreKeeperDashboardController>();
+      dash.pendingCount.value = pendingCount;
+      dash.fetchPendingCount();
     } catch (_) {}
   }
 }

@@ -175,6 +175,7 @@ class DriverShellView extends GetView<DriverShellController> {
           const ServiceMenServicesView(),
           const ServiceMenTiresView(),
           const ServiceMenBreakdownsView(),
+          DriverAttendanceView(),
           const ServiceMenProfileView(),
         ];
       case 'STORE_KEEPER':

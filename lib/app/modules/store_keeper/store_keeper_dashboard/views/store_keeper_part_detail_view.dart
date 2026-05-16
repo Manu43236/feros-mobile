@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../controllers/store_keeper_dashboard_controller.dart';
-import 'store_keeper_dashboard_view.dart' show StockInSheet;
+import 'store_keeper_dashboard_view.dart' show StockInSheet, StockOutSheet;
 
 class StoreKeeperPartDetailView extends StatefulWidget {
   final Map<String, dynamic> item;
@@ -81,21 +81,40 @@ class _StoreKeeperPartDetailViewState extends State<StoreKeeperPartDetailView>
       body: TabBarView(
         controller: _tabs,
         children: [
-          _OverviewTab(item: widget.item, isLow: isLow, onStockIn: () {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (_) => StockInSheet(
-                controller: _controller,
-                preSelectedPart: {
-                  'id': widget.item['sparePartId'] ?? widget.item['id'],
-                  'name': widget.item['partName'],
-                  'partNumber': widget.item['partNumber'],
-                },
-              ),
-            ).then((_) => _loadTransactions());
-          }),
+          _OverviewTab(
+            item: widget.item,
+            isLow: isLow,
+            onStockIn: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => StockInSheet(
+                  controller: _controller,
+                  preSelectedPart: {
+                    'id': widget.item['sparePartId'] ?? widget.item['id'],
+                    'name': widget.item['partName'],
+                    'partNumber': widget.item['partNumber'],
+                  },
+                ),
+              ).then((_) => _loadTransactions());
+            },
+            onStockOut: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => StockOutSheet(
+                  controller: _controller,
+                  preSelectedPart: {
+                    'id': widget.item['sparePartId'] ?? widget.item['id'],
+                    'name': widget.item['partName'],
+                    'partNumber': widget.item['partNumber'],
+                  },
+                ),
+              ).then((_) => _loadTransactions());
+            },
+          ),
           _TransactionsTab(
             transactions: _transactions,
             isLoading: _loadingTx,
@@ -111,7 +130,8 @@ class _OverviewTab extends StatelessWidget {
   final Map<String, dynamic> item;
   final bool isLow;
   final VoidCallback onStockIn;
-  const _OverviewTab({required this.item, required this.isLow, required this.onStockIn});
+  final VoidCallback onStockOut;
+  const _OverviewTab({required this.item, required this.isLow, required this.onStockIn, required this.onStockOut});
 
   @override
   Widget build(BuildContext context) {
@@ -202,24 +222,45 @@ class _OverviewTab extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // ── Stock In button ───────────────────────────────────
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: onStockIn,
-              icon: const Icon(Icons.add, size: 18),
-              label: Text('Stock In',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.white, fontWeight: FontWeight.w600)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.navy,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+          // ── Stock In / Write-off buttons ──────────────────────
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: onStockIn,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: Text('Stock In',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                          color: Colors.white, fontWeight: FontWeight.w600)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.navy,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: onStockOut,
+                  icon: const Icon(Icons.remove_circle_outline, size: 18),
+                  label: Text('Write-off',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                          color: Colors.white, fontWeight: FontWeight.w600)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFDC2626),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

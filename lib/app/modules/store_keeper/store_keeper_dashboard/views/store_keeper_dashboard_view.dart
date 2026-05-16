@@ -156,7 +156,7 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
                           builder: (_) =>
-                              _StockOutSheet(controller: controller),
+                              StockOutSheet(controller: controller),
                         ),
                       ),
                     ),
@@ -678,21 +678,30 @@ class StockInSheetState extends State<StockInSheet> {
 }
 
 // ── Stock Out Sheet ───────────────────────────────────────────────────────────
-class _StockOutSheet extends StatefulWidget {
+class StockOutSheet extends StatefulWidget {
   final StoreKeeperDashboardController controller;
-  const _StockOutSheet({required this.controller});
+  final Map<String, dynamic>? preSelectedPart;
+  const StockOutSheet({required this.controller, this.preSelectedPart});
 
   @override
-  State<_StockOutSheet> createState() => _StockOutSheetState();
+  State<StockOutSheet> createState() => StockOutSheetState();
 }
 
-class _StockOutSheetState extends State<_StockOutSheet> {
+class StockOutSheetState extends State<StockOutSheet> {
   Map<String, dynamic>? _selectedPart;
   String _type        = 'DAMAGE';
   final _qtyCtrl      = TextEditingController(text: '1');
   final _notesCtrl    = TextEditingController();
   bool _submitting    = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.preSelectedPart != null) {
+      _selectedPart = widget.preSelectedPart;
+    }
+  }
 
   @override
   void dispose() {
