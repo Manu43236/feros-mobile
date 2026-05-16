@@ -133,10 +133,10 @@ class ServiceMenBreakdownsView
                               final b = controller.filtered[i];
                               return _BreakdownCard(
                                 breakdown: b,
-                                onResolve: () =>
-                                    _confirmResolve(context, b),
                                 onLogService: () =>
                                     _showLogServiceSheet(context, b),
+                                onViewService: () =>
+                                    _navigateToLinkedService(b),
                               );
                             },
                           ),
@@ -155,45 +155,34 @@ class ServiceMenBreakdownsView
     }
   }
 
-  void _confirmResolve(BuildContext context, Map<String, dynamic> b) {
-    final vehicleId   = b['vehicleId']   as int?;
-    final breakdownId = b['id']          as int?;
-    if (vehicleId == null || breakdownId == null) return;
+  void _navigateToLinkedService(Map<String, dynamic> b) {
+    final svcCtrl = Get.find<ServiceMenServicesController>();
+    final vehicleReg = b['vehicleRegistrationNumber'] as String?;
 
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Resolve Breakdown',
-            style: AppTextStyles.heading4.copyWith(color: AppColors.navy)),
-        content: Text(
-          'Mark this breakdown as resolved for ${b['vehicleRegistrationNumber'] ?? 'this vehicle'}?',
-          style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel',
-                style:
-                    AppTextStyles.body.copyWith(color: AppColors.mutedText)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await controller.resolveBreakdown(vehicleId, breakdownId);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.success,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('Resolve',
-                style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+    // Find the active breakdown-triggered service for this vehicle
+    final linked = svcCtrl.services.firstWhereOrNull(
+      (s) =>
+          s['triggeredBy'] == 'BREAKDOWN' &&
+          s['vehicleRegistrationNumber'] == vehicleReg &&
+          s['status'] != 'COMPLETED',
     );
+
+    if (linked != null) {
+      Get.to(() => ServiceMenServiceDetailView(service: linked));
+    } else {
+      // Services not cached yet — refresh and retry
+      svcCtrl.fetchServices().then((_) {
+        final fresh = svcCtrl.services.firstWhereOrNull(
+          (s) =>
+              s['triggeredBy'] == 'BREAKDOWN' &&
+              s['vehicleRegistrationNumber'] == vehicleReg &&
+              s['status'] != 'COMPLETED',
+        );
+        if (fresh != null) {
+          Get.to(() => ServiceMenServiceDetailView(service: fresh));
+        }
+      });
+    }
   }
 
   void _showLogServiceSheet(
@@ -220,12 +209,12 @@ class ServiceMenBreakdownsView
 // ── Breakdown Card ─────────────────────────────────────────────────────────────
 class _BreakdownCard extends StatelessWidget {
   final Map<String, dynamic> breakdown;
-  final VoidCallback onResolve;
   final VoidCallback onLogService;
+  final VoidCallback onViewService;
   const _BreakdownCard({
     required this.breakdown,
-    required this.onResolve,
     required this.onLogService,
+    required this.onViewService,
   });
 
   @override
@@ -362,49 +351,42 @@ class _BreakdownCard extends StatelessWidget {
             ],
           ),
 
-          // ── Action buttons (only for open/in-repair) ─────────
-          if (isOpen) ...[
+          // ── Action buttons ────────────────────────────────────
+          if (!isResolved) ...[
             const SizedBox(height: 14),
             const Divider(height: 1),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onLogService,
-                    icon: const Icon(Icons.build_outlined, size: 16),
-                    label: const Text('Log Service'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.navy,
-                      side: const BorderSide(color: AppColors.navy),
-                      padding:
-                          const EdgeInsets.symmetric(vertical: 10),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                  ),
-                ),
-                if (!isInRepair) ...[
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: onResolve,
-                      icon: const Icon(Icons.check_circle_outline,
+            SizedBox(
+              width: double.infinity,
+              child: isInRepair
+                  ? ElevatedButton.icon(
+                      onPressed: onViewService,
+                      icon: const Icon(Icons.arrow_forward_rounded,
                           size: 16),
-                      label: const Text('Resolve'),
+                      label: const Text('View Service'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.success,
-                        foregroundColor: Colors.white,
+                        backgroundColor: const Color(0xFFFFF7ED),
+                        foregroundColor: const Color(0xFFC2410C),
                         elevation: 0,
                         padding:
                             const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8)),
                       ),
+                    )
+                  : OutlinedButton.icon(
+                      onPressed: onLogService,
+                      icon: const Icon(Icons.build_outlined, size: 16),
+                      label: const Text('Log Service'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.navy,
+                        side: const BorderSide(color: AppColors.navy),
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
                     ),
-                  ),
-                ],
-              ],
             ),
           ],
         ],
