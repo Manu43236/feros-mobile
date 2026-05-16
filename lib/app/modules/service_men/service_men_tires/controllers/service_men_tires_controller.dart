@@ -11,16 +11,41 @@ class ServiceMenTiresController extends GetxController {
   final isLoadingTires     = false.obs;
   final isSubmitting       = false.obs;
 
-  final vehicles         = <Map<String, dynamic>>[].obs;
-  final selectedVehicle  = Rxn<Map<String, dynamic>>();
-  final positions        = <Map<String, dynamic>>[].obs;
-  final availableTires   = <Map<String, dynamic>>[].obs;
+  final vehicles             = <Map<String, dynamic>>[].obs;
+  final selectedVehicle      = Rxn<Map<String, dynamic>>();
+  final positions            = <Map<String, dynamic>>[].obs;
+  final availableTires       = <Map<String, dynamic>>[].obs;
+  final requireTireApproval  = false.obs;
+  final myTireRequests       = <Map<String, dynamic>>[].obs;
+  final isLoadingMyRequests  = false.obs;
 
   @override
   void onInit() {
     super.onInit();
     _loadVehicles();
     _loadAvailableTires();
+    _loadSettings();
+    fetchMyRequests();
+  }
+
+  Future<void> fetchMyRequests() async {
+    isLoadingMyRequests.value = true;
+    try {
+      final res = await _api.get(ApiEndpoints.tireRequestsMy);
+      myTireRequests.value =
+          List<Map<String, dynamic>>.from(res.data['data'] ?? []);
+    } catch (_) {}
+    isLoadingMyRequests.value = false;
+  }
+
+  Future<void> _loadSettings() async {
+    try {
+      final res = await _api.get(ApiEndpoints.tenantSettings);
+      final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>?;
+      requireTireApproval.value = data?['requireTireApproval'] == true;
+    } catch (_) {
+      requireTireApproval.value = false;
+    }
   }
 
   Future<void> _loadVehicles() async {
@@ -92,6 +117,29 @@ class ServiceMenTiresController extends GetxController {
       return true;
     } catch (_) {
       FerosSnackbar.error('Failed to fit tire');
+      return false;
+    } finally {
+      isSubmitting.value = false;
+    }
+  }
+
+  Future<bool> requestTire({
+    required int vehicleId,
+    required int positionId,
+    String? notes,
+  }) async {
+    isSubmitting.value = true;
+    try {
+      await _api.post(ApiEndpoints.tireRequests, data: {
+        'vehicleId':  vehicleId,
+        'positionId': positionId,
+        if (notes != null && notes.isNotEmpty) 'notes': notes,
+      });
+      await fetchMyRequests();
+      FerosSnackbar.success('Tire request submitted — awaiting store keeper approval');
+      return true;
+    } catch (_) {
+      FerosSnackbar.error('Failed to submit tire request');
       return false;
     } finally {
       isSubmitting.value = false;

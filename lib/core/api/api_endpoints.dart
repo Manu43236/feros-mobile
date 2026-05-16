@@ -177,6 +177,11 @@ class ApiEndpoints {
   static const tireFittings            = '/tire-fittings';
   static String tireFittingRemove(id)  => '/tire-fittings/$id/remove';
   static const tireRotations           = '/tire-rotations';
+  static const tireRequests            = '/tire-requests';
+  static const tireRequestsMy         = '/tire-requests/my';
+  static const tireRequestsPending    = '/tire-requests/pending';
+  static String approveTireRequest(id) => '/tire-requests/$id/approve';
+  static String rejectTireRequest(id)  => '/tire-requests/$id/reject';
 
   // Upload
   static const upload                  = '/upload';

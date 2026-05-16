@@ -6,6 +6,7 @@ import '../../store_keeper_dashboard/controllers/store_keeper_dashboard_controll
 class StoreKeeperRequestsController extends GetxController {
   final _api = Get.find<ApiClient>();
 
+  // ── Spare Parts ──────────────────────────────────────────────────────────────
   final isLoading   = true.obs;
   final requests    = <Map<String, dynamic>>[].obs;
   final searchQuery = ''.obs;
@@ -24,10 +25,20 @@ class StoreKeeperRequestsController extends GetxController {
   int get pendingCount =>
       requests.where((r) => r['status'] == 'REQUESTED').length;
 
+  // ── Tire Requests ────────────────────────────────────────────────────────────
+  final isLoadingTireRequests = true.obs;
+  final tireRequests          = <Map<String, dynamic>>[].obs;
+  final isLoadingAvailTires   = false.obs;
+  final availableTires        = <Map<String, dynamic>>[].obs;
+
+  int get pendingTireCount =>
+      tireRequests.where((r) => r['status'] == 'PENDING').length;
+
   @override
   void onInit() {
     super.onInit();
     fetchRequests();
+    fetchTireRequests();
   }
 
   Future<void> fetchRequests() async {
@@ -39,6 +50,28 @@ class StoreKeeperRequestsController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<void> fetchTireRequests() async {
+    isLoadingTireRequests.value = true;
+    try {
+      final res = await _api.get(ApiEndpoints.tireRequestsPending);
+      tireRequests.value =
+          List<Map<String, dynamic>>.from(res.data['data'] ?? []);
+    } catch (_) {
+    } finally {
+      isLoadingTireRequests.value = false;
+    }
+  }
+
+  Future<void> fetchAvailableTires() async {
+    isLoadingAvailTires.value = true;
+    try {
+      final res = await _api.get(ApiEndpoints.tiresAvailable);
+      availableTires.value =
+          List<Map<String, dynamic>>.from(res.data['data'] ?? []);
+    } catch (_) {}
+    isLoadingAvailTires.value = false;
   }
 
   void onSearch(String q) => searchQuery.value = q;
@@ -65,6 +98,35 @@ class StoreKeeperRequestsController extends GetxController {
       );
       await fetchRequests();
       _syncDashboardCount();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> approveTireRequest(int id, int tireId, {double? fittedAtKm}) async {
+    try {
+      await _api.patch(
+        ApiEndpoints.approveTireRequest(id),
+        data: {
+          'tireId': tireId,
+          if (fittedAtKm != null) 'fittedAtKm': fittedAtKm,
+        },
+      );
+      await fetchTireRequests();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> rejectTireRequest(int id, String reason) async {
+    try {
+      await _api.patch(
+        ApiEndpoints.rejectTireRequest(id),
+        data: {'rejectionReason': reason},
+      );
+      await fetchTireRequests();
       return true;
     } catch (_) {
       return false;
