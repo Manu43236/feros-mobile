@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
@@ -266,6 +267,7 @@ class _PositionCard extends StatelessWidget {
 
   void _showRemoveSheet(BuildContext context) {
     String selectedReason = removalReasons.first;
+    final kmCtrl = TextEditingController();
 
     showModalBottomSheet(
       context: context,
@@ -285,15 +287,44 @@ class _PositionCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Remove Tire — ${position['positionCode']}',
-                  style:
-                      AppTextStyles.heading3.copyWith(color: AppColors.navy)),
-              const SizedBox(height: 6),
+                  style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
+              const SizedBox(height: 4),
               Text(
-                _fitting?['tireSerialNumber'] ?? '',
+                '${_fitting?['tireSerialNumber'] ?? ''}'
+                '${_fitting?['tireBrand'] != null ? ' · ${_fitting!['tireBrand']}' : ''}',
                 style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
               ),
               const SizedBox(height: 20),
 
+              // ── Current Odometer ─────────────────────────
+              Text('Current Odometer (km) *',
+                  style: AppTextStyles.label.copyWith(color: AppColors.navy)),
+              const SizedBox(height: 6),
+              TextField(
+                controller: kmCtrl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*'))],
+                decoration: InputDecoration(
+                  hintText: 'e.g. 45000',
+                  hintStyle: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                  suffixText: 'km',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppColors.navy),
+                  ),
+                ),
+              ),
+              if (_fitting?['fittedAtKm'] != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Fitted at ${_fitting!['fittedAtKm']} km',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                ),
+              ],
+              const SizedBox(height: 16),
+
+              // ── Removal Reason ───────────────────────────
               Text('Removal Reason',
                   style: AppTextStyles.label.copyWith(color: AppColors.navy)),
               const SizedBox(height: 10),
@@ -305,22 +336,16 @@ class _PositionCard extends StatelessWidget {
                   return GestureDetector(
                     onTap: () => setSheet(() => selectedReason = r),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: active
-                            ? AppColors.navy
-                            : const Color(0xFFF1F5F9),
+                        color: active ? AppColors.navy : const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         r.replaceAll('_', ' '),
                         style: AppTextStyles.caption.copyWith(
-                          color:
-                              active ? Colors.white : AppColors.mutedText,
-                          fontWeight: active
-                              ? FontWeight.w600
-                              : FontWeight.w400,
+                          color: active ? Colors.white : AppColors.mutedText,
+                          fontWeight: active ? FontWeight.w600 : FontWeight.w400,
                         ),
                       ),
                     ),
@@ -335,15 +360,18 @@ class _PositionCard extends StatelessWidget {
                   onPressed: controller.isSubmitting.value
                       ? null
                       : () async {
+                          final kmText = kmCtrl.text.trim();
+                          if (kmText.isEmpty) {
+                            return;
+                          }
+                          final km = double.tryParse(kmText);
                           Navigator.pop(context);
                           await controller.removeTire(
                             fittingId: _fitting!['id'] as int,
-                            vehicleId:
-                                controller.selectedVehicle.value!['id'] as int,
+                            vehicleId: controller.selectedVehicle.value!['id'] as int,
                             removalReason: selectedReason,
-                            removedDate: DateTime.now()
-                                .toIso8601String()
-                                .substring(0, 10),
+                            removedDate: DateTime.now().toIso8601String().substring(0, 10),
+                            removedAtKm: km,
                           );
                         },
                   style: ElevatedButton.styleFrom(
@@ -351,18 +379,15 @@ class _PositionCard extends StatelessWidget {
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   child: controller.isSubmitting.value
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : Text('Confirm Remove',
-                          style: AppTextStyles.bodyMedium
-                              .copyWith(color: Colors.white)),
+                          style: AppTextStyles.bodyMedium.copyWith(color: Colors.white)),
                 ),
               )),
             ],

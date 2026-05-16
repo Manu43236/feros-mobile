@@ -101,12 +101,14 @@ class ServiceMenTiresController extends GetxController {
     required int vehicleId,
     required String removalReason,
     required String removedDate,
+    double? removedAtKm,
   }) async {
     isSubmitting.value = true;
     try {
       await _api.put(ApiEndpoints.tireFittingRemove(fittingId), data: {
         'removedDate':   removedDate,
         'removalReason': removalReason,
+        if (removedAtKm != null) 'removedAtKm': removedAtKm,
       });
       await _loadPositions(vehicleId);
       await _loadAvailableTires();
