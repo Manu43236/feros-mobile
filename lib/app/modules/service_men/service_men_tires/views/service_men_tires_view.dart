@@ -183,6 +183,7 @@ class _PositionCard extends StatelessWidget {
 
   void _showFitSheet(BuildContext context) {
     Map<String, dynamic>? selectedTire;
+    final currentOdo = controller.selectedVehicle.value?['currentOdometerReading'];
 
     showModalBottomSheet(
       context: context,
@@ -206,6 +207,26 @@ class _PositionCard extends StatelessWidget {
                       AppTextStyles.heading3.copyWith(color: AppColors.navy)),
               const SizedBox(height: 20),
 
+              if (currentOdo != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFBBF7D0)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.speed_outlined, size: 18, color: AppColors.success),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Current odometer: ${currentOdo.toString().replaceAll('.0', '')} km — will be recorded as fitted km',
+                        style: AppTextStyles.caption.copyWith(color: AppColors.success),
+                      ),
+                    ],
+                  ),
+                ),
               FerosSelectField<Map<String, dynamic>>(
                 label: 'Available Tire',
                 title: 'Select Tire',
@@ -237,6 +258,7 @@ class _PositionCard extends StatelessWidget {
                             tireId: selectedTire!['id'] as int,
                             positionId: position['id'] as int,
                             fittedDate: DateTime.now().toIso8601String().substring(0, 10),
+                            fittedAtKm: currentOdo?.toDouble(),
                           );
                         },
                   style: ElevatedButton.styleFrom(
@@ -267,7 +289,10 @@ class _PositionCard extends StatelessWidget {
 
   void _showRemoveSheet(BuildContext context) {
     String selectedReason = removalReasons.first;
-    final kmCtrl = TextEditingController();
+    final currentOdo = controller.selectedVehicle.value?['currentOdometerReading'];
+    final kmCtrl = TextEditingController(
+      text: currentOdo != null ? currentOdo.toString().replaceAll('.0', '') : '',
+    );
 
     showModalBottomSheet(
       context: context,

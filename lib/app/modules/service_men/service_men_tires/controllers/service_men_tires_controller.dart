@@ -75,6 +75,7 @@ class ServiceMenTiresController extends GetxController {
     required int tireId,
     required int positionId,
     required String fittedDate,
+    double? fittedAtKm,
   }) async {
     isSubmitting.value = true;
     try {
@@ -83,6 +84,7 @@ class ServiceMenTiresController extends GetxController {
         'tireId':     tireId,
         'positionId': positionId,
         'fittedDate': fittedDate,
+        if (fittedAtKm != null) 'fittedAtKm': fittedAtKm,
       });
       await _loadPositions(vehicleId);
       await _loadAvailableTires();
