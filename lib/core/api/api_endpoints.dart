@@ -125,7 +125,7 @@ class ApiEndpoints {
   static const vehicleStatuses = '/masters/tenant/vehicle-statuses';
   static const chargeTypes     = '/masters/tenant/charge-types';
   static const paymentTerms    = '/masters/tenant/payment-terms';
-  static const tenantSettings  = '/masters/tenant/settings';
+  static const tenantSettings  = '/tenants/settings';
 
   // Masters — Global
   static const states          = '/masters/global/states';
