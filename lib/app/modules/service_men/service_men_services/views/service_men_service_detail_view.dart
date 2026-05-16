@@ -4,7 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
+import '../../../../../../core/pdf_viewer/pdf_viewer_view.dart';
+import '../../../../../../core/pdf_viewer/pdf_viewer_binding.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../core/widgets/feros_select_field.dart';
@@ -192,31 +193,29 @@ class _ServiceMenServiceDetailViewState
     }
   }
 
-  Future<Directory?> _tempDir() async {
+  Future<void> _viewPdf(Map<String, dynamic> invoice) async {
+    final invoiceId = invoice['id'] as int?;
+    if (invoiceId == null) return;
+    final bytes = await _ctrl.downloadInvoicePdf(invoiceId);
+    if (bytes == null || !mounted) return;
     try {
-      return await getTemporaryDirectory();
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<File?> _writePdf(Directory dir, String name, List<int> bytes) async {
-    try {
+      final dir  = await getTemporaryDirectory();
+      final name = invoice['invoiceNumber'] as String? ?? 'invoice';
       final file = File('${dir.path}/$name.pdf');
       await file.writeAsBytes(bytes, flush: true);
-      return file;
+      await Get.to(
+        () => const PdfViewerView(),
+        binding: PdfViewerBinding(),
+        arguments: {
+          'file':     file,
+          'title':    name,
+          'subtitle': invoice['vehicleRegistrationNumber'] as String?,
+        },
+        transition: Transition.cupertino,
+      );
     } catch (_) {
-      return null;
+      FerosSnackbar.error('Could not open PDF');
     }
-  }
-
-  void _sharePdf(File file) {
-    SharePlus.instance.share(
-      ShareParams(
-        files: [XFile(file.path, mimeType: 'application/pdf')],
-        subject: 'Service Invoice',
-      ),
-    );
   }
 
   void _showAddTaskSheet() {
@@ -931,29 +930,10 @@ class _ServiceMenServiceDetailViewState
                               SizedBox(
                                 width: double.infinity,
                                 child: OutlinedButton.icon(
-                                  onPressed: () async {
-                                    final invoiceId =
-                                        _invoice!['id'] as int?;
-                                    if (invoiceId == null) return;
-                                    final bytes = await _ctrl
-                                        .downloadInvoicePdf(invoiceId);
-                                    if (bytes == null || !mounted) return;
-                                    // Save to temp file and share
-                                    final dir = await _tempDir();
-                                    if (dir == null) return;
-                                    final file = await _writePdf(
-                                        dir,
-                                        _invoice!['invoiceNumber']
-                                                as String? ??
-                                            'invoice',
-                                        bytes);
-                                    if (file != null && mounted) {
-                                      _sharePdf(file);
-                                    }
-                                  },
+                                  onPressed: () => _viewPdf(_invoice!),
                                   icon: const Icon(Icons.picture_as_pdf,
                                       size: 18),
-                                  label: const Text('Download / Share PDF'),
+                                  label: const Text('View / Share PDF'),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: AppColors.navy,
                                     side: const BorderSide(
