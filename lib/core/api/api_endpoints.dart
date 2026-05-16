@@ -21,6 +21,7 @@ class ApiEndpoints {
   static String completeService(id)       => '/vehicle-services/$id/complete';
   static String cancelService(id)         => '/vehicle-services/$id/cancel';
   static String completeTask(serviceId, taskId) => '/vehicle-services/$serviceId/tasks/$taskId/complete';
+  static String addServiceTask(serviceId)       => '/vehicle-services/$serviceId/tasks';
   static const fuelLogs                   = '/fuel-logs';
   static String fuelLogById(id)           => '/fuel-logs/$id';
   static const meterReadings              = '/meter-readings';

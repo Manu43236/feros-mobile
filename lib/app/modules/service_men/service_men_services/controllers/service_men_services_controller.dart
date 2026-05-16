@@ -76,6 +76,28 @@ class ServiceMenServicesController extends GetxController {
     }
   }
 
+  Future<Map<String, dynamic>?> addTask(
+    int serviceId, {
+    int? taskTypeId,
+    String? customName,
+    double? cost,
+  }) async {
+    try {
+      final data = <String, dynamic>{};
+      if (taskTypeId != null) data['taskTypeId'] = taskTypeId;
+      if (customName != null && customName.isNotEmpty) data['customName'] = customName;
+      if (cost != null) data['cost'] = cost;
+      final res = await _api.post(ApiEndpoints.addServiceTask(serviceId), data: data);
+      final updated = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      _updateLocal(serviceId, updated);
+      FerosSnackbar.success('Task added');
+      return updated;
+    } catch (_) {
+      FerosSnackbar.error('Failed to add task');
+      return null;
+    }
+  }
+
   Future<List<Map<String, dynamic>>> fetchServiceParts(int serviceId) async {
     try {
       final res = await _api.get(ApiEndpoints.servicePartsByService(serviceId));

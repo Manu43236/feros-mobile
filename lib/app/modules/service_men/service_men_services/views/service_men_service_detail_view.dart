@@ -7,6 +7,7 @@ import '../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../core/widgets/feros_select_field.dart';
 import '../../../../../../core/api/api_endpoints.dart';
 import '../../../../../../core/api/api_client.dart';
+import '../../../../../../core/popups/feros_snackbar.dart';
 import '../controllers/service_men_services_controller.dart';
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
@@ -263,6 +264,136 @@ class _ServiceMenServiceDetailViewState
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddTaskSheet() {
+    final nameCtrl = TextEditingController();
+    final costCtrl = TextEditingController();
+    Map<String, dynamic>? selectedType;
+    List<Map<String, dynamic>> taskTypes = [];
+    bool loadingTypes = true;
+
+    final api = Get.find<ApiClient>();
+    api.get(ApiEndpoints.serviceTaskTypes).then((res) {
+      taskTypes = ((res.data as Map<String, dynamic>)['data'] as List)
+          .cast<Map<String, dynamic>>();
+      loadingTypes = false;
+    });
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            left: 24, right: 24, top: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Add Task',
+                  style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
+              const SizedBox(height: 20),
+              FerosSelectField<Map<String, dynamic>>(
+                label: 'Task Type (optional)',
+                title: 'Select Task Type',
+                hint: 'Search task types…',
+                selectedDisplay:
+                    selectedType != null ? selectedType!['name'] as String : null,
+                items: taskTypes,
+                itemLabel: (t) => t['name'] as String? ?? '',
+                onSelected: (t) => setSheetState(() {
+                  selectedType = t;
+                  nameCtrl.clear();
+                }),
+                isLoading: loadingTypes,
+                emptyMessage: 'No task types found',
+              ),
+              if (selectedType == null) ...[
+                const SizedBox(height: 16),
+                Text('Custom Name',
+                    style: AppTextStyles.label.copyWith(color: AppColors.navy)),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: nameCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'e.g. Replace brake pads',
+                    hintStyle:
+                        AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppColors.navy),
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              Text('Cost (optional)',
+                  style: AppTextStyles.label.copyWith(color: AppColors.navy)),
+              const SizedBox(height: 6),
+              TextField(
+                controller: costCtrl,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  hintText: 'e.g. 500',
+                  prefixText: '₹ ',
+                  hintStyle:
+                      AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppColors.navy),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    final name = nameCtrl.text.trim();
+                    if (selectedType == null && name.isEmpty) {
+                      FerosSnackbar.error('Enter a task type or custom name');
+                      return;
+                    }
+                    final cost = double.tryParse(costCtrl.text.trim());
+                    Navigator.pop(context);
+                    final updated = await _ctrl.addTask(
+                      _service['id'] as int,
+                      taskTypeId: selectedType?['id'] as int?,
+                      customName: selectedType == null ? name : null,
+                      cost: cost,
+                    );
+                    if (updated != null && mounted) {
+                      setState(() => _service = updated);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.navy,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('Add Task',
+                      style:
+                          AppTextStyles.bodyMedium.copyWith(color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -542,97 +673,125 @@ class _ServiceMenServiceDetailViewState
                 const SizedBox(height: 12),
 
                 // ── Tasks ────────────────────────────────────────────────
-                if (_tasks.isNotEmpty)
-                  _Section(
-                    title: 'Tasks',
-                    child: Column(
-                      children: [
-                        ..._tasks.map((task) {
-                          final done = task['status'] == 'COMPLETED';
-                          final cost = (task['cost'] as num?)?.toDouble();
-                          final isRecurring = task['isRecurring'] == true;
-                          final freqKm = task['frequencyKm'];
-                          return InkWell(
-                            onTap: _status == 'COMPLETED'
-                                ? null
-                                : () => _toggleTask(task),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    done
-                                        ? Icons.check_circle
-                                        : Icons.radio_button_unchecked,
-                                    color: done
-                                        ? AppColors.success
-                                        : AppColors.mutedText,
-                                    size: 22,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          task['displayName'] ??
-                                              task['customName'] ??
-                                              '—',
-                                          style: AppTextStyles.body.copyWith(
-                                            color: done
-                                                ? AppColors.mutedText
-                                                : AppColors.bodyText,
-                                            decoration: done
-                                                ? TextDecoration.lineThrough
-                                                : null,
-                                          ),
-                                        ),
-                                        if (isRecurring && freqKm != null)
-                                          Text(
-                                            'Every ${freqKm.toString()} km',
-                                            style: AppTextStyles.caption
-                                                .copyWith(
-                                                    color: AppColors.mutedText),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (cost != null && cost > 0)
-                                    Text(
-                                      '₹${cost.toStringAsFixed(0)}',
-                                      style: AppTextStyles.caption.copyWith(
-                                          color: AppColors.mutedText),
-                                    ),
-                                ],
-                              ),
+                _Section(
+                  title: 'Tasks',
+                  trailing: _status != 'COMPLETED'
+                      ? GestureDetector(
+                          onTap: _showAddTaskSheet,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.navy,
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                          );
-                        }),
-                        if (taskCost > 0) ...[
-                          const Divider(height: 1),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 10),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text('Total Cost',
-                                    style: AppTextStyles.bodyMedium
-                                        .copyWith(color: AppColors.navy)),
-                                Text(
-                                  '₹${taskCost.toStringAsFixed(0)}',
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                      color: AppColors.success,
-                                      fontWeight: FontWeight.w700),
-                                ),
+                                const Icon(Icons.add,
+                                    color: Colors.white, size: 14),
+                                const SizedBox(width: 4),
+                                Text('Add Task',
+                                    style: AppTextStyles.caption.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600)),
                               ],
                             ),
                           ),
-                        ],
-                      ],
-                    ),
-                  ),
-                if (_tasks.isNotEmpty) const SizedBox(height: 12),
+                        )
+                      : null,
+                  child: _tasks.isEmpty
+                      ? Text('No tasks yet — tap Add Task to log work',
+                          style: AppTextStyles.caption
+                              .copyWith(color: AppColors.mutedText))
+                      : Column(
+                          children: [
+                            ..._tasks.map((task) {
+                              final done = task['status'] == 'COMPLETED';
+                              final cost = (task['cost'] as num?)?.toDouble();
+                              final isRecurring = task['isRecurring'] == true;
+                              final freqKm = task['frequencyKm'];
+                              return InkWell(
+                                onTap: _status == 'COMPLETED'
+                                    ? null
+                                    : () => _toggleTask(task),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        done
+                                            ? Icons.check_circle
+                                            : Icons.radio_button_unchecked,
+                                        color: done
+                                            ? AppColors.success
+                                            : AppColors.mutedText,
+                                        size: 22,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              task['displayName'] ??
+                                                  task['customName'] ??
+                                                  '—',
+                                              style: AppTextStyles.body.copyWith(
+                                                color: done
+                                                    ? AppColors.mutedText
+                                                    : AppColors.bodyText,
+                                                decoration: done
+                                                    ? TextDecoration.lineThrough
+                                                    : null,
+                                              ),
+                                            ),
+                                            if (isRecurring && freqKm != null)
+                                              Text(
+                                                'Every ${freqKm.toString()} km',
+                                                style: AppTextStyles.caption
+                                                    .copyWith(
+                                                        color: AppColors.mutedText),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      if (cost != null && cost > 0)
+                                        Text(
+                                          '₹${cost.toStringAsFixed(0)}',
+                                          style: AppTextStyles.caption.copyWith(
+                                              color: AppColors.mutedText),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }),
+                            if (taskCost > 0) ...[
+                              const Divider(height: 1),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 10),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text('Total Cost',
+                                        style: AppTextStyles.bodyMedium
+                                            .copyWith(color: AppColors.navy)),
+                                    Text(
+                                      '₹${taskCost.toStringAsFixed(0)}',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                          color: AppColors.success,
+                                          fontWeight: FontWeight.w700),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                ),
+                const SizedBox(height: 12),
 
                 // ── Parts Used ───────────────────────────────────────────
                 _Section(
