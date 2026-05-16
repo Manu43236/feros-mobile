@@ -418,9 +418,8 @@ class _PositionCard extends StatelessWidget {
   void _showFitSheet(BuildContext context) {
     Map<String, dynamic>? selectedTire;
     final currentOdo = controller.selectedVehicle.value?['currentOdometerReading'];
-    final notesCtrl  = TextEditingController();
-    final tires      = controller.availableTires;
-    final needApproval = controller.requireTireApproval.value;
+    final notesCtrl = TextEditingController();
+    final tires     = controller.availableTires;
 
     showModalBottomSheet(
       context: context,
@@ -428,7 +427,9 @@ class _PositionCard extends StatelessWidget {
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => StatefulBuilder(
-        builder: (ctx, setSheet) => Padding(
+        builder: (ctx, setSheet) {
+          final needApproval = controller.requireTireApproval.value;
+          return Padding(
           padding: EdgeInsets.only(
             left: 24,
             right: 24,
@@ -689,7 +690,8 @@ class _PositionCard extends StatelessWidget {
               ],
             ],
           ),
-        ),
+        );
+        },
       ),
     );
   }
