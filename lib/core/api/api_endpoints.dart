@@ -97,9 +97,11 @@ class ApiEndpoints {
   static const attendanceMarkPresent      = '/attendance/my/mark-present';
   static const attendanceTodayStatus      = '/attendance/my/today-status';
   static const attendancePending          = '/attendance/pending';
+  static String attendanceById(id)        => '/attendance/$id';
   static String approveAttendance(id)     => '/attendance/$id/approve';
   static String rejectAttendance(id)      => '/attendance/$id/reject';
   static String userAttendance(id)        => '/attendance/user/$id';
+  static const attendanceRejected         = '/attendance/rejected';
   static const tripProofs                 = '/trip-proofs';
   static String tripProofsByLr(lrId)      => '/trip-proofs/lr/$lrId';
   static String reviewTripProof(id)       => '/trip-proofs/$id/review';
@@ -132,12 +134,21 @@ class ApiEndpoints {
   static const payRates        = '/masters/tenant/pay-rates';
   static const vehicleStatuses = '/masters/tenant/vehicle-statuses';
   static const chargeTypes     = '/masters/tenant/charge-types';
+  static const clientTypes     = '/masters/tenant/client-types';
   static const paymentTerms    = '/masters/tenant/payment-terms';
   static const tenantSettings  = '/tenants/settings';
+
+  // Vehicle Documents & Images (ADMIN/OFFICE_STAFF)
+  static String vehicleDocuments(id)      => '/staff/vehicles/$id/documents';
+  static String vehicleDocumentVerify(id) => '/staff/vehicles/documents/$id/verify';
+  static String vehicleDocumentById(id)   => '/staff/vehicles/documents/$id';
+  static String vehicleImages(id)         => '/staff/vehicles/$id/images';
+  static String vehicleImageById(id)      => '/staff/vehicles/images/$id';
 
   // Masters — Global
   static const states          = '/masters/global/states';
   static const cities          = '/masters/global/cities';
+  static const ownershipTypes  = '/masters/global/ownership-types';
   static const vehicleTypes    = '/masters/global/vehicle-types';
   static const vehicleBrands   = '/masters/global/vehicle-brands';
   static const fuelTypes       = '/masters/global/fuel-types';
@@ -154,8 +165,9 @@ class ApiEndpoints {
   static const notifMarkAllRead    = '/notifications/mark-all-read';
 
   // Subscription
-  static const mySubscription      = '/subscriptions/my';
+  static const mySubscription         = '/subscriptions/my';
   static const mySubscriptionInvoices = '/subscriptions/my/invoices';
+  static String mySubscriptionInvoicePdf(id) => '/subscriptions/my/invoices/$id/pdf';
 
   // Reports
   static const reportDailyVehicles     = '/reports/daily-vehicles';
@@ -172,10 +184,33 @@ class ApiEndpoints {
   static const reportOrderStatus       = '/reports/order-status';
   static const reportAttendance        = '/reports/attendance';
   static const reportPayrollSummary    = '/reports/payroll-summary';
-  static const reportRevenueTrend      = '/reports/revenue-trend';
-  static const reportInvoiceAging      = '/reports/invoice-aging';
-  static const reportTopClients        = '/reports/top-clients';
-  static const reportStockLevels       = '/reports/stock-levels';
+  static const reportRevenueTrend         = '/reports/revenue-trend';
+  // Orders
+  static const reportOrderFulfillment    = '/reports/order-fulfillment';
+  static const reportOrderLeadTime       = '/reports/order-lead-time';
+  static const reportUnassignedVehicles  = '/reports/unassigned-vehicles';
+  static const reportDriverAssignments   = '/reports/driver-assignments';
+  // LRs & Trips
+  static const reportTripsInProgress     = '/reports/trips-in-progress';
+  static const reportLrStatusFunnel      = '/reports/lr-status-funnel';
+  static const reportUnbilledLrs         = '/reports/unbilled-lrs';
+  static const reportInvoiceTurnaround   = '/reports/invoice-turnaround';
+  static const reportTripDuration        = '/reports/trip-duration';
+  static const reportWeightVariance      = '/reports/weight-variance';
+  static const reportOverloading         = '/reports/overloading';
+  // Driver & Staff
+  static const reportDriverPerformance   = '/reports/driver-performance';
+  static const reportAttendanceGaps      = '/reports/attendance-gaps';
+  static const reportAttendanceTrend     = '/reports/attendance-trend';
+  static const reportAttendanceCalendar  = '/reports/attendance-calendar';
+  // Finance
+  static const reportInvoiceAging        = '/reports/invoice-aging';
+  static const reportRouteProfitability  = '/reports/route-profitability';
+  static const reportGstSummary          = '/reports/gst-summary';
+  static const reportCreditNotesReport   = '/reports/credit-notes';
+  static const reportClientPendingBilling= '/reports/client-pending-billing';
+  static const reportTopClients          = '/reports/top-clients';
+  static const reportStockLevels         = '/reports/stock-levels';
 
   // Tires
   static const tires                   = '/tires';
