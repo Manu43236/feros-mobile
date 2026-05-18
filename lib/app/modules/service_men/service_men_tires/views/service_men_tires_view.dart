@@ -48,9 +48,9 @@ class _ServiceMenTiresViewState extends State<ServiceMenTiresView>
             unselectedLabelColor: Colors.white60,
             labelStyle: const TextStyle(
                 fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600),
-            tabs: const [
-              Tab(text: 'Tire Work'),
-              Tab(text: 'My Requests'),
+            tabs: [
+              Tab(text: 'lbl_tire_work'.tr),
+              Tab(text: 'lbl_my_requests'.tr),
             ],
           ),
         ),
@@ -64,9 +64,9 @@ class _ServiceMenTiresViewState extends State<ServiceMenTiresView>
             padding: const EdgeInsets.all(16),
             children: [
               FerosSelectField<Map<String, dynamic>>(
-                label: 'Vehicle',
-                title: 'Select Vehicle',
-                hint: 'Search by registration…',
+                label: 'lbl_vehicle'.tr,
+                title: 'lbl_select_vehicle'.tr,
+                hint: 'lbl_search_reg_type'.tr,
                 isRequired: true,
                 selectedDisplay: _ctrl.selectedVehicle.value != null
                     ? _ctrl.selectedVehicle.value!['registrationNumber'] as String?
@@ -77,7 +77,7 @@ class _ServiceMenTiresViewState extends State<ServiceMenTiresView>
                     '${v['vehicleTypeName'] != null ? ' · ${v['vehicleTypeName']}' : ''}',
                 onSelected: _ctrl.selectVehicle,
                 isLoading: _ctrl.isLoadingVehicles.value,
-                emptyMessage: 'No active vehicles found',
+                emptyMessage: 'lbl_no_active_vehicles'.tr,
               ),
               const SizedBox(height: 20),
               if (_ctrl.selectedVehicle.value != null) ...[
@@ -91,7 +91,7 @@ class _ServiceMenTiresViewState extends State<ServiceMenTiresView>
                 else if (_ctrl.positions.isEmpty)
                   _EmptyPositions()
                 else ...[
-                  Text('Tire Positions',
+                  Text('lbl_tire_positions'.tr,
                       style: AppTextStyles.bodyMedium.copyWith(
                           color: AppColors.navy, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 10),
@@ -140,11 +140,11 @@ class _MyRequestsTab extends StatelessWidget {
                   const Icon(Icons.circle_outlined,
                       size: 48, color: AppColors.border),
                   const SizedBox(height: 12),
-                  Text('No tire requests yet',
+                  Text('lbl_no_tire_requests'.tr,
                       style: AppTextStyles.heading3
                           .copyWith(color: AppColors.navy)),
                   const SizedBox(height: 6),
-                  Text('Submit a request from the Tire Work tab',
+                  Text('lbl_submit_from_tire_tab'.tr,
                       style: AppTextStyles.body
                           .copyWith(color: AppColors.mutedText)),
                 ],
@@ -248,7 +248,7 @@ class _TireRequestCard extends StatelessWidget {
                 ]),
                 if (notes != null) ...[
                   const SizedBox(height: 6),
-                  Text('Notes: $notes',
+                  Text('${'lbl_notes'.tr}: $notes',
                       style:
                           AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
                 ],
@@ -264,7 +264,7 @@ class _TireRequestCard extends StatelessWidget {
                       const Icon(Icons.check_circle_outline,
                           size: 14, color: Color(0xFF16A34A)),
                       const SizedBox(width: 6),
-                      Text('Issued: $tire',
+                      Text('${'lbl_issued'.tr}: $tire',
                           style: AppTextStyles.caption
                               .copyWith(color: const Color(0xFF16A34A),
                                   fontWeight: FontWeight.w600)),
@@ -284,7 +284,7 @@ class _TireRequestCard extends StatelessWidget {
                           size: 14, color: Color(0xFFDC2626)),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text('Reason: $reason',
+                        child: Text('${'lbl_reason'.tr}: $reason',
                             style: AppTextStyles.caption
                                 .copyWith(color: const Color(0xFFDC2626))),
                       ),
@@ -389,7 +389,7 @@ class _PositionCard extends StatelessWidget {
                           .copyWith(color: AppColors.mutedText),
                     ),
                 ] else
-                  Text('Empty',
+                  Text('lbl_empty_position'.tr,
                       style: AppTextStyles.caption
                           .copyWith(color: AppColors.mutedText)),
               ],
@@ -400,14 +400,14 @@ class _PositionCard extends StatelessWidget {
           if (_isFitted)
             TextButton(
               onPressed: () => _showRemoveSheet(context),
-              child: Text('Remove',
+              child: Text('btn_remove'.tr,
                   style: AppTextStyles.caption
                       .copyWith(color: AppColors.error, fontWeight: FontWeight.w600)),
             )
           else
             TextButton(
               onPressed: () => _showFitSheet(context),
-              child: Text('Fit Tire',
+              child: Text('btn_fit_tire'.tr,
                   style: AppTextStyles.caption
                       .copyWith(color: AppColors.navy, fontWeight: FontWeight.w600)),
             ),
@@ -443,8 +443,8 @@ class _PositionCard extends StatelessWidget {
             children: [
               Text(
                 needApproval
-                    ? 'Request Tire — ${position['positionCode']}'
-                    : 'Fit Tire — ${position['positionCode']}',
+                    ? '${'lbl_request_tire'.tr} — ${position['positionCode']}'
+                    : '${'btn_fit_tire'.tr} — ${position['positionCode']}',
                 style: AppTextStyles.heading3.copyWith(color: AppColors.navy),
               ),
               const SizedBox(height: 20),
@@ -460,13 +460,13 @@ class _PositionCard extends StatelessWidget {
                             size: 48, color: AppColors.mutedText),
                         const SizedBox(height: 12),
                         Text(
-                          'No tires available in stock',
+                          'lbl_no_tires_in_stock'.tr,
                           style: AppTextStyles.body
                               .copyWith(color: AppColors.mutedText),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Ask the store keeper to add tires to inventory.',
+                          'lbl_contact_store_keeper'.tr,
                           textAlign: TextAlign.center,
                           style: AppTextStyles.caption
                               .copyWith(color: AppColors.mutedText),
@@ -479,7 +479,7 @@ class _PositionCard extends StatelessWidget {
                   width: double.infinity,
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Close'),
+                    child: Text('btn_close'.tr),
                   ),
                 ),
               ]
@@ -502,7 +502,7 @@ class _PositionCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Tire fitting requires store keeper approval. Submit a request and they will assign a tire.',
+                          'lbl_tire_approval_info'.tr,
                           style: AppTextStyles.caption
                               .copyWith(color: const Color(0xFF92400E)),
                         ),
@@ -512,7 +512,7 @@ class _PositionCard extends StatelessWidget {
                 ),
 
                 // Available tires (informational)
-                Text('Available in Stock (${tires.length})',
+                Text('${'lbl_available_in_stock'.tr} (${tires.length})',
                     style: AppTextStyles.label.copyWith(color: AppColors.navy)),
                 const SizedBox(height: 8),
                 Container(
@@ -554,7 +554,7 @@ class _PositionCard extends StatelessWidget {
                 const SizedBox(height: 16),
 
                 // Notes (optional)
-                Text('Notes (optional)',
+                Text('lbl_notes_optional'.tr,
                     style: AppTextStyles.label.copyWith(color: AppColors.navy)),
                 const SizedBox(height: 6),
                 TextField(
@@ -602,7 +602,7 @@ class _PositionCard extends StatelessWidget {
                             height: 20,
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white))
-                        : Text('Submit Request',
+                        : Text('btn_submit_request'.tr,
                             style: AppTextStyles.bodyMedium
                                 .copyWith(color: Colors.white)),
                   ),
@@ -636,9 +636,9 @@ class _PositionCard extends StatelessWidget {
                     ),
                   ),
                 FerosSelectField<Map<String, dynamic>>(
-                  label: 'Available Tire',
-                  title: 'Select Tire',
-                  hint: 'Search by serial number…',
+                  label: 'lbl_available_tire'.tr,
+                  title: 'lbl_select_tire'.tr,
+                  hint: 'lbl_search_serial_number'.tr,
                   isRequired: true,
                   selectedDisplay: selectedTire != null
                       ? '${selectedTire!['serialNumber']} · ${selectedTire!['brand'] ?? ''}'
@@ -650,7 +650,7 @@ class _PositionCard extends StatelessWidget {
                       '${t['size'] != null ? ' (${t['size']})' : ''}',
                   onSelected: (t) => setSheet(() => selectedTire = t),
                   isLoading: controller.isLoadingTires.value,
-                  emptyMessage: 'No available tires in stock',
+                  emptyMessage: 'lbl_no_available_tires'.tr,
                 ),
                 const SizedBox(height: 20),
 
@@ -683,7 +683,7 @@ class _PositionCard extends StatelessWidget {
                             height: 20,
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white))
-                        : Text('Confirm Fit',
+                        : Text('btn_confirm_fit'.tr,
                             style: AppTextStyles.bodyMedium
                                 .copyWith(color: Colors.white)),
                   ),
@@ -721,7 +721,7 @@ class _PositionCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Remove Tire — ${position['positionCode']}',
+              Text('${'lbl_remove_tire'.tr} — ${position['positionCode']}',
                   style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
               const SizedBox(height: 4),
               Text(
@@ -732,7 +732,7 @@ class _PositionCard extends StatelessWidget {
               const SizedBox(height: 20),
 
               // ── Current Odometer ─────────────────────────
-              Text('Current Odometer (km) *',
+              Text('lbl_current_odometer_km'.tr,
                   style: AppTextStyles.label.copyWith(color: AppColors.navy)),
               const SizedBox(height: 6),
               TextField(
@@ -753,14 +753,14 @@ class _PositionCard extends StatelessWidget {
               if (_fitting?['fittedAtKm'] != null) ...[
                 const SizedBox(height: 4),
                 Text(
-                  'Fitted at ${_fitting!['fittedAtKm']} km',
+                  '${'lbl_fitted_at_km'.tr} ${_fitting!['fittedAtKm']} km',
                   style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
                 ),
               ],
               const SizedBox(height: 16),
 
               // ── Removal Reason ───────────────────────────
-              Text('Removal Reason',
+              Text('lbl_removal_reason'.tr,
                   style: AppTextStyles.label.copyWith(color: AppColors.navy)),
               const SizedBox(height: 10),
               Wrap(
@@ -821,7 +821,7 @@ class _PositionCard extends StatelessWidget {
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text('Confirm Remove',
+                      : Text('btn_confirm_remove'.tr,
                           style: AppTextStyles.bodyMedium.copyWith(color: Colors.white)),
                 ),
               )),
@@ -844,7 +844,7 @@ class _EmptyPositions extends StatelessWidget {
             const Icon(Icons.circle_outlined,
                 size: 48, color: AppColors.mutedText),
             const SizedBox(height: 12),
-            Text('No tire positions configured for this vehicle',
+            Text('lbl_no_tire_positions'.tr,
                 textAlign: TextAlign.center,
                 style:
                     AppTextStyles.body.copyWith(color: AppColors.mutedText)),

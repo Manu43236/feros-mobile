@@ -24,8 +24,8 @@ class DriverPayslipView extends GetView<DriverPayslipController> {
             size: 18,
           ),
         ),
-        title: const Text('Payslip',
-            style: TextStyle(
+        title: Text('lbl_payslip_title'.tr,
+            style: const TextStyle(
                 color: Colors.white,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w600)),
@@ -37,10 +37,10 @@ class DriverPayslipView extends GetView<DriverPayslipController> {
               onRefresh: controller.fetch,
               color: AppColors.navy,
               child: controller.payslips.isEmpty
-                  ? const EmptyState(
+                  ? EmptyState(
                       icon: Icons.payments_outlined,
-                      title: 'No Payslips Yet',
-                      subtitle: 'Your monthly payslips will appear here',
+                      title: 'lbl_no_payslips'.tr,
+                      subtitle: 'lbl_payslips_appear'.tr,
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.all(16),
@@ -108,7 +108,7 @@ class _PayslipCardState extends State<_PayslipCard> {
                           style: AppTextStyles.bodyMedium
                               .copyWith(color: AppColors.navy)),
                       const SizedBox(height: 2),
-                      Text('$presentDays / $totalDays days present',
+                      Text('$presentDays / $totalDays ${'lbl_days_present'.tr}',
                           style: AppTextStyles.caption
                               .copyWith(color: AppColors.mutedText)),
                     ],
@@ -139,13 +139,13 @@ class _PayslipCardState extends State<_PayslipCard> {
               const SizedBox(height: 12),
               const Divider(height: 1),
               const SizedBox(height: 12),
-              _row('Gross Pay', '₹${grossPay.toStringAsFixed(2)}'),
-              _row('Deductions', '- ₹${totalDeductions.toStringAsFixed(2)}'),
+              _row('lbl_gross_pay'.tr, '₹${grossPay.toStringAsFixed(2)}'),
+              _row('lbl_deductions_label'.tr, '- ₹${totalDeductions.toStringAsFixed(2)}'),
               if (advanceDeductions > 0)
-                _row('Advance Recovery',
+                _row('lbl_advance_recovery'.tr,
                     '- ₹${advanceDeductions.toStringAsFixed(2)}'),
               const Divider(height: 16),
-              _row('Net Pay', '₹${netPay.toStringAsFixed(2)}', bold: true),
+              _row('lbl_net_pay'.tr, '₹${netPay.toStringAsFixed(2)}', bold: true),
             ],
             const SizedBox(height: 4),
             Icon(

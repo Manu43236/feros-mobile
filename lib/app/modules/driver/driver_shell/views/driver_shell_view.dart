@@ -134,9 +134,9 @@ class DriverShellView extends GetView<DriverShellController> {
 
   String _greeting() {
     final h = DateTime.now().hour;
-    if (h < 12) return 'Good Morning,';
-    if (h < 17) return 'Good Afternoon,';
-    return 'Good Evening,';
+    if (h < 12) return 'lbl_good_morning'.tr;
+    if (h < 17) return 'lbl_good_afternoon'.tr;
+    return 'lbl_good_evening'.tr;
   }
 
   List<Widget> _buildPages() {

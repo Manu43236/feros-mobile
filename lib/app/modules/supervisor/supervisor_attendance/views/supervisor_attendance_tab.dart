@@ -23,7 +23,7 @@ class SupervisorAttendanceTab extends GetView<SupervisorAttendanceController> {
             children: [
               const Icon(Icons.error_outline, size: 48, color: AppColors.error),
               const SizedBox(height: 12),
-              Text('Failed to load attendance data',
+              Text('lbl_failed_att'.tr,
                   style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -34,7 +34,7 @@ class SupervisorAttendanceTab extends GetView<SupervisorAttendanceController> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text('Retry'),
+                child: Text('btn_retry'.tr),
               ),
             ],
           ),
@@ -74,11 +74,11 @@ class SupervisorAttendanceTab extends GetView<SupervisorAttendanceController> {
               tabs: [
                 Obx(() {
                   final count = controller.remainingStaff.length;
-                  return Tab(text: 'Remaining${count > 0 ? ' ($count)' : ''}');
+                  return Tab(text: '${'lbl_remaining'.tr}${count > 0 ? ' ($count)' : ''}');
                 }),
                 Obx(() {
                   final count = controller.markedStaff.length;
-                  return Tab(text: 'Marked${count > 0 ? ' ($count)' : ''}');
+                  return Tab(text: '${'lbl_marked_badge'.tr}${count > 0 ? ' ($count)' : ''}');
                 }),
               ],
             ),
@@ -131,8 +131,8 @@ class SupervisorAttendanceTab extends GetView<SupervisorAttendanceController> {
                           )
                         : Text(
                             count > 0
-                                ? 'Submit Attendance ($count)'
-                                : 'Submit Attendance',
+                                ? 'lbl_submit_att_count'.trParams({'count': '$count'})
+                                : 'btn_submit_attendance'.tr,
                             style: const TextStyle(
                               fontFamily: 'Inter',
                               fontWeight: FontWeight.w600,
@@ -192,7 +192,7 @@ class _SearchBarState extends State<_SearchBar> {
         onChanged: _onChanged,
         style: AppTextStyles.body,
         decoration: InputDecoration(
-          hintText: 'Search driver or cleaner…',
+          hintText: 'lbl_search_driver_cleaner'.tr,
           hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
           prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.mutedText),
           suffixIcon: _hasText
@@ -282,7 +282,7 @@ class _DateStatsBar extends StatelessWidget {
                   border: Border.all(color: AppColors.orange.withValues(alpha: 0.3)),
                 ),
                 child: Text(
-                  '$pending unsaved',
+                  'lbl_unsaved'.trParams({'count': '$pending'}),
                   style: AppTextStyles.caption.copyWith(
                       color: AppColors.orange, fontWeight: FontWeight.w600),
                 ),
@@ -319,8 +319,8 @@ class _RemainingList extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 controller.searchQuery.value.isNotEmpty
-                    ? 'No staff found'
-                    : 'All staff attendance marked',
+                    ? 'lbl_no_staff_found'.tr
+                    : 'lbl_all_staff_marked'.tr,
                 style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
               ),
             ],
@@ -362,8 +362,8 @@ class _MarkedList extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 controller.searchQuery.value.isNotEmpty
-                    ? 'No staff found'
-                    : 'No attendance marked yet',
+                    ? 'lbl_no_staff_found'.tr
+                    : 'lbl_no_att_yet'.tr,
                 style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
               ),
             ],
@@ -405,7 +405,7 @@ class _StaffRow extends StatelessWidget {
     final roleColor  = isDriver
         ? AppColors.info
         : AppColors.mutedText;
-    final roleLabel  = isDriver ? 'Driver' : 'Cleaner';
+    final roleLabel  = isDriver ? 'role_driver'.tr : 'role_cleaner'.tr;
     final roleBg     = isDriver
         ? AppColors.infoLight
         : const Color(0xFFF3F4F6);
@@ -574,12 +574,12 @@ class _StaffRow extends StatelessWidget {
 
   String _typeLabel(String name) {
     switch (name) {
-      case 'PRESENT':    return 'Present';
-      case 'ABSENT':     return 'Absent';
-      case 'HALF_DAY':   return 'Half Day';
-      case 'LEAVE':      return 'Leave';
-      case 'HOLIDAY':    return 'Holiday';
-      case 'WEEKLY_OFF': return 'Weekly Off';
+      case 'PRESENT':    return 'status_present'.tr;
+      case 'ABSENT':     return 'status_absent'.tr;
+      case 'HALF_DAY':   return 'status_half_day'.tr;
+      case 'LEAVE':      return 'status_leave'.tr;
+      case 'HOLIDAY':    return 'lbl_holiday'.tr;
+      case 'WEEKLY_OFF': return 'lbl_week_off'.tr;
       default:
         return name
             .split('_')

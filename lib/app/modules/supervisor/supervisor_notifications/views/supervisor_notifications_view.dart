@@ -24,9 +24,9 @@ class SupervisorNotificationsView extends GetView<SupervisorNotificationsControl
               size: 18,
             ),
           ),
-          title: const Text(
-            'Notifications',
-            style: TextStyle(
+          title: Text(
+            'lbl_notifications'.tr,
+            style: const TextStyle(
               color: Colors.white,
               fontFamily: 'Inter',
               fontWeight: FontWeight.w600,
@@ -37,7 +37,7 @@ class SupervisorNotificationsView extends GetView<SupervisorNotificationsControl
             if (controller.hasUnread)
               TextButton(
                 onPressed: controller.markAllRead,
-                child: Text('Mark all read',
+                child: Text('btn_mark_all_read'.tr,
                     style: AppTextStyles.caption
                         .copyWith(color: Colors.white70)),
               ),
@@ -59,10 +59,10 @@ class SupervisorNotificationsView extends GetView<SupervisorNotificationsControl
           children: [
             const Icon(Icons.error_outline, size: 48, color: AppColors.mutedText),
             const SizedBox(height: 12),
-            Text('Failed to load notifications',
+            Text('lbl_failed_load_notifications'.tr,
                 style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
             const SizedBox(height: 12),
-            TextButton(onPressed: controller.load, child: const Text('Retry')),
+            TextButton(onPressed: controller.load, child: Text('btn_retry'.tr)),
           ],
         ),
       );
@@ -76,7 +76,7 @@ class SupervisorNotificationsView extends GetView<SupervisorNotificationsControl
                 size: 64,
                 color: AppColors.mutedText.withValues(alpha: 0.5)),
             const SizedBox(height: 16),
-            Text('No notifications yet',
+            Text('lbl_no_notifications_yet'.tr,
                 style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
           ],
         ),
@@ -211,10 +211,10 @@ class _NotifTile extends StatelessWidget {
       final dt   = DateTime.parse(raw).toLocal();
       final now  = DateTime.now();
       final diff = now.difference(dt);
-      if (diff.inMinutes < 1)  return 'Just now';
+      if (diff.inMinutes < 1)  return 'lbl_just_now'.tr;
       if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
       if (diff.inHours < 24)   return '${diff.inHours}h ago';
-      if (diff.inDays == 1)    return 'Yesterday';
+      if (diff.inDays == 1)    return 'lbl_yesterday'.tr;
       if (diff.inDays < 7)     return '${diff.inDays}d ago';
       return DateFormat('d MMM').format(dt);
     } catch (_) { return ''; }

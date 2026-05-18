@@ -4,6 +4,7 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/string_utils.dart';
 import '../controllers/store_keeper_profile_controller.dart';
+import '../../../../../core/widgets/language_switcher_tile.dart';
 import '../../../../modules/supervisor/supervisor_profile/views/change_pin_view.dart';
 
 class StoreKeeperProfileView extends GetView<StoreKeeperProfileController> {
@@ -100,7 +101,7 @@ class StoreKeeperProfileView extends GetView<StoreKeeperProfileController> {
         ),
         const SizedBox(height: 12),
 
-        // ── Change PIN ──────────────────────────────────────────
+        // ── Change PIN + Language ──────────────────────────────
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -112,14 +113,20 @@ class StoreKeeperProfileView extends GetView<StoreKeeperProfileController> {
                   offset: Offset(0, 2)),
             ],
           ),
-          child: ListTile(
-            leading: const Icon(Icons.lock_outline,
-                color: AppColors.navy, size: 22),
-            title: Text('Change PIN',
-                style: AppTextStyles.body.copyWith(color: AppColors.navy)),
-            trailing: const Icon(Icons.chevron_right,
-                color: AppColors.mutedText),
-            onTap: () => Get.to(() => const ChangePinView()),
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.lock_outline,
+                    color: AppColors.navy, size: 22),
+                title: Text('Change PIN',
+                    style: AppTextStyles.body.copyWith(color: AppColors.navy)),
+                trailing: const Icon(Icons.chevron_right,
+                    color: AppColors.mutedText),
+                onTap: () => Get.to(() => const ChangePinView()),
+              ),
+              const Divider(height: 1, indent: 56),
+              const LanguageSwitcherTile(),
+            ],
           ),
         ),
         const SizedBox(height: 24),

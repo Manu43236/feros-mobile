@@ -312,9 +312,9 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
           onTap: Get.back,
           child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
         ),
-        title: const Text(
-          'New Order',
-          style: TextStyle(
+        title: Text(
+          'lbl_new_order'.tr,
+          style: const TextStyle(
             fontFamily: 'Inter',
             fontWeight: FontWeight.w600,
             fontSize: 16,
@@ -332,27 +332,27 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                 child: Column(
                   children: [
-                    _Section(title: 'Basic Info', children: _buildBasicInfo()),
+                    _Section(title: 'lbl_basic_info'.tr, children: _buildBasicInfo()),
                     const SizedBox(height: 16),
-                    _Section(title: 'Source (From)', children: _buildSource()),
+                    _Section(title: 'lbl_source_from'.tr, children: _buildSource()),
                     const SizedBox(height: 16),
                     _Section(
-                      title: 'Destination (To)',
+                      title: 'lbl_destination_to'.tr,
                       badge: _clientAutoFilled
-                          ? 'Auto-filled from client'
+                          ? 'lbl_auto_filled_client'.tr
                           : null,
                       children: _buildDestination(),
                     ),
                     const SizedBox(height: 16),
-                    _Section(title: 'Freight', children: _buildFreight()),
+                    _Section(title: 'lbl_freight'.tr, children: _buildFreight()),
                     const SizedBox(height: 16),
                     _Section(
-                      title: 'Additional Info',
+                      title: 'lbl_additional_info'.tr,
                       children: _buildAdditional(),
                     ),
                     const SizedBox(height: 16),
                     _Section(
-                      title: 'E-way Bill',
+                      title: 'lbl_eway_bill'.tr,
                       isOptional: true,
                       children: _buildEwayBill(),
                     ),
@@ -401,9 +401,9 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text(
-                        'Create Order',
-                        style: TextStyle(
+                    : Text(
+                        'btn_create_order'.tr,
+                        style: const TextStyle(
                           fontFamily: 'Inter',
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
@@ -426,16 +426,16 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
       _isLoadingClients
           ? const _FieldShimmer()
           : FerosSelectField<Map<String, dynamic>>(
-              label: 'Client',
-              title: 'Select Client',
-              hint: 'Select client',
+              label: 'lbl_client'.tr,
+              title: 'lbl_select_client'.tr,
+              hint: 'lbl_select_client'.tr,
               isRequired: true,
               selectedDisplay: _selectedClient?['clientName'] as String?,
               items: _clients.where((c) => c['isActive'] == true).toList(),
               itemLabel: (c) => c['clientName'] as String? ?? '—',
               onSelected: _onClientSelected,
               errorText: _errors['client'],
-              emptyMessage: 'No clients found',
+              emptyMessage: 'lbl_no_clients_found'.tr,
             ),
       const SizedBox(height: 16),
 
@@ -443,16 +443,16 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
       _isLoadingMaterials
           ? const _FieldShimmer()
           : FerosSelectField<Map<String, dynamic>>(
-              label: 'Material Type',
-              title: 'Select Material',
-              hint: 'Select material',
+              label: 'lbl_material_type'.tr,
+              title: 'lbl_select_material'.tr,
+              hint: 'lbl_select_material'.tr,
               isRequired: true,
               selectedDisplay: _selectedMaterial?['name'] as String?,
               items: _materials,
               itemLabel: (m) => m['name'] as String? ?? '—',
               onSelected: (m) => setState(() => _selectedMaterial = m),
               errorText: _errors['material'],
-              emptyMessage: 'No materials found',
+              emptyMessage: 'lbl_no_materials_found'.tr,
             ),
       if (isOther) ...[
         const SizedBox(height: 8),
@@ -475,7 +475,7 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _Label('Total Weight (tons)', isRequired: true),
+                _Label('lbl_total_weight_tons'.tr, isRequired: true),
                 const SizedBox(height: 6),
                 TextField(
                   controller: _weightCtrl,
@@ -505,7 +505,7 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _Label('Order Date'),
+                _Label('lbl_order_date'.tr),
                 const SizedBox(height: 6),
                 _DateField(
                   value: _orderDate,
@@ -518,7 +518,7 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
         ],
       ),
       const SizedBox(height: 16),
-      const _Label('Expected Delivery Date'),
+      _Label('lbl_expected_delivery'.tr),
       const SizedBox(height: 6),
       _DateField(
         value: _expectedDeliveryDate,
@@ -538,9 +538,9 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
             child: _isLoadingStates
                 ? const _FieldShimmer()
                 : FerosSelectField<Map<String, dynamic>>(
-                    label: 'State',
-                    title: 'Select State',
-                    hint: 'Select state',
+                    label: 'lbl_state'.tr,
+                    title: 'lbl_select_state'.tr,
+                    hint: 'lbl_select_state'.tr,
                     isRequired: true,
                     selectedDisplay: _srcState?['name'] as String?,
                     items: _states,
@@ -554,7 +554,7 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
                       _loadSrcCities(s['id'] as int);
                     },
                     errorText: _errors['srcState'],
-                    emptyMessage: 'No states found',
+                    emptyMessage: 'lbl_no_states_found'.tr,
                   ),
           ),
           const SizedBox(width: 12),
@@ -562,11 +562,11 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
             child: _isLoadingSrcCities
                 ? const _FieldShimmer()
                 : FerosSelectField<Map<String, dynamic>>(
-                    label: 'City',
-                    title: 'Select City',
+                    label: 'lbl_city'.tr,
+                    title: 'lbl_select_city'.tr,
                     hint: _srcState == null
-                        ? 'Select state first'
-                        : 'Select city',
+                        ? 'lbl_select_state'.tr
+                        : 'lbl_select_city'.tr,
                     isRequired: true,
                     selectedDisplay: _srcCity?['name'] as String?,
                     items: _srcCities,
@@ -574,13 +574,13 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
                     onSelected: (c) => setState(() => _srcCity = c),
                     enabled: _srcState != null,
                     errorText: _errors['srcCity'],
-                    emptyMessage: 'No cities found',
+                    emptyMessage: 'lbl_no_cities_found'.tr,
                   ),
           ),
         ],
       ),
       const SizedBox(height: 16),
-      const _Label('Loading Address'),
+      _Label('lbl_loading_address'.tr),
       const SizedBox(height: 6),
       TextField(
         controller: _srcAddressCtrl,
@@ -602,9 +602,9 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
             child: _isLoadingStates
                 ? const _FieldShimmer()
                 : FerosSelectField<Map<String, dynamic>>(
-                    label: 'State',
-                    title: 'Select State',
-                    hint: 'Select state',
+                    label: 'lbl_state'.tr,
+                    title: 'lbl_select_state'.tr,
+                    hint: 'lbl_select_state'.tr,
                     isRequired: true,
                     selectedDisplay: _dstState?['name'] as String?,
                     items: _states,
@@ -618,7 +618,7 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
                       _loadDstCities(s['id'] as int);
                     },
                     errorText: _errors['dstState'],
-                    emptyMessage: 'No states found',
+                    emptyMessage: 'lbl_no_states_found'.tr,
                   ),
           ),
           const SizedBox(width: 12),
@@ -626,11 +626,11 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
             child: _isLoadingDstCities
                 ? const _FieldShimmer()
                 : FerosSelectField<Map<String, dynamic>>(
-                    label: 'City',
-                    title: 'Select City',
+                    label: 'lbl_city'.tr,
+                    title: 'lbl_select_city'.tr,
                     hint: _dstState == null
-                        ? 'Select state first'
-                        : 'Select city',
+                        ? 'lbl_select_state'.tr
+                        : 'lbl_select_city'.tr,
                     isRequired: true,
                     selectedDisplay: _dstCity?['name'] as String?,
                     items: _dstCities,
@@ -638,13 +638,13 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
                     onSelected: (c) => setState(() => _dstCity = c),
                     enabled: _dstState != null,
                     errorText: _errors['dstCity'],
-                    emptyMessage: 'No cities found',
+                    emptyMessage: 'lbl_no_cities_found'.tr,
                   ),
           ),
         ],
       ),
       const SizedBox(height: 16),
-      const _Label('Delivery Address'),
+      _Label('lbl_delivery_address'.tr),
       const SizedBox(height: 6),
       TextField(
         controller: _dstAddressCtrl,
@@ -664,15 +664,15 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
         children: [
           Expanded(
             child: FerosSelectField<Map<String, dynamic>>(
-              label: 'Rate Type',
-              title: 'Rate Type',
-              hint: 'Select rate type',
+              label: 'lbl_rate_type'.tr,
+              title: 'lbl_rate_type'.tr,
+              hint: 'lbl_rate_type'.tr,
               isRequired: true,
               selectedDisplay: _selectedRateType['name'] as String?,
               items: _rateTypes,
               itemLabel: (t) => t['name'] as String,
               onSelected: (t) => setState(() => _selectedRateType = t),
-              emptyMessage: 'No options',
+              emptyMessage: 'lbl_no_options'.tr,
             ),
           ),
           const SizedBox(width: 12),
@@ -680,7 +680,7 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _Label('Rate (₹)', isRequired: true),
+                _Label('lbl_rate'.tr, isRequired: true),
                 const SizedBox(height: 6),
                 TextField(
                   controller: _freightRateCtrl,
@@ -713,14 +713,14 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
       if (_selectedRateType['id'] == 'PER_TON') ...[
         const SizedBox(height: 16),
         FerosSelectField<Map<String, dynamic>>(
-          label: 'Bill On',
-          title: 'Bill On',
-          hint: 'Select billing basis',
+          label: 'lbl_bill_on'.tr,
+          title: 'lbl_bill_on'.tr,
+          hint: 'lbl_bill_on'.tr,
           selectedDisplay: _selectedBillingOn['name'] as String?,
           items: _billingOptions,
           itemLabel: (b) => b['name'] as String,
           onSelected: (b) => setState(() => _selectedBillingOn = b),
-          emptyMessage: 'No options',
+          emptyMessage: 'lbl_no_options'.tr,
         ),
       ],
     ];
@@ -735,7 +735,7 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _Label('Special Instructions'),
+                _Label('lbl_special_instructions'.tr),
                 const SizedBox(height: 6),
                 TextField(
                   controller: _specialInstCtrl,
@@ -753,7 +753,7 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _Label('Remarks'),
+                _Label('lbl_remarks'.tr),
                 const SizedBox(height: 6),
                 TextField(
                   controller: _remarksCtrl,
@@ -781,7 +781,7 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _Label('E-way Bill No.'),
+                _Label('lbl_eway_bill_no'.tr),
                 const SizedBox(height: 6),
                 TextField(
                   controller: _ewayBillNoCtrl,
@@ -799,7 +799,7 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _Label('Date'),
+                _Label('lbl_date'.tr),
                 const SizedBox(height: 6),
                 _DateField(
                   value: _ewayBillDate,
@@ -814,7 +814,7 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _Label('Valid Upto'),
+                _Label('lbl_valid_upto'.tr),
                 const SizedBox(height: 6),
                 _DateField(
                   value: _ewayBillValidUpto,
@@ -941,7 +941,7 @@ class _Section extends StatelessWidget {
               if (isOptional) ...[
                 const SizedBox(width: 6),
                 Text(
-                  '(optional)',
+                  'lbl_optional_section'.tr,
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.mutedText,
                   ),

@@ -57,6 +57,11 @@ class LoginController extends GetxController {
       final token   = payload['token'] as String;
       final user    = UserModel.fromJson(payload);
 
+      if (user.role == 'SUPER_ADMIN') {
+        FerosSnackbar.error('Super Admin cannot log in on the mobile app.');
+        return;
+      }
+
       await _auth.saveSession(token, user);
       Get.offAllNamed(_auth.roleHome);
     } on UnauthorizedException {

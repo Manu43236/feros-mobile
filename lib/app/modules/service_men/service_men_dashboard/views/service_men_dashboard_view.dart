@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../core/widgets/shimmer_card.dart';
+import '../../../../../core/utils/status_utils.dart';
 import '../controllers/service_men_dashboard_controller.dart';
 import '../../service_men_services/views/service_men_service_detail_view.dart';
 import '../../../driver/driver_shell/controllers/driver_shell_controller.dart';
@@ -26,14 +27,14 @@ class ServiceMenDashboardView extends GetView<ServiceMenDashboardController> {
             Row(
               children: [
                 _StatCard(
-                  label: 'Open',
+                  label: 'status_open'.tr,
                   value: controller.openCount,
                   icon: Icons.build_outlined,
                   color: AppColors.info,
                 ),
                 const SizedBox(width: 12),
                 _StatCard(
-                  label: 'In Progress',
+                  label: 'status_in_progress'.tr,
                   value: controller.inProgressCount,
                   icon: Icons.settings_outlined,
                   color: AppColors.warning,
@@ -44,7 +45,7 @@ class ServiceMenDashboardView extends GetView<ServiceMenDashboardController> {
 
             // ── Active Service Card ───────────────────────────
             if (controller.activeService != null) ...[
-              _SectionTitle('Active Service'),
+              _SectionTitle('lbl_active_service'.tr),
               const SizedBox(height: 10),
               _ActiveServiceCard(
                 service: controller.activeService!,
@@ -56,26 +57,26 @@ class ServiceMenDashboardView extends GetView<ServiceMenDashboardController> {
             ],
 
             // ── Quick Actions ─────────────────────────────────
-            _SectionTitle('Quick Actions'),
+            _SectionTitle('lbl_quick_actions'.tr),
             const SizedBox(height: 10),
             Row(
               children: [
                 _QuickAction(
-                  label: 'Services',
+                  label: 'lbl_services'.tr,
                   icon: Icons.build_outlined,
                   color: AppColors.navy,
                   onTap: () => Get.find<DriverShellController>().onTabTapped(1),
                 ),
                 const SizedBox(width: 12),
                 _QuickAction(
-                  label: 'Tire Work',
+                  label: 'lbl_tire_work'.tr,
                   icon: Icons.tire_repair_outlined,
                   color: const Color(0xFF7C3AED),
                   onTap: () => Get.find<DriverShellController>().onTabTapped(2),
                 ),
                 const SizedBox(width: 12),
                 _QuickAction(
-                  label: 'Breakdowns',
+                  label: 'lbl_breakdowns'.tr,
                   icon: Icons.warning_amber_outlined,
                   color: AppColors.error,
                   onTap: () => Get.find<DriverShellController>().onTabTapped(3),
@@ -86,7 +87,7 @@ class ServiceMenDashboardView extends GetView<ServiceMenDashboardController> {
 
             // ── All Services Summary ──────────────────────────
             if (controller.services.isNotEmpty) ...[
-              _SectionTitle('Recent Services'),
+              _SectionTitle('lbl_recent_services'.tr),
               const SizedBox(height: 10),
               ...controller.services.take(5).map((s) => _ServiceCard(
                     service: s,
@@ -206,7 +207,7 @@ class _ActiveServiceCard extends StatelessWidget {
                 color: AppColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: Text('IN PROGRESS',
+              child: Text('status_in_progress'.tr,
                   style: AppTextStyles.caption.copyWith(
                       color: AppColors.warning, fontWeight: FontWeight.w600)),
             ),
@@ -318,7 +319,7 @@ class _ServiceCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                status.replaceAll('_', ' '),
+                statusLabel(status),
                 style: AppTextStyles.caption
                     .copyWith(color: color, fontWeight: FontWeight.w600),
               ),
@@ -352,7 +353,7 @@ class _EmptyState extends StatelessWidget {
           children: [
             const Icon(Icons.build_outlined, size: 48, color: AppColors.mutedText),
             const SizedBox(height: 12),
-            Text('No services assigned',
+            Text('lbl_no_services_assigned'.tr,
                 style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
           ],
         ),

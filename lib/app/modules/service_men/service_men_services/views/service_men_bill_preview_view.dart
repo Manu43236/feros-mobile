@@ -59,8 +59,8 @@ class _ServiceMenBillPreviewViewState extends State<ServiceMenBillPreviewView> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Bill Preview',
-                style: TextStyle(
+            Text('lbl_bill_preview'.tr,
+                style: const TextStyle(
                     color: Colors.white,
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w600,
@@ -81,13 +81,13 @@ class _ServiceMenBillPreviewViewState extends State<ServiceMenBillPreviewView> {
               children: [
                 // ── Service Info ──────────────────────────────────────────
                 _Section(
-                  title: 'Service Info',
+                  title: 'lbl_service_info'.tr,
                   child: Column(
                     children: [
-                      _InfoRow('Vehicle',
+                      _InfoRow('lbl_vehicle'.tr,
                           widget.service['vehicleRegistrationNumber'] ?? '—'),
-                      _InfoRow('Type',
-                          _isInternal ? 'Internal (Self)' : (widget.service['vendorName'] ?? 'External')),
+                      _InfoRow('lbl_type'.tr,
+                          _isInternal ? 'lbl_service_internal'.tr : (widget.service['vendorName'] as String? ?? 'lbl_external_vendor'.tr)),
                     ],
                   ),
                 ),
@@ -95,11 +95,11 @@ class _ServiceMenBillPreviewViewState extends State<ServiceMenBillPreviewView> {
 
                 // ── Odometer ─────────────────────────────────────────────
                 _Section(
-                  title: 'Completion Details',
+                  title: 'lbl_completion_details'.tr,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Odometer Reading (optional)',
+                      Text('lbl_odometer_optional'.tr,
                           style: AppTextStyles.label
                               .copyWith(color: AppColors.navy)),
                       const SizedBox(height: 6),
@@ -120,7 +120,7 @@ class _ServiceMenBillPreviewViewState extends State<ServiceMenBillPreviewView> {
                   // ── Tasks ───────────────────────────────────────────────
                   if (_tasks.isNotEmpty)
                     _Section(
-                      title: 'Work Performed',
+                      title: 'lbl_work_performed'.tr,
                       child: Column(
                         children: [
                           ..._tasks.map((t) {
@@ -151,7 +151,7 @@ class _ServiceMenBillPreviewViewState extends State<ServiceMenBillPreviewView> {
                             mainAxisAlignment:
                                 MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Tasks Total',
+                              Text('lbl_tasks_total'.tr,
                                   style: AppTextStyles.bodyMedium),
                               Text('₹${_tasksTotal.toStringAsFixed(0)}',
                                   style: AppTextStyles.bodyMedium),
@@ -164,11 +164,11 @@ class _ServiceMenBillPreviewViewState extends State<ServiceMenBillPreviewView> {
 
                   // ── Labour Charges ───────────────────────────────────────
                   _Section(
-                    title: 'Labour Charges',
+                    title: 'lbl_labour_charges'.tr,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Labour / Service Charges (optional)',
+                        Text('lbl_labour_optional'.tr,
                             style: AppTextStyles.label
                                 .copyWith(color: AppColors.navy)),
                         const SizedBox(height: 6),
@@ -187,26 +187,26 @@ class _ServiceMenBillPreviewViewState extends State<ServiceMenBillPreviewView> {
 
                   // ── Cost Summary ─────────────────────────────────────────
                   _Section(
-                    title: 'Cost Summary',
+                    title: 'lbl_cost_summary'.tr,
                     child: Column(
                       children: [
-                        _SummaryRow('Tasks Total',
+                        _SummaryRow('lbl_tasks_total'.tr,
                             '₹${_tasksTotal.toStringAsFixed(2)}'),
-                        _SummaryRow('Labour Charges',
+                        _SummaryRow('lbl_labour_charges'.tr,
                             '₹${_labour.toStringAsFixed(2)}'),
-                        _SummaryRow('Sub Total',
+                        _SummaryRow('lbl_sub_total'.tr,
                             '₹${_subTotal.toStringAsFixed(2)}'),
-                        _SummaryRow('GST (18%)',
+                        _SummaryRow('lbl_gst_18'.tr,
                             '₹${_gstAmount.toStringAsFixed(2)}'),
                         const Divider(height: 12),
                         _SummaryRow(
-                          'Estimated Total',
+                          'lbl_estimated_total'.tr,
                           '₹${_total.toStringAsFixed(2)}',
                           highlight: true,
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '* Final GST rate applied from your tenant settings',
+                          'lbl_gst_note'.tr,
                           style: AppTextStyles.caption
                               .copyWith(color: AppColors.mutedText),
                         ),
@@ -216,11 +216,11 @@ class _ServiceMenBillPreviewViewState extends State<ServiceMenBillPreviewView> {
                 ] else ...[
                   // ── External Vendor Details ──────────────────────────────
                   _Section(
-                    title: 'Vendor Bill',
+                    title: 'lbl_vendor_bill'.tr,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Vendor Charged Amount (optional)',
+                        Text('lbl_vendor_charged_optional'.tr,
                             style: AppTextStyles.label
                                 .copyWith(color: AppColors.navy)),
                         const SizedBox(height: 6),
@@ -232,7 +232,7 @@ class _ServiceMenBillPreviewViewState extends State<ServiceMenBillPreviewView> {
                               decimal: true),
                         ),
                         const SizedBox(height: 12),
-                        Text('Vendor Invoice No (optional)',
+                        Text('lbl_vendor_invoice_no_optional'.tr,
                             style: AppTextStyles.label
                                 .copyWith(color: AppColors.navy)),
                         const SizedBox(height: 6),
@@ -242,7 +242,7 @@ class _ServiceMenBillPreviewViewState extends State<ServiceMenBillPreviewView> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Vendor\'s bill includes GST — no separate GST calculated',
+                          'lbl_vendor_gst_note'.tr,
                           style: AppTextStyles.caption
                               .copyWith(color: AppColors.mutedText),
                         ),
@@ -280,7 +280,7 @@ class _ServiceMenBillPreviewViewState extends State<ServiceMenBillPreviewView> {
                             strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.check_circle_outline, size: 20),
                 label: Text(
-                  _submitting ? 'Completing…' : 'Confirm & Complete',
+                  _submitting ? 'lbl_completing'.tr : 'btn_confirm_complete'.tr,
                   style:
                       AppTextStyles.bodyMedium.copyWith(color: Colors.white),
                 ),

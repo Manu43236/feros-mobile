@@ -16,9 +16,9 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
       appBar: AppBar(
         backgroundColor: AppColors.navy,
         elevation: 0,
-        title: const Text(
-          'Drivers & Cleaners',
-          style: TextStyle(
+        title: Text(
+          'lbl_drivers_cleaners'.tr,
+          style: const TextStyle(
             color: Colors.white,
             fontFamily: 'Inter',
             fontWeight: FontWeight.w600,
@@ -40,7 +40,7 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
               onChanged: controller.onSearch,
               style: AppTextStyles.body,
               decoration: InputDecoration(
-                hintText: 'Search by name or phone…',
+                hintText: 'lbl_search_crew'.tr,
                 hintStyle: AppTextStyles.body.copyWith(
                   color: AppColors.mutedText,
                 ),
@@ -77,15 +77,15 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
               return const SizedBox.shrink();
             }
             final roleOptions = [
-              _RF('ALL', 'All', null),
-              _RF('DRIVER', 'Drivers', controller.driverCount),
-              _RF('CLEANER', 'Cleaners', controller.cleanerCount),
+              _RF('ALL', 'lbl_all'.tr, null),
+              _RF('DRIVER', 'lbl_drivers_chip'.tr, controller.driverCount),
+              _RF('CLEANER', 'lbl_cleaners_chip'.tr, controller.cleanerCount),
             ];
             final statusOptions = [
-              _RF('ALL', 'All', null),
-              _RF('AVAILABLE', 'Available', controller.availableCount),
-              _RF('ON_TRIP', 'On Trip', controller.onTripCount),
-              _RF('INACTIVE', 'Inactive', null),
+              _RF('ALL', 'lbl_all'.tr, null),
+              _RF('AVAILABLE', 'lbl_available'.tr, controller.availableCount),
+              _RF('ON_TRIP', 'lbl_on_trip_chip'.tr, controller.onTripCount),
+              _RF('INACTIVE', 'lbl_inactive'.tr, null),
             ];
             return Container(
               color: AppColors.surface,
@@ -155,7 +155,7 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Failed to load staff',
+                        'lbl_failed_staff'.tr,
                         style: AppTextStyles.body.copyWith(
                           color: AppColors.mutedText,
                         ),
@@ -170,7 +170,7 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text('Retry'),
+                        child: Text('btn_retry'.tr),
                       ),
                     ],
                   ),
@@ -190,7 +190,7 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'No staff found',
+                        'lbl_no_staff_found'.tr,
                         style: AppTextStyles.body.copyWith(
                           color: AppColors.mutedText,
                         ),
@@ -322,21 +322,21 @@ class _CrewCard extends StatelessWidget {
         ? (
             const Color(0xFF1E3A5F),
             const Color(0xFFEFF6FF),
-            'Driver',
+            'role_driver'.tr,
             const Color(0xFF2563EB),
           )
         : (
             const Color(0xFF374151),
             const Color(0xFFF3F4F6),
-            'Cleaner',
+            'role_cleaner'.tr,
             const Color(0xFF6B7280),
           );
 
     final (statusBg, statusColor, statusLabel) = !isActive
-        ? (const Color(0xFFF3F4F6), const Color(0xFF9CA3AF), 'Inactive')
+        ? (const Color(0xFFF3F4F6), const Color(0xFF9CA3AF), 'lbl_inactive'.tr)
         : isAssigned
-        ? (const Color(0xFFFFF7ED), const Color(0xFFEA580C), 'On Trip')
-        : (const Color(0xFFF0FDF4), const Color(0xFF16A34A), 'Available');
+        ? (const Color(0xFFFFF7ED), const Color(0xFFEA580C), 'lbl_on_trip_chip'.tr)
+        : (const Color(0xFFF0FDF4), const Color(0xFF16A34A), 'lbl_available'.tr);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -474,7 +474,10 @@ class _CrewCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '$trips trip${trips != 1 ? 's' : ''} completed',
+                          (trips == 1
+                              ? 'lbl_trips_count'
+                              : 'lbl_trips_count_plural')
+                              .trParams({'count': '$trips'}),
                           style: AppTextStyles.caption.copyWith(
                             color: AppColors.mutedText,
                           ),

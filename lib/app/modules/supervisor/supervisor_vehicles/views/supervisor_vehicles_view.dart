@@ -17,9 +17,9 @@ class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
       appBar: AppBar(
         backgroundColor: AppColors.navy,
         elevation: 0,
-        title: const Text(
-          'Vehicles',
-          style: TextStyle(
+        title: Text(
+          'lbl_vehicles'.tr,
+          style: const TextStyle(
             color: Colors.white,
             fontFamily: 'Inter',
             fontWeight: FontWeight.w600,
@@ -41,7 +41,7 @@ class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
               onChanged: controller.onSearch,
               style: AppTextStyles.body,
               decoration: InputDecoration(
-                hintText: 'Search by reg. number, type or brand…',
+                hintText: 'lbl_search_vehicles'.tr,
                 hintStyle: AppTextStyles.body.copyWith(
                   color: AppColors.mutedText,
                 ),
@@ -107,7 +107,7 @@ class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
                           ),
                         ),
                         child: Text(
-                          s == 'ALL' ? 'All' : s,
+                          s == 'ALL' ? 'lbl_all'.tr : s,
                           style: AppTextStyles.caption.copyWith(
                             color: isSelected
                                 ? Colors.white
@@ -147,7 +147,7 @@ class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Failed to load vehicles',
+                        'lbl_failed_vehicles'.tr,
                         style: AppTextStyles.body.copyWith(
                           color: AppColors.mutedText,
                         ),
@@ -162,7 +162,7 @@ class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text('Retry'),
+                        child: Text('btn_retry'.tr),
                       ),
                     ],
                   ),
@@ -182,7 +182,7 @@ class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'No vehicles found',
+                        'lbl_no_vehicles_found'.tr,
                         style: AppTextStyles.body.copyWith(
                           color: AppColors.mutedText,
                         ),
@@ -344,7 +344,7 @@ class _VehicleCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            'Inactive',
+                            'lbl_inactive'.tr,
                             style: AppTextStyles.caption.copyWith(
                               color: AppColors.error,
                               fontWeight: FontWeight.w600,

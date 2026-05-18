@@ -62,9 +62,9 @@ class SupervisorShellView extends GetView<SupervisorShellController> {
                   backgroundColor: AppColors.navy,
                   foregroundColor: Colors.white,
                   icon: const Icon(Icons.add),
-                  label: const Text(
-                    'Create Order',
-                    style: TextStyle(
+                  label: Text(
+                    'btn_create_order'.tr,
+                    style: const TextStyle(
                       fontFamily: 'Inter',
                       fontWeight: FontWeight.w600,
                     ),
@@ -78,7 +78,7 @@ class SupervisorShellView extends GetView<SupervisorShellController> {
 
   PreferredSizeWidget _buildAppBar() {
     final auth   = Get.find<AuthService>();
-    final titles = ['Home', 'Orders', 'Trips', 'Attendance'];
+    final titles = ['nav_home'.tr, 'nav_orders'.tr, 'nav_trips'.tr, 'nav_attendance'.tr];
     return AppBar(
       backgroundColor: AppColors.navy,
       elevation: 0,
@@ -126,7 +126,7 @@ class SupervisorShellView extends GetView<SupervisorShellController> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      'Supervisor',
+                      'role_supervisor'.tr,
                       style: AppTextStyles.caption.copyWith(
                         color: Colors.white.withValues(alpha: 0.85),
                         fontSize: 10,
@@ -165,9 +165,9 @@ class SupervisorShellView extends GetView<SupervisorShellController> {
 
   String _greeting() {
     final h = DateTime.now().hour;
-    if (h < 12) return 'Good Morning,';
-    if (h < 17) return 'Good Afternoon,';
-    return 'Good Evening,';
+    if (h < 12) return 'lbl_good_morning'.tr;
+    if (h < 17) return 'lbl_good_afternoon'.tr;
+    return 'lbl_good_evening'.tr;
   }
 }
 
@@ -230,7 +230,7 @@ class _SupervisorDrawer extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          'Supervisor',
+                          'role_supervisor'.tr,
                           style: AppTextStyles.caption.copyWith(
                             color: Colors.white,
                           ),
@@ -258,7 +258,7 @@ class _SupervisorDrawer extends StatelessWidget {
               children: [
                 _DrawerTile(
                   icon: Icons.person_outline,
-                  label: 'My Profile',
+                  label: 'lbl_my_profile'.tr,
                   onTap: () {
                     Navigator.of(context).pop();
                     Get.to(
@@ -269,7 +269,7 @@ class _SupervisorDrawer extends StatelessWidget {
                 ),
                 _DrawerTile(
                   icon: Icons.payments_outlined,
-                  label: 'My Payslip',
+                  label: 'lbl_my_payslip'.tr,
                   onTap: () {
                     Navigator.of(context).pop();
                     Get.to(
@@ -280,7 +280,7 @@ class _SupervisorDrawer extends StatelessWidget {
                 ),
                 _DrawerTile(
                   icon: Icons.calendar_month_outlined,
-                  label: 'My Attendance',
+                  label: 'lbl_my_attendance'.tr,
                   onTap: () {
                     Navigator.of(context).pop();
                     Get.to(
@@ -291,7 +291,7 @@ class _SupervisorDrawer extends StatelessWidget {
                 ),
                 _DrawerTile(
                   icon: Icons.car_crash_outlined,
-                  label: 'Report Breakdown',
+                  label: 'btn_report_breakdown'.tr,
                   onTap: () {
                     Navigator.of(context).pop();
                     Get.to(
@@ -302,10 +302,10 @@ class _SupervisorDrawer extends StatelessWidget {
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 const SizedBox(height: 4),
-                _DrawerSectionLabel(label: 'Vehicles & Billing'),
+                _DrawerSectionLabel(label: 'lbl_vehicles_billing'.tr),
                 _DrawerTile(
                   icon: Icons.garage_outlined,
-                  label: 'Vehicles',
+                  label: 'lbl_vehicles'.tr,
                   onTap: () {
                     Navigator.of(context).pop();
                     Get.to(
@@ -316,7 +316,7 @@ class _SupervisorDrawer extends StatelessWidget {
                 ),
                 _DrawerTile(
                   icon: Icons.badge_outlined,
-                  label: 'Drivers & Cleaners',
+                  label: 'lbl_drivers_cleaners'.tr,
                   onTap: () {
                     Navigator.of(context).pop();
                     Get.to(
@@ -328,7 +328,7 @@ class _SupervisorDrawer extends StatelessWidget {
                 ),
                 _DrawerTile(
                   icon: Icons.receipt_long_outlined,
-                  label: 'LRs',
+                  label: 'lbl_lrs'.tr,
                   onTap: () {
                     Navigator.of(context).pop();
                     Get.to(
@@ -342,14 +342,14 @@ class _SupervisorDrawer extends StatelessWidget {
                 const SizedBox(height: 8),
                 _DrawerTile(
                   icon: Icons.logout,
-                  label: 'Logout',
+                  label: 'btn_logout'.tr,
                   color: AppColors.error,
                   onTap: () async {
                     Navigator.of(context).pop();
                     final confirmed = await FerosDialog.confirm(
-                      title: 'Logout',
-                      message: 'Are you sure you want to logout?',
-                      confirmText: 'Logout',
+                      title: 'btn_logout'.tr,
+                      message: 'lbl_logout_confirm'.tr,
+                      confirmText: 'btn_logout'.tr,
                       isDestructive: true,
                     );
                     if (confirmed) auth.logout();
@@ -365,7 +365,7 @@ class _SupervisorDrawer extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: Text(
-                'FEROS v1.0.0',
+                'lbl_version'.tr,
                 style: AppTextStyles.caption.copyWith(
                   color: AppColors.mutedText,
                 ),
@@ -435,10 +435,10 @@ class _SupervisorNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      (Icons.home_outlined, Icons.home, 'Home'),
-      (Icons.assignment_outlined, Icons.assignment, 'Orders'),
-      (Icons.local_shipping_outlined, Icons.local_shipping, 'Trips'),
-      (Icons.fact_check_outlined, Icons.fact_check, 'Attendance'),
+      (Icons.home_outlined, Icons.home, 'nav_home'.tr),
+      (Icons.assignment_outlined, Icons.assignment, 'nav_orders'.tr),
+      (Icons.local_shipping_outlined, Icons.local_shipping, 'nav_trips'.tr),
+      (Icons.fact_check_outlined, Icons.fact_check, 'nav_attendance'.tr),
     ];
 
     return Container(

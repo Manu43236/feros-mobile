@@ -25,9 +25,9 @@ class SupervisorMyAttendanceView
             size: 18,
           ),
         ),
-        title: const Text(
-          'My Attendance',
-          style: TextStyle(
+        title: Text(
+          'lbl_my_attendance'.tr,
+          style: const TextStyle(
             color: Colors.white,
             fontFamily: 'Inter',
             fontWeight: FontWeight.w600,
@@ -48,7 +48,7 @@ class SupervisorMyAttendanceView
                 const Icon(Icons.error_outline,
                     size: 48, color: AppColors.error),
                 const SizedBox(height: 12),
-                Text('Failed to load attendance',
+                Text('lbl_failed_load_att'.tr,
                     style:
                         AppTextStyles.body.copyWith(color: AppColors.mutedText)),
                 const SizedBox(height: 16),
@@ -60,7 +60,7 @@ class SupervisorMyAttendanceView
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Retry'),
+                  child: Text('btn_retry'.tr),
                 ),
               ],
             ),
@@ -74,11 +74,11 @@ class SupervisorMyAttendanceView
                 const Icon(Icons.calendar_today_outlined,
                     size: 52, color: AppColors.mutedText),
                 const SizedBox(height: 12),
-                Text('No attendance records',
+                Text('lbl_no_att_records'.tr,
                     style: AppTextStyles.heading4
                         .copyWith(color: AppColors.navy)),
                 const SizedBox(height: 6),
-                Text('Your attendance history will appear here',
+                Text('lbl_att_history_appear'.tr,
                     style: AppTextStyles.body
                         .copyWith(color: AppColors.mutedText)),
               ],
@@ -187,7 +187,7 @@ class _AttendanceCard extends StatelessWidget {
                 if (markedAt != null) ...[
                   const SizedBox(height: 3),
                   Text(
-                    'Marked at ${FerosDateUtils.formatDateTime(markedAt)}',
+                    '${'lbl_marked_at_time'.tr} ${FerosDateUtils.formatDateTime(markedAt)}',
                     style: AppTextStyles.caption
                         .copyWith(color: AppColors.mutedText),
                   ),
@@ -254,11 +254,11 @@ class _AttendanceCard extends StatelessWidget {
   (Color, String) _approvalStyle(String status) {
     switch (status) {
       case 'PENDING':
-        return (AppColors.warning, 'Pending');
+        return (AppColors.warning, 'status_pending'.tr);
       case 'APPROVED':
-        return (AppColors.success, 'Approved');
+        return (AppColors.success, 'status_approved'.tr);
       case 'REJECTED':
-        return (AppColors.error, 'Rejected');
+        return (AppColors.error, 'status_rejected'.tr);
       default:
         return (AppColors.mutedText, status);
     }

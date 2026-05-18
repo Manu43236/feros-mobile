@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/string_utils.dart';
+import '../../../../../core/widgets/language_switcher_tile.dart';
 import '../controllers/supervisor_profile_controller.dart';
 import 'change_pin_view.dart';
 
@@ -17,8 +18,8 @@ class SupervisorProfileView extends GetView<SupervisorProfileController> {
           appBar: AppBar(
             backgroundColor: AppColors.navy,
             elevation: 0,
-            title: const Text('Profile',
-                style: TextStyle(
+            title: Text('lbl_profile'.tr,
+                style: const TextStyle(
                     color: Colors.white,
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w600)),
@@ -92,19 +93,19 @@ class SupervisorProfileView extends GetView<SupervisorProfileController> {
                   children: [
                     _InfoTile(
                       icon: Icons.phone_outlined,
-                      label: 'Phone',
+                      label: 'lbl_phone'.tr,
                       value: user?.phone ?? '—',
                     ),
                     const Divider(height: 1, indent: 56),
                     _InfoTile(
                       icon: Icons.business_outlined,
-                      label: 'Company',
+                      label: 'lbl_company'.tr,
                       value: user?.companyName ?? '—',
                     ),
                     const Divider(height: 1, indent: 56),
                     _InfoTile(
                       icon: Icons.badge_outlined,
-                      label: 'User ID',
+                      label: 'lbl_user_id'.tr,
                       value: '#${user?.userId ?? '—'}',
                     ),
                   ],
@@ -112,7 +113,7 @@ class SupervisorProfileView extends GetView<SupervisorProfileController> {
               ),
               const SizedBox(height: 12),
 
-              // ── Change PIN ────────────────────────────────────
+              // ── Change PIN + Language ─────────────────────────
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -124,14 +125,20 @@ class SupervisorProfileView extends GetView<SupervisorProfileController> {
                         offset: Offset(0, 2)),
                   ],
                 ),
-                child: ListTile(
-                  leading: const Icon(Icons.lock_outline,
-                      color: AppColors.navy, size: 22),
-                  title: Text('Change PIN',
-                      style: AppTextStyles.body.copyWith(color: AppColors.navy)),
-                  trailing: const Icon(Icons.chevron_right,
-                      color: AppColors.mutedText),
-                  onTap: () => Get.to(() => const ChangePinView()),
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.lock_outline,
+                          color: AppColors.navy, size: 22),
+                      title: Text('lbl_change_pin'.tr,
+                          style: AppTextStyles.body.copyWith(color: AppColors.navy)),
+                      trailing: const Icon(Icons.chevron_right,
+                          color: AppColors.mutedText),
+                      onTap: () => Get.to(() => const ChangePinView()),
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    const LanguageSwitcherTile(),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
@@ -142,7 +149,7 @@ class SupervisorProfileView extends GetView<SupervisorProfileController> {
                 child: ElevatedButton.icon(
                   onPressed: controller.logout,
                   icon: const Icon(Icons.logout, size: 18),
-                  label: Text('Logout',
+                  label: Text('btn_logout'.tr,
                       style: AppTextStyles.bodyMedium.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600)),
@@ -160,7 +167,7 @@ class SupervisorProfileView extends GetView<SupervisorProfileController> {
 
               // ── App version ───────────────────────────────────
               Center(
-                child: Text('FEROS v1.0.0',
+                child: Text('lbl_version'.tr,
                     style: AppTextStyles.caption
                         .copyWith(color: AppColors.mutedText)),
               ),
@@ -172,13 +179,13 @@ class SupervisorProfileView extends GetView<SupervisorProfileController> {
 
   String _roleLabel(String role) {
     switch (role) {
-      case 'DRIVER':       return 'Driver';
-      case 'CLEANER':      return 'Cleaner';
-      case 'SUPERVISOR':   return 'Supervisor';
-      case 'OFFICE_STAFF': return 'Office Staff';
-      case 'SERVICE_MEN':  return 'Service Men';
-      case 'STORE_KEEPER': return 'Store Keeper';
-      case 'ADMIN':        return 'Admin';
+      case 'DRIVER':       return 'role_driver'.tr;
+      case 'CLEANER':      return 'role_cleaner'.tr;
+      case 'SUPERVISOR':   return 'role_supervisor'.tr;
+      case 'OFFICE_STAFF': return 'role_office_staff'.tr;
+      case 'SERVICE_MEN':  return 'role_service_men'.tr;
+      case 'STORE_KEEPER': return 'role_store_keeper'.tr;
+      case 'ADMIN':        return 'role_admin'.tr;
       default:             return role;
     }
   }

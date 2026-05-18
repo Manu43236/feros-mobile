@@ -40,39 +40,60 @@ String? _fmtDateTime(dynamic d) {
 
 // ── Status / chip helpers ─────────────────────────────────────────────────────
 Widget _statusChip(String status) {
-  final map = {
-    'OPEN':        (_chipBg(0xFFEFF6FF), _chipFg(0xFF1D4ED8), 'Open'),
-    'IN_PROGRESS': (_chipBg(0xFFFFF7ED), _chipFg(0xFFC2410C), 'In Progress'),
-    'COMPLETED':   (_chipBg(0xFFF0FDF4), _chipFg(0xFF15803D), 'Completed'),
-    'OVERDUE':     (_chipBg(0xFFFEF2F2), _chipFg(0xFFB91C1C), 'Overdue'),
+  final labels = {
+    'OPEN':        'status_open'.tr,
+    'IN_PROGRESS': 'status_in_progress'.tr,
+    'COMPLETED':   'status_completed'.tr,
+    'OVERDUE':     'status_overdue'.tr,
   };
-  final entry = map[status];
-  if (entry == null) return const SizedBox.shrink();
-  return _Chip(label: entry.$3, bg: entry.$1, fg: entry.$2);
+  final colors = {
+    'OPEN':        (_chipBg(0xFFEFF6FF), _chipFg(0xFF1D4ED8)),
+    'IN_PROGRESS': (_chipBg(0xFFFFF7ED), _chipFg(0xFFC2410C)),
+    'COMPLETED':   (_chipBg(0xFFF0FDF4), _chipFg(0xFF15803D)),
+    'OVERDUE':     (_chipBg(0xFFFEF2F2), _chipFg(0xFFB91C1C)),
+  };
+  final label = labels[status];
+  final color = colors[status];
+  if (label == null || color == null) return const SizedBox.shrink();
+  return _Chip(label: label, bg: color.$1, fg: color.$2);
 }
 
 Widget _triggeredChip(String t) {
-  final map = {
-    'SCHEDULED':  (_chipBg(0xFFF5F3FF), _chipFg(0xFF6D28D9), 'Scheduled'),
-    'BREAKDOWN':  (_chipBg(0xFFFFF7ED), _chipFg(0xFFC2410C), 'Breakdown'),
-    'ACCIDENT':   (_chipBg(0xFFFEF2F2), _chipFg(0xFFB91C1C), 'Accident'),
-    'COMPLIANCE': (_chipBg(0xFFEFF6FF), _chipFg(0xFF1D4ED8), 'Compliance'),
-    'WARRANTY':   (_chipBg(0xFFF0FDF4), _chipFg(0xFF15803D), 'Warranty'),
+  final labels = {
+    'SCHEDULED':  'lbl_trigger_scheduled'.tr,
+    'BREAKDOWN':  'lbl_trigger_breakdown'.tr,
+    'ACCIDENT':   'lbl_trigger_accident'.tr,
+    'COMPLIANCE': 'lbl_trigger_compliance'.tr,
+    'WARRANTY':   'lbl_trigger_warranty'.tr,
   };
-  final entry = map[t];
-  if (entry == null) return const SizedBox.shrink();
-  return _Chip(label: entry.$3, bg: entry.$1, fg: entry.$2);
+  final colors = {
+    'SCHEDULED':  (_chipBg(0xFFF5F3FF), _chipFg(0xFF6D28D9)),
+    'BREAKDOWN':  (_chipBg(0xFFFFF7ED), _chipFg(0xFFC2410C)),
+    'ACCIDENT':   (_chipBg(0xFFFEF2F2), _chipFg(0xFFB91C1C)),
+    'COMPLIANCE': (_chipBg(0xFFEFF6FF), _chipFg(0xFF1D4ED8)),
+    'WARRANTY':   (_chipBg(0xFFF0FDF4), _chipFg(0xFF15803D)),
+  };
+  final label = labels[t];
+  final color = colors[t];
+  if (label == null || color == null) return const SizedBox.shrink();
+  return _Chip(label: label, bg: color.$1, fg: color.$2);
 }
 
 Widget _partStatusChip(String s) {
-  final map = {
-    'REQUESTED': (_chipBg(0xFFFFFBEB), _chipFg(0xFFB45309), 'Requested'),
-    'APPROVED':  (_chipBg(0xFFF0FDF4), _chipFg(0xFF15803D), 'Approved'),
-    'REJECTED':  (_chipBg(0xFFFEF2F2), _chipFg(0xFFB91C1C), 'Rejected'),
+  final labels = {
+    'REQUESTED': 'status_requested'.tr,
+    'APPROVED':  'status_approved'.tr,
+    'REJECTED':  'status_rejected'.tr,
   };
-  final entry = map[s];
-  if (entry == null) return const SizedBox.shrink();
-  return _Chip(label: entry.$3, bg: entry.$1, fg: entry.$2);
+  final colors = {
+    'REQUESTED': (_chipBg(0xFFFFFBEB), _chipFg(0xFFB45309)),
+    'APPROVED':  (_chipBg(0xFFF0FDF4), _chipFg(0xFF15803D)),
+    'REJECTED':  (_chipBg(0xFFFEF2F2), _chipFg(0xFFB91C1C)),
+  };
+  final label = labels[s];
+  final color = colors[s];
+  if (label == null || color == null) return const SizedBox.shrink();
+  return _Chip(label: label, bg: color.$1, fg: color.$2);
 }
 
 Color _chipBg(int hex) => Color(hex);
@@ -80,18 +101,18 @@ Color _chipFg(int hex) => Color(hex);
 
 String _payerLabel(String p) {
   switch (p) {
-    case 'WARRANTY_OEM': return 'OEM Warranty';
-    case 'WARRANTY_ANC': return 'ANC Warranty';
-    case 'INSURANCE':    return 'Insurance';
-    case 'AMC':          return 'AMC Contract';
+    case 'WARRANTY_OEM': return 'lbl_payer_oem_warranty'.tr;
+    case 'WARRANTY_ANC': return 'lbl_payer_anc_warranty'.tr;
+    case 'INSURANCE':    return 'lbl_payer_insurance'.tr;
+    case 'AMC':          return 'lbl_payer_amc'.tr;
     default:             return p;
   }
 }
 
 String _serviceTypeLabel(String t, String? vendor) {
-  if (t == 'INTERNAL')   return 'Internal (Self)';
-  if (t == 'OEM_CENTER') return 'OEM: ${vendor ?? "Service Center"}';
-  return vendor ?? '3rd Party';
+  if (t == 'INTERNAL')   return 'lbl_service_internal'.tr;
+  if (t == 'OEM_CENTER') return 'lbl_service_oem'.trParams({'vendor': vendor ?? 'Service Center'});
+  return vendor ?? 'lbl_service_third_party'.tr;
 }
 
 // ── Main view ─────────────────────────────────────────────────────────────────
@@ -150,16 +171,16 @@ class _ServiceMenServiceDetailViewState
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Start Service',
+        title: Text('btn_start_service'.tr,
             style: AppTextStyles.heading4.copyWith(color: AppColors.navy)),
         content: Text(
-          'Start working on ${_service['serviceNumber']}?',
+          'lbl_start_service_confirm'.trParams({'num': _service['serviceNumber'] as String? ?? ''}),
           style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel',
+            child: Text('btn_cancel'.tr,
                 style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
           ),
           ElevatedButton(
@@ -177,7 +198,7 @@ class _ServiceMenServiceDetailViewState
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('Start', style: TextStyle(color: Colors.white)),
+            child: Text('btn_start'.tr, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -257,13 +278,13 @@ class _ServiceMenServiceDetailViewState
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Add Task',
+                Text('btn_add_task'.tr,
                     style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
                 const SizedBox(height: 20),
                 FerosSelectField<Map<String, dynamic>>(
-                  label: 'Task Type (optional)',
-                  title: 'Select Task Type',
-                  hint: 'Search task types…',
+                  label: 'lbl_task_type_optional'.tr,
+                  title: 'lbl_select_task_type'.tr,
+                  hint: 'lbl_search_task_types'.tr,
                   selectedDisplay:
                       selectedType != null ? selectedType!['name'] as String : null,
                   items: taskTypes,
@@ -273,11 +294,11 @@ class _ServiceMenServiceDetailViewState
                     nameCtrl.clear();
                   }),
                   isLoading: loadingTypes,
-                  emptyMessage: 'No task types found',
+                  emptyMessage: 'lbl_no_task_types_found'.tr,
                 ),
                 if (selectedType == null) ...[
                   const SizedBox(height: 16),
-                  Text('Custom Name',
+                  Text('lbl_custom_name'.tr,
                       style: AppTextStyles.label.copyWith(color: AppColors.navy)),
                   const SizedBox(height: 6),
                   TextField(
@@ -296,7 +317,7 @@ class _ServiceMenServiceDetailViewState
                   ),
                 ],
                 const SizedBox(height: 16),
-                Text('Cost (optional)',
+                Text('lbl_cost_optional'.tr,
                     style: AppTextStyles.label.copyWith(color: AppColors.navy)),
                 const SizedBox(height: 6),
                 TextField(
@@ -349,7 +370,7 @@ class _ServiceMenServiceDetailViewState
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: Text('Add Task',
+                    child: Text('btn_add_task'.tr,
                         style:
                             AppTextStyles.bodyMedium.copyWith(color: Colors.white)),
                   ),
@@ -390,14 +411,14 @@ class _ServiceMenServiceDetailViewState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Request Spare Part',
+              Text('lbl_request_spare_part'.tr,
                   style:
                       AppTextStyles.heading3.copyWith(color: AppColors.navy)),
               const SizedBox(height: 20),
               FerosSelectField<Map<String, dynamic>>(
-                label: 'Spare Part',
-                title: 'Select Spare Part',
-                hint: 'Search parts…',
+                label: 'lbl_spare_part'.tr,
+                title: 'lbl_select_spare_part'.tr,
+                hint: 'lbl_search_parts'.tr,
                 isRequired: true,
                 selectedDisplay:
                     selectedPart != null ? selectedPart!['name'] as String : null,
@@ -405,10 +426,10 @@ class _ServiceMenServiceDetailViewState
                 itemLabel: (p) => p['name'] as String? ?? '',
                 onSelected: (p) => setSheetState(() => selectedPart = p),
                 isLoading: isLoadingParts,
-                emptyMessage: 'No spare parts found',
+                emptyMessage: 'lbl_no_spare_parts_found'.tr,
               ),
               const SizedBox(height: 16),
-              Text('Quantity',
+              Text('lbl_quantity'.tr,
                   style: AppTextStyles.label.copyWith(color: AppColors.navy)),
               const SizedBox(height: 6),
               TextField(
@@ -448,7 +469,7 @@ class _ServiceMenServiceDetailViewState
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: Text('Submit Request',
+                  child: Text('btn_submit_request'.tr,
                       style: AppTextStyles.bodyMedium
                           .copyWith(color: Colors.white)),
                 ),
@@ -541,7 +562,7 @@ class _ServiceMenServiceDetailViewState
                     if (triggeredBy != null) _triggeredChip(triggeredBy),
                     if (isEscalated)
                       _Chip(
-                        label: 'Escalated',
+                        label: 'lbl_escalated'.tr,
                         bg: const Color(0xFFFFFBEB),
                         fg: const Color(0xFFB45309),
                       ),
@@ -557,23 +578,23 @@ class _ServiceMenServiceDetailViewState
 
                 // ── Service Info ─────────────────────────────────────────
                 _Section(
-                  title: 'Service Info',
+                  title: 'lbl_service_info'.tr,
                   child: Column(
                     children: [
-                      _InfoRow('Vehicle',
+                      _InfoRow('lbl_vehicle'.tr,
                           _service['vehicleRegistrationNumber'] ?? '—'),
-                      _InfoRow('Service No', _service['serviceNumber'] ?? '—'),
-                      _InfoRow('Type',
+                      _InfoRow('lbl_service_no'.tr, _service['serviceNumber'] ?? '—'),
+                      _InfoRow('lbl_type'.tr,
                           _serviceTypeLabel(serviceType, vendorName)),
                       if (serviceDate != null)
-                        _InfoRow('Service Date', serviceDate),
+                        _InfoRow('lbl_service_date'.tr, serviceDate),
                       if (odometer != null)
-                        _InfoRow('Odometer',
+                        _InfoRow('lbl_odometer'.tr,
                             '${(odometer as num).toStringAsFixed(0)} km'),
                       if (dueAtOdo != null)
-                        _InfoRow('Due At',
+                        _InfoRow('lbl_due_at'.tr,
                             '${(dueAtOdo as num).toStringAsFixed(0)} km'),
-                      if (location != null) _InfoRow('Location', location),
+                      if (location != null) _InfoRow('lbl_location'.tr, location),
                     ],
                   ),
                 ),
@@ -584,14 +605,14 @@ class _ServiceMenServiceDetailViewState
                   _ColoredSection(
                     bg: const Color(0xFFEFF6FF),
                     borderColor: const Color(0xFFBFDBFE),
-                    title: 'Insurance Claim',
+                    title: 'lbl_insurance_claim'.tr,
                     titleColor: const Color(0xFF1D4ED8),
                     child: Column(
                       children: [
                         if (claimNo != null)
-                          _InfoRow('Claim No', claimNo),
+                          _InfoRow('lbl_claim_no'.tr, claimNo),
                         if (claimAmt != null)
-                          _InfoRow('Claim Amount',
+                          _InfoRow('lbl_claim_amount'.tr,
                               '₹${(claimAmt as num).toStringAsFixed(2)}'),
                       ],
                     ),
@@ -604,14 +625,14 @@ class _ServiceMenServiceDetailViewState
                   _ColoredSection(
                     bg: const Color(0xFFF5F3FF),
                     borderColor: const Color(0xFFDDD6FE),
-                    title: 'Compliance Certificate',
+                    title: 'lbl_compliance_cert'.tr,
                     titleColor: const Color(0xFF6D28D9),
                     child: Column(
                       children: [
                         if (certNo != null)
-                          _InfoRow('Certificate No', certNo),
+                          _InfoRow('lbl_cert_no'.tr, certNo),
                         if (certValidUntil != null)
-                          _InfoRow('Valid Until', certValidUntil),
+                          _InfoRow('lbl_valid_until'.tr, certValidUntil),
                       ],
                     ),
                   ),
@@ -620,22 +641,22 @@ class _ServiceMenServiceDetailViewState
 
                 // ── Timeline ─────────────────────────────────────────────
                 _Section(
-                  title: 'Timeline',
+                  title: 'lbl_timeline'.tr,
                   child: _Timeline(events: [
                     _TimelineEvent(
-                      label: 'Service Created',
+                      label: 'lbl_service_created'.tr,
                       sub: createdAt,
                       done: true,
                     ),
                     _TimelineEvent(
-                      label: 'Work Started',
+                      label: 'lbl_work_started'.tr,
                       sub: startedAt,
                       done: _status == 'IN_PROGRESS' ||
                           _status == 'COMPLETED',
                       active: _status == 'IN_PROGRESS',
                     ),
                     _TimelineEvent(
-                      label: 'Completed',
+                      label: 'status_completed'.tr,
                       sub: completedAt,
                       done: _status == 'COMPLETED',
                     ),
@@ -645,7 +666,7 @@ class _ServiceMenServiceDetailViewState
 
                 // ── Tasks ────────────────────────────────────────────────
                 _Section(
-                  title: 'Tasks',
+                  title: 'lbl_tasks'.tr,
                   trailing: _status != 'COMPLETED'
                       ? GestureDetector(
                           onTap: _showAddTaskSheet,
@@ -662,7 +683,7 @@ class _ServiceMenServiceDetailViewState
                                 const Icon(Icons.add,
                                     color: Colors.white, size: 14),
                                 const SizedBox(width: 4),
-                                Text('Add Task',
+                                Text('btn_add_task'.tr,
                                     style: AppTextStyles.caption.copyWith(
                                         color: Colors.white,
                                         fontWeight: FontWeight.w600)),
@@ -672,7 +693,7 @@ class _ServiceMenServiceDetailViewState
                         )
                       : null,
                   child: _tasks.isEmpty
-                      ? Text('No tasks yet — tap Add Task to log work',
+                      ? Text('lbl_no_tasks_yet'.tr,
                           style: AppTextStyles.caption
                               .copyWith(color: AppColors.mutedText))
                       : Column(
@@ -720,7 +741,7 @@ class _ServiceMenServiceDetailViewState
                                             ),
                                             if (isRecurring && freqKm != null)
                                               Text(
-                                                'Every ${freqKm.toString()} km',
+                                                'lbl_every_km'.trParams({'km': freqKm.toString()}),
                                                 style: AppTextStyles.caption
                                                     .copyWith(
                                                         color: AppColors.mutedText),
@@ -746,7 +767,7 @@ class _ServiceMenServiceDetailViewState
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text('Total Cost',
+                                    Text('lbl_total_cost'.tr,
                                         style: AppTextStyles.bodyMedium
                                             .copyWith(color: AppColors.navy)),
                                     Text(
@@ -766,7 +787,7 @@ class _ServiceMenServiceDetailViewState
 
                 // ── Parts Used ───────────────────────────────────────────
                 _Section(
-                  title: 'Parts Used',
+                  title: 'lbl_parts_used'.tr,
                   trailing: _status == 'IN_PROGRESS'
                       ? GestureDetector(
                           onTap: _showRequestPartSheet,
@@ -783,7 +804,7 @@ class _ServiceMenServiceDetailViewState
                                 const Icon(Icons.add,
                                     color: Colors.white, size: 14),
                                 const SizedBox(width: 4),
-                                Text('Add Part',
+                                Text('btn_add_part'.tr,
                                     style: AppTextStyles.caption.copyWith(
                                         color: Colors.white,
                                         fontWeight: FontWeight.w600)),
@@ -806,7 +827,7 @@ class _ServiceMenServiceDetailViewState
                           ),
                         )
                       : _parts.isEmpty
-                          ? Text('No parts requested yet',
+                          ? Text('lbl_no_parts_yet'.tr,
                               style: AppTextStyles.caption
                                   .copyWith(color: AppColors.mutedText))
                           : Column(
@@ -868,7 +889,7 @@ class _ServiceMenServiceDetailViewState
                 // ── Notes ────────────────────────────────────────────────
                 if (notes != null)
                   _Section(
-                    title: 'Notes',
+                    title: 'lbl_notes'.tr,
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
@@ -888,7 +909,7 @@ class _ServiceMenServiceDetailViewState
                 // ── Invoice ──────────────────────────────────────────────
                 if (_status == 'COMPLETED') ...[
                   _Section(
-                    title: 'Service Invoice',
+                    title: 'lbl_service_invoice'.tr,
                     child: _invoice == null
                         ? const Padding(
                             padding: EdgeInsets.symmetric(vertical: 8),
@@ -903,36 +924,36 @@ class _ServiceMenServiceDetailViewState
                           )
                         : Column(
                             children: [
-                              _InfoRow('Invoice No',
+                              _InfoRow('lbl_invoice_no'.tr,
                                   _invoice!['invoiceNumber'] as String? ?? '—'),
                               _InfoRow(
-                                'Type',
+                                'lbl_type'.tr,
                                 (_invoice!['invoiceType'] as String?) == 'INTERNAL'
-                                    ? 'Internal'
-                                    : 'External (Vendor)',
+                                    ? 'lbl_internal_invoice'.tr
+                                    : 'lbl_external_vendor'.tr,
                               ),
                               if (_invoice!['totalAmount'] != null)
                                 _InfoRow(
-                                  'Total Amount',
+                                  'lbl_total_amount'.tr,
                                   '₹${(_invoice!['totalAmount'] as num).toStringAsFixed(2)}',
                                 ),
                               if (_invoice!['vendorAmount'] != null &&
                                   _invoice!['invoiceType'] == 'EXTERNAL')
                                 _InfoRow(
-                                  'Vendor Amount',
+                                  'lbl_vendor_amount'.tr,
                                   '₹${(_invoice!['vendorAmount'] as num).toStringAsFixed(2)}',
                                 ),
                               if (_invoice!['gstAmount'] != null &&
                                   _invoice!['invoiceType'] == 'INTERNAL')
                                 _InfoRow(
-                                  'GST',
+                                  'lbl_gst'.tr,
                                   '₹${(_invoice!['gstAmount'] as num).toStringAsFixed(2)}',
                                 ),
                               _InfoRow(
-                                'Payment',
+                                'lbl_payment'.tr,
                                 (_invoice!['paymentStatus'] as String?) == 'PAID'
-                                    ? 'Paid'
-                                    : 'Pending',
+                                    ? 'lbl_paid'.tr
+                                    : 'lbl_pending_payment'.tr,
                               ),
                               const SizedBox(height: 12),
                               SizedBox(
@@ -941,7 +962,7 @@ class _ServiceMenServiceDetailViewState
                                   onPressed: () => _viewPdf(_invoice!),
                                   icon: const Icon(Icons.picture_as_pdf,
                                       size: 18),
-                                  label: const Text('View / Share PDF'),
+                                  label: Text('btn_view_share_pdf'.tr),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: AppColors.navy,
                                     side: const BorderSide(
@@ -988,7 +1009,7 @@ class _ServiceMenServiceDetailViewState
                       child: ElevatedButton.icon(
                         onPressed: _showStartConfirm,
                         icon: const Icon(Icons.play_arrow, size: 20),
-                        label: Text('Start Service',
+                        label: Text('btn_start_service'.tr,
                             style: AppTextStyles.bodyMedium
                                 .copyWith(color: Colors.white)),
                         style: ElevatedButton.styleFrom(
@@ -1008,7 +1029,7 @@ class _ServiceMenServiceDetailViewState
                         onPressed: _openBillPreview,
                         icon: const Icon(Icons.check_circle_outline,
                             size: 20),
-                        label: Text('Complete Service',
+                        label: Text('btn_complete_service'.tr,
                             style: AppTextStyles.bodyMedium
                                 .copyWith(color: Colors.white)),
                         style: ElevatedButton.styleFrom(
@@ -1050,7 +1071,7 @@ class _ServiceMenServiceDetailViewState
                     const Icon(Icons.check_circle,
                         color: AppColors.success, size: 20),
                     const SizedBox(width: 8),
-                    Text('Service Completed',
+                    Text('lbl_service_completed_banner'.tr,
                         style: AppTextStyles.bodyMedium
                             .copyWith(color: AppColors.success)),
                   ],

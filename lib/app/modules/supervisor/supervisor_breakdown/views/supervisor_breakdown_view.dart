@@ -23,8 +23,8 @@ class SupervisorBreakdownView extends GetView<SupervisorBreakdownController> {
             size: 18,
           ),
         ),
-        title: const Text('Report Breakdown',
-            style: TextStyle(
+        title: Text('btn_report_breakdown'.tr,
+            style: const TextStyle(
                 color: Colors.white,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w600)),
@@ -48,7 +48,7 @@ class SupervisorBreakdownView extends GetView<SupervisorBreakdownController> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Your supervisor will be notified immediately upon submission.',
+                    'lbl_supervisor_notified'.tr,
                     style: AppTextStyles.caption
                         .copyWith(color: const Color(0xFFD97706)),
                   ),
@@ -73,9 +73,9 @@ class SupervisorBreakdownView extends GetView<SupervisorBreakdownController> {
               children: [
                 // ── Vehicle Picker ───────────────────────────────
                 Obx(() => FerosSelectField<Map<String, dynamic>>(
-                  label: 'Vehicle',
-                  title: 'Select Vehicle',
-                  hint: 'Search by registration or type…',
+                  label: 'lbl_vehicle'.tr,
+                  title: 'lbl_select_vehicle'.tr,
+                  hint: 'lbl_search_reg_type'.tr,
                   isRequired: true,
                   selectedDisplay: controller.selectedVehicle.value != null
                       ? '${controller.selectedVehicle.value!['registrationNumber'] ?? ''}'
@@ -87,11 +87,11 @@ class SupervisorBreakdownView extends GetView<SupervisorBreakdownController> {
                       '${v['vehicleTypeName'] != null ? ' · ${v['vehicleTypeName']}' : ''}',
                   onSelected: (v) => controller.selectedVehicle.value = v,
                   isLoading: controller.isLoadingVehicles.value,
-                  emptyMessage: 'No active vehicles found',
+                  emptyMessage: 'lbl_no_active_vehicles'.tr,
                 )),
                 const SizedBox(height: 16),
 
-                Text('Breakdown Type',
+                Text('lbl_breakdown_type'.tr,
                     style: AppTextStyles.label.copyWith(color: AppColors.navy)),
                 const SizedBox(height: 8),
                 Wrap(
@@ -119,7 +119,7 @@ class SupervisorBreakdownView extends GetView<SupervisorBreakdownController> {
                 ),
                 const SizedBox(height: 16),
 
-                Text('Expected Duration',
+                Text('lbl_expected_duration'.tr,
                     style: AppTextStyles.label.copyWith(color: AppColors.navy)),
                 const SizedBox(height: 8),
                 Row(
@@ -137,7 +137,7 @@ class SupervisorBreakdownView extends GetView<SupervisorBreakdownController> {
                           ),
                           child: Center(
                             child: Text(
-                              d == 'SHORT' ? 'Short (< 2 hrs)' : 'Long (> 2 hrs)',
+                              d == 'SHORT' ? 'lbl_short_duration'.tr : 'lbl_long_duration'.tr,
                               style: AppTextStyles.caption.copyWith(
                                 color: selected ? Colors.white : AppColors.mutedText,
                                 fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
@@ -151,7 +151,7 @@ class SupervisorBreakdownView extends GetView<SupervisorBreakdownController> {
                 ),
                 const SizedBox(height: 16),
 
-                Text('Reason *',
+                Text('${'lbl_reason'.tr} *',
                     style: AppTextStyles.label.copyWith(color: AppColors.navy)),
                 const SizedBox(height: 8),
                 TextField(
@@ -159,7 +159,7 @@ class SupervisorBreakdownView extends GetView<SupervisorBreakdownController> {
                   maxLines: 3,
                   style: AppTextStyles.body,
                   decoration: InputDecoration(
-                    hintText: 'Describe what happened…',
+                    hintText: 'lbl_describe_happened'.tr,
                     hintStyle: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     focusedBorder: OutlineInputBorder(
@@ -170,7 +170,7 @@ class SupervisorBreakdownView extends GetView<SupervisorBreakdownController> {
                 ),
                 const SizedBox(height: 16),
 
-                Text('Additional Notes',
+                Text('lbl_additional_notes'.tr,
                     style: AppTextStyles.label.copyWith(color: AppColors.navy)),
                 const SizedBox(height: 8),
                 TextField(
@@ -178,7 +178,7 @@ class SupervisorBreakdownView extends GetView<SupervisorBreakdownController> {
                   maxLines: 2,
                   style: AppTextStyles.body,
                   decoration: InputDecoration(
-                    hintText: 'Optional…',
+                    hintText: 'lbl_optional_hint'.tr,
                     hintStyle: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     focusedBorder: OutlineInputBorder(
@@ -221,10 +221,10 @@ class SupervisorBreakdownView extends GetView<SupervisorBreakdownController> {
                         Expanded(
                           child: Text(
                             controller.isGettingLocation.value
-                                ? 'Getting location…'
+                                ? 'lbl_getting_location'.tr
                                 : controller.position.value != null
                                     ? '${controller.position.value!.latitude.toStringAsFixed(4)}, ${controller.position.value!.longitude.toStringAsFixed(4)}'
-                                    : 'Tap to capture current location (optional)',
+                                    : 'lbl_tap_location'.tr,
                             style: AppTextStyles.caption.copyWith(
                               color: controller.position.value != null
                                   ? const Color(0xFF16A34A)
@@ -258,7 +258,7 @@ class SupervisorBreakdownView extends GetView<SupervisorBreakdownController> {
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.report_problem_outlined, size: 20),
               label: Text(
-                controller.isSubmitting.value ? 'Submitting…' : 'Report Breakdown',
+                controller.isSubmitting.value ? 'lbl_submitting'.tr : 'btn_report_breakdown'.tr,
                 style: AppTextStyles.bodyMedium.copyWith(
                     color: Colors.white, fontWeight: FontWeight.w600),
               ),

@@ -24,7 +24,7 @@ class SupervisorHomeTab extends GetView<SupervisorDashboardController> {
             children: [
               const Icon(Icons.error_outline, size: 48, color: Color(0xFFDC2626)),
               const SizedBox(height: 12),
-              Text('Something went wrong',
+              Text('lbl_something_wrong'.tr,
                   style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy)),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -36,7 +36,7 @@ class SupervisorHomeTab extends GetView<SupervisorDashboardController> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text('Retry'),
+                child: Text('btn_retry'.tr),
               ),
             ],
           ),

@@ -18,7 +18,12 @@ class SplashController extends GetxController {
 
       if (isLoggedIn) {
         final role = await storage.getRole();
-        Get.offAllNamed(_roleHome(role));
+        if (role == 'SUPER_ADMIN') {
+          await storage.clearAll();
+          Get.offAllNamed(Routes.LOGIN);
+        } else {
+          Get.offAllNamed(_roleHome(role));
+        }
       } else {
         Get.offAllNamed(Routes.LOGIN);
       }

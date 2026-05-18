@@ -111,7 +111,7 @@ class _SupervisorCreateLrSheetState extends State<SupervisorCreateLrSheet> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
               child: Row(
                 children: [
-                  Text('Create LR',
+                  Text('btn_create_lr'.tr,
                       style: AppTextStyles.heading4
                           .copyWith(color: AppColors.navy)),
                   const Spacer(),
@@ -131,11 +131,11 @@ class _SupervisorCreateLrSheetState extends State<SupervisorCreateLrSheet> {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
                 children: [
                   // ── Order ─────────────────────────────────────────
-                  _Label('Order *'),
+                  _Label('${'lbl_order'.tr} *'),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<Map<String, dynamic>>(
                     value: _selectedOrder,
-                    hint: Text('Select order',
+                    hint: Text('lbl_select_order'.tr,
                         style: AppTextStyles.body
                             .copyWith(color: AppColors.hintText)),
                     isExpanded: true,
@@ -161,7 +161,7 @@ class _SupervisorCreateLrSheetState extends State<SupervisorCreateLrSheet> {
                   const SizedBox(height: 16),
 
                   // ── Vehicle allocation ────────────────────────────
-                  _Label('Vehicle *'),
+                  _Label('${'lbl_vehicle'.tr} *'),
                   const SizedBox(height: 6),
                   if (_selectedOrder == null)
                     Container(
@@ -172,7 +172,7 @@ class _SupervisorCreateLrSheetState extends State<SupervisorCreateLrSheet> {
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: AppColors.border),
                       ),
-                      child: Text('Select an order first',
+                      child: Text('lbl_select_order_first'.tr,
                           style: AppTextStyles.body
                               .copyWith(color: AppColors.hintText)),
                     )
@@ -187,14 +187,14 @@ class _SupervisorCreateLrSheetState extends State<SupervisorCreateLrSheet> {
                             color: AppColors.warning.withValues(alpha: 0.4)),
                       ),
                       child: Text(
-                          'No vehicles assigned to this order yet',
+                          'lbl_no_vehicles_assigned'.tr,
                           style: AppTextStyles.body
                               .copyWith(color: AppColors.warning)),
                     )
                   else
                     DropdownButtonFormField<Map<String, dynamic>>(
                       value: _selectedAllocation,
-                      hint: Text('Select vehicle',
+                      hint: Text('lbl_select_vehicle_hint'.tr,
                           style: AppTextStyles.body
                               .copyWith(color: AppColors.hintText)),
                       isExpanded: true,
@@ -219,7 +219,7 @@ class _SupervisorCreateLrSheetState extends State<SupervisorCreateLrSheet> {
                   const SizedBox(height: 16),
 
                   // ── LR Date ───────────────────────────────────────
-                  _Label('LR Date'),
+                  _Label('lbl_lr_date'.tr),
                   const SizedBox(height: 6),
                   GestureDetector(
                     onTap: _pickDate,
@@ -246,7 +246,7 @@ class _SupervisorCreateLrSheetState extends State<SupervisorCreateLrSheet> {
                   const SizedBox(height: 16),
 
                   // ── Loaded weight ─────────────────────────────────
-                  _Label('Loaded Weight (tonnes)'),
+                  _Label('lbl_loaded_weight_tonnes'.tr),
                   const SizedBox(height: 6),
                   TextField(
                     controller: _weightCtrl,
@@ -263,7 +263,7 @@ class _SupervisorCreateLrSheetState extends State<SupervisorCreateLrSheet> {
                   const SizedBox(height: 16),
 
                   // ── Remarks ───────────────────────────────────────
-                  _Label('Remarks'),
+                  _Label('lbl_remarks'.tr),
                   const SizedBox(height: 6),
                   TextField(
                     controller: _remarksCtrl,
@@ -271,7 +271,7 @@ class _SupervisorCreateLrSheetState extends State<SupervisorCreateLrSheet> {
                     style: AppTextStyles.body
                         .copyWith(color: AppColors.bodyText),
                     decoration: _inputDecoration().copyWith(
-                      hintText: 'Optional notes…',
+                      hintText: 'lbl_optional_notes'.tr,
                       hintStyle: AppTextStyles.body
                           .copyWith(color: AppColors.hintText),
                     ),
@@ -299,9 +299,9 @@ class _SupervisorCreateLrSheetState extends State<SupervisorCreateLrSheet> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text(
-                            'Create LR',
-                            style: TextStyle(
+                        : Text(
+                            'btn_create_lr'.tr,
+                            style: const TextStyle(
                               fontFamily: 'Inter',
                               fontWeight: FontWeight.w600,
                               fontSize: 15,

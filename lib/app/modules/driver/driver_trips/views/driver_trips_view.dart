@@ -23,7 +23,7 @@ class DriverTripsView extends GetView<DriverTripsController> {
           color: AppColors.navy,
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: FerosSearchBar(
-            hint: 'Search by LR, order, client, route…',
+            hint: 'lbl_search_trips'.tr,
             onChanged: controller.onSearch,
           ),
         ),
@@ -37,15 +37,15 @@ class DriverTripsView extends GetView<DriverTripsController> {
             }
             if (controller.state.value == ViewState.error) {
               return ErrorState(
-                message: 'Failed to load trips',
+                message: 'lbl_failed_load_trips'.tr,
                 onRetry: controller.fetchLrs,
               );
             }
             if (controller.filteredLrs.isEmpty) {
-              return const EmptyState(
+              return EmptyState(
                 icon: Icons.local_shipping_outlined,
-                title: 'No trips found',
-                subtitle: 'No LRs match your search or filter',
+                title: 'lbl_no_trips_found'.tr,
+                subtitle: 'lbl_no_trips_match'.tr,
               );
             }
             return RefreshIndicator(
@@ -82,13 +82,13 @@ class _FilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const labels = {
-      'All':           'All',
-      'CREATED':       'Created',
-      'WEIGHT_LOADED': 'Loaded',
-      'IN_TRANSIT':    'In Transit',
-      'DELIVERED':     'Delivered',
-      'CANCELLED':     'Cancelled',
+    final labels = {
+      'All':           'lbl_all'.tr,
+      'CREATED':       'lbl_lr_created'.tr,
+      'WEIGHT_LOADED': 'lbl_weight_loaded_chip'.tr,
+      'IN_TRANSIT':    'status_in_transit'.tr,
+      'DELIVERED':     'status_delivered'.tr,
+      'CANCELLED':     'status_cancelled'.tr,
     };
     return Container(
       color: Colors.white,
@@ -211,8 +211,8 @@ class _LrCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   lr.loadedWeight != null
-                      ? '${lr.loadedWeight!.toStringAsFixed(1)}T loaded'
-                      : '${lr.allocatedWeight.toStringAsFixed(1)}T allocated',
+                      ? '${lr.loadedWeight!.toStringAsFixed(1)}T ${'lbl_t_loaded'.tr}'
+                      : '${lr.allocatedWeight.toStringAsFixed(1)}T ${'lbl_t_allocated'.tr}',
                   style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
                 ),
               ],
@@ -233,12 +233,12 @@ class _LrStatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     Color bg; Color fg; String label;
     switch (status.toUpperCase()) {
-      case 'CREATED':       bg = const Color(0xFFEFF6FF); fg = AppColors.navy;              label = 'Created';       break;
-      case 'WEIGHT_LOADED': bg = const Color(0xFFF5F3FF); fg = const Color(0xFF7C3AED);     label = 'Weight Loaded'; break;
-      case 'IN_TRANSIT':    bg = const Color(0xFFFFFBEB); fg = const Color(0xFFD97706);     label = 'In Transit';    break;
-      case 'DELIVERED':     bg = const Color(0xFFF0FDF4); fg = const Color(0xFF16A34A);     label = 'Delivered';     break;
-      case 'CANCELLED':     bg = const Color(0xFFFEF2F2); fg = const Color(0xFFDC2626);     label = 'Cancelled';     break;
-      default:              bg = const Color(0xFFF1F5F9); fg = AppColors.mutedText;         label = status;          break;
+      case 'CREATED':       bg = const Color(0xFFEFF6FF); fg = AppColors.navy;              label = 'lbl_lr_created'.tr;         break;
+      case 'WEIGHT_LOADED': bg = const Color(0xFFF5F3FF); fg = const Color(0xFF7C3AED);     label = 'lbl_weight_loaded_chip'.tr; break;
+      case 'IN_TRANSIT':    bg = const Color(0xFFFFFBEB); fg = const Color(0xFFD97706);     label = 'status_in_transit'.tr;      break;
+      case 'DELIVERED':     bg = const Color(0xFFF0FDF4); fg = const Color(0xFF16A34A);     label = 'status_delivered'.tr;       break;
+      case 'CANCELLED':     bg = const Color(0xFFFEF2F2); fg = const Color(0xFFDC2626);     label = 'status_cancelled'.tr;       break;
+      default:              bg = const Color(0xFFF1F5F9); fg = AppColors.mutedText;         label = status;                      break;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

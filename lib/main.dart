@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import 'app/bindings/initial_binding.dart';
 import 'app/routes/app_pages.dart';
+import 'core/localization/app_translations.dart';
 import 'core/theme/app_theme.dart';
 
 void main() async {
@@ -34,6 +35,9 @@ class FerosApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'FEROS',
       theme: AppTheme.light,
+      translations: AppTranslations(),
+      locale: const Locale('en', 'US'),
+      fallbackLocale: const Locale('en', 'US'),
       initialBinding: InitialBinding(),
       initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,

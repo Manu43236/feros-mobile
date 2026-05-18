@@ -24,8 +24,8 @@ class DriverFuelLogView extends GetView<DriverFuelLogController> {
             size: 18,
           ),
         ),
-        title: const Text('Fuel Log',
-            style: TextStyle(
+        title: Text('lbl_fuel_log'.tr,
+            style: const TextStyle(
                 color: Colors.white,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w600)),
@@ -42,10 +42,10 @@ class DriverFuelLogView extends GetView<DriverFuelLogController> {
               onRefresh: controller.fetch,
               color: AppColors.navy,
               child: controller.logs.isEmpty
-                  ? const EmptyState(
+                  ? EmptyState(
                       icon: Icons.local_gas_station_outlined,
-                      title: 'No Fuel Logs',
-                      subtitle: 'Tap + to record a fuel fill',
+                      title: 'lbl_no_fuel_logs'.tr,
+                      subtitle: 'lbl_tap_add_fuel'.tr,
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.all(16),
@@ -84,19 +84,19 @@ class DriverFuelLogView extends GetView<DriverFuelLogController> {
                 ),
               ),
               const SizedBox(height: 16),
-              Text('Add Fuel Log',
+              Text('btn_add_fuel_log'.tr,
                   style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy)),
               const SizedBox(height: 16),
-              _Field(label: 'Litres Filled', ctrl: controller.litresCtrl,
+              _Field(label: 'lbl_litres_filled'.tr, ctrl: controller.litresCtrl,
                   keyboard: const TextInputType.numberWithOptions(decimal: true), suffix: 'L'),
               const SizedBox(height: 12),
-              _Field(label: 'Total Cost (₹)', ctrl: controller.costCtrl,
+              _Field(label: 'lbl_total_cost'.tr, ctrl: controller.costCtrl,
                   keyboard: const TextInputType.numberWithOptions(decimal: true), prefix: '₹'),
               const SizedBox(height: 12),
-              _Field(label: 'Odometer Reading (km)', ctrl: controller.odmCtrl,
+              _Field(label: 'lbl_odometer_reading'.tr, ctrl: controller.odmCtrl,
                   keyboard: TextInputType.number, suffix: 'km'),
               const SizedBox(height: 12),
-              _Field(label: 'Fuel Station (optional)', ctrl: controller.stationCtrl,
+              _Field(label: 'lbl_fuel_station'.tr, ctrl: controller.stationCtrl,
                   keyboard: TextInputType.text),
               const SizedBox(height: 20),
               Obx(() => SizedBox(
@@ -121,7 +121,7 @@ class DriverFuelLogView extends GetView<DriverFuelLogController> {
                           width: 20, height: 20,
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white))
-                      : Text('Save',
+                      : Text('btn_save'.tr,
                           style: AppTextStyles.bodyMedium.copyWith(
                               color: Colors.white, fontWeight: FontWeight.w600)),
                 ),

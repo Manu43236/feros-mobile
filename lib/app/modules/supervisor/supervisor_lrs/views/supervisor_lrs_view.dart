@@ -29,9 +29,9 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
       appBar: AppBar(
         backgroundColor: AppColors.navy,
         elevation: 0,
-        title: const Text(
-          'LRs',
-          style: TextStyle(
+        title: Text(
+          'lbl_lrs'.tr,
+          style: const TextStyle(
             color: Colors.white,
             fontFamily: 'Inter',
             fontWeight: FontWeight.w600,
@@ -58,7 +58,7 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
                       color: AppColors.bodyText,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Search by LR no., vehicle, client…',
+                      hintText: 'lbl_search_lrs'.tr,
                       hintStyle: AppTextStyles.body.copyWith(
                         color: AppColors.hintText,
                       ),
@@ -179,7 +179,7 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Failed to load LRs',
+                        'lbl_failed_lrs'.tr,
                         style: AppTextStyles.body.copyWith(
                           color: AppColors.mutedText,
                         ),
@@ -194,7 +194,7 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text('Retry'),
+                        child: Text('btn_retry'.tr),
                       ),
                     ],
                   ),
@@ -213,14 +213,14 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'No LRs found',
+                        'lbl_no_lrs_found'.tr,
                         style: AppTextStyles.heading4.copyWith(
                           color: AppColors.navy,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Try a different filter or search',
+                        'lbl_try_filter'.tr,
                         style: AppTextStyles.body.copyWith(
                           color: AppColors.mutedText,
                         ),
@@ -246,16 +246,16 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
         backgroundColor: AppColors.navy,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text(
-          'Create LR',
-          style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
+        label: Text(
+          'btn_create_lr'.tr,
+          style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
         ),
         onPressed: () async {
           await controller.ensureOrdersLoaded();
           if (controller.orders.isEmpty) {
             Get.snackbar(
-              'No Active Orders',
-              'There are no active orders to create a LR for',
+              'lbl_no_active_orders'.tr,
+              'lbl_no_orders_for_lr'.tr,
               snackPosition: SnackPosition.BOTTOM,
             );
             return;
@@ -302,7 +302,7 @@ class _LrCard extends StatelessWidget {
     final allocatedWeight = lr['allocatedWeight'];
     final loadedWeight = lr['loadedWeight'];
     final weight = loadedWeight ?? allocatedWeight;
-    final weightLabel = loadedWeight != null ? 'Loaded' : 'Alloc.';
+    final weightLabel = loadedWeight != null ? 'lbl_loaded_chip'.tr : 'lbl_alloc_chip'.tr;
     final lrDate = lr['lrDate'] as String?;
     final orderNum = lr['orderNumber'] as String?;
 
@@ -343,7 +343,7 @@ class _LrCard extends StatelessWidget {
                         if (orderNum != null) ...[
                           const SizedBox(height: 2),
                           Text(
-                            'Order: $orderNum',
+                            '${'lbl_order_prefix'.tr} $orderNum',
                             style: AppTextStyles.caption.copyWith(
                               color: AppColors.mutedText,
                             ),
@@ -541,21 +541,13 @@ Color _lrColor(String s) {
 
 String _lrLabel(String s) {
   switch (s) {
-    case 'ALL':
-      return 'All';
-    case 'CREATED':
-      return 'Created';
-    case 'WEIGHT_LOADED':
-      return 'Weight Loaded';
-    case 'IN_TRANSIT':
-      return 'In Transit';
-    case 'DELIVERED':
-      return 'Delivered';
-    case 'INVOICED':
-      return 'Invoiced';
-    case 'CANCELLED':
-      return 'Cancelled';
-    default:
-      return s;
+    case 'ALL':          return 'lbl_all'.tr;
+    case 'CREATED':      return 'lbl_lr_created'.tr;
+    case 'WEIGHT_LOADED':return 'lbl_weight_loaded_chip'.tr;
+    case 'IN_TRANSIT':   return 'status_in_transit'.tr;
+    case 'DELIVERED':    return 'status_delivered'.tr;
+    case 'INVOICED':     return 'status_invoiced'.tr;
+    case 'CANCELLED':    return 'status_cancelled'.tr;
+    default:             return s;
   }
 }

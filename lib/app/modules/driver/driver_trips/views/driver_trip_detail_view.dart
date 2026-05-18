@@ -41,7 +41,7 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'LR Status',
+                    'lbl_lr_status'.tr,
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.mutedText,
                     ),
@@ -53,7 +53,7 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                     const SizedBox(height: 10),
                     _AuditRow(
                       icon: Icons.play_circle_outline,
-                      label: 'Started by',
+                      label: 'lbl_started_by'.tr,
                       name: controller.lr.startedByName!,
                       role: controller.lr.startedByRole,
                     ),
@@ -62,7 +62,7 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                     const SizedBox(height: 6),
                     _AuditRow(
                       icon: Icons.check_circle_outline,
-                      label: 'Completed by',
+                      label: 'lbl_completed_by'.tr,
                       name: controller.lr.completedByName!,
                       role: controller.lr.completedByRole,
                     ),
@@ -75,8 +75,7 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                       color: const Color(0xFFD97706),
                       bg: const Color(0xFFFFFBEB),
                       border: const Color(0xFFFDE68A),
-                      message:
-                          'Waiting for supervisor to record loading weight',
+                      message: 'lbl_waiting_weight'.tr,
                     ),
                   ],
 
@@ -107,7 +106,7 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                                 ),
                               )
                             : Text(
-                                'Start Trip',
+                                'btn_start_trip'.tr,
                                 style: AppTextStyles.caption.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
@@ -144,7 +143,7 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                                 ),
                               )
                             : Text(
-                                'Mark Delivered',
+                                'btn_mark_delivered'.tr,
                                 style: AppTextStyles.caption.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
@@ -160,7 +159,7 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
 
             // ── Trip Info ─────────────────────────────────────────
             _SectionCard(
-              title: 'Trip Details',
+              title: 'lbl_trip_details'.tr,
               action: GestureDetector(
                 onTap: controller.viewPdf,
                 child: Container(
@@ -192,7 +191,7 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                         ),
                       const SizedBox(width: 5),
                       Text(
-                        controller.isPdfLoading.value ? 'Loading…' : 'LR PDF',
+                        controller.isPdfLoading.value ? 'lbl_loading_pdf'.tr : 'lbl_lr_pdf'.tr,
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.navy,
                           fontWeight: FontWeight.w600,
@@ -204,17 +203,17 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
               ),
               child: Column(
                 children: [
-                  InfoRow(label: 'Order', value: controller.lr.orderNumber),
-                  InfoRow(label: 'Client', value: controller.lr.clientName),
-                  InfoRow(label: 'From', value: controller.lr.fromCity),
-                  InfoRow(label: 'To', value: controller.lr.toCity),
-                  InfoRow(label: 'Vehicle', value: controller.lr.vehicleNumber),
+                  InfoRow(label: 'lbl_order'.tr, value: controller.lr.orderNumber),
+                  InfoRow(label: 'lbl_client'.tr, value: controller.lr.clientName),
+                  InfoRow(label: 'lbl_from'.tr, value: controller.lr.fromCity),
+                  InfoRow(label: 'lbl_to_label'.tr, value: controller.lr.toCity),
+                  InfoRow(label: 'lbl_vehicle_label'.tr, value: controller.lr.vehicleNumber),
                   if (controller.lr.vehicleTypeName != null)
                     InfoRow(
-                      label: 'Type',
+                      label: 'lbl_type'.tr,
                       value: controller.lr.vehicleTypeName!,
                     ),
-                  InfoRow(label: 'LR Date', value: controller.lr.lrDate),
+                  InfoRow(label: 'lbl_lr_date'.tr, value: controller.lr.lrDate),
                 ],
               ),
             ),
@@ -222,29 +221,29 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
 
             // ── Weight ────────────────────────────────────────────
             _SectionCard(
-              title: 'Weight',
+              title: 'lbl_weight_section'.tr,
               child: Column(
                 children: [
                   InfoRow(
-                    label: 'Allocated',
+                    label: 'lbl_allocated'.tr,
                     value:
                         '${controller.lr.allocatedWeight.toStringAsFixed(1)} T',
                   ),
                   if (controller.loadedWeight.value != null)
                     InfoRow(
-                      label: 'Loaded',
+                      label: 'lbl_loaded_label'.tr,
                       value:
                           '${controller.loadedWeight.value!.toStringAsFixed(1)} T',
                     ),
                   controller.deliveredWeight.value != null
                       ? InfoRow(
-                          label: 'Delivered',
+                          label: 'lbl_delivered_label'.tr,
                           value:
                               '${controller.deliveredWeight.value!.toStringAsFixed(1)} T',
                           showDivider: false,
                         )
-                      : const InfoRow(
-                          label: 'Delivered',
+                      : InfoRow(
+                          label: 'lbl_delivered_label'.tr,
                           value: '—',
                           showDivider: false,
                         ),
@@ -255,17 +254,17 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
 
             // ── Odometer ──────────────────────────────────────────
             _SectionCard(
-              title: 'Odometer',
+              title: 'lbl_odometer_section'.tr,
               child: Column(
                 children: [
                   InfoRow(
-                    label: 'Start ODM',
+                    label: 'lbl_start_odm'.tr,
                     value: controller.startOdometer.value != null
                         ? '${controller.startOdometer.value!.toStringAsFixed(0)} km'
                         : '—',
                   ),
                   InfoRow(
-                    label: 'End ODM',
+                    label: 'lbl_end_odm'.tr,
                     value: controller.endOdometer.value != null
                         ? '${controller.endOdometer.value!.toStringAsFixed(0)} km'
                         : '—',
@@ -277,7 +276,7 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                     const Divider(height: 1),
                     const SizedBox(height: 8),
                     InfoRow(
-                      label: 'Distance',
+                      label: 'lbl_distance'.tr,
                       value:
                           '${(controller.endOdometer.value! - controller.startOdometer.value!).toStringAsFixed(0)} km',
                       showDivider: false,
@@ -441,27 +440,27 @@ class _LrStatusBadge extends StatelessWidget {
       case 'CREATED':
         bg = const Color(0xFFEFF6FF);
         fg = AppColors.navy;
-        label = 'LR Created';
+        label = 'lbl_lr_created'.tr;
         break;
       case 'WEIGHT_LOADED':
         bg = const Color(0xFFF5F3FF);
         fg = const Color(0xFF7C3AED);
-        label = 'Weight Loaded';
+        label = 'lbl_weight_loaded_chip'.tr;
         break;
       case 'IN_TRANSIT':
         bg = const Color(0xFFFFFBEB);
         fg = const Color(0xFFD97706);
-        label = 'In Transit';
+        label = 'status_in_transit'.tr;
         break;
       case 'DELIVERED':
         bg = const Color(0xFFF0FDF4);
         fg = const Color(0xFF16A34A);
-        label = 'Delivered';
+        label = 'status_delivered'.tr;
         break;
       case 'CANCELLED':
         bg = const Color(0xFFFEF2F2);
         fg = const Color(0xFFDC2626);
-        label = 'Cancelled';
+        label = 'status_cancelled'.tr;
         break;
       default:
         bg = const Color(0xFFF1F5F9);
@@ -501,12 +500,9 @@ class _AuditRow extends StatelessWidget {
 
   String _roleLabel(String? r) {
     switch (r) {
-      case 'DRIVER':
-        return 'Driver';
-      case 'CLEANER':
-        return 'Cleaner';
-      default:
-        return r ?? '';
+      case 'DRIVER':   return 'role_driver'.tr;
+      case 'CLEANER':  return 'role_cleaner'.tr;
+      default:         return r ?? '';
     }
   }
 

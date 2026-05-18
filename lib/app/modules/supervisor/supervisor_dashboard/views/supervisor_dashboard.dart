@@ -36,7 +36,7 @@ class SupervisorDashboard extends StatelessWidget {
         // ── Orders ─────────────────────────────────────────────────
         _SectionCard(
           icon: Icons.assignment_outlined,
-          title: 'Orders',
+          title: 'nav_orders'.tr,
           accentColor: AppColors.navy,
           onTap: () => _goToTab(1),
           child: Column(
@@ -45,11 +45,11 @@ class SupervisorDashboard extends StatelessWidget {
               _TotalBadge(value: controller.orderTotal.value, color: AppColors.navy),
               const SizedBox(height: 12),
               _StatRow(stats: [
-                _StatItem('Active',    controller.orderActive.value,    AppColors.orderActive),
-                _StatItem('Pending',   controller.orderPending.value,   AppColors.orderPending),
-                _StatItem('Completed', controller.orderCompleted.value, AppColors.orderCompleted),
-                _StatItem('Delivered', controller.orderDelivered.value, AppColors.lrDelivered),
-                _StatItem('Cancelled', controller.orderCancelled.value, AppColors.orderCancelled),
+                _StatItem('status_active'.tr,    controller.orderActive.value,    AppColors.orderActive),
+                _StatItem('status_pending'.tr,   controller.orderPending.value,   AppColors.orderPending),
+                _StatItem('status_completed'.tr, controller.orderCompleted.value, AppColors.orderCompleted),
+                _StatItem('status_delivered'.tr, controller.orderDelivered.value, AppColors.lrDelivered),
+                _StatItem('status_cancelled'.tr, controller.orderCancelled.value, AppColors.orderCancelled),
               ]),
             ],
           ),
@@ -59,7 +59,7 @@ class SupervisorDashboard extends StatelessWidget {
         // ── Assignments ────────────────────────────────────────────
         _SectionHeader(
           icon: Icons.people_alt_outlined,
-          title: 'Assignments',
+          title: 'lbl_assignments'.tr,
           accentColor: AppColors.orange,
         ),
         const SizedBox(height: 8),
@@ -67,7 +67,7 @@ class SupervisorDashboard extends StatelessWidget {
         // Vehicles sub-card
         _SubCard(
           icon: Icons.garage_outlined,
-          label: 'Vehicles',
+          label: 'lbl_vehicles'.tr,
           total: controller.vehicleTotal.value,
           color: AppColors.navy,
           onTap: () => Get.to(
@@ -76,10 +76,10 @@ class SupervisorDashboard extends StatelessWidget {
             transition: Transition.cupertino,
           ),
           stats: [
-            _StatItem('Available', controller.vehicleAvailable.value, AppColors.success),
-            _StatItem('On Trip',   controller.vehicleOnTrip.value,    AppColors.lrInTransit),
-            _StatItem('Breakdown', controller.vehicleBreakdown.value, AppColors.error),
-            _StatItem('Inactive',  controller.vehicleInactive.value,  AppColors.mutedText),
+            _StatItem('lbl_available'.tr,    controller.vehicleAvailable.value, AppColors.success),
+            _StatItem('lbl_on_trip_chip'.tr, controller.vehicleOnTrip.value,    AppColors.lrInTransit),
+            _StatItem('lbl_breakdown_chip'.tr,controller.vehicleBreakdown.value, AppColors.error),
+            _StatItem('lbl_inactive'.tr,     controller.vehicleInactive.value,  AppColors.mutedText),
           ],
         ),
         const SizedBox(height: 8),
@@ -87,7 +87,7 @@ class SupervisorDashboard extends StatelessWidget {
         // Drivers sub-card
         _SubCard(
           icon: Icons.drive_eta_outlined,
-          label: 'Drivers',
+          label: 'role_driver'.tr,
           total: controller.driverTotal.value,
           color: AppColors.info,
           onTap: () => Get.to(
@@ -96,9 +96,9 @@ class SupervisorDashboard extends StatelessWidget {
             transition: Transition.cupertino,
           ),
           stats: [
-            _StatItem('Available', controller.driverAvailable.value, AppColors.success),
-            _StatItem('On Trip',   controller.driverOnTrip.value,    AppColors.lrInTransit),
-            _StatItem('Present',   controller.driverPresent.value,   AppColors.attPresent),
+            _StatItem('lbl_available'.tr,    controller.driverAvailable.value, AppColors.success),
+            _StatItem('lbl_on_trip_chip'.tr, controller.driverOnTrip.value,    AppColors.lrInTransit),
+            _StatItem('status_present'.tr,   controller.driverPresent.value,   AppColors.attPresent),
           ],
         ),
         const SizedBox(height: 8),
@@ -106,7 +106,7 @@ class SupervisorDashboard extends StatelessWidget {
         // Cleaners sub-card
         _SubCard(
           icon: Icons.cleaning_services_outlined,
-          label: 'Cleaners',
+          label: 'role_cleaner'.tr,
           total: controller.cleanerTotal.value,
           color: AppColors.lrLoaded,
           onTap: () => Get.to(
@@ -115,9 +115,9 @@ class SupervisorDashboard extends StatelessWidget {
             transition: Transition.cupertino,
           ),
           stats: [
-            _StatItem('Available', controller.cleanerAvailable.value, AppColors.success),
-            _StatItem('On Trip',   controller.cleanerOnTrip.value,    AppColors.lrInTransit),
-            _StatItem('Present',   controller.cleanerPresent.value,   AppColors.attPresent),
+            _StatItem('lbl_available'.tr,    controller.cleanerAvailable.value, AppColors.success),
+            _StatItem('lbl_on_trip_chip'.tr, controller.cleanerOnTrip.value,    AppColors.lrInTransit),
+            _StatItem('status_present'.tr,   controller.cleanerPresent.value,   AppColors.attPresent),
           ],
         ),
         const SizedBox(height: 14),
@@ -125,7 +125,7 @@ class SupervisorDashboard extends StatelessWidget {
         // ── LRs ────────────────────────────────────────────────────
         _SectionCard(
           icon: Icons.receipt_long_outlined,
-          title: 'LRs',
+          title: 'lbl_lrs'.tr,
           accentColor: AppColors.lrInTransit,
           onTap: () => Get.to(
             () => const SupervisorLrsView(),
@@ -138,10 +138,10 @@ class SupervisorDashboard extends StatelessWidget {
               _TotalBadge(value: controller.lrTotal.value, color: AppColors.lrInTransit),
               const SizedBox(height: 12),
               _StatRow(stats: [
-                _StatItem('Created',    controller.lrCreated.value,   AppColors.lrCreated),
-                _StatItem('Loaded',     controller.lrLoaded.value,    AppColors.lrLoaded),
-                _StatItem('In Transit', controller.lrInTransit.value, AppColors.lrInTransit),
-                _StatItem('Delivered',  controller.lrDelivered.value, AppColors.lrDelivered),
+                _StatItem('lbl_lr_created'.tr,    controller.lrCreated.value,   AppColors.lrCreated),
+                _StatItem('lbl_loaded_chip'.tr,   controller.lrLoaded.value,    AppColors.lrLoaded),
+                _StatItem('status_in_transit'.tr, controller.lrInTransit.value, AppColors.lrInTransit),
+                _StatItem('status_delivered'.tr,  controller.lrDelivered.value, AppColors.lrDelivered),
               ]),
             ],
           ),
@@ -151,7 +151,7 @@ class SupervisorDashboard extends StatelessWidget {
         // ── Attendance ─────────────────────────────────────────────
         _SectionCard(
           icon: Icons.fact_check_outlined,
-          title: 'Attendance (Today)',
+          title: 'lbl_attendance_today'.tr,
           accentColor: AppColors.attPresent,
           onTap: () => _goToTab(3),
           child: Column(
@@ -160,13 +160,13 @@ class SupervisorDashboard extends StatelessWidget {
               _TotalBadge(
                   value: controller.attTotal.value,
                   color: AppColors.attPresent,
-                  label: 'Marked'),
+                  label: 'lbl_marked_badge'.tr),
               const SizedBox(height: 12),
               _StatRow(stats: [
-                _StatItem('Present',  controller.attPresent.value,   AppColors.attPresent),
-                _StatItem('Absent',   controller.attAbsent.value,    AppColors.attAbsent),
-                _StatItem('Half Day', controller.attHalfDay.value,   AppColors.attHalfDay),
-                _StatItem('Week Off', controller.attWeeklyOff.value, AppColors.attWeeklyOff),
+                _StatItem('status_present'.tr,  controller.attPresent.value,   AppColors.attPresent),
+                _StatItem('status_absent'.tr,   controller.attAbsent.value,    AppColors.attAbsent),
+                _StatItem('status_half_day'.tr, controller.attHalfDay.value,   AppColors.attHalfDay),
+                _StatItem('lbl_week_off'.tr,    controller.attWeeklyOff.value, AppColors.attWeeklyOff),
               ]),
             ],
           ),
@@ -462,12 +462,12 @@ Color _attTypeColor(String name) {
 
 String _attTypeLabel(String name) {
   final n = name.toUpperCase();
-  if (n.contains('PRESENT') && !n.contains('HALF')) return 'Present';
-  if (n.contains('ABSENT'))  return 'Absent';
-  if (n.contains('HALF'))    return 'Half Day';
-  if (n.contains('LEAVE'))   return 'Leave';
-  if (n.contains('HOLIDAY')) return 'Holiday';
-  if (n.contains('WEEK') || n.contains('OFF')) return 'Weekly Off';
+  if (n.contains('PRESENT') && !n.contains('HALF')) return 'status_present'.tr;
+  if (n.contains('ABSENT'))  return 'status_absent'.tr;
+  if (n.contains('HALF'))    return 'status_half_day'.tr;
+  if (n.contains('LEAVE'))   return 'status_leave'.tr;
+  if (n.contains('HOLIDAY')) return 'lbl_holiday'.tr;
+  if (n.contains('WEEK') || n.contains('OFF')) return 'lbl_week_off'.tr;
   return name.split('_')
       .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
       .join(' ');
@@ -526,12 +526,12 @@ class _SelfAttendanceCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text('My Attendance',
+                  child: Text('lbl_my_attendance'.tr,
                       style: AppTextStyles.bodyMedium.copyWith(
                           color: AppColors.bodyText,
                           fontWeight: FontWeight.w600)),
                 ),
-                Text('Today',
+                Text('lbl_today'.tr,
                     style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
               ],
             ),
@@ -571,7 +571,7 @@ class _SelfAttendanceCard extends StatelessWidget {
                 ),
               ),
             ] else ...[
-              Text('Tap to mark your attendance',
+              Text('lbl_tap_mark_att'.tr,
                   style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
               const SizedBox(height: 10),
               Wrap(
@@ -621,7 +621,7 @@ class _ApprovalBadge extends StatelessWidget {
         ? AppColors.attPresent : AppColors.error;
     final icon  = isPending ? Icons.hourglass_top_rounded
         : isApproved ? Icons.check_circle_outline : Icons.cancel_outlined;
-    final label = isPending ? 'Pending Approval' : isApproved ? 'Approved' : 'Rejected';
+    final label = isPending ? 'lbl_pending_approval'.tr : isApproved ? 'status_approved'.tr : 'status_rejected'.tr;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -754,7 +754,7 @@ class _SelfieSheetState extends State<_SelfieSheet> {
             child: Row(
               children: [
                 Expanded(
-                  child: Text('Mark Attendance',
+                  child: Text('lbl_mark_attendance'.tr,
                       style: AppTextStyles.bodyMedium.copyWith(
                           color: AppColors.bodyText,
                           fontWeight: FontWeight.w700,
@@ -803,11 +803,11 @@ class _SelfieSheetState extends State<_SelfieSheet> {
                           const Icon(Icons.camera_alt_outlined,
                               size: 36, color: AppColors.mutedText),
                           const SizedBox(height: 8),
-                          Text('Tap to take selfie',
+                          Text('lbl_take_selfie'.tr,
                               style: AppTextStyles.body
                                   .copyWith(color: AppColors.mutedText)),
                           const SizedBox(height: 4),
-                          Text('(Required)',
+                          Text('lbl_required_hint'.tr,
                               style: AppTextStyles.caption
                                   .copyWith(color: AppColors.hintText)),
                         ],
@@ -845,11 +845,11 @@ class _SelfieSheetState extends State<_SelfieSheet> {
                   Expanded(
                     child: Text(
                       _locating
-                          ? 'Getting location…'
+                          ? 'lbl_getting_location'.tr
                           : _position != null
                               ? '${_position!.latitude.toStringAsFixed(5)}, '
                                 '${_position!.longitude.toStringAsFixed(5)}'
-                              : 'Location unavailable',
+                              : 'lbl_location_unavailable'.tr,
                       style: AppTextStyles.caption.copyWith(
                         color: _position != null
                             ? AppColors.bodyText
@@ -860,7 +860,7 @@ class _SelfieSheetState extends State<_SelfieSheet> {
                   if (!_locating && _position == null)
                     GestureDetector(
                       onTap: _fetchLocation,
-                      child: Text('Retry',
+                      child: Text('btn_retry'.tr,
                           style: AppTextStyles.caption.copyWith(
                               color: AppColors.navy,
                               fontWeight: FontWeight.w600)),
@@ -894,8 +894,8 @@ class _SelfieSheetState extends State<_SelfieSheet> {
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white),
                       )
-                    : const Text('Submit Attendance',
-                        style: TextStyle(
+                    : Text('btn_submit_attendance'.tr,
+                        style: const TextStyle(
                           fontFamily: 'Inter',
                           fontWeight: FontWeight.w600,
                           fontSize: 15,

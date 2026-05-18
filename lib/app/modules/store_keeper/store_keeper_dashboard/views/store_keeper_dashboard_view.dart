@@ -50,20 +50,20 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                       color: const Color(0xFF16A34A),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.check_circle_outline,
+                        const Icon(Icons.check_circle_outline,
                             color: Colors.white, size: 20),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Expanded(
-                          child: Text("Mark Today's Attendance",
-                              style: TextStyle(
+                          child: Text('lbl_mark_attendance'.tr,
+                              style: const TextStyle(
                                   color: Colors.white,
                                   fontFamily: 'Inter',
                                   fontWeight: FontWeight.w600,
                                   fontSize: 14)),
                         ),
-                        Icon(Icons.chevron_right,
+                        const Icon(Icons.chevron_right,
                             color: Colors.white, size: 20),
                       ],
                     ),
@@ -87,7 +87,7 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                     GestureDetector(
                       onTap: () => _goToInventory(tab: 0),
                       child: _SummaryCard(
-                        label: 'Total Parts',
+                        label: 'lbl_total_parts'.tr,
                         value: '${controller.totalItems}',
                         icon: Icons.inventory_2_outlined,
                         color: AppColors.navy,
@@ -96,7 +96,7 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                     GestureDetector(
                       onTap: () => _goToInventory(tab: 0),
                       child: _SummaryCard(
-                        label: 'In Stock',
+                        label: 'lbl_in_stock'.tr,
                         value: '${controller.inStockCount}',
                         icon: Icons.check_circle_outline,
                         color: const Color(0xFF16A34A),
@@ -105,7 +105,7 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                     GestureDetector(
                       onTap: () => _goToInventory(tab: 0),
                       child: _SummaryCard(
-                        label: 'Low Stock',
+                        label: 'lbl_low_stock'.tr,
                         value: '${controller.lowStockCount}',
                         icon: Icons.warning_amber_outlined,
                         color: const Color(0xFFDC2626),
@@ -114,7 +114,7 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                     GestureDetector(
                       onTap: () => _goToInventory(tab: 1),
                       child: _SummaryCard(
-                        label: 'Pending Requests',
+                        label: 'lbl_pending_requests'.tr,
                         value: '${controller.pendingCount.value}',
                         icon: Icons.pending_actions_outlined,
                         color: const Color(0xFFD97706),
@@ -134,7 +134,7 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                     Expanded(
                       child: _QuickActionButton(
                         icon: Icons.add_box_outlined,
-                        label: 'Stock In',
+                        label: 'lbl_stock_in'.tr,
                         color: AppColors.navy,
                         onTap: () => showModalBottomSheet(
                           context: context,
@@ -149,7 +149,7 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                     Expanded(
                       child: _QuickActionButton(
                         icon: Icons.remove_circle_outline,
-                        label: 'Write-off',
+                        label: 'lbl_write_off'.tr,
                         color: const Color(0xFFDC2626),
                         onTap: () => showModalBottomSheet(
                           context: context,
@@ -164,7 +164,7 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                     Expanded(
                       child: _QuickActionButton(
                         icon: Icons.add_circle_outline,
-                        label: 'New Part',
+                        label: 'lbl_new_part'.tr,
                         color: const Color(0xFF0891B2),
                         onTap: () => showModalBottomSheet(
                           context: context,
@@ -340,7 +340,7 @@ class _StockCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text('Min: $minLevel $unit',
+                  Text('${'lbl_min'.tr}: $minLevel $unit',
                       style: AppTextStyles.caption
                           .copyWith(color: AppColors.mutedText, fontSize: 11)),
                 ],
@@ -374,8 +374,8 @@ class _StockCard extends StatelessWidget {
                     decoration: BoxDecoration(
                         color: const Color(0xFFFEF2F2),
                         borderRadius: BorderRadius.circular(20)),
-                    child: const Text('Low Stock',
-                        style: TextStyle(
+                    child: Text('lbl_low_stock'.tr,
+                        style: const TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
@@ -387,8 +387,8 @@ class _StockCard extends StatelessWidget {
                     decoration: BoxDecoration(
                         color: const Color(0xFFF0FDF4),
                         borderRadius: BorderRadius.circular(20)),
-                    child: const Text('OK',
-                        style: TextStyle(
+                    child: Text('lbl_ok'.tr,
+                        style: const TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
@@ -446,11 +446,11 @@ class StockInSheetState extends State<StockInSheet> {
   Future<void> _submit() async {
     final qty = int.tryParse(_qtyCtrl.text.trim()) ?? 0;
     if (_selectedPart == null) {
-      setState(() => _error = 'Please select a spare part');
+      setState(() => _error = 'err_select_spare_part'.tr);
       return;
     }
     if (qty < 1) {
-      setState(() => _error = 'Quantity must be at least 1');
+      setState(() => _error = 'err_qty_min_1'.tr);
       return;
     }
     setState(() { _submitting = true; _error = null; });
@@ -475,7 +475,7 @@ class StockInSheetState extends State<StockInSheet> {
           snackPosition: SnackPosition.BOTTOM,
           margin: const EdgeInsets.all(16));
     } else {
-      setState(() => _error = 'Failed to add stock. Please try again.');
+      setState(() => _error = 'err_failed_add_stock'.tr);
     }
   }
 
@@ -507,7 +507,7 @@ class StockInSheetState extends State<StockInSheet> {
                 children: [
                   const Icon(Icons.add_box_outlined, color: AppColors.navy, size: 20),
                   const SizedBox(width: 8),
-                  Text('Add Stock (Stock In)',
+                  Text('lbl_add_stock_in'.tr,
                       style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
                 ],
               ),
@@ -544,7 +544,7 @@ class StockInSheetState extends State<StockInSheet> {
                     ],
 
                     // Spare Part
-                    _SheetLabel('Spare Part *'),
+                    _SheetLabel('${'lbl_spare_part'.tr} *'),
                     const SizedBox(height: 6),
                     GestureDetector(
                       onTap: () => _showPartPicker(context, parts.toList()),
@@ -562,7 +562,7 @@ class StockInSheetState extends State<StockInSheet> {
                                 _selectedPart != null
                                     ? '${_selectedPart!['name']}'
                                         '${_selectedPart!['partNumber'] != null ? ' (${_selectedPart!['partNumber']})' : ''}'
-                                    : 'Select spare part…',
+                                    : 'lbl_select_spare_part'.tr,
                                 style: AppTextStyles.body.copyWith(
                                     color: _selectedPart != null
                                         ? AppColors.navy
@@ -584,7 +584,7 @@ class StockInSheetState extends State<StockInSheet> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _SheetLabel('Quantity *'),
+                              _SheetLabel('${'lbl_quantity'.tr} *'),
                               const SizedBox(height: 6),
                               _SheetTextField(
                                 controller: _qtyCtrl,
@@ -599,11 +599,11 @@ class StockInSheetState extends State<StockInSheet> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _SheetLabel('Unit Cost (₹)'),
+                              _SheetLabel('lbl_unit_cost'.tr),
                               const SizedBox(height: 6),
                               _SheetTextField(
                                 controller: _costCtrl,
-                                hint: 'Optional',
+                                hint: 'lbl_optional'.tr,
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                               ),
                             ],
@@ -614,17 +614,17 @@ class StockInSheetState extends State<StockInSheet> {
                     const SizedBox(height: 16),
 
                     // Supplier
-                    _SheetLabel('Supplier Name'),
+                    _SheetLabel('lbl_supplier_name'.tr),
                     const SizedBox(height: 6),
                     _SheetTextField(
-                        controller: _supplierCtrl, hint: 'Optional'),
+                        controller: _supplierCtrl, hint: 'lbl_optional'.tr),
                     const SizedBox(height: 16),
 
                     // Notes
-                    _SheetLabel('Notes'),
+                    _SheetLabel('lbl_notes'.tr),
                     const SizedBox(height: 6),
                     _SheetTextField(
-                        controller: _notesCtrl, hint: 'Optional', maxLines: 2),
+                        controller: _notesCtrl, hint: 'lbl_optional'.tr, maxLines: 2),
                     const SizedBox(height: 24),
 
                     // Submit
@@ -645,7 +645,7 @@ class StockInSheetState extends State<StockInSheet> {
                                 width: 20, height: 20,
                                 child: CircularProgressIndicator(
                                     strokeWidth: 2, color: Colors.white))
-                            : Text('Add Stock',
+                            : Text('btn_add_stock'.tr,
                                 style: AppTextStyles.bodyMedium.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w600)),
@@ -723,16 +723,16 @@ class StockOutSheetState extends State<StockOutSheet> {
   Future<void> _submit() async {
     final qty = int.tryParse(_qtyCtrl.text.trim()) ?? 0;
     if (_selectedPart == null) {
-      setState(() => _error = 'Please select a spare part');
+      setState(() => _error = 'err_select_spare_part'.tr);
       return;
     }
     if (qty < 1) {
-      setState(() => _error = 'Quantity must be at least 1');
+      setState(() => _error = 'err_qty_min_1'.tr);
       return;
     }
     final avail = _availableQty;
     if (avail != null && qty > avail) {
-      setState(() => _error = 'Only $avail units available in stock');
+      setState(() => _error = 'err_only_avail_units'.trParams({'avail': '$avail'}));
       return;
     }
     setState(() { _submitting = true; _error = null; });
@@ -755,7 +755,7 @@ class StockOutSheetState extends State<StockOutSheet> {
           snackPosition: SnackPosition.BOTTOM,
           margin: const EdgeInsets.all(16));
     } else {
-      setState(() => _error = 'Failed to record. Please try again.');
+      setState(() => _error = 'err_failed_record'.tr);
     }
   }
 
@@ -788,7 +788,7 @@ class StockOutSheetState extends State<StockOutSheet> {
                 children: [
                   const Icon(Icons.remove_circle_outline, color: Color(0xFFDC2626), size: 20),
                   const SizedBox(width: 8),
-                  Text('Write-off / Stock Out',
+                  Text('lbl_write_off_stock_out'.tr,
                       style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
                 ],
               ),
@@ -818,7 +818,7 @@ class StockOutSheetState extends State<StockOutSheet> {
                     ],
 
                     // Spare Part picker
-                    _SheetLabel('Spare Part *'),
+                    _SheetLabel('${'lbl_spare_part'.tr} *'),
                     const SizedBox(height: 6),
                     GestureDetector(
                       onTap: () => _showPartPicker(context, parts.toList()),
@@ -836,7 +836,7 @@ class StockOutSheetState extends State<StockOutSheet> {
                                 _selectedPart != null
                                     ? '${_selectedPart!['name']}'
                                         '${_selectedPart!['partNumber'] != null ? ' (${_selectedPart!['partNumber']})' : ''}'
-                                    : 'Select spare part…',
+                                    : 'lbl_select_spare_part'.tr,
                                 style: AppTextStyles.body.copyWith(
                                     color: _selectedPart != null
                                         ? AppColors.navy
@@ -850,13 +850,13 @@ class StockOutSheetState extends State<StockOutSheet> {
                     ),
                     if (avail != null) ...[
                       const SizedBox(height: 4),
-                      Text('Available: $avail units',
+                      Text('lbl_available_units'.trParams({'avail': '$avail'}),
                           style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
                     ],
                     const SizedBox(height: 16),
 
                     // Type toggle
-                    _SheetLabel('Type *'),
+                    _SheetLabel('${'lbl_type'.tr} *'),
                     const SizedBox(height: 6),
                     Container(
                       decoration: BoxDecoration(
@@ -880,7 +880,7 @@ class StockOutSheetState extends State<StockOutSheet> {
                                     Icon(Icons.broken_image_outlined, size: 15,
                                         color: isDamage ? Colors.white : AppColors.mutedText),
                                     const SizedBox(width: 6),
-                                    Text('Damage / Loss',
+                                    Text('lbl_damage_loss'.tr,
                                         style: AppTextStyles.bodyMedium.copyWith(
                                             color: isDamage ? Colors.white : AppColors.mutedText)),
                                   ],
@@ -904,7 +904,7 @@ class StockOutSheetState extends State<StockOutSheet> {
                                     Icon(Icons.tune_outlined, size: 15,
                                         color: !isDamage ? Colors.white : AppColors.mutedText),
                                     const SizedBox(width: 6),
-                                    Text('Adjustment',
+                                    Text('lbl_adjustment'.tr,
                                         style: AppTextStyles.bodyMedium.copyWith(
                                             color: !isDamage ? Colors.white : AppColors.mutedText)),
                                   ],
@@ -918,7 +918,7 @@ class StockOutSheetState extends State<StockOutSheet> {
                     const SizedBox(height: 16),
 
                     // Quantity
-                    _SheetLabel('Quantity *'),
+                    _SheetLabel('${'lbl_quantity'.tr} *'),
                     const SizedBox(height: 6),
                     _SheetTextField(
                       controller: _qtyCtrl,
@@ -928,7 +928,7 @@ class StockOutSheetState extends State<StockOutSheet> {
                     const SizedBox(height: 16),
 
                     // Notes
-                    _SheetLabel('Notes'),
+                    _SheetLabel('lbl_notes'.tr),
                     const SizedBox(height: 6),
                     _SheetTextField(
                         controller: _notesCtrl,
@@ -955,7 +955,7 @@ class StockOutSheetState extends State<StockOutSheet> {
                                 width: 20, height: 20,
                                 child: CircularProgressIndicator(
                                     strokeWidth: 2, color: Colors.white))
-                            : Text('Confirm Write-off',
+                            : Text('btn_confirm_write_off'.tr,
                                 style: AppTextStyles.bodyMedium.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w600)),
@@ -1024,7 +1024,7 @@ class _PartPickerSheetState extends State<_PartPickerSheet> {
             ),
             child: Row(
               children: [
-                Text('Select Spare Part',
+                Text('lbl_select_spare_part_title'.tr,
                     style: AppTextStyles.bodyMedium
                         .copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
                 const Spacer(),
@@ -1041,7 +1041,7 @@ class _PartPickerSheetState extends State<_PartPickerSheet> {
               autofocus: true,
               onChanged: (v) => setState(() => _q = v.toLowerCase()),
               decoration: InputDecoration(
-                hintText: 'Search parts…',
+                hintText: 'lbl_search_parts'.tr,
                 prefixIcon: const Icon(Icons.search, size: 18),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -1054,7 +1054,7 @@ class _PartPickerSheetState extends State<_PartPickerSheet> {
           Expanded(
             child: filtered.isEmpty
                 ? Center(
-                    child: Text('No parts found',
+                    child: Text('lbl_no_parts_found'.tr,
                         style: AppTextStyles.body.copyWith(color: AppColors.mutedText)))
                 : ListView.separated(
                     padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1162,11 +1162,11 @@ class _AddPartSheetState extends State<_AddPartSheet> {
     final unit = _unitCtrl.text.trim();
     final min  = int.tryParse(_minCtrl.text.trim()) ?? 0;
     if (name.isEmpty) {
-      setState(() => _error = 'Part name is required');
+      setState(() => _error = 'err_part_name_required'.tr);
       return;
     }
     if (unit.isEmpty) {
-      setState(() => _error = 'Unit is required (e.g. Pieces, Litres)');
+      setState(() => _error = 'err_unit_required'.tr);
       return;
     }
     setState(() { _submitting = true; _error = null; });
@@ -1190,7 +1190,7 @@ class _AddPartSheetState extends State<_AddPartSheet> {
           snackPosition: SnackPosition.BOTTOM,
           margin: const EdgeInsets.all(16));
     } else {
-      setState(() => _error = 'Failed to add part. Please try again.');
+      setState(() => _error = 'err_failed_add_part'.tr);
     }
   }
 
@@ -1218,7 +1218,7 @@ class _AddPartSheetState extends State<_AddPartSheet> {
                 children: [
                   const Icon(Icons.add_circle_outline, color: AppColors.navy, size: 20),
                   const SizedBox(width: 8),
-                  Text('Add New Part',
+                  Text('lbl_add_new_part'.tr,
                       style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
                 ],
               ),
@@ -1246,19 +1246,19 @@ class _AddPartSheetState extends State<_AddPartSheet> {
                       ),
                       const SizedBox(height: 16),
                     ],
-                    _SheetLabel('Part Name *'),
+                    _SheetLabel('${'lbl_part_name'.tr} *'),
                     const SizedBox(height: 6),
                     _SheetTextField(controller: _nameCtrl, hint: 'e.g. Engine Oil Filter'),
                     const SizedBox(height: 16),
                     Row(children: [
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        _SheetLabel('Part Number'),
+                        _SheetLabel('lbl_part_number'.tr),
                         const SizedBox(height: 6),
-                        _SheetTextField(controller: _partNumCtrl, hint: 'Optional'),
+                        _SheetTextField(controller: _partNumCtrl, hint: 'lbl_optional'.tr),
                       ])),
                       const SizedBox(width: 12),
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        _SheetLabel('Category'),
+                        _SheetLabel('lbl_category'.tr),
                         const SizedBox(height: 6),
                         _SheetTextField(controller: _categoryCtrl, hint: 'e.g. Engine'),
                       ])),
@@ -1266,13 +1266,13 @@ class _AddPartSheetState extends State<_AddPartSheet> {
                     const SizedBox(height: 16),
                     Row(children: [
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        _SheetLabel('Unit *'),
+                        _SheetLabel('${'lbl_unit'.tr} *'),
                         const SizedBox(height: 6),
                         _SheetTextField(controller: _unitCtrl, hint: 'e.g. Pieces'),
                       ])),
                       const SizedBox(width: 12),
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        _SheetLabel('Min Stock Level'),
+                        _SheetLabel('lbl_min_stock_level'.tr),
                         const SizedBox(height: 6),
                         _SheetTextField(controller: _minCtrl, hint: '1',
                             keyboardType: TextInputType.number),
@@ -1293,7 +1293,7 @@ class _AddPartSheetState extends State<_AddPartSheet> {
                         child: _submitting
                             ? const SizedBox(width: 20, height: 20,
                                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : Text('Add Part',
+                            : Text('btn_add_part'.tr,
                                 style: AppTextStyles.bodyMedium.copyWith(
                                     color: Colors.white, fontWeight: FontWeight.w600)),
                       ),
@@ -1371,13 +1371,13 @@ class _RecentRequests extends StatelessWidget {
                 const Icon(Icons.pending_actions_outlined,
                     size: 16, color: AppColors.navy),
                 const SizedBox(width: 6),
-                Text('Recent Requests',
+                Text('lbl_recent_requests'.tr,
                     style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.navy, fontWeight: FontWeight.w700)),
                 const Spacer(),
                 GestureDetector(
                   onTap: onViewAll,
-                  child: Text('View All',
+                  child: Text('lbl_view_all'.tr,
                       style: AppTextStyles.caption.copyWith(
                           color: AppColors.navy,
                           fontWeight: FontWeight.w600,
@@ -1423,15 +1423,15 @@ class _RecentRequestTile extends StatelessWidget {
     if (isPending) {
       badgeColor = const Color(0xFFFEF3C7);
       badgeText  = const Color(0xFFD97706);
-      badgeLabel = 'Pending';
+      badgeLabel = 'status_pending'.tr;
     } else if (isApproved) {
       badgeColor = const Color(0xFFDCFCE7);
       badgeText  = const Color(0xFF16A34A);
-      badgeLabel = 'Approved';
+      badgeLabel = 'status_approved'.tr;
     } else {
       badgeColor = const Color(0xFFFEE2E2);
       badgeText  = const Color(0xFFDC2626);
-      badgeLabel = 'Rejected';
+      badgeLabel = 'status_rejected'.tr;
     }
 
     return GestureDetector(
@@ -1504,7 +1504,7 @@ class _RecentRequestTile extends StatelessWidget {
                           color: badgeText)),
                 ),
                 const SizedBox(height: 4),
-                Text('$qty units',
+                Text('$qty ${'lbl_units'.tr}',
                     style: AppTextStyles.caption
                         .copyWith(color: AppColors.mutedText)),
               ],
@@ -1562,7 +1562,7 @@ class _ApproveRejectSheetState extends State<_ApproveRejectSheet> {
     if (_isApprove) {
       final qty = int.tryParse(_qtyCtrl.text.trim()) ?? 0;
       if (qty < 1) {
-        setState(() { _submitting = false; _error = 'Quantity must be at least 1'; });
+        setState(() { _submitting = false; _error = 'err_qty_min_1'.tr; });
         return;
       }
       ok  = await widget.controller.approveRequest(id, qty);
@@ -1570,7 +1570,7 @@ class _ApproveRejectSheetState extends State<_ApproveRejectSheet> {
     } else {
       final reason = _reasonCtrl.text.trim();
       if (reason.isEmpty) {
-        setState(() { _submitting = false; _error = 'Please provide a reason'; });
+        setState(() { _submitting = false; _error = 'err_provide_reason'.tr; });
         return;
       }
       ok  = await widget.controller.rejectRequest(id, reason);
@@ -1625,7 +1625,7 @@ class _ApproveRejectSheetState extends State<_ApproveRejectSheet> {
                                 .copyWith(color: AppColors.navy),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis),
-                        Text('Requested: $requestedQty units',
+                        Text('lbl_requested_units'.trParams({'qty': '$requestedQty'}),
                             style: AppTextStyles.caption
                                 .copyWith(color: AppColors.mutedText)),
                       ],
@@ -1692,7 +1692,7 @@ class _ApproveRejectSheetState extends State<_ApproveRejectSheet> {
                                             ? Colors.white
                                             : AppColors.mutedText),
                                     const SizedBox(width: 6),
-                                    Text('Approve',
+                                    Text('btn_approve'.tr,
                                         style: AppTextStyles.bodyMedium.copyWith(
                                             color: _isApprove
                                                 ? Colors.white
@@ -1724,7 +1724,7 @@ class _ApproveRejectSheetState extends State<_ApproveRejectSheet> {
                                             ? Colors.white
                                             : AppColors.mutedText),
                                     const SizedBox(width: 6),
-                                    Text('Reject',
+                                    Text('btn_reject'.tr,
                                         style: AppTextStyles.bodyMedium.copyWith(
                                             color: !_isApprove
                                                 ? Colors.white
@@ -1739,7 +1739,7 @@ class _ApproveRejectSheetState extends State<_ApproveRejectSheet> {
                     ),
                     const SizedBox(height: 20),
                     if (_isApprove) ...[
-                      Text('Quantity to Approve',
+                      Text('lbl_qty_to_approve'.tr,
                           style: AppTextStyles.caption.copyWith(
                               color: AppColors.mutedText,
                               fontWeight: FontWeight.w600)),
@@ -1768,7 +1768,7 @@ class _ApproveRejectSheetState extends State<_ApproveRejectSheet> {
                       ),
                     ],
                     if (!_isApprove) ...[
-                      Text('Rejection Reason *',
+                      Text('${'lbl_rejection_reason'.tr} *',
                           style: AppTextStyles.caption.copyWith(
                               color: AppColors.mutedText,
                               fontWeight: FontWeight.w600)),
@@ -1818,8 +1818,8 @@ class _ApproveRejectSheetState extends State<_ApproveRejectSheet> {
                                     strokeWidth: 2, color: Colors.white))
                             : Text(
                                 _isApprove
-                                    ? 'Confirm Approval'
-                                    : 'Confirm Rejection',
+                                    ? 'btn_confirm_approval'.tr
+                                    : 'btn_confirm_rejection'.tr,
                                 style: AppTextStyles.bodyMedium.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w600)),
@@ -1861,14 +1861,14 @@ class _LowStockAlerts extends StatelessWidget {
               const Icon(Icons.warning_amber_outlined,
                   size: 16, color: Color(0xFFDC2626)),
               const SizedBox(width: 6),
-              Text('Low Stock Alerts',
+              Text('lbl_low_stock_alerts'.tr,
                   style: AppTextStyles.bodyMedium.copyWith(
                       color: const Color(0xFFDC2626),
                       fontWeight: FontWeight.w700)),
               const Spacer(),
               GestureDetector(
                 onTap: onViewAll,
-                child: Text('View All',
+                child: Text('lbl_view_all'.tr,
                     style: AppTextStyles.caption.copyWith(
                         color: AppColors.navy,
                         fontWeight: FontWeight.w600,
@@ -1924,7 +1924,7 @@ class _LowStockAlerts extends StatelessWidget {
               child: GestureDetector(
                 onTap: onViewAll,
                 child: Text(
-                  '+${controller.lowStockCount - 5} more low stock items',
+                  'lbl_more_low_stock'.trParams({'count': '${controller.lowStockCount - 5}'}),
                   style: AppTextStyles.caption.copyWith(
                       color: AppColors.mutedText,
                       decoration: TextDecoration.underline),
@@ -1969,7 +1969,7 @@ class _AddNewPartSheetState extends State<_AddNewPartSheet> {
   Future<void> _submit() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
-      setState(() => _error = 'Part name is required');
+      setState(() => _error = 'err_part_name_required'.tr);
       return;
     }
     setState(() { _submitting = true; _error = null; });
@@ -1990,7 +1990,7 @@ class _AddNewPartSheetState extends State<_AddNewPartSheet> {
           snackPosition: SnackPosition.BOTTOM,
           margin: const EdgeInsets.all(16));
     } else {
-      setState(() => _error = 'Failed to add part. Please try again.');
+      setState(() => _error = 'err_failed_add_part'.tr);
     }
   }
 
@@ -2018,7 +2018,7 @@ class _AddNewPartSheetState extends State<_AddNewPartSheet> {
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
               child: Row(
                 children: [
-                  Text('Add New Part',
+                  Text('lbl_add_new_part'.tr,
                       style: AppTextStyles.heading3
                           .copyWith(color: AppColors.navy)),
                   const Spacer(),
@@ -2056,16 +2056,16 @@ class _AddNewPartSheetState extends State<_AddNewPartSheet> {
                       ),
                       const SizedBox(height: 16),
                     ],
-                    _label('Part Name *'),
+                    _label('${'lbl_part_name'.tr} *'),
                     _field(_nameCtrl, 'e.g. Engine Oil Filter'),
                     const SizedBox(height: 14),
-                    _label('Part Number'),
+                    _label('lbl_part_number'.tr),
                     _field(_partNumCtrl, 'e.g. OF-2201'),
                     const SizedBox(height: 14),
-                    _label('Category'),
+                    _label('lbl_category'.tr),
                     _field(_categoryCtrl, 'e.g. Filters'),
                     const SizedBox(height: 14),
-                    _label('Unit *'),
+                    _label('${'lbl_unit'.tr} *'),
                     DropdownButtonFormField<String>(
                       value: _unit,
                       onChanged: (v) => setState(() => _unit = v!),
@@ -2091,7 +2091,7 @@ class _AddNewPartSheetState extends State<_AddNewPartSheet> {
                           .toList(),
                     ),
                     const SizedBox(height: 14),
-                    _label('Min Stock Level'),
+                    _label('lbl_min_stock_level'.tr),
                     _field(_minCtrl, '1', type: TextInputType.number),
                     const SizedBox(height: 24),
                     SizedBox(
@@ -2111,7 +2111,7 @@ class _AddNewPartSheetState extends State<_AddNewPartSheet> {
                                 width: 20, height: 20,
                                 child: CircularProgressIndicator(
                                     strokeWidth: 2, color: Colors.white))
-                            : Text('Add Part',
+                            : Text('btn_add_part'.tr,
                                 style: AppTextStyles.bodyMedium.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w600)),

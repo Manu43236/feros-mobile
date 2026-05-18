@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import '../../core/api/api_client.dart';
+import '../../core/localization/locale_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/connectivity_service.dart';
 import '../../core/services/storage_service.dart';
@@ -14,5 +15,6 @@ class InitialBinding extends Bindings {
     Get.put<AuthService>(AuthService(), permanent: true);
     Get.put<ConnectivityService>(ConnectivityService(), permanent: true);
     Get.put<UploadService>(UploadService(), permanent: true);
+    Get.put<LocaleService>(LocaleService(), permanent: true);
   }
 }

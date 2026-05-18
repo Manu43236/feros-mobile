@@ -120,7 +120,7 @@ class ServiceMenBreakdownsView
                                         size: 48,
                                         color: AppColors.mutedText),
                                     const SizedBox(height: 12),
-                                    Text('No breakdowns found',
+                                    Text('lbl_no_breakdowns_found'.tr,
                                         style: AppTextStyles.body.copyWith(
                                             color: AppColors.mutedText)),
                                   ],
@@ -157,7 +157,7 @@ class ServiceMenBreakdownsView
               onPressed: () => _showReportBreakdownSheet(context),
               backgroundColor: AppColors.navy,
               icon: const Icon(Icons.add, color: Colors.white),
-              label: Text('Report',
+              label: Text('btn_report'.tr,
                   style: AppTextStyles.bodyMedium.copyWith(
                       color: Colors.white, fontWeight: FontWeight.w600)),
             ),
@@ -184,13 +184,12 @@ class ServiceMenBreakdownsView
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Resolve Breakdown?'),
-        content: const Text(
-            'Mark this breakdown as resolved and return the vehicle to service.'),
+        title: Text('btn_resolve_breakdown'.tr),
+        content: Text('lbl_resolve_breakdown_msg'.tr),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('btn_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -201,7 +200,7 @@ class ServiceMenBreakdownsView
               backgroundColor: AppColors.success,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Resolve'),
+            child: Text('btn_resolve'.tr),
           ),
         ],
       ),
@@ -210,9 +209,11 @@ class ServiceMenBreakdownsView
 
   String _filterLabel(String f) {
     switch (f) {
-      case 'IN_REPAIR': return 'In Repair';
-      case 'RESOLVED':  return 'Resolved';
-      default:          return f[0] + f.substring(1).toLowerCase();
+      case 'ALL':       return 'lbl_all'.tr;
+      case 'OPEN':      return 'status_open'.tr;
+      case 'IN_REPAIR': return 'status_in_repair'.tr;
+      case 'RESOLVED':  return 'status_resolved'.tr;
+      default:          return f;
     }
   }
 
@@ -307,10 +308,10 @@ class _BreakdownCard extends StatelessWidget {
             ? const Color(0xFFF0FDF4)
             : const Color(0xFFFEF2F2);
     final statusLabel = isInRepair
-        ? 'In Repair'
+        ? 'status_in_repair'.tr
         : isResolved
-            ? 'Resolved'
-            : 'Open';
+            ? 'status_resolved'.tr
+            : 'status_open'.tr;
 
     String? fmtDate;
     if (dateRaw != null) {
@@ -378,7 +379,7 @@ class _BreakdownCard extends StatelessWidget {
                     bg: const Color(0xFFF1F5F9),
                     fg: AppColors.bodyText),
               _SmallChip(
-                  label: duration == 'SHORT' ? 'Minor' : 'Major',
+                  label: duration == 'SHORT' ? 'lbl_minor'.tr : 'lbl_major'.tr,
                   bg: duration == 'SHORT'
                       ? const Color(0xFFF0FDF4)
                       : const Color(0xFFFEF2F2),
@@ -425,7 +426,7 @@ class _BreakdownCard extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: onViewService,
                   icon: const Icon(Icons.arrow_forward_rounded, size: 16),
-                  label: const Text('View Service'),
+                  label: Text('btn_view_service'.tr),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFFF7ED),
                     foregroundColor: const Color(0xFFC2410C),
@@ -443,7 +444,7 @@ class _BreakdownCard extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: onLogService,
                       icon: const Icon(Icons.build_outlined, size: 16),
-                      label: const Text('Log Service'),
+                      label: Text('btn_log_service'.tr),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.navy,
                         side: const BorderSide(color: AppColors.navy),
@@ -458,7 +459,7 @@ class _BreakdownCard extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: onResolve,
                       icon: const Icon(Icons.check_circle_outline, size: 16),
-                      label: const Text('Resolve'),
+                      label: Text('btn_resolve'.tr),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.success,
                         side: BorderSide(color: AppColors.success),
@@ -584,7 +585,7 @@ class _ReportBreakdownSheetState extends State<_ReportBreakdownSheet> {
                   const Icon(Icons.warning_amber_outlined,
                       color: AppColors.error, size: 20),
                   const SizedBox(width: 8),
-                  Text('Report Breakdown',
+                  Text('btn_report_breakdown'.tr,
                       style:
                           AppTextStyles.heading3.copyWith(color: AppColors.navy)),
                 ],
@@ -613,7 +614,7 @@ class _ReportBreakdownSheetState extends State<_ReportBreakdownSheet> {
                     ],
 
                     // Vehicle picker
-                    Text('Vehicle',
+                    Text('lbl_vehicle'.tr,
                         style: AppTextStyles.label
                             .copyWith(color: AppColors.navy)),
                     const SizedBox(height: 6),
@@ -623,7 +624,7 @@ class _ReportBreakdownSheetState extends State<_ReportBreakdownSheet> {
                                 color: AppColors.navy, strokeWidth: 2))
                         : DropdownButtonFormField<Map<String, dynamic>>(
                             value: _selectedVehicle,
-                            hint: Text('Select vehicle',
+                            hint: Text('lbl_select_vehicle_hint'.tr,
                                 style: AppTextStyles.caption
                                     .copyWith(color: AppColors.mutedText)),
                             decoration: InputDecoration(
@@ -651,7 +652,7 @@ class _ReportBreakdownSheetState extends State<_ReportBreakdownSheet> {
                     const SizedBox(height: 16),
 
                     // Breakdown type
-                    Text('Breakdown Type',
+                    Text('lbl_breakdown_type'.tr,
                         style: AppTextStyles.label
                             .copyWith(color: AppColors.navy)),
                     const SizedBox(height: 8),
@@ -691,20 +692,20 @@ class _ReportBreakdownSheetState extends State<_ReportBreakdownSheet> {
                     const SizedBox(height: 16),
 
                     // Severity
-                    Text('Severity',
+                    Text('lbl_severity'.tr,
                         style: AppTextStyles.label
                             .copyWith(color: AppColors.navy)),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         _DurationChip(
-                          label: 'Minor (SHORT)',
+                          label: 'lbl_minor_short'.tr,
                           selected: _duration == 'SHORT',
                           onTap: () => setState(() => _duration = 'SHORT'),
                         ),
                         const SizedBox(width: 8),
                         _DurationChip(
-                          label: 'Major (LONG)',
+                          label: 'lbl_major_long'.tr,
                           selected: _duration == 'LONG',
                           onTap: () => setState(() => _duration = 'LONG'),
                         ),
@@ -713,7 +714,7 @@ class _ReportBreakdownSheetState extends State<_ReportBreakdownSheet> {
                     const SizedBox(height: 16),
 
                     // Reason
-                    Text('Reason *',
+                    Text('${'lbl_reason'.tr} *',
                         style: AppTextStyles.label
                             .copyWith(color: AppColors.navy)),
                     const SizedBox(height: 6),
@@ -721,7 +722,7 @@ class _ReportBreakdownSheetState extends State<_ReportBreakdownSheet> {
                       controller: _reasonCtrl,
                       maxLines: 2,
                       decoration: InputDecoration(
-                        hintText: 'Describe the breakdown…',
+                        hintText: 'lbl_describe_breakdown'.tr,
                         hintStyle: AppTextStyles.caption
                             .copyWith(color: AppColors.mutedText),
                         border: OutlineInputBorder(
@@ -736,7 +737,7 @@ class _ReportBreakdownSheetState extends State<_ReportBreakdownSheet> {
                     const SizedBox(height: 12),
 
                     // Location
-                    Text('Location (optional)',
+                    Text('lbl_location_optional'.tr,
                         style: AppTextStyles.label
                             .copyWith(color: AppColors.navy)),
                     const SizedBox(height: 6),
@@ -758,7 +759,7 @@ class _ReportBreakdownSheetState extends State<_ReportBreakdownSheet> {
                     const SizedBox(height: 12),
 
                     // Notes
-                    Text('Notes (optional)',
+                    Text('lbl_notes_optional'.tr,
                         style: AppTextStyles.label
                             .copyWith(color: AppColors.navy)),
                     const SizedBox(height: 6),
@@ -766,7 +767,7 @@ class _ReportBreakdownSheetState extends State<_ReportBreakdownSheet> {
                       controller: _notesCtrl,
                       maxLines: 2,
                       decoration: InputDecoration(
-                        hintText: 'Additional details…',
+                        hintText: 'lbl_additional_details'.tr,
                         hintStyle: AppTextStyles.caption
                             .copyWith(color: AppColors.mutedText),
                         border: OutlineInputBorder(
@@ -792,7 +793,7 @@ class _ReportBreakdownSheetState extends State<_ReportBreakdownSheet> {
                                     strokeWidth: 2, color: Colors.white))
                             : const Icon(Icons.warning_amber_rounded, size: 20),
                         label: Text(
-                          _submitting ? 'Reporting…' : 'Report Breakdown',
+                          _submitting ? 'lbl_reporting'.tr : 'btn_report_breakdown'.tr,
                           style: AppTextStyles.bodyMedium
                               .copyWith(color: Colors.white),
                         ),
@@ -875,11 +876,16 @@ class _LogServiceSheetState extends State<_LogServiceSheet> {
   final _notesCtrl    = TextEditingController();
   bool _submitting    = false;
 
-  static const _serviceTypes = [
-    ('INTERNAL',    'Internal (Self)'),
-    ('OEM_CENTER',  'OEM Center'),
-    ('THIRD_PARTY', '3rd Party'),
-  ];
+  static const _serviceTypes = ['INTERNAL', 'OEM_CENTER', 'THIRD_PARTY'];
+
+  String _svcTypeLabel(String t) {
+    switch (t) {
+      case 'INTERNAL':    return 'lbl_service_internal'.tr;
+      case 'OEM_CENTER':  return 'lbl_service_oem_center'.tr;
+      case 'THIRD_PARTY': return 'lbl_service_third_party'.tr;
+      default:            return t;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -901,28 +907,28 @@ class _LogServiceSheetState extends State<_LogServiceSheet> {
                   color: AppColors.navy, size: 20),
               const SizedBox(width: 8),
               Expanded(
-                child: Text('Log Service',
+                child: Text('btn_log_service'.tr,
                     style: AppTextStyles.heading3
                         .copyWith(color: AppColors.navy)),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          Text('Vehicle: ${widget.vehicleReg} · Triggered by breakdown',
+          Text('${'lbl_vehicle'.tr}: ${widget.vehicleReg} · ${'lbl_triggered_by_breakdown'.tr}',
               style:
                   AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
           const SizedBox(height: 20),
 
           // Service Type
-          Text('Service Type',
+          Text('lbl_service_type'.tr,
               style: AppTextStyles.label.copyWith(color: AppColors.navy)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             children: _serviceTypes.map((t) {
-              final selected = _serviceType == t.$1;
+              final selected = _serviceType == t;
               return GestureDetector(
-                onTap: () => setState(() => _serviceType = t.$1),
+                onTap: () => setState(() => _serviceType = t),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 9),
@@ -936,7 +942,7 @@ class _LogServiceSheetState extends State<_LogServiceSheet> {
                             ? AppColors.navy
                             : AppColors.border),
                   ),
-                  child: Text(t.$2,
+                  child: Text(_svcTypeLabel(t),
                       style: AppTextStyles.caption.copyWith(
                         color: selected ? Colors.white : AppColors.bodyText,
                         fontWeight: selected
@@ -950,14 +956,14 @@ class _LogServiceSheetState extends State<_LogServiceSheet> {
           const SizedBox(height: 16),
 
           // Notes
-          Text('Notes (optional)',
+          Text('lbl_notes_optional'.tr,
               style: AppTextStyles.label.copyWith(color: AppColors.navy)),
           const SizedBox(height: 6),
           TextField(
             controller: _notesCtrl,
             maxLines: 3,
             decoration: InputDecoration(
-              hintText: 'Describe the repair work planned…',
+              hintText: 'lbl_describe_repair'.tr,
               hintStyle:
                   AppTextStyles.caption.copyWith(color: AppColors.mutedText),
               border:
@@ -983,7 +989,7 @@ class _LogServiceSheetState extends State<_LogServiceSheet> {
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.build_circle_outlined, size: 20),
               label: Text(
-                _submitting ? 'Creating…' : 'Create Service Record',
+                _submitting ? 'lbl_creating'.tr : 'btn_create_service_record'.tr,
                 style: AppTextStyles.bodyMedium
                     .copyWith(color: Colors.white),
               ),

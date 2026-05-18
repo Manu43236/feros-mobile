@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/string_utils.dart';
+import '../../../../../core/widgets/language_switcher_tile.dart';
 import '../controllers/driver_profile_controller.dart';
 
 class DriverProfileView extends GetView<DriverProfileController> {
@@ -87,23 +88,39 @@ class DriverProfileView extends GetView<DriverProfileController> {
                   children: [
                     _InfoTile(
                       icon: Icons.phone_outlined,
-                      label: 'Phone',
+                      label: 'lbl_phone'.tr,
                       value: user?.phone ?? '—',
                     ),
                     const Divider(height: 1, indent: 56),
                     _InfoTile(
                       icon: Icons.business_outlined,
-                      label: 'Company',
+                      label: 'lbl_company'.tr,
                       value: user?.companyName ?? '—',
                     ),
                     const Divider(height: 1, indent: 56),
                     _InfoTile(
                       icon: Icons.badge_outlined,
-                      label: 'User ID',
+                      label: 'lbl_user_id'.tr,
                       value: '#${user?.userId ?? '—'}',
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(height: 12),
+
+              // ── Language ──────────────────────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [
+                    BoxShadow(
+                        color: Color(0x0A000000),
+                        blurRadius: 8,
+                        offset: Offset(0, 2)),
+                  ],
+                ),
+                child: const LanguageSwitcherTile(),
               ),
               const SizedBox(height: 24),
 
@@ -113,7 +130,7 @@ class DriverProfileView extends GetView<DriverProfileController> {
                 child: ElevatedButton.icon(
                   onPressed: controller.logout,
                   icon: const Icon(Icons.logout, size: 18),
-                  label: Text('Logout',
+                  label: Text('btn_logout'.tr,
                       style: AppTextStyles.bodyMedium.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600)),
@@ -131,7 +148,7 @@ class DriverProfileView extends GetView<DriverProfileController> {
 
               // ── App version ───────────────────────────────────
               Center(
-                child: Text('FEROS v1.0.0',
+                child: Text('lbl_version'.tr,
                     style: AppTextStyles.caption
                         .copyWith(color: AppColors.mutedText)),
               ),
@@ -142,13 +159,13 @@ class DriverProfileView extends GetView<DriverProfileController> {
 
   String _roleLabel(String role) {
     switch (role) {
-      case 'DRIVER':       return 'Driver';
-      case 'CLEANER':      return 'Cleaner';
-      case 'SUPERVISOR':   return 'Supervisor';
-      case 'OFFICE_STAFF': return 'Office Staff';
-      case 'SERVICE_MEN':  return 'Service Men';
-      case 'STORE_KEEPER': return 'Store Keeper';
-      case 'ADMIN':        return 'Admin';
+      case 'DRIVER':       return 'role_driver'.tr;
+      case 'CLEANER':      return 'role_cleaner'.tr;
+      case 'SUPERVISOR':   return 'role_supervisor'.tr;
+      case 'OFFICE_STAFF': return 'role_office_staff'.tr;
+      case 'SERVICE_MEN':  return 'role_service_men'.tr;
+      case 'STORE_KEEPER': return 'role_store_keeper'.tr;
+      case 'ADMIN':        return 'role_admin'.tr;
       default:             return role;
     }
   }
@@ -179,7 +196,7 @@ class _TripStat extends StatelessWidget {
                 ),
               ),
         const SizedBox(height: 4),
-        Text('Trips Completed',
+        Text('lbl_trips_completed'.tr,
             style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
       ],
     );

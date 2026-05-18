@@ -62,9 +62,9 @@ class _ChangePinViewState extends State<ChangePinView> {
             size: 18,
           ),
         ),
-        title: const Text(
-          'Change PIN',
-          style: TextStyle(
+        title: Text(
+          'lbl_change_pin'.tr,
+          style: const TextStyle(
             color: Colors.white,
             fontFamily: 'Inter',
             fontWeight: FontWeight.w600,
@@ -91,17 +91,17 @@ class _ChangePinViewState extends State<ChangePinView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _PinField(
-                  label: 'Current PIN',
+                  label: 'lbl_current_pin'.tr,
                   onChanged: (v) => setState(() => _currentPin = v),
                 ),
                 const SizedBox(height: 24),
                 _PinField(
-                  label: 'New PIN',
+                  label: 'lbl_new_pin'.tr,
                   onChanged: (v) => setState(() => _newPin = v),
                 ),
                 const SizedBox(height: 24),
                 _PinField(
-                  label: 'Confirm New PIN',
+                  label: 'lbl_confirm_new_pin'.tr,
                   onChanged: (v) => setState(() => _confirmPin = v),
                 ),
               ],
@@ -129,7 +129,7 @@ class _ChangePinViewState extends State<ChangePinView> {
                           strokeWidth: 2, color: Colors.white),
                     )
                   : Text(
-                      'Change PIN',
+                      'btn_change_pin'.tr,
                       style: AppTextStyles.bodyMedium.copyWith(
                           color: Colors.white, fontWeight: FontWeight.w600),
                     ),

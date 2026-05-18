@@ -56,13 +56,13 @@ class _StoreKeeperInventoryViewState extends State<StoreKeeperInventoryView>
             labelStyle: AppTextStyles.label
                 .copyWith(fontWeight: FontWeight.w600),
             tabs: [
-              const Tab(text: 'Stock'),
-              const Tab(text: 'Parts'),
+              Tab(text: 'lbl_stock'.tr),
+              Tab(text: 'lbl_parts'.tr),
               Tab(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Requests'),
+                    Text('lbl_requests'.tr),
                     if (_ctrl.pendingPartCount + _ctrl.pendingTireCount > 0) ...[
                       const SizedBox(width: 6),
                       _Badge(_ctrl.pendingPartCount + _ctrl.pendingTireCount),
@@ -95,7 +95,7 @@ class _StoreKeeperInventoryViewState extends State<StoreKeeperInventoryView>
                     backgroundColor: AppColors.navy,
                     foregroundColor: Colors.white,
                     icon: const Icon(Icons.add),
-                    label: const Text('Add Stock'),
+                    label: Text('btn_add_stock'.tr),
                   ),
                 ),
               if (_tab.index == 1 && _isAdmin)
@@ -107,7 +107,7 @@ class _StoreKeeperInventoryViewState extends State<StoreKeeperInventoryView>
                     backgroundColor: AppColors.navy,
                     foregroundColor: Colors.white,
                     icon: const Icon(Icons.add),
-                    label: const Text('Add Part'),
+                    label: Text('btn_add_part'.tr),
                   ),
                 ),
             ],
@@ -213,18 +213,18 @@ class _StockTab extends StatelessWidget {
                     Row(
                       children: [
                         _StatCard(
-                          label: 'Total Items',
+                          label: 'lbl_total_items'.tr,
                           value: '${ctrl.stockItems.length}',
                         ),
                         const SizedBox(width: 8),
                         _StatCard(
-                          label: 'In Stock',
+                          label: 'lbl_in_stock'.tr,
                           value: '${ctrl.inStockCount}',
                           valueColor: AppColors.success,
                         ),
                         const SizedBox(width: 8),
                         _StatCard(
-                          label: 'Low Stock',
+                          label: 'lbl_low_stock'.tr,
                           value: '${ctrl.lowStockCount}',
                           valueColor: AppColors.error,
                           onTap: ctrl.toggleLowStock,
@@ -249,13 +249,13 @@ class _StockTab extends StatelessWidget {
                             Icon(Icons.warning_amber_rounded,
                                 size: 14, color: AppColors.error),
                             const SizedBox(width: 6),
-                            Text('Showing low stock only',
+                            Text('lbl_showing_low_stock'.tr,
                                 style: AppTextStyles.caption
                                     .copyWith(color: AppColors.error)),
                             const Spacer(),
                             GestureDetector(
                               onTap: ctrl.toggleLowStock,
-                              child: Text('Clear',
+                              child: Text('lbl_clear'.tr,
                                   style: AppTextStyles.caption.copyWith(
                                       color: AppColors.error,
                                       decoration: TextDecoration.underline)),
@@ -264,7 +264,7 @@ class _StockTab extends StatelessWidget {
                         ),
                       ),
                     FerosSearchBar(
-                      hint: 'Search stock…',
+                      hint: 'lbl_search_stock'.tr,
                       onChanged: ctrl.setStockSearch,
                     ),
                     const SizedBox(height: 12),
@@ -285,16 +285,16 @@ class _StockTab extends StatelessWidget {
                 ),
               )
             else if (ctrl.filteredStock.isEmpty)
-              const SliverFillRemaining(
+              SliverFillRemaining(
                 child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.inventory_2_outlined,
+                      const Icon(Icons.inventory_2_outlined,
                           size: 48, color: Colors.black26),
-                      SizedBox(height: 8),
-                      Text('No stock records',
-                          style: TextStyle(color: Colors.black45)),
+                      const SizedBox(height: 8),
+                      Text('lbl_no_stock_records'.tr,
+                          style: const TextStyle(color: Colors.black45)),
                     ],
                   ),
                 ),
@@ -398,7 +398,7 @@ class _StockRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  isLow ? 'Low' : 'OK',
+                  isLow ? 'lbl_low'.tr : 'lbl_ok'.tr,
                   style: AppTextStyles.caption.copyWith(
                     color: isLow ? AppColors.error : AppColors.success,
                     fontWeight: FontWeight.w600,
@@ -437,18 +437,18 @@ class _PartsTab extends StatelessWidget {
                     Row(
                       children: [
                         _StatCard(
-                          label: 'Total Parts',
+                          label: 'lbl_total_parts'.tr,
                           value: '${ctrl.spareParts.length}',
                         ),
                         const SizedBox(width: 8),
                         _StatCard(
-                          label: 'Active',
+                          label: 'lbl_active'.tr,
                           value: '${ctrl.activeParts}',
                           valueColor: AppColors.success,
                         ),
                         const SizedBox(width: 8),
                         _StatCard(
-                          label: 'Categories',
+                          label: 'lbl_categories'.tr,
                           value: '${ctrl.categoryCount}',
                           valueColor: AppColors.navy,
                         ),
@@ -456,7 +456,7 @@ class _PartsTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     FerosSearchBar(
-                      hint: 'Search parts…',
+                      hint: 'lbl_search_parts'.tr,
                       onChanged: ctrl.setPartsSearch,
                     ),
                     const SizedBox(height: 12),
@@ -477,16 +477,16 @@ class _PartsTab extends StatelessWidget {
                 ),
               )
             else if (ctrl.filteredParts.isEmpty)
-              const SliverFillRemaining(
+              SliverFillRemaining(
                 child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.build_outlined,
+                      const Icon(Icons.build_outlined,
                           size: 48, color: Colors.black26),
-                      SizedBox(height: 8),
-                      Text('No spare parts found',
-                          style: TextStyle(color: Colors.black45)),
+                      const SizedBox(height: 8),
+                      Text('lbl_no_spare_parts_found'.tr,
+                          style: const TextStyle(color: Colors.black45)),
                     ],
                   ),
                 ),
@@ -561,7 +561,7 @@ class _PartRow extends StatelessWidget {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        isActive ? 'Active' : 'Inactive',
+                        isActive ? 'lbl_active'.tr : 'lbl_inactive'.tr,
                         style: AppTextStyles.caption.copyWith(
                           color: isActive
                               ? AppColors.success
@@ -584,7 +584,7 @@ class _PartRow extends StatelessWidget {
                       Text(category,
                           style: AppTextStyles.caption
                               .copyWith(color: AppColors.mutedText)),
-                    Text('$unit · min $minStock',
+                    Text('$unit · ${'lbl_min'.tr} $minStock',
                         style: AppTextStyles.caption
                             .copyWith(color: AppColors.mutedText)),
                   ],
@@ -658,7 +658,7 @@ class _RequestsTabState extends State<_RequestsTab>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Part Requests'),
+                    Text('lbl_part_requests'.tr),
                     if (widget.ctrl.pendingPartCount > 0) ...[
                       const SizedBox(width: 6),
                       _Badge(widget.ctrl.pendingPartCount),
@@ -670,7 +670,7 @@ class _RequestsTabState extends State<_RequestsTab>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Tire Requests'),
+                    Text('lbl_tire_requests'.tr),
                     if (widget.ctrl.pendingTireCount > 0) ...[
                       const SizedBox(width: 6),
                       _Badge(widget.ctrl.pendingTireCount),
@@ -718,15 +718,15 @@ class _PartRequestsList extends StatelessWidget {
         onRefresh: ctrl.fetchPartRequests,
         color: AppColors.navy,
         child: requests.isEmpty
-            ? const Center(
+            ? Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.check_circle_outline,
+                    const Icon(Icons.check_circle_outline,
                         size: 48, color: Colors.black26),
-                    SizedBox(height: 8),
-                    Text('No pending part requests',
-                        style: TextStyle(color: Colors.black45)),
+                    const SizedBox(height: 8),
+                    Text('lbl_no_pending_part_requests'.tr,
+                        style: const TextStyle(color: Colors.black45)),
                   ],
                 ),
               )
@@ -805,7 +805,7 @@ class _PartReqCard extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: () => _showPartReqSheet(context, ctrl, id, qtyReq),
               icon: const Icon(Icons.check_circle_outline, size: 16),
-              label: const Text('Process'),
+              label: Text('btn_process'.tr),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.navy,
                 side: BorderSide(color: AppColors.navy.withValues(alpha: 0.4)),
@@ -842,15 +842,15 @@ class _TireRequestsList extends StatelessWidget {
         onRefresh: ctrl.fetchTireRequests,
         color: AppColors.navy,
         child: requests.isEmpty
-            ? const Center(
+            ? Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.tire_repair_outlined,
+                    const Icon(Icons.tire_repair_outlined,
                         size: 48, color: Colors.black26),
-                    SizedBox(height: 8),
-                    Text('No pending tire requests',
-                        style: TextStyle(color: Colors.black45)),
+                    const SizedBox(height: 8),
+                    Text('lbl_no_pending_tire_requests'.tr,
+                        style: const TextStyle(color: Colors.black45)),
                   ],
                 ),
               )
@@ -904,7 +904,7 @@ class _TireReqCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          _InfoRow(Icons.location_on_outlined, 'Position: $position'),
+          _InfoRow(Icons.location_on_outlined, '${'lbl_position'.tr}: $position'),
           _InfoRow(Icons.person_outline, reqBy),
           if (notes != null && notes.isNotEmpty)
             _InfoRow(Icons.notes_outlined, notes),
@@ -915,7 +915,7 @@ class _TireReqCard extends StatelessWidget {
               onPressed: () =>
                   _showTireReqSheet(context, ctrl, id, request),
               icon: const Icon(Icons.check_circle_outline, size: 16),
-              label: const Text('Process'),
+              label: Text('btn_process'.tr),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.navy,
                 side: BorderSide(color: AppColors.navy.withValues(alpha: 0.4)),
@@ -1046,7 +1046,7 @@ class _StockInSheetState extends State<_StockInSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  Text('Add Stock (Stock In)',
+                  Text('lbl_add_stock_in'.tr,
                       style: AppTextStyles.heading3),
                   const Spacer(),
                   IconButton(
@@ -1064,9 +1064,9 @@ class _StockInSheetState extends State<_StockInSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     FerosSelectField<Map<String, dynamic>>(
-                      label: 'Spare Part',
-                      title: 'Select Spare Part',
-                      hint: 'Select part',
+                      label: 'lbl_spare_part'.tr,
+                      title: 'lbl_select_spare_part_title'.tr,
+                      hint: 'lbl_select_part'.tr,
                       isRequired: true,
                       items: widget.ctrl.spareParts,
                       itemLabel: (p) => p['name'] as String? ?? '',
@@ -1079,23 +1079,23 @@ class _StockInSheetState extends State<_StockInSheet> {
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        Expanded(child: _field('Quantity *', _qtyCtrl,
+                        Expanded(child: _field('${'lbl_quantity'.tr} *', _qtyCtrl,
                             keyboardType: TextInputType.number,
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly
                             ])),
                         const SizedBox(width: 12),
-                        Expanded(child: _field('Unit Cost (₹)', _costCtrl,
-                            hint: 'Optional',
+                        Expanded(child: _field('lbl_unit_cost'.tr, _costCtrl,
+                            hint: 'lbl_optional'.tr,
                             keyboardType: const TextInputType
                                 .numberWithOptions(decimal: true))),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    _field('Supplier Name', _supplierCtrl,
-                        hint: 'Optional'),
+                    _field('lbl_supplier_name'.tr, _supplierCtrl,
+                        hint: 'lbl_optional'.tr),
                     const SizedBox(height: 16),
-                    _field('Notes', _notesCtrl, hint: 'Optional'),
+                    _field('lbl_notes'.tr, _notesCtrl, hint: 'lbl_optional'.tr),
                   ],
                 ),
               ),
@@ -1121,9 +1121,9 @@ class _StockInSheetState extends State<_StockInSheet> {
                             width: 20, height: 20,
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white))
-                        : const Text('Add Stock',
+                        : Text('btn_add_stock'.tr,
                             style:
-                                TextStyle(fontWeight: FontWeight.w600)),
+                                const TextStyle(fontWeight: FontWeight.w600)),
                   ),
                 ),
               ),
@@ -1246,7 +1246,7 @@ class _SparePartSheetState extends State<_SparePartSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  Text(_isEdit ? 'Edit Spare Part' : 'Add Spare Part',
+                  Text(_isEdit ? 'lbl_edit_spare_part'.tr : 'lbl_add_spare_part'.tr,
                       style: AppTextStyles.heading3),
                   const Spacer(),
                   IconButton(
@@ -1263,14 +1263,14 @@ class _SparePartSheetState extends State<_SparePartSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _field('Name *', _nameCtrl),
+                    _field('${'lbl_name'.tr} *', _nameCtrl),
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        Expanded(child: _field('Part Number',
-                            _partNoCtrl, hint: 'Optional')),
+                        Expanded(child: _field('lbl_part_number'.tr,
+                            _partNoCtrl, hint: 'lbl_optional'.tr)),
                         const SizedBox(width: 12),
-                        Expanded(child: _field('Category',
+                        Expanded(child: _field('lbl_category'.tr,
                             _categoryCtrl, hint: 'e.g. Engine')),
                       ],
                     ),
@@ -1282,7 +1282,7 @@ class _SparePartSheetState extends State<_SparePartSheet> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Unit *',
+                              Text('${'lbl_unit'.tr} *',
                                   style: AppTextStyles.label.copyWith(
                                       color: AppColors.bodyText)),
                               const SizedBox(height: 6),
@@ -1314,7 +1314,7 @@ class _SparePartSheetState extends State<_SparePartSheet> {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: _field('Min Stock Alert', _minStockCtrl,
+                          child: _field('lbl_min_stock_alert'.tr, _minStockCtrl,
                               keyboardType: TextInputType.number,
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly
@@ -1345,7 +1345,7 @@ class _SparePartSheetState extends State<_SparePartSheet> {
                             width: 20, height: 20,
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white))
-                        : Text(_isEdit ? 'Update' : 'Create',
+                        : Text(_isEdit ? 'btn_update'.tr : 'btn_create'.tr,
                             style: const TextStyle(
                                 fontWeight: FontWeight.w600)),
                   ),
@@ -1454,7 +1454,7 @@ class _PartReqSheetState extends State<_PartReqSheet> {
                       borderRadius: BorderRadius.circular(2))),
             ),
             const SizedBox(height: 16),
-            Text('Process Part Request',
+            Text('lbl_process_part_request'.tr,
                 style: AppTextStyles.heading3),
             const SizedBox(height: 16),
             Row(
@@ -1476,7 +1476,7 @@ class _PartReqSheetState extends State<_PartReqSheet> {
                         ),
                       ),
                       child: Center(
-                        child: Text('✓ Approve',
+                        child: Text('✓ ${'btn_approve'.tr}',
                             style: AppTextStyles.bodyMedium.copyWith(
                                 color: _approve
                                     ? Colors.white
@@ -1504,7 +1504,7 @@ class _PartReqSheetState extends State<_PartReqSheet> {
                         ),
                       ),
                       child: Center(
-                        child: Text('✗ Reject',
+                        child: Text('✗ ${'btn_reject'.tr}',
                             style: AppTextStyles.bodyMedium.copyWith(
                                 color: !_approve
                                     ? Colors.white
@@ -1518,14 +1518,14 @@ class _PartReqSheetState extends State<_PartReqSheet> {
             ),
             const SizedBox(height: 16),
             if (_approve)
-              _field('Quantity to Approve *', _qtyCtrl,
+              _field('${'lbl_qty_to_approve'.tr} *', _qtyCtrl,
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly
                   ])
             else
-              _field('Rejection Reason *', _reasonCtrl,
-                  hint: 'Reason for rejection…'),
+              _field('${'lbl_rejection_reason'.tr} *', _reasonCtrl,
+                  hint: 'lbl_reason_for_rejection'.tr),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
@@ -1546,8 +1546,8 @@ class _PartReqSheetState extends State<_PartReqSheet> {
                             strokeWidth: 2, color: Colors.white))
                     : Text(
                         _approve
-                            ? 'Approve & Deduct Stock'
-                            : 'Reject Request',
+                            ? 'btn_approve_deduct_stock'.tr
+                            : 'btn_reject_request'.tr,
                         style: const TextStyle(
                             fontWeight: FontWeight.w600)),
               ),
@@ -1661,7 +1661,7 @@ class _TireReqSheetState extends State<_TireReqSheet> {
                       borderRadius: BorderRadius.circular(2))),
             ),
             const SizedBox(height: 16),
-            Text('Process Tire Request',
+            Text('lbl_process_tire_request'.tr,
                 style: AppTextStyles.heading3),
             const SizedBox(height: 8),
             Container(
@@ -1674,7 +1674,7 @@ class _TireReqSheetState extends State<_TireReqSheet> {
                 children: [
                   _InfoRow(Icons.directions_car_outlined, vehicle),
                   _InfoRow(Icons.location_on_outlined,
-                      'Position: $position'),
+                      '${'lbl_position'.tr}: $position'),
                 ],
               ),
             ),
@@ -1698,7 +1698,7 @@ class _TireReqSheetState extends State<_TireReqSheet> {
                         ),
                       ),
                       child: Center(
-                        child: Text('✓ Approve',
+                        child: Text('✓ ${'btn_approve'.tr}',
                             style: AppTextStyles.bodyMedium.copyWith(
                                 color: _approve
                                     ? Colors.white
@@ -1726,7 +1726,7 @@ class _TireReqSheetState extends State<_TireReqSheet> {
                         ),
                       ),
                       child: Center(
-                        child: Text('✗ Reject',
+                        child: Text('✗ ${'btn_reject'.tr}',
                             style: AppTextStyles.bodyMedium.copyWith(
                                 color: !_approve
                                     ? Colors.white
@@ -1741,9 +1741,9 @@ class _TireReqSheetState extends State<_TireReqSheet> {
             const SizedBox(height: 16),
             if (_approve) ...[
               Obx(() => FerosSelectField<Map<String, dynamic>>(
-                label: 'Select Tire to Issue *',
-                title: 'Available Tires',
-                hint: 'Search by serial number…',
+                label: '${'lbl_select_tire_to_issue'.tr} *',
+                title: 'lbl_available_tires'.tr,
+                hint: 'lbl_search_by_serial'.tr,
                 isRequired: true,
                 items: widget.ctrl.availableTires,
                 itemLabel: (t) {
@@ -1758,15 +1758,15 @@ class _TireReqSheetState extends State<_TireReqSheet> {
                 onSelected: (t) => setState(() => _selectedTire = t),
               )),
               const SizedBox(height: 12),
-              _field('Fitted at Km', _kmCtrl,
-                  hint: 'Optional',
+              _field('lbl_fitted_at_km'.tr, _kmCtrl,
+                  hint: 'lbl_optional'.tr,
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly
                   ]),
             ] else
-              _field('Rejection Reason *', _reasonCtrl,
-                  hint: 'Reason for rejection…'),
+              _field('${'lbl_rejection_reason'.tr} *', _reasonCtrl,
+                  hint: 'lbl_reason_for_rejection'.tr),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
@@ -1787,8 +1787,8 @@ class _TireReqSheetState extends State<_TireReqSheet> {
                             strokeWidth: 2, color: Colors.white))
                     : Text(
                         _approve
-                            ? 'Approve & Issue Tire'
-                            : 'Reject Request',
+                            ? 'btn_approve_issue_tire'.tr
+                            : 'btn_reject_request'.tr,
                         style: const TextStyle(
                             fontWeight: FontWeight.w600)),
               ),

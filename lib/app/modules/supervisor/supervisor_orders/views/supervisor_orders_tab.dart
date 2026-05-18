@@ -84,7 +84,7 @@ class _SearchBar extends StatelessWidget {
         onChanged: controller.onSearch,
         style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
         decoration: InputDecoration(
-          hintText: 'Search by order no., client, city...',
+          hintText: 'lbl_search_orders'.tr,
           hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
           prefixIcon: const Icon(Icons.search, color: AppColors.mutedText, size: 20),
           filled: true,
@@ -327,14 +327,14 @@ class _StatusBadge extends StatelessWidget {
 
   String _label(String s) {
     switch (s) {
-      case 'PENDING':             return 'Pending';
-      case 'PARTIALLY_ASSIGNED':  return 'Part. Assigned';
-      case 'FULLY_ASSIGNED':      return 'Assigned';
-      case 'IN_TRANSIT':          return 'In Transit';
-      case 'PARTIALLY_DELIVERED': return 'Part. Delivered';
-      case 'DELIVERED':           return 'Delivered';
-      case 'COMPLETED':           return 'Completed';
-      case 'CANCELLED':           return 'Cancelled';
+      case 'PENDING':             return 'status_pending'.tr;
+      case 'PARTIALLY_ASSIGNED':  return 'lbl_part_assigned'.tr;
+      case 'FULLY_ASSIGNED':      return 'lbl_assigned'.tr;
+      case 'IN_TRANSIT':          return 'status_in_transit'.tr;
+      case 'PARTIALLY_DELIVERED': return 'lbl_part_delivered'.tr;
+      case 'DELIVERED':           return 'status_delivered'.tr;
+      case 'COMPLETED':           return 'status_completed'.tr;
+      case 'CANCELLED':           return 'status_cancelled'.tr;
       default:                    return s;
     }
   }
@@ -351,10 +351,10 @@ class _EmptyState extends StatelessWidget {
         children: [
           const Icon(Icons.assignment_outlined, size: 52, color: AppColors.mutedText),
           const SizedBox(height: 16),
-          Text('No orders found',
+          Text('lbl_no_orders_found'.tr,
               style: AppTextStyles.heading4.copyWith(color: AppColors.navy)),
           const SizedBox(height: 6),
-          Text('Try a different filter or search',
+          Text('lbl_try_filter'.tr,
               style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
         ],
       ),
@@ -373,7 +373,7 @@ class _ErrorState extends StatelessWidget {
         children: [
           const Icon(Icons.error_outline, size: 48, color: AppColors.error),
           const SizedBox(height: 12),
-          Text('Failed to load orders',
+          Text('lbl_failed_orders'.tr,
               style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
           const SizedBox(height: 16),
           ElevatedButton(
@@ -384,7 +384,7 @@ class _ErrorState extends StatelessWidget {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('Retry'),
+            child: Text('btn_retry'.tr),
           ),
         ],
       ),

@@ -33,7 +33,7 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
             children: [
               const Icon(Icons.error_outline, size: 48, color: Color(0xFFDC2626)),
               const SizedBox(height: 12),
-              Text('Something went wrong',
+              Text('lbl_something_wrong'.tr,
                   style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy)),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -45,7 +45,7 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text('Retry'),
+                child: Text('btn_retry'.tr),
               ),
             ],
           ),
@@ -62,14 +62,14 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
         return _HomeState(
           statusColor: const Color(0xFFD97706),
           statusIcon: Icons.local_shipping,
-          statusLabel: 'ON TRIP',
+          statusLabel: 'lbl_on_trip'.tr,
           tripData: active,
           attended: attended,
-          actionLabel: 'Mark as Done',
+          actionLabel: 'btn_mark_done'.tr,
           actionIcon: Icons.check_circle_outline,
           actionColor: AppColors.navy,
           onAction: () => _markDoneFromHome(context, active),
-          secondaryActionLabel: 'View Trip Details',
+          secondaryActionLabel: 'btn_view_trip_details'.tr,
           onSecondaryAction: () => _openTrip(context, active),
           onCardTap: () => _openTrip(context, active),
           bottomRow: _BottomNav(controller: controller, attended: attended),
@@ -82,10 +82,10 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
         return _HomeState(
           statusColor: const Color(0xFFD97706),
           statusIcon: Icons.inventory_2_outlined,
-          statusLabel: 'TRIP READY',
+          statusLabel: 'lbl_trip_ready'.tr,
           tripData: nextReady,
           attended: attended,
-          actionLabel: gateBlocked ? 'Mark Attendance First' : 'Start Trip',
+          actionLabel: gateBlocked ? 'lbl_mark_attendance_first'.tr : 'btn_start_trip'.tr,
           actionIcon: gateBlocked ? Icons.lock_outline : Icons.play_circle_outline,
           actionColor: gateBlocked ? const Color(0xFFD97706) : AppColors.navy,
           onAction: gateBlocked
@@ -216,13 +216,13 @@ class _IdleState extends StatelessWidget {
                   size: 52, color: AppColors.navy),
             ),
             const SizedBox(height: 16),
-            Text('No Active Trip',
+            Text('lbl_no_active_trip'.tr,
                 style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
             const SizedBox(height: 4),
             Obx(() => Text(
               controller.isAttendanceMarked.value
-                  ? 'Attendance marked ✓'
-                  : 'Mark your attendance first',
+                  ? 'lbl_attendance_marked'.tr
+                  : 'lbl_mark_attendance_first'.tr,
               style: AppTextStyles.body.copyWith(
                 color: controller.isAttendanceMarked.value
                     ? const Color(0xFF16A34A)
@@ -242,7 +242,7 @@ class _IdleState extends StatelessWidget {
                         onMarked: controller.fetchDashboard,
                       ),
                       icon: const Icon(Icons.check_circle_outline, size: 26),
-                      label: const Text('MARK ATTENDANCE',
+                      label: Text('btn_mark_attendance'.tr,
                           style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -265,7 +265,7 @@ class _IdleState extends StatelessWidget {
                 Expanded(
                   child: _BigTile(
                     icon: Icons.local_shipping_outlined,
-                    label: 'My Trips',
+                    label: 'lbl_my_trips'.tr,
                     color: AppColors.navy,
                     onTap: () =>
                         Get.find<DriverShellController>().onTabTapped(1),
@@ -275,7 +275,7 @@ class _IdleState extends StatelessWidget {
                 Expanded(
                   child: _BigTile(
                     icon: Icons.payments_outlined,
-                    label: 'My Salary',
+                    label: 'lbl_my_salary'.tr,
                     color: const Color(0xFF7C3AED),
                     onTap: () => Get.to(() => const DriverPayslipView(), binding: DriverPayslipBinding()),
                   ),
@@ -288,8 +288,7 @@ class _IdleState extends StatelessWidget {
             Obx(() => controller.upcomingTrips.isNotEmpty
                 ? _InfoBanner(
                     icon: Icons.calendar_today_outlined,
-                    text:
-                        '${controller.upcomingTrips.length} upcoming trip(s) scheduled',
+                    text: 'lbl_upcoming_trips'.trParams({'count': '${controller.upcomingTrips.length}'}),
                     color: AppColors.navy,
                   )
                 : const SizedBox.shrink()),
@@ -618,7 +617,7 @@ class _BottomNav extends StatelessWidget {
             icon: attended
                 ? Icons.check_circle
                 : Icons.check_circle_outline,
-            label: attended ? 'Present ✓' : 'Attendance',
+            label: attended ? 'lbl_present_check'.tr : 'nav_attendance'.tr,
             color: attended
                 ? const Color(0xFF16A34A)
                 : const Color(0xFFD97706),
@@ -634,7 +633,7 @@ class _BottomNav extends StatelessWidget {
         Expanded(
           child: _SmallTile(
             icon: Icons.payments_outlined,
-            label: 'My Salary',
+            label: 'lbl_my_salary'.tr,
             color: const Color(0xFF7C3AED),
             onTap: () => Get.to(() => const DriverPayslipView(), binding: DriverPayslipBinding()),
           ),

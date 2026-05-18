@@ -22,7 +22,7 @@ class DriverBreakdownView extends GetView<DriverBreakdownController> {
             size: 18,
           ),
         ),
-        title: const Text('Report Breakdown',
+        title: Text('btn_report_breakdown'.tr,
             style: TextStyle(
                 color: Colors.white,
                 fontFamily: 'Inter',
@@ -47,7 +47,7 @@ class DriverBreakdownView extends GetView<DriverBreakdownController> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Your supervisor will be notified immediately upon submission.',
+                    'lbl_supervisor_notified'.tr,
                     style: AppTextStyles.caption
                         .copyWith(color: const Color(0xFFD97706)),
                   ),
@@ -71,7 +71,7 @@ class DriverBreakdownView extends GetView<DriverBreakdownController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Breakdown Type
-                Text('Breakdown Type',
+                Text('lbl_breakdown_type'.tr,
                     style: AppTextStyles.label.copyWith(color: AppColors.navy)),
                 const SizedBox(height: 8),
                 Wrap(
@@ -101,7 +101,7 @@ class DriverBreakdownView extends GetView<DriverBreakdownController> {
                 const SizedBox(height: 16),
 
                 // Duration
-                Text('Expected Duration',
+                Text('lbl_expected_duration'.tr,
                     style: AppTextStyles.label.copyWith(color: AppColors.navy)),
                 const SizedBox(height: 8),
                 Row(
@@ -119,7 +119,7 @@ class DriverBreakdownView extends GetView<DriverBreakdownController> {
                           ),
                           child: Center(
                             child: Text(
-                              d == 'SHORT' ? 'Short (< 2 hrs)' : 'Long (> 2 hrs)',
+                              d == 'SHORT' ? 'lbl_short_duration'.tr : 'lbl_long_duration'.tr,
                               style: AppTextStyles.caption.copyWith(
                                 color: selected ? Colors.white : AppColors.mutedText,
                                 fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
@@ -134,7 +134,7 @@ class DriverBreakdownView extends GetView<DriverBreakdownController> {
                 const SizedBox(height: 16),
 
                 // Reason
-                Text('Reason *',
+                Text('${'lbl_reason'.tr} *',
                     style: AppTextStyles.label.copyWith(color: AppColors.navy)),
                 const SizedBox(height: 8),
                 TextField(
@@ -142,7 +142,7 @@ class DriverBreakdownView extends GetView<DriverBreakdownController> {
                   maxLines: 3,
                   style: AppTextStyles.body,
                   decoration: InputDecoration(
-                    hintText: 'Describe what happened…',
+                    hintText: 'lbl_describe_happened'.tr,
                     hintStyle: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     focusedBorder: OutlineInputBorder(
@@ -154,7 +154,7 @@ class DriverBreakdownView extends GetView<DriverBreakdownController> {
                 const SizedBox(height: 16),
 
                 // Notes
-                Text('Additional Notes',
+                Text('lbl_additional_notes'.tr,
                     style: AppTextStyles.label.copyWith(color: AppColors.navy)),
                 const SizedBox(height: 8),
                 TextField(
@@ -162,7 +162,7 @@ class DriverBreakdownView extends GetView<DriverBreakdownController> {
                   maxLines: 2,
                   style: AppTextStyles.body,
                   decoration: InputDecoration(
-                    hintText: 'Optional…',
+                    hintText: 'lbl_optional_hint'.tr,
                     hintStyle: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     focusedBorder: OutlineInputBorder(
@@ -206,10 +206,10 @@ class DriverBreakdownView extends GetView<DriverBreakdownController> {
                         Expanded(
                           child: Text(
                             controller.isGettingLocation.value
-                                ? 'Getting location…'
+                                ? 'lbl_getting_location'.tr
                                 : controller.position.value != null
                                     ? '${controller.position.value!.latitude.toStringAsFixed(4)}, ${controller.position.value!.longitude.toStringAsFixed(4)}'
-                                    : 'Tap to capture current location (optional)',
+                                    : 'lbl_tap_location'.tr,
                             style: AppTextStyles.caption.copyWith(
                               color: controller.position.value != null
                                   ? const Color(0xFF16A34A)
@@ -244,7 +244,7 @@ class DriverBreakdownView extends GetView<DriverBreakdownController> {
                           strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.report_problem_outlined, size: 20),
               label: Text(
-                controller.isSubmitting.value ? 'Submitting…' : 'Report Breakdown',
+                controller.isSubmitting.value ? 'lbl_submitting'.tr : 'btn_report_breakdown'.tr,
                 style: AppTextStyles.bodyMedium.copyWith(
                     color: Colors.white, fontWeight: FontWeight.w600),
               ),

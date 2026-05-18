@@ -79,9 +79,9 @@ class _StoreKeeperPartDetailViewState extends State<StoreKeeperPartDetailView>
           unselectedLabelColor: Colors.white60,
           labelStyle: AppTextStyles.caption
               .copyWith(fontWeight: FontWeight.w600),
-          tabs: const [
-            Tab(text: 'Overview'),
-            Tab(text: 'Transactions'),
+          tabs: [
+            Tab(text: 'lbl_overview'.tr),
+            Tab(text: 'lbl_transactions'.tr),
           ],
         ),
       ),
@@ -187,7 +187,7 @@ class _OverviewTab extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    isLow ? 'Low Stock' : 'In Stock',
+                    isLow ? 'lbl_low_stock'.tr : 'lbl_in_stock'.tr,
                     style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 12,
@@ -214,16 +214,16 @@ class _OverviewTab extends StatelessWidget {
             child: Column(
               children: [
                 if (partNum != null) ...[
-                  _DetailRow(label: 'Part Number', value: partNum),
+                  _DetailRow(label: 'lbl_part_number'.tr, value: partNum),
                   const Divider(height: 1, indent: 16),
                 ],
                 if (category != null) ...[
-                  _DetailRow(label: 'Category', value: category),
+                  _DetailRow(label: 'lbl_category'.tr, value: category),
                   const Divider(height: 1, indent: 16),
                 ],
-                _DetailRow(label: 'Unit', value: unit.isEmpty ? '—' : unit),
+                _DetailRow(label: 'lbl_unit'.tr, value: unit.isEmpty ? '—' : unit),
                 const Divider(height: 1, indent: 16),
-                _DetailRow(label: 'Min Stock Level', value: '$minLevel $unit'),
+                _DetailRow(label: 'lbl_min_stock_level'.tr, value: '$minLevel $unit'),
               ],
             ),
           ),
@@ -236,7 +236,7 @@ class _OverviewTab extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: onStockIn,
                   icon: const Icon(Icons.add, size: 18),
-                  label: Text('Stock In',
+                  label: Text('lbl_stock_in'.tr,
                       style: AppTextStyles.bodyMedium.copyWith(
                           color: Colors.white, fontWeight: FontWeight.w600)),
                   style: ElevatedButton.styleFrom(
@@ -254,7 +254,7 @@ class _OverviewTab extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: onStockOut,
                   icon: const Icon(Icons.remove_circle_outline, size: 18),
-                  label: Text('Write-off',
+                  label: Text('lbl_write_off'.tr,
                       style: AppTextStyles.bodyMedium.copyWith(
                           color: Colors.white, fontWeight: FontWeight.w600)),
                   style: ElevatedButton.styleFrom(
@@ -316,7 +316,7 @@ class _TransactionsTab extends StatelessWidget {
           children: [
             const Icon(Icons.history, size: 48, color: AppColors.border),
             const SizedBox(height: 12),
-            Text('No transactions yet',
+            Text('lbl_no_transactions'.tr,
                 style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
           ],
         ),
@@ -378,7 +378,7 @@ class _TxCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(isIn ? 'Stock In' : 'Stock Out',
+                    Text(isIn ? 'lbl_stock_in'.tr : 'lbl_stock_out'.tr,
                         style: AppTextStyles.bodyMedium.copyWith(
                             color: isIn
                                 ? const Color(0xFF16A34A)
@@ -391,13 +391,13 @@ class _TxCard extends StatelessWidget {
                 ),
                 if (supplier != null) ...[
                   const SizedBox(height: 2),
-                  Text('Supplier: $supplier',
+                  Text('${'lbl_supplier'.tr}: $supplier',
                       style: AppTextStyles.caption
                           .copyWith(color: AppColors.mutedText)),
                 ],
                 if (unitCost != null) ...[
                   const SizedBox(height: 2),
-                  Text('Unit cost: ₹$unitCost',
+                  Text('${'lbl_unit_cost_tx'.tr}: ₹$unitCost',
                       style: AppTextStyles.caption
                           .copyWith(color: AppColors.mutedText)),
                 ],

@@ -63,9 +63,9 @@ class DriverAttendanceView extends GetView<DriverAttendanceController> {
                               size: 20,
                             ),
                             const SizedBox(width: 10),
-                            const Expanded(
+                            Expanded(
                               child: Text(
-                                'Mark Today\'s Attendance',
+                                'lbl_mark_today_attendance'.tr,
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontFamily: 'Inter',
@@ -188,22 +188,22 @@ class DriverAttendanceView extends GetView<DriverAttendanceController> {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         _SummaryChip(
-                          label: 'Present',
+                          label: 'status_present'.tr,
                           count: present,
                           color: const Color(0xFF16A34A),
                         ),
                         _SummaryChip(
-                          label: 'Absent',
+                          label: 'status_absent'.tr,
                           count: absent,
                           color: const Color(0xFFDC2626),
                         ),
                         _SummaryChip(
-                          label: 'Half Day',
+                          label: 'status_half_day'.tr,
                           count: halfDay,
                           color: const Color(0xFFD97706),
                         ),
                         _SummaryChip(
-                          label: 'Leave',
+                          label: 'status_leave'.tr,
                           count: onLeave,
                           color: AppColors.navy,
                         ),
@@ -227,13 +227,10 @@ class DriverAttendanceView extends GetView<DriverAttendanceController> {
                     spacing: 16,
                     runSpacing: 6,
                     children: [
-                      _Legend(color: const Color(0xFF16A34A), label: 'Present'),
-                      _Legend(color: const Color(0xFFDC2626), label: 'Absent'),
-                      _Legend(
-                        color: const Color(0xFFD97706),
-                        label: 'Half Day',
-                      ),
-                      _Legend(color: AppColors.navy, label: 'Leave'),
+                      _Legend(color: const Color(0xFF16A34A), label: 'status_present'.tr),
+                      _Legend(color: const Color(0xFFDC2626), label: 'status_absent'.tr),
+                      _Legend(color: const Color(0xFFD97706), label: 'status_half_day'.tr),
+                      _Legend(color: AppColors.navy, label: 'status_leave'.tr),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -241,7 +238,7 @@ class DriverAttendanceView extends GetView<DriverAttendanceController> {
                   // ── Records List ──────────────────────────
                   if (records.isNotEmpty) ...[
                     Text(
-                      'This Month\'s Records',
+                      'lbl_this_month_records'.tr,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.navy,
                       ),
@@ -412,7 +409,7 @@ class _DayDetail extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             Text(
-              '$dateLabel — No record',
+              '$dateLabel — ${'lbl_no_record'.tr}',
               style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
             ),
           ],
@@ -462,7 +459,7 @@ class _DayDetail extends StatelessWidget {
           if (markedAt != null) ...[
             const SizedBox(height: 4),
             Text(
-              'Marked at ${_formatTime(markedAt)}',
+              '${'lbl_marked_at'.tr} ${_formatTime(markedAt)}',
               style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
             ),
           ],
@@ -515,7 +512,7 @@ class _DayDetail extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'Tap selfie to enlarge',
+                  'lbl_tap_selfie'.tr,
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.mutedText,
                     fontSize: 11,
@@ -535,15 +532,15 @@ class _DayDetail extends StatelessWidget {
     switch (status) {
       case 'APPROVED':
         color = const Color(0xFF16A34A);
-        label = 'Approved';
+        label = 'status_approved'.tr;
         break;
       case 'REJECTED':
         color = const Color(0xFFDC2626);
-        label = 'Rejected';
+        label = 'status_rejected'.tr;
         break;
       default:
         color = const Color(0xFFD97706);
-        label = 'Pending';
+        label = 'status_pending'.tr;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -672,15 +669,15 @@ class _AttendanceListItem extends StatelessWidget {
     switch (status) {
       case 'APPROVED':
         statusColor = const Color(0xFF16A34A);
-        statusLabel = 'Approved';
+        statusLabel = 'status_approved'.tr;
         break;
       case 'REJECTED':
         statusColor = const Color(0xFFDC2626);
-        statusLabel = 'Rejected';
+        statusLabel = 'status_rejected'.tr;
         break;
       default:
         statusColor = const Color(0xFFD97706);
-        statusLabel = 'Pending';
+        statusLabel = 'status_pending'.tr;
     }
 
     return Container(

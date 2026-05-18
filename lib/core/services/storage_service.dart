@@ -1,11 +1,13 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import '../models/user_model.dart';
 
 class StorageService extends GetxService {
-  static const _keyToken = 'feros_token';
-  static const _keyUser  = 'feros_user';
+  static const _keyToken  = 'feros_token';
+  static const _keyUser   = 'feros_user';
+  static const _keyLocale = 'feros_locale';
 
   final _storage = const FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
@@ -33,6 +35,17 @@ class StorageService extends GetxService {
   Future<bool> isLoggedIn() async {
     final token = await getToken();
     return token != null && token.isNotEmpty;
+  }
+
+  Future<void> saveLocale(Locale locale) =>
+      _storage.write(key: _keyLocale, value: '${locale.languageCode}_${locale.countryCode}');
+
+  Future<Locale?> getLocale() async {
+    final raw = await _storage.read(key: _keyLocale);
+    if (raw == null) return null;
+    final parts = raw.split('_');
+    if (parts.length < 2) return null;
+    return Locale(parts[0], parts[1]);
   }
 
   Future<void> clearAll() => _storage.deleteAll();

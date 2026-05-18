@@ -57,7 +57,7 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Failed to load LR',
+                  'lbl_failed_lr'.tr,
                   style: AppTextStyles.body.copyWith(
                     color: AppColors.mutedText,
                   ),
@@ -72,7 +72,7 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text('Retry'),
+                  child: Text('btn_retry'.tr),
                 ),
               ],
             ),
@@ -110,13 +110,13 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
 
               // ── Checkposts ─────────────────────────────────────────────
               _SectionHeader(
-                title: 'Checkposts',
+                title: 'lbl_checkposts'.tr,
                 count: controller.checkposts.length,
                 onAdd: () => _showAddCheckpostSheet(context),
               ),
               const SizedBox(height: 8),
               if (controller.checkposts.isEmpty)
-                _EmptySection(label: 'No checkposts recorded')
+                _EmptySection(label: 'lbl_no_checkposts'.tr)
               else
                 ...controller.checkposts.map(
                   (c) => _CheckpostCard(checkpost: c),
@@ -125,25 +125,25 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
 
               // ── Charges ────────────────────────────────────────────────
               _SectionHeader(
-                title: 'Charges',
+                title: 'lbl_charges'.tr,
                 count: controller.charges.length,
                 onAdd: () => _showAddChargeSheet(context),
               ),
               const SizedBox(height: 8),
               if (controller.charges.isEmpty)
-                _EmptySection(label: 'No charges recorded')
+                _EmptySection(label: 'lbl_no_charges'.tr)
               else
                 ...controller.charges.map((c) => _ChargeCard(charge: c)),
               const SizedBox(height: 16),
 
               // ── Trip Proofs ─────────────────────────────────────────────
               _SectionHeader(
-                title: 'Trip Proofs',
+                title: 'lbl_trip_proofs'.tr,
                 count: controller.proofs.length,
               ),
               const SizedBox(height: 8),
               if (controller.proofs.isEmpty)
-                _EmptySection(label: 'No proofs submitted yet')
+                _EmptySection(label: 'lbl_no_proofs'.tr)
               else
                 ...controller.proofs.map(
                   (p) => _ProofCard(proof: p, controller: controller),
@@ -232,7 +232,7 @@ class _StatusBanner extends StatelessWidget {
                 ),
               ),
               child: Text(
-                'Overloaded',
+                'lbl_overloaded'.tr,
                 style: AppTextStyles.caption.copyWith(
                   color: AppColors.error,
                   fontWeight: FontWeight.w600,
@@ -398,12 +398,12 @@ class _InfoCard extends StatelessWidget {
             spacing: 16,
             runSpacing: 8,
             children: [
-              if (client.isNotEmpty) _MetaItem(label: 'Client', value: client),
-              if (orderNum != null) _MetaItem(label: 'Order', value: orderNum),
-              if (driver != null) _MetaItem(label: 'Driver', value: driver),
+              if (client.isNotEmpty) _MetaItem(label: 'lbl_client'.tr, value: client),
+              if (orderNum != null) _MetaItem(label: 'lbl_order'.tr, value: orderNum),
+              if (driver != null) _MetaItem(label: 'role_driver'.tr, value: driver),
               if (lrDate != null)
                 _MetaItem(
-                  label: 'LR Date',
+                  label: 'lbl_lr_date'.tr,
                   value: FerosDateUtils.formatDate(lrDate),
                 ),
             ],
@@ -414,7 +414,7 @@ class _InfoCard extends StatelessWidget {
             const Divider(height: 1, color: AppColors.border),
             const SizedBox(height: 8),
             Text(
-              'Remarks',
+              'lbl_remarks'.tr,
               style: AppTextStyles.caption.copyWith(
                 color: AppColors.mutedText,
                 fontWeight: FontWeight.w600,
@@ -482,7 +482,7 @@ class _DriverCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Driver',
+                      'role_driver'.tr,
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.mutedText,
                       ),
@@ -550,15 +550,15 @@ class _WeightCard extends StatelessWidget {
     return _Card(
       child: Row(
         children: [
-          _WeightStat(label: 'Allocated', value: allocated),
+          _WeightStat(label: 'lbl_allocated'.tr, value: allocated),
           _Divider(),
-          _WeightStat(label: 'Loaded', value: loaded),
+          _WeightStat(label: 'lbl_loaded'.tr, value: loaded),
           _Divider(),
-          _WeightStat(label: 'Delivered', value: delivered),
+          _WeightStat(label: 'lbl_delivered'.tr, value: delivered),
           if (variance != null) ...[
             _Divider(),
             _WeightStat(
-              label: 'Variance',
+              label: 'lbl_variance'.tr,
               value: variance,
               color: (variance as num) != 0
                   ? AppColors.warning
@@ -645,7 +645,7 @@ class _ActionButtons extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Waiting for driver to start the trip. Follow up with the driver.',
+                      'lbl_waiting_driver'.tr,
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.warning,
                         fontWeight: FontWeight.w500,
@@ -660,7 +660,7 @@ class _ActionButtons extends StatelessWidget {
               if (status == 'CREATED')
                 Expanded(
                   child: _ActionBtn(
-                    label: 'Record Loading',
+                    label: 'btn_record_loading'.tr,
                     icon: Icons.inventory_2_outlined,
                     color: AppColors.lrLoaded,
                     loading: busy,
@@ -676,7 +676,7 @@ class _ActionButtons extends StatelessWidget {
               if (status == 'IN_TRANSIT') ...[
                 Expanded(
                   child: _ActionBtn(
-                    label: 'Mark Delivered',
+                    label: 'btn_mark_delivered'.tr,
                     icon: Icons.check_circle_outline,
                     color: AppColors.lrDelivered,
                     loading: busy,
@@ -804,7 +804,7 @@ class _SectionHeader extends StatelessWidget {
                   const Icon(Icons.add, size: 14, color: Colors.white),
                   const SizedBox(width: 4),
                   Text(
-                    'Add',
+                    'lbl_add'.tr,
                     style: AppTextStyles.caption.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -885,7 +885,7 @@ class _CheckpostCard extends StatelessWidget {
           if (receipt != null) ...[
             const SizedBox(height: 4),
             Text(
-              'Receipt: $receipt',
+              '${'lbl_receipt'.tr}: $receipt',
               style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
             ),
           ],
@@ -992,12 +992,12 @@ class _RecordLoadingSheetState extends State<_RecordLoadingSheet> {
   @override
   Widget build(BuildContext context) {
     return _SimpleSheet(
-      title: 'Record Loading',
+      title: 'btn_record_loading'.tr,
       controller: widget.controller.isUpdating,
       onSubmit: _submit,
-      submitLabel: 'Record Loading',
+      submitLabel: 'btn_record_loading'.tr,
       children: [
-        _SheetLabel('Loaded Weight (tonnes)'),
+        _SheetLabel('lbl_loaded_weight_tonnes'.tr),
         const SizedBox(height: 6),
         _SheetField(
           controller: _weightCtrl,
@@ -1005,9 +1005,9 @@ class _RecordLoadingSheetState extends State<_RecordLoadingSheet> {
           keyboard: const TextInputType.numberWithOptions(decimal: true),
         ),
         const SizedBox(height: 16),
-        _SheetLabel('Remarks'),
+        _SheetLabel('lbl_remarks'.tr),
         const SizedBox(height: 6),
-        _SheetField(controller: _remarksCtrl, hint: 'Optional…', maxLines: 2),
+        _SheetField(controller: _remarksCtrl, hint: 'lbl_optional_hint'.tr, maxLines: 2),
       ],
     );
   }
@@ -1060,12 +1060,12 @@ class _MarkDeliveredSheetState extends State<_MarkDeliveredSheet> {
   @override
   Widget build(BuildContext context) {
     return _SimpleSheet(
-      title: 'Mark as Delivered',
+      title: 'lbl_mark_as_delivered'.tr,
       controller: widget.controller.isUpdating,
       onSubmit: _submit,
-      submitLabel: 'Mark Delivered',
+      submitLabel: 'btn_mark_delivered'.tr,
       children: [
-        _SheetLabel('End Odometer (km) *'),
+        _SheetLabel('lbl_end_odometer'.tr),
         const SizedBox(height: 6),
         _SheetField(
           controller: _odomCtrl,
@@ -1073,7 +1073,7 @@ class _MarkDeliveredSheetState extends State<_MarkDeliveredSheet> {
           keyboard: const TextInputType.numberWithOptions(decimal: true),
         ),
         const SizedBox(height: 16),
-        _SheetLabel('Delivered Weight (tonnes)'),
+        _SheetLabel('lbl_delivered_weight_tonnes'.tr),
         const SizedBox(height: 6),
         _SheetField(
           controller: _weightCtrl,
@@ -1081,9 +1081,9 @@ class _MarkDeliveredSheetState extends State<_MarkDeliveredSheet> {
           keyboard: const TextInputType.numberWithOptions(decimal: true),
         ),
         const SizedBox(height: 16),
-        _SheetLabel('Remarks'),
+        _SheetLabel('lbl_remarks'.tr),
         const SizedBox(height: 6),
-        _SheetField(controller: _remarksCtrl, hint: 'Optional…', maxLines: 2),
+        _SheetField(controller: _remarksCtrl, hint: 'lbl_optional_hint'.tr, maxLines: 2),
       ],
     );
   }
@@ -1142,20 +1142,20 @@ class _AddCheckpostSheetState extends State<_AddCheckpostSheet> {
   @override
   Widget build(BuildContext context) {
     return _SimpleSheet(
-      title: 'Add Checkpost',
+      title: 'btn_add_checkpost'.tr,
       controller: widget.controller.isAddingCheckpost,
       onSubmit: _submit,
-      submitLabel: 'Add Checkpost',
+      submitLabel: 'btn_add_checkpost'.tr,
       children: [
-        _SheetLabel('Checkpost Name *'),
+        _SheetLabel('lbl_checkpost_name'.tr),
         const SizedBox(height: 6),
         _SheetField(controller: _nameCtrl, hint: 'e.g. Walajah Checkpost'),
         const SizedBox(height: 16),
-        _SheetLabel('Location'),
+        _SheetLabel('lbl_location'.tr),
         const SizedBox(height: 6),
-        _SheetField(controller: _locationCtrl, hint: 'Optional location'),
+        _SheetField(controller: _locationCtrl, hint: 'lbl_optional_hint'.tr),
         const SizedBox(height: 16),
-        _SheetLabel('Fine Amount (₹)'),
+        _SheetLabel('lbl_fine_amount'.tr),
         const SizedBox(height: 6),
         _SheetField(
           controller: _fineCtrl,
@@ -1163,13 +1163,13 @@ class _AddCheckpostSheetState extends State<_AddCheckpostSheet> {
           keyboard: const TextInputType.numberWithOptions(decimal: true),
         ),
         const SizedBox(height: 16),
-        _SheetLabel('Fine Receipt Number'),
+        _SheetLabel('lbl_fine_receipt'.tr),
         const SizedBox(height: 6),
         _SheetField(controller: _receiptCtrl, hint: 'Receipt no.'),
         const SizedBox(height: 16),
-        _SheetLabel('Remarks'),
+        _SheetLabel('lbl_remarks'.tr),
         const SizedBox(height: 6),
-        _SheetField(controller: _remarksCtrl, hint: 'Optional…', maxLines: 2),
+        _SheetField(controller: _remarksCtrl, hint: 'lbl_optional_hint'.tr, maxLines: 2),
       ],
     );
   }
@@ -1227,17 +1227,17 @@ class _AddChargeSheetState extends State<_AddChargeSheet> {
   @override
   Widget build(BuildContext context) {
     return _SimpleSheet(
-      title: 'Add Charge',
+      title: 'btn_add_charge'.tr,
       controller: widget.controller.isAddingCharge,
       onSubmit: _submit,
-      submitLabel: 'Add Charge',
+      submitLabel: 'btn_add_charge'.tr,
       children: [
-        _SheetLabel('Charge Type *'),
+        _SheetLabel('lbl_charge_type'.tr),
         const SizedBox(height: 6),
         DropdownButtonFormField<Map<String, dynamic>>(
           value: _selectedType,
           hint: Text(
-            'Select type',
+            'lbl_select_type'.tr,
             style: AppTextStyles.body.copyWith(color: AppColors.hintText),
           ),
           isExpanded: true,
@@ -1258,7 +1258,7 @@ class _AddChargeSheetState extends State<_AddChargeSheet> {
           onChanged: (v) => setState(() => _selectedType = v),
         ),
         const SizedBox(height: 16),
-        _SheetLabel('Amount (₹) *'),
+        _SheetLabel('lbl_amount'.tr),
         const SizedBox(height: 6),
         _SheetField(
           controller: _amountCtrl,
@@ -1266,9 +1266,9 @@ class _AddChargeSheetState extends State<_AddChargeSheet> {
           keyboard: const TextInputType.numberWithOptions(decimal: true),
         ),
         const SizedBox(height: 16),
-        _SheetLabel('Remarks'),
+        _SheetLabel('lbl_remarks'.tr),
         const SizedBox(height: 6),
-        _SheetField(controller: _remarksCtrl, hint: 'Optional…', maxLines: 2),
+        _SheetField(controller: _remarksCtrl, hint: 'lbl_optional_hint'.tr, maxLines: 2),
       ],
     );
   }
@@ -1521,20 +1521,13 @@ Color _lrColor(String s) {
 
 String _lrLabel(String s) {
   switch (s) {
-    case 'CREATED':
-      return 'Created';
-    case 'WEIGHT_LOADED':
-      return 'Weight Loaded';
-    case 'IN_TRANSIT':
-      return 'In Transit';
-    case 'DELIVERED':
-      return 'Delivered';
-    case 'INVOICED':
-      return 'Invoiced';
-    case 'CANCELLED':
-      return 'Cancelled';
-    default:
-      return s;
+    case 'CREATED':       return 'lbl_lr_created'.tr;
+    case 'WEIGHT_LOADED': return 'lbl_weight_loaded_chip'.tr;
+    case 'IN_TRANSIT':    return 'status_in_transit'.tr;
+    case 'DELIVERED':     return 'status_delivered'.tr;
+    case 'INVOICED':      return 'status_invoiced'.tr;
+    case 'CANCELLED':     return 'status_cancelled'.tr;
+    default:              return s;
   }
 }
 

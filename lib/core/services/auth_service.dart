@@ -39,9 +39,8 @@ class AuthService extends GetxService {
   }
 
   Future<void> logout() async {
+    Get.offAllNamed(Routes.LOGIN);
     await _storage.clearAll();
     currentUser.value = null;
-    Get.offAllNamed(Routes.LOGIN);
-
   }
 }

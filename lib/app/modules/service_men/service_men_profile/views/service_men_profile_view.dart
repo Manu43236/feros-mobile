@@ -4,6 +4,7 @@ import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../core/utils/string_utils.dart';
 import '../controllers/service_men_profile_controller.dart';
+import '../../../../../../core/widgets/language_switcher_tile.dart';
 import '../../../supervisor/supervisor_profile/views/change_pin_view.dart';
 
 class ServiceMenProfileView extends GetView<ServiceMenProfileController> {
@@ -46,7 +47,7 @@ class ServiceMenProfileView extends GetView<ServiceMenProfileController> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'Service Men',
+                  'role_service_men'.tr,
                   style: AppTextStyles.caption.copyWith(
                       color: AppColors.navy, fontWeight: FontWeight.w600),
                 ),
@@ -67,17 +68,17 @@ class ServiceMenProfileView extends GetView<ServiceMenProfileController> {
           ),
           child: Column(
             children: [
-              _InfoTile(icon: Icons.phone_outlined,   label: 'Phone',   value: user?.phone       ?? '—'),
+              _InfoTile(icon: Icons.phone_outlined,   label: 'lbl_phone'.tr,   value: user?.phone       ?? '—'),
               const Divider(height: 1, indent: 56),
-              _InfoTile(icon: Icons.business_outlined, label: 'Company', value: user?.companyName ?? '—'),
+              _InfoTile(icon: Icons.business_outlined, label: 'lbl_company'.tr, value: user?.companyName ?? '—'),
               const Divider(height: 1, indent: 56),
-              _InfoTile(icon: Icons.badge_outlined,   label: 'User ID', value: '#${user?.userId  ?? '—'}'),
+              _InfoTile(icon: Icons.badge_outlined,   label: 'lbl_user_id'.tr, value: '#${user?.userId  ?? '—'}'),
             ],
           ),
         ),
         const SizedBox(height: 12),
 
-        // ── Change PIN ──────────────────────────────────────────
+        // ── Change PIN + Language ──────────────────────────────
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -86,12 +87,18 @@ class ServiceMenProfileView extends GetView<ServiceMenProfileController> {
               BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
             ],
           ),
-          child: ListTile(
-            leading: const Icon(Icons.lock_outline, color: AppColors.navy, size: 22),
-            title: Text('Change PIN',
-                style: AppTextStyles.body.copyWith(color: AppColors.navy)),
-            trailing: const Icon(Icons.chevron_right, color: AppColors.mutedText),
-            onTap: () => Get.to(() => const ChangePinView()),
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.lock_outline, color: AppColors.navy, size: 22),
+                title: Text('lbl_change_pin'.tr,
+                    style: AppTextStyles.body.copyWith(color: AppColors.navy)),
+                trailing: const Icon(Icons.chevron_right, color: AppColors.mutedText),
+                onTap: () => Get.to(() => const ChangePinView()),
+              ),
+              const Divider(height: 1, indent: 56),
+              const LanguageSwitcherTile(),
+            ],
           ),
         ),
         const SizedBox(height: 24),
@@ -102,7 +109,7 @@ class ServiceMenProfileView extends GetView<ServiceMenProfileController> {
           child: ElevatedButton.icon(
             onPressed: controller.logout,
             icon: const Icon(Icons.logout, size: 18),
-            label: Text('Logout',
+            label: Text('btn_logout'.tr,
                 style: AppTextStyles.bodyMedium.copyWith(
                     color: Colors.white, fontWeight: FontWeight.w600)),
             style: ElevatedButton.styleFrom(
@@ -117,7 +124,7 @@ class ServiceMenProfileView extends GetView<ServiceMenProfileController> {
         const SizedBox(height: 24),
 
         Center(
-          child: Text('FEROS v1.0.0',
+          child: Text('lbl_version'.tr,
               style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
         ),
         const SizedBox(height: 8),

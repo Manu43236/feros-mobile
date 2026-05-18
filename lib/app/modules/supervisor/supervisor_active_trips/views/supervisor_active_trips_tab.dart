@@ -27,7 +27,7 @@ class SupervisorActiveTripsTab extends GetView<SupervisorActiveTripsController> 
             children: [
               const Icon(Icons.error_outline, size: 48, color: AppColors.error),
               const SizedBox(height: 12),
-              Text('Failed to load active trips',
+              Text('lbl_failed_active_trips'.tr,
                   style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -38,7 +38,7 @@ class SupervisorActiveTripsTab extends GetView<SupervisorActiveTripsController> 
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text('Retry'),
+                child: Text('btn_retry'.tr),
               ),
             ],
           ),
@@ -52,10 +52,10 @@ class SupervisorActiveTripsTab extends GetView<SupervisorActiveTripsController> 
               const Icon(Icons.local_shipping_outlined,
                   size: 52, color: AppColors.mutedText),
               const SizedBox(height: 12),
-              Text('No active trips',
+              Text('lbl_no_active_trips'.tr,
                   style: AppTextStyles.heading4.copyWith(color: AppColors.navy)),
               const SizedBox(height: 6),
-              Text('In-transit LRs will appear here',
+              Text('lbl_active_trips_hint'.tr,
                   style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
             ],
           ),
@@ -161,7 +161,7 @@ class _ActiveTripCard extends StatelessWidget {
                           const PulsingDot(
                               color: AppColors.lrInTransit, size: 6),
                           const SizedBox(width: 4),
-                          Text('In Transit',
+                          Text('status_in_transit'.tr,
                               style: AppTextStyles.caption.copyWith(
                                   color: AppColors.lrInTransit,
                                   fontWeight: FontWeight.w600)),
