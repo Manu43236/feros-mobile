@@ -6,6 +6,9 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/theme/app_spacing.dart';
 import '../../office_shell/controllers/office_shell_controller.dart';
+import '../../office_finance/views/office_finance_view.dart';
+import '../../office_attendance/views/office_attendance_view.dart';
+import '../../office_staff/views/office_staff_view.dart';
 
 class OfficeDashboardView extends StatelessWidget {
   final OfficeDashboardController controller;
@@ -59,7 +62,7 @@ class OfficeDashboardView extends StatelessWidget {
               label: 'Outstanding',
               value: _fmtRupee(controller.invoiceOutstanding.value),
               sub: '${controller.invoiceOverdue.value} overdue invoices',
-              onTap: () => _goToTab(3),
+              onTap: () => Get.to(() => const OfficeFinanceView()),
             ),
             _StatCard(
               icon: Icons.people_outlined,
@@ -67,7 +70,7 @@ class OfficeDashboardView extends StatelessWidget {
               label: "Today's Attendance",
               value: '${controller.attPresent.value}',
               sub: 'of ${controller.attTotal.value} staff · ${controller.attAbsent.value} absent',
-              onTap: () => _goToTab(3),
+              onTap: () => Get.to(() => const OfficeAttendanceView()),
             ),
           ],
         ),
@@ -107,7 +110,7 @@ class OfficeDashboardView extends StatelessWidget {
           icon: Icons.receipt_long_outlined,
           title: 'Invoice Summary',
           accentColor: const Color(0xFF0284C7),
-          onTap: () => _goToTab(3),
+          onTap: () => Get.to(() => const OfficeFinanceView()),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -134,6 +137,7 @@ class OfficeDashboardView extends StatelessWidget {
           count: controller.vehicleAlerts.length,
           emptyText: 'All vehicle documents up to date',
           items: controller.vehicleAlerts,
+          onTap: () => _goToTab(2),
           labelBuilder: (item) => item['registrationNumber'] as String? ?? '—',
           subBuilder: (item) => item['alertType'] as String? ?? '',
           dateBuilder: (item) => item['expiryDate'] as String? ?? '',
@@ -149,6 +153,7 @@ class OfficeDashboardView extends StatelessWidget {
           count: controller.staffAlerts.length,
           emptyText: 'All staff documents up to date',
           items: controller.staffAlerts,
+          onTap: () => Get.to(() => const OfficeStaffView()),
           labelBuilder: (item) => item['userName'] as String? ?? '—',
           subBuilder: (item) => item['documentType'] as String? ?? '',
           dateBuilder: (item) => item['expiryDate'] as String? ?? '',
@@ -158,37 +163,43 @@ class OfficeDashboardView extends StatelessWidget {
         const SizedBox(height: 14),
 
         // ── Today's Snapshot ─────────────────────────────────────────
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.navy,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.access_time, size: 15, color: AppColors.orange),
-                  const SizedBox(width: 6),
-                  Text("Today's Snapshot",
-                      style: AppTextStyles.caption.copyWith(
-                          color: Colors.white.withValues(alpha: 0.7))),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  _SnapshotStat('Present',  controller.attPresent.value,  AppColors.success),
-                  const SizedBox(width: 20),
-                  _SnapshotStat('Absent',   controller.attAbsent.value,   AppColors.error),
-                  const SizedBox(width: 20),
-                  _SnapshotStat('Half Day', controller.attHalfDay.value,  AppColors.warning),
-                  const SizedBox(width: 20),
-                  _SnapshotStat('On Leave', controller.attOnLeave.value,  AppColors.info),
-                ],
-              ),
-            ],
+        GestureDetector(
+          onTap: () => Get.to(() => const OfficeAttendanceView()),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.navy,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.access_time, size: 15, color: AppColors.orange),
+                    const SizedBox(width: 6),
+                    Text("Today's Snapshot",
+                        style: AppTextStyles.caption.copyWith(
+                            color: Colors.white.withValues(alpha: 0.7))),
+                    const Spacer(),
+                    Icon(Icons.chevron_right, size: 16,
+                        color: Colors.white.withValues(alpha: 0.5)),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    _SnapshotStat('Present',  controller.attPresent.value,  AppColors.success),
+                    const SizedBox(width: 20),
+                    _SnapshotStat('Absent',   controller.attAbsent.value,   AppColors.error),
+                    const SizedBox(width: 20),
+                    _SnapshotStat('Half Day', controller.attHalfDay.value,  AppColors.warning),
+                    const SizedBox(width: 20),
+                    _SnapshotStat('On Leave', controller.attOnLeave.value,  AppColors.info),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -372,6 +383,7 @@ class _AlertSection extends StatelessWidget {
   final int count;
   final String emptyText;
   final List<Map<String, dynamic>> items;
+  final VoidCallback onTap;
   final String Function(Map<String, dynamic>) labelBuilder;
   final String Function(Map<String, dynamic>) subBuilder;
   final String Function(Map<String, dynamic>) dateBuilder;
@@ -384,6 +396,7 @@ class _AlertSection extends StatelessWidget {
     required this.count,
     required this.emptyText,
     required this.items,
+    required this.onTap,
     required this.labelBuilder,
     required this.subBuilder,
     required this.dateBuilder,
@@ -426,36 +439,42 @@ class _AlertSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppColors.orange.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(icon, size: 15, color: AppColors.orange),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(title,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600)),
-                ),
-                if (count > 0)
+          InkWell(
+            onTap: onTap,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+              child: Row(
+                children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: AppColors.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+                      color: AppColors.orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text('$count',
-                        style: AppTextStyles.caption.copyWith(
-                            color: AppColors.error, fontWeight: FontWeight.w600)),
+                    child: Icon(icon, size: 15, color: AppColors.orange),
                   ),
-              ],
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(title,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                            fontWeight: FontWeight.w600)),
+                  ),
+                  if (count > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text('$count',
+                          style: AppTextStyles.caption.copyWith(
+                              color: AppColors.error, fontWeight: FontWeight.w600)),
+                    ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.chevron_right, size: 16, color: AppColors.mutedText),
+                ],
+              ),
             ),
           ),
           const Divider(height: 1, color: AppColors.border),

@@ -22,6 +22,7 @@ import '../../../supervisor/supervisor_my_attendance/views/supervisor_my_attenda
 import '../../../supervisor/supervisor_my_attendance/bindings/supervisor_my_attendance_binding.dart';
 import '../../../supervisor/supervisor_notifications/views/supervisor_notifications_view.dart';
 import '../../../supervisor/supervisor_notifications/bindings/supervisor_notifications_binding.dart';
+import '../../office_subscription/views/office_subscription_view.dart';
 
 class OfficeShellView extends GetView<OfficeShellController> {
   const OfficeShellView({super.key});
@@ -285,14 +286,7 @@ class _OfficeDrawer extends StatelessWidget {
                     label: 'Subscription',
                     onTap: () {
                       Navigator.of(context).pop();
-                      // Phase 9 — placeholder
-                      Get.snackbar(
-                        'Subscription',
-                        'Coming in Phase 9',
-                        snackPosition: SnackPosition.BOTTOM,
-                        backgroundColor: AppColors.navy,
-                        colorText: Colors.white,
-                      );
+                      Get.to(() => const OfficeSubscriptionView());
                     },
                   ),
                 ],
