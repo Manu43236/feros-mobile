@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import '../api/api_client.dart';
+import '../api/api_endpoints.dart';
 import '../models/user_model.dart';
 import 'storage_service.dart';
 import '../../app/routes/app_pages.dart';
@@ -39,6 +41,11 @@ class AuthService extends GetxService {
   }
 
   Future<void> logout() async {
+    // Notify server to invalidate session (best-effort — don't block logout if it fails)
+    try {
+      await Get.find<ApiClient>().post(ApiEndpoints.logout);
+    } catch (_) {}
+
     Get.offAllNamed(Routes.LOGIN);
     await _storage.clearAll();
     currentUser.value = null;

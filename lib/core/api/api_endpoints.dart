@@ -3,6 +3,7 @@ class ApiEndpoints {
 
   // Auth
   static const login      = '/auth/login';
+  static const logout     = '/auth/logout';
   static const changePin  = '/auth/change-pin';
 
   // Dashboard

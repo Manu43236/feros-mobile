@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_endpoints.dart';
 import '../../../../core/exceptions/app_exception.dart';
@@ -47,9 +49,13 @@ class LoginController extends GetxController {
 
     isLoading.value = true;
     try {
+      final packageInfo = await PackageInfo.fromPlatform();
       final response = await _api.post(ApiEndpoints.login, data: {
-        'phone': phoneController.text.trim(),
-        'pin':   _pin,
+        'phone':      phoneController.text.trim(),
+        'pin':        _pin,
+        'deviceType': 'MOBILE',
+        'deviceInfo': Platform.isAndroid ? 'Android' : 'iOS',
+        'appVersion': packageInfo.version,
       });
 
       final data    = response.data as Map<String, dynamic>;
