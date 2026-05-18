@@ -13,7 +13,14 @@ import 'supervisor_create_lr_sheet.dart';
 class SupervisorLrsView extends GetView<SupervisorLrsController> {
   const SupervisorLrsView({super.key});
 
-  static const _statuses = ['ALL', 'CREATED', 'WEIGHT_LOADED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'];
+  static const _statuses = [
+    'ALL',
+    'CREATED',
+    'WEIGHT_LOADED',
+    'IN_TRANSIT',
+    'DELIVERED',
+    'CANCELLED',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -31,10 +38,9 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
             fontSize: 16,
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: Colors.white, size: 18),
-          onPressed: Get.back,
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
         ),
       ),
       body: Column(
@@ -48,17 +54,22 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                   child: TextField(
                     onChanged: controller.onSearch,
-                    style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.bodyText,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Search by LR no., vehicle, client…',
-                      hintStyle:
-                          AppTextStyles.body.copyWith(color: AppColors.hintText),
-                      prefixIcon: const Icon(Icons.search,
-                          color: AppColors.mutedText, size: 20),
+                      hintStyle: AppTextStyles.body.copyWith(
+                        color: AppColors.hintText,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: AppColors.mutedText,
+                        size: 20,
+                      ),
                       filled: true,
                       fillColor: AppColors.background,
-                      contentPadding:
-                          const EdgeInsets.symmetric(vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide.none,
@@ -74,23 +85,24 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                     child: Row(
                       children: _statuses.map((s) {
-                        final isAll    = s == 'ALL';
+                        final isAll = s == 'ALL';
                         final isActive = isAll
                             ? selected.isEmpty
                             : selected == s;
-                        final color    = _lrColor(s);
-                        final count    = isAll
+                        final color = _lrColor(s);
+                        final count = isAll
                             ? controller.totalCount
                             : controller.countByStatus(s);
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: GestureDetector(
-                            onTap: () =>
-                                controller.setFilter(isAll ? '' : s),
+                            onTap: () => controller.setFilter(isAll ? '' : s),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 180),
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: isActive
                                     ? color
@@ -108,16 +120,16 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
                                   Text(
                                     _lrLabel(s),
                                     style: AppTextStyles.caption.copyWith(
-                                      color: isActive
-                                          ? Colors.white
-                                          : color,
+                                      color: isActive ? Colors.white : color,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   const SizedBox(width: 4),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 5, vertical: 1),
+                                      horizontal: 5,
+                                      vertical: 1,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: isActive
                                           ? Colors.white.withValues(alpha: 0.25)
@@ -152,19 +164,26 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
             child: Obx(() {
               if (controller.state.value == ViewState.loading) {
                 return const Center(
-                    child: CircularProgressIndicator(color: AppColors.navy));
+                  child: CircularProgressIndicator(color: AppColors.navy),
+                );
               }
               if (controller.state.value == ViewState.error) {
                 return Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.error_outline,
-                          size: 48, color: AppColors.error),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: AppColors.error,
+                      ),
                       const SizedBox(height: 12),
-                      Text('Failed to load LRs',
-                          style: AppTextStyles.body
-                              .copyWith(color: AppColors.mutedText)),
+                      Text(
+                        'Failed to load LRs',
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.mutedText,
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: controller.fetchLrs,
@@ -172,7 +191,8 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
                           backgroundColor: AppColors.navy,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                         child: const Text('Retry'),
                       ),
@@ -186,16 +206,25 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.receipt_long_outlined,
-                          size: 52, color: AppColors.mutedText),
+                      const Icon(
+                        Icons.receipt_long_outlined,
+                        size: 52,
+                        color: AppColors.mutedText,
+                      ),
                       const SizedBox(height: 12),
-                      Text('No LRs found',
-                          style: AppTextStyles.heading4
-                              .copyWith(color: AppColors.navy)),
+                      Text(
+                        'No LRs found',
+                        style: AppTextStyles.heading4.copyWith(
+                          color: AppColors.navy,
+                        ),
+                      ),
                       const SizedBox(height: 6),
-                      Text('Try a different filter or search',
-                          style: AppTextStyles.body
-                              .copyWith(color: AppColors.mutedText)),
+                      Text(
+                        'Try a different filter or search',
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.mutedText,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -217,8 +246,10 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
         backgroundColor: AppColors.navy,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('Create LR',
-            style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600)),
+        label: const Text(
+          'Create LR',
+          style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
+        ),
         onPressed: () async {
           await controller.ensureOrdersLoaded();
           if (controller.orders.isEmpty) {
@@ -262,18 +293,18 @@ class _LrCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status   = lr['lrStatus']                  as String? ?? '';
-    final lrNumber = lr['lrNumber']                  as String? ?? '—';
-    final vehicle  = lr['vehicleRegistrationNumber'] as String? ?? '—';
-    final client   = lr['clientName']                as String? ?? '—';
-    final fromCity = lr['fromCity']                  as String? ?? '—';
-    final toCity   = lr['toCity']                    as String? ?? '—';
+    final status = lr['lrStatus'] as String? ?? '';
+    final lrNumber = lr['lrNumber'] as String? ?? '—';
+    final vehicle = lr['vehicleRegistrationNumber'] as String? ?? '—';
+    final client = lr['clientName'] as String? ?? '—';
+    final fromCity = lr['fromCity'] as String? ?? '—';
+    final toCity = lr['toCity'] as String? ?? '—';
     final allocatedWeight = lr['allocatedWeight'];
-    final loadedWeight    = lr['loadedWeight'];
-    final weight          = loadedWeight ?? allocatedWeight;
-    final weightLabel     = loadedWeight != null ? 'Loaded' : 'Alloc.';
-    final lrDate          = lr['lrDate'] as String?;
-    final orderNum        = lr['orderNumber'] as String?;
+    final loadedWeight = lr['loadedWeight'];
+    final weight = loadedWeight ?? allocatedWeight;
+    final weightLabel = loadedWeight != null ? 'Loaded' : 'Alloc.';
+    final lrDate = lr['lrDate'] as String?;
+    final orderNum = lr['orderNumber'] as String?;
 
     return GestureDetector(
       onTap: _openDetail,
@@ -284,9 +315,10 @@ class _LrCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: const [
             BoxShadow(
-                color: Color(0x0A000000),
-                blurRadius: 8,
-                offset: Offset(0, 2)),
+              color: Color(0x0A000000),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
           ],
         ),
         child: Padding(
@@ -312,8 +344,9 @@ class _LrCard extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             'Order: $orderNum',
-                            style: AppTextStyles.caption
-                                .copyWith(color: AppColors.mutedText),
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.mutedText,
+                            ),
                           ),
                         ],
                       ],
@@ -335,13 +368,17 @@ class _LrCard extends StatelessWidget {
               // Vehicle
               Row(
                 children: [
-                  const Icon(Icons.local_shipping_outlined,
-                      size: 13, color: AppColors.mutedText),
+                  const Icon(
+                    Icons.local_shipping_outlined,
+                    size: 13,
+                    color: AppColors.mutedText,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     vehicle,
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.bodyText),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.bodyText,
+                    ),
                   ),
                 ],
               ),
@@ -350,27 +387,42 @@ class _LrCard extends StatelessWidget {
               // Route
               Row(
                 children: [
-                  const Icon(Icons.radio_button_checked,
-                      size: 12, color: AppColors.navy),
+                  const Icon(
+                    Icons.radio_button_checked,
+                    size: 12,
+                    color: AppColors.navy,
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
-                    child: Text(fromCity,
-                        style: AppTextStyles.caption
-                            .copyWith(color: AppColors.bodyText),
-                        overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      fromCity,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.bodyText,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  const Icon(Icons.arrow_forward,
-                      size: 12, color: AppColors.mutedText),
+                  const Icon(
+                    Icons.arrow_forward,
+                    size: 12,
+                    color: AppColors.mutedText,
+                  ),
                   const SizedBox(width: 8),
-                  const Icon(Icons.location_on,
-                      size: 12, color: AppColors.orange),
+                  const Icon(
+                    Icons.location_on,
+                    size: 12,
+                    color: AppColors.orange,
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
-                    child: Text(toCity,
-                        style: AppTextStyles.caption
-                            .copyWith(color: AppColors.bodyText),
-                        overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      toCity,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.bodyText,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
@@ -382,29 +434,40 @@ class _LrCard extends StatelessWidget {
               Row(
                 children: [
                   if (weight != null) ...[
-                    const Icon(Icons.scale_outlined,
-                        size: 12, color: AppColors.mutedText),
+                    const Icon(
+                      Icons.scale_outlined,
+                      size: 12,
+                      color: AppColors.mutedText,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '$weightLabel: ${weight}T',
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.mutedText),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.mutedText,
+                      ),
                     ),
                     const SizedBox(width: 12),
                   ],
                   if (lrDate != null) ...[
-                    const Icon(Icons.calendar_today_outlined,
-                        size: 12, color: AppColors.mutedText),
+                    const Icon(
+                      Icons.calendar_today_outlined,
+                      size: 12,
+                      color: AppColors.mutedText,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       FerosDateUtils.formatDate(lrDate),
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.mutedText),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.mutedText,
+                      ),
                     ),
                   ],
                   const Spacer(),
-                  const Icon(Icons.chevron_right,
-                      size: 18, color: AppColors.mutedText),
+                  const Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: AppColors.mutedText,
+                  ),
                 ],
               ),
             ],
@@ -457,26 +520,42 @@ class _LrStatusBadge extends StatelessWidget {
 
 Color _lrColor(String s) {
   switch (s) {
-    case 'ALL':           return AppColors.navy;
-    case 'CREATED':       return AppColors.lrCreated;
-    case 'WEIGHT_LOADED': return AppColors.lrLoaded;
-    case 'IN_TRANSIT':    return AppColors.lrInTransit;
-    case 'DELIVERED':     return AppColors.lrDelivered;
-    case 'INVOICED':      return AppColors.lrInvoiced;
-    case 'CANCELLED':     return AppColors.error;
-    default:              return AppColors.mutedText;
+    case 'ALL':
+      return AppColors.navy;
+    case 'CREATED':
+      return AppColors.lrCreated;
+    case 'WEIGHT_LOADED':
+      return AppColors.lrLoaded;
+    case 'IN_TRANSIT':
+      return AppColors.lrInTransit;
+    case 'DELIVERED':
+      return AppColors.lrDelivered;
+    case 'INVOICED':
+      return AppColors.lrInvoiced;
+    case 'CANCELLED':
+      return AppColors.error;
+    default:
+      return AppColors.mutedText;
   }
 }
 
 String _lrLabel(String s) {
   switch (s) {
-    case 'ALL':           return 'All';
-    case 'CREATED':       return 'Created';
-    case 'WEIGHT_LOADED': return 'Weight Loaded';
-    case 'IN_TRANSIT':    return 'In Transit';
-    case 'DELIVERED':     return 'Delivered';
-    case 'INVOICED':      return 'Invoiced';
-    case 'CANCELLED':     return 'Cancelled';
-    default:              return s;
+    case 'ALL':
+      return 'All';
+    case 'CREATED':
+      return 'Created';
+    case 'WEIGHT_LOADED':
+      return 'Weight Loaded';
+    case 'IN_TRANSIT':
+      return 'In Transit';
+    case 'DELIVERED':
+      return 'Delivered';
+    case 'INVOICED':
+      return 'Invoiced';
+    case 'CANCELLED':
+      return 'Cancelled';
+    default:
+      return s;
   }
 }

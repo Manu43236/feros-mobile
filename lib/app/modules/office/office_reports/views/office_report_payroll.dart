@@ -98,6 +98,10 @@ class _OfficeReportPayrollState extends State<OfficeReportPayroll> {
       appBar: AppBar(
         backgroundColor: AppColors.navy,
         foregroundColor: Colors.white,
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+        ),
         title: const Text('Payroll Summary'),
         actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _fetch)],
       ),

@@ -20,12 +20,12 @@ class _OfficeStaffDetailViewState extends State<OfficeStaffDetailView>
 
   // Attendance tab
   DateTime _attFrom = DateTime.now().subtract(const Duration(days: 30));
-  DateTime _attTo   = DateTime.now();
-  List<Map<String, dynamic>> _attRecords  = [];
+  DateTime _attTo = DateTime.now();
+  List<Map<String, dynamic>> _attRecords = [];
   bool _attLoading = false;
 
   // Payslip tab
-  List<Map<String, dynamic>> _payrolls  = [];
+  List<Map<String, dynamic>> _payrolls = [];
   bool _payLoading = false;
 
   @override
@@ -53,8 +53,8 @@ class _OfficeStaffDetailViewState extends State<OfficeStaffDetailView>
     try {
       final id = (widget.user['id'] as num?)?.toInt() ?? 0;
       final from = _fmt(_attFrom);
-      final to   = _fmt(_attTo);
-      final res  = await _api.get(
+      final to = _fmt(_attTo);
+      final res = await _api.get(
         ApiEndpoints.userAttendance(id),
         params: {'from': from, 'to': to},
       );
@@ -71,7 +71,7 @@ class _OfficeStaffDetailViewState extends State<OfficeStaffDetailView>
   Future<void> _fetchPayrolls() async {
     setState(() => _payLoading = true);
     try {
-      final id  = (widget.user['id'] as num?)?.toInt() ?? 0;
+      final id = (widget.user['id'] as num?)?.toInt() ?? 0;
       final res = await _api.get(ApiEndpoints.userPayroll(id));
       setState(() {
         _payrolls = ((res.data as Map)['data'] as List? ?? [])
@@ -96,24 +96,30 @@ class _OfficeStaffDetailViewState extends State<OfficeStaffDetailView>
       appBar: AppBar(
         backgroundColor: AppColors.navy,
         elevation: 0,
-        leading: IconButton(
-          onPressed: Get.back,
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(name,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16)),
-            Text(_roleLabel(role),
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontFamily: 'Inter',
-                    fontSize: 11)),
+            Text(
+              name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+            Text(
+              _roleLabel(role),
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontFamily: 'Inter',
+                fontSize: 11,
+              ),
+            ),
           ],
         ),
         bottom: TabBar(
@@ -121,8 +127,10 @@ class _OfficeStaffDetailViewState extends State<OfficeStaffDetailView>
           indicatorColor: Colors.white,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white.withValues(alpha: 0.55),
-          labelStyle: AppTextStyles.caption
-              .copyWith(fontWeight: FontWeight.w600, fontSize: 12),
+          labelStyle: AppTextStyles.caption.copyWith(
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
           tabs: const [
             Tab(text: 'Profile'),
             Tab(text: 'Attendance'),
@@ -142,7 +150,7 @@ class _OfficeStaffDetailViewState extends State<OfficeStaffDetailView>
             onDateChanged: (f, t) {
               setState(() {
                 _attFrom = f;
-                _attTo   = t;
+                _attTo = t;
               });
               _fetchAttendance();
             },
@@ -154,7 +162,7 @@ class _OfficeStaffDetailViewState extends State<OfficeStaffDetailView>
   }
 
   String _roleLabel(String role) => switch (role) {
-    'SERVICE_MEN'  => 'Service Men',
+    'SERVICE_MEN' => 'Service Men',
     'STORE_KEEPER' => 'Store Keeper',
     'OFFICE_STAFF' => 'Office Staff',
     _ => role.isEmpty ? '' : role[0] + role.substring(1).toLowerCase(),
@@ -172,34 +180,32 @@ class _ProfileTab extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         _section('Basic Info', [
-          _row('Name',        user['name']),
-          _row('Phone',       user['phone']),
-          _row('Role',        user['role']),
-          _row('Employee #',  user['userNumber']),
-          _row('Status',      (user['isActive'] == true) ? 'Active' : 'Inactive'),
+          _row('Name', user['name']),
+          _row('Phone', user['phone']),
+          _row('Role', user['role']),
+          _row('Employee #', user['userNumber']),
+          _row('Status', (user['isActive'] == true) ? 'Active' : 'Inactive'),
         ]),
         if (user['designationName'] != null ||
             user['employmentType'] != null) ...[
           const SizedBox(height: 12),
           _section('Employment', [
-            _row('Designation',     user['designationName']),
+            _row('Designation', user['designationName']),
             _row('Employment Type', user['employmentType']),
-            _row('Joining Date',    user['joiningDate']),
-            _row('Date of Birth',   user['dateOfBirth']),
+            _row('Joining Date', user['joiningDate']),
+            _row('Date of Birth', user['dateOfBirth']),
           ]),
         ],
         if (user['licenseNumber'] != null) ...[
           const SizedBox(height: 12),
           _section('License', [
-            _row('License No.',     user['licenseNumber']),
-            _row('Expiry Date',     user['licenseExpiryDate']),
+            _row('License No.', user['licenseNumber']),
+            _row('Expiry Date', user['licenseExpiryDate']),
           ]),
         ],
         if (user['address'] != null) ...[
           const SizedBox(height: 12),
-          _section('Address', [
-            _row('Address', user['address']),
-          ]),
+          _section('Address', [_row('Address', user['address'])]),
         ],
       ],
     );
@@ -213,19 +219,23 @@ class _ProfileTab extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x0A000000),
-              blurRadius: 6,
-              offset: Offset(0, 2)),
+            color: Color(0x0A000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: AppTextStyles.caption.copyWith(
-                  color: AppColors.mutedText,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.4)),
+          Text(
+            title,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.mutedText,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.4,
+            ),
+          ),
           const SizedBox(height: 10),
           ...rows.where((r) => r is! SizedBox || true),
         ],
@@ -234,7 +244,8 @@ class _ProfileTab extends StatelessWidget {
   }
 
   Widget _row(String label, dynamic value) {
-    if (value == null || value.toString().isEmpty) return const SizedBox.shrink();
+    if (value == null || value.toString().isEmpty)
+      return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -242,14 +253,16 @@ class _ProfileTab extends StatelessWidget {
         children: [
           SizedBox(
             width: 120,
-            child: Text(label,
-                style: AppTextStyles.caption
-                    .copyWith(color: AppColors.mutedText)),
+            child: Text(
+              label,
+              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+            ),
           ),
           Expanded(
-            child: Text(value.toString(),
-                style: AppTextStyles.body
-                    .copyWith(color: AppColors.bodyText)),
+            child: Text(
+              value.toString(),
+              style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+            ),
           ),
         ],
       ),
@@ -305,18 +318,23 @@ class _AttendanceTab extends StatelessWidget {
         Expanded(
           child: loading
               ? const Center(
-                  child: CircularProgressIndicator(color: AppColors.navy))
+                  child: CircularProgressIndicator(color: AppColors.navy),
+                )
               : records.isEmpty
-                  ? const Center(
-                      child: Text('No attendance records',
-                          style: TextStyle(
-                              fontFamily: 'Inter', color: AppColors.mutedText)))
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                      itemCount: records.length,
-                      itemBuilder: (_, i) =>
-                          _AttRow(record: records[i]),
+              ? const Center(
+                  child: Text(
+                    'No attendance records',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      color: AppColors.mutedText,
                     ),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  itemCount: records.length,
+                  itemBuilder: (_, i) => _AttRow(record: records[i]),
+                ),
         ),
       ],
     );
@@ -327,8 +345,11 @@ class _DateBtn extends StatelessWidget {
   final String label;
   final DateTime date;
   final void Function(DateTime) onPick;
-  const _DateBtn(
-      {required this.label, required this.date, required this.onPick});
+  const _DateBtn({
+    required this.label,
+    required this.date,
+    required this.onPick,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -357,14 +378,20 @@ class _DateBtn extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.border),
         ),
-        child: Row(children: [
-          const Icon(Icons.calendar_today_outlined,
-              size: 14, color: AppColors.mutedText),
-          const SizedBox(width: 6),
-          Text('$label: $text',
-              style: AppTextStyles.caption
-                  .copyWith(color: AppColors.bodyText)),
-        ]),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.calendar_today_outlined,
+              size: 14,
+              color: AppColors.mutedText,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '$label: $text',
+              style: AppTextStyles.caption.copyWith(color: AppColors.bodyText),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -376,8 +403,8 @@ class _AttRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date   = record['attendanceDate'] as String? ?? '';
-    final type   = record['attendanceTypeName'] as String? ?? '—';
+    final date = record['attendanceDate'] as String? ?? '';
+    final type = record['attendanceTypeName'] as String? ?? '—';
     final marked = record['markedByName'] as String? ?? '';
     final status = record['approvalStatus'] as String? ?? '';
 
@@ -406,41 +433,52 @@ class _AttRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(date,
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(fontWeight: FontWeight.w600)),
+                Text(
+                  date,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 if (marked.isNotEmpty)
-                  Text('by $marked',
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.mutedText)),
+                  Text(
+                    'by $marked',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.mutedText,
+                    ),
+                  ),
               ],
             ),
           ),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: typeColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Text(type,
-                style: AppTextStyles.caption.copyWith(
-                    color: typeColor, fontWeight: FontWeight.w600)),
+            child: Text(
+              type,
+              style: AppTextStyles.caption.copyWith(
+                color: typeColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
           if (status == 'PENDING') ...[
             const SizedBox(width: 6),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
               decoration: BoxDecoration(
                 color: AppColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text('Pending',
-                  style: AppTextStyles.caption.copyWith(
-                      color: AppColors.warning,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 10)),
+              child: Text(
+                'Pending',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.warning,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 10,
+                ),
+              ),
             ),
           ],
         ],
@@ -459,13 +497,15 @@ class _PayslipTab extends StatelessWidget {
   Widget build(BuildContext context) {
     if (loading) {
       return const Center(
-          child: CircularProgressIndicator(color: AppColors.navy));
+        child: CircularProgressIndicator(color: AppColors.navy),
+      );
     }
     if (payrolls.isEmpty) {
       return const Center(
-        child: Text('No payslips found',
-            style: TextStyle(
-                fontFamily: 'Inter', color: AppColors.mutedText)),
+        child: Text(
+          'No payslips found',
+          style: TextStyle(fontFamily: 'Inter', color: AppColors.mutedText),
+        ),
       );
     }
     return ListView.builder(
@@ -482,19 +522,19 @@ class _PayslipCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final from   = p['payCycleStartDate'] as String? ?? '';
-    final to     = p['payCycleEndDate']   as String? ?? '';
-    final net    = p['netPay']            as num? ?? 0;
-    final gross  = p['grossPay']          as num? ?? 0;
-    final deduct = p['totalDeductions']   as num? ?? 0;
-    final status = p['payrollStatus']     as String? ?? '';
-    final present= (p['presentDays']      as num?)?.toInt() ?? 0;
-    final total  = (p['totalDays']        as num?)?.toInt() ?? 0;
+    final from = p['payCycleStartDate'] as String? ?? '';
+    final to = p['payCycleEndDate'] as String? ?? '';
+    final net = p['netPay'] as num? ?? 0;
+    final gross = p['grossPay'] as num? ?? 0;
+    final deduct = p['totalDeductions'] as num? ?? 0;
+    final status = p['payrollStatus'] as String? ?? '';
+    final present = (p['presentDays'] as num?)?.toInt() ?? 0;
+    final total = (p['totalDays'] as num?)?.toInt() ?? 0;
 
     final statusColor = switch (status) {
       'APPROVED' || 'PAID' => AppColors.success,
-      'DRAFT'              => AppColors.warning,
-      'CANCELLED'          => AppColors.error,
+      'DRAFT' => AppColors.warning,
+      'CANCELLED' => AppColors.error,
       _ => AppColors.mutedText,
     };
 
@@ -506,63 +546,86 @@ class _PayslipCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x0A000000),
-              blurRadius: 8,
-              offset: Offset(0, 2)),
+            color: Color(0x0A000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Expanded(
-              child: Text('$from → $to',
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(fontWeight: FontWeight.w600)),
-            ),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '$from → $to',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-              child: Text(status,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  status,
                   style: AppTextStyles.caption.copyWith(
-                      color: statusColor,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 10)),
-            ),
-          ]),
+                    color: statusColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 10,
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
-          Row(children: [
-            _amt('Gross', '₹${gross.toStringAsFixed(0)}',
-                AppColors.bodyText),
-            const SizedBox(width: 16),
-            _amt('Deductions', '-₹${deduct.toStringAsFixed(0)}',
-                AppColors.error),
-            const SizedBox(width: 16),
-            _amt('Net Pay', '₹${net.toStringAsFixed(0)}',
-                AppColors.success),
-          ]),
+          Row(
+            children: [
+              _amt('Gross', '₹${gross.toStringAsFixed(0)}', AppColors.bodyText),
+              const SizedBox(width: 16),
+              _amt(
+                'Deductions',
+                '-₹${deduct.toStringAsFixed(0)}',
+                AppColors.error,
+              ),
+              const SizedBox(width: 16),
+              _amt('Net Pay', '₹${net.toStringAsFixed(0)}', AppColors.success),
+            ],
+          ),
           const SizedBox(height: 6),
-          Text('$present / $total days present',
-              style: AppTextStyles.caption
-                  .copyWith(color: AppColors.mutedText)),
+          Text(
+            '$present / $total days present',
+            style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+          ),
         ],
       ),
     );
   }
 
   Widget _amt(String label, String value, Color color) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: AppTextStyles.caption
-                  .copyWith(color: AppColors.mutedText, fontSize: 10)),
-          Text(value,
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: color, fontWeight: FontWeight.w700)),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: AppTextStyles.caption.copyWith(
+          color: AppColors.mutedText,
+          fontSize: 10,
+        ),
+      ),
+      Text(
+        value,
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    ],
+  );
 }

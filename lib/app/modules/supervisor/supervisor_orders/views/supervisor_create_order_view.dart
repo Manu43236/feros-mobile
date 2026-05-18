@@ -19,33 +19,32 @@ class SupervisorCreateOrderView extends StatefulWidget {
       _SupervisorCreateOrderViewState();
 }
 
-class _SupervisorCreateOrderViewState
-    extends State<SupervisorCreateOrderView> {
+class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
   final _api = Get.find<ApiClient>();
 
   // ── Loading ────────────────────────────────────────────────────────────────
-  bool _isLoadingClients   = true;
+  bool _isLoadingClients = true;
   bool _isLoadingMaterials = true;
-  bool _isLoadingStates    = true;
+  bool _isLoadingStates = true;
   bool _isLoadingSrcCities = false;
   bool _isLoadingDstCities = false;
-  bool _isSubmitting       = false;
+  bool _isSubmitting = false;
 
   // ── Master data ────────────────────────────────────────────────────────────
-  List<Map<String, dynamic>> _clients   = [];
+  List<Map<String, dynamic>> _clients = [];
   List<Map<String, dynamic>> _materials = [];
-  List<Map<String, dynamic>> _states    = [];
+  List<Map<String, dynamic>> _states = [];
   List<Map<String, dynamic>> _srcCities = [];
   List<Map<String, dynamic>> _dstCities = [];
 
   static final _rateTypes = <Map<String, dynamic>>[
-    {'id': 'PER_TON',  'name': 'Per Ton'},
+    {'id': 'PER_TON', 'name': 'Per Ton'},
     {'id': 'PER_TRIP', 'name': 'Per Trip'},
-    {'id': 'PER_KM',   'name': 'Per KM'},
+    {'id': 'PER_KM', 'name': 'Per KM'},
   ];
 
   static final _billingOptions = <Map<String, dynamic>>[
-    {'id': 'LOADED_WEIGHT',    'name': 'Loaded Weight'},
+    {'id': 'LOADED_WEIGHT', 'name': 'Loaded Weight'},
     {'id': 'DELIVERED_WEIGHT', 'name': 'Delivered Weight'},
   ];
 
@@ -56,21 +55,21 @@ class _SupervisorCreateOrderViewState
   Map<String, dynamic>? _srcCity;
   Map<String, dynamic>? _dstState;
   Map<String, dynamic>? _dstCity;
-  Map<String, dynamic>  _selectedRateType  = _rateTypes[0];
-  Map<String, dynamic>  _selectedBillingOn = _billingOptions[0];
+  Map<String, dynamic> _selectedRateType = _rateTypes[0];
+  Map<String, dynamic> _selectedBillingOn = _billingOptions[0];
   DateTime? _orderDate, _expectedDeliveryDate;
   DateTime? _ewayBillDate, _ewayBillValidUpto;
   bool _clientAutoFilled = false;
 
   // ── Text controllers ───────────────────────────────────────────────────────
-  final _weightCtrl         = TextEditingController();
-  final _freightRateCtrl    = TextEditingController();
-  final _srcAddressCtrl     = TextEditingController();
-  final _dstAddressCtrl     = TextEditingController();
+  final _weightCtrl = TextEditingController();
+  final _freightRateCtrl = TextEditingController();
+  final _srcAddressCtrl = TextEditingController();
+  final _dstAddressCtrl = TextEditingController();
   final _customMaterialCtrl = TextEditingController();
-  final _specialInstCtrl    = TextEditingController();
-  final _remarksCtrl        = TextEditingController();
-  final _ewayBillNoCtrl     = TextEditingController();
+  final _specialInstCtrl = TextEditingController();
+  final _remarksCtrl = TextEditingController();
+  final _ewayBillNoCtrl = TextEditingController();
 
   // ── Validation errors ──────────────────────────────────────────────────────
   final Map<String, String> _errors = {};
@@ -103,28 +102,31 @@ class _SupervisorCreateOrderViewState
         _api.get(ApiEndpoints.materialTypes),
         _api.get(ApiEndpoints.states),
       ]);
-      final clientsData   = ((results[0].data as Map)['data'] as List? ?? []).cast<Map<String, dynamic>>();
-      final materialsData = ((results[1].data as Map)['data'] as List? ?? []).cast<Map<String, dynamic>>();
-      final statesData    = ((results[2].data as Map)['data'] as List? ?? []).cast<Map<String, dynamic>>();
+      final clientsData = ((results[0].data as Map)['data'] as List? ?? [])
+          .cast<Map<String, dynamic>>();
+      final materialsData = ((results[1].data as Map)['data'] as List? ?? [])
+          .cast<Map<String, dynamic>>();
+      final statesData = ((results[2].data as Map)['data'] as List? ?? [])
+          .cast<Map<String, dynamic>>();
       if (mounted) {
         setState(() {
-          _clients          = clientsData;
+          _clients = clientsData;
           _isLoadingClients = false;
-          _materials        = [
+          _materials = [
             ...materialsData,
             {'id': -1, 'name': 'Other (specify manually)'},
           ];
           _isLoadingMaterials = false;
-          _states           = statesData;
-          _isLoadingStates  = false;
+          _states = statesData;
+          _isLoadingStates = false;
         });
       }
     } catch (_) {
       if (mounted) {
         setState(() {
-          _isLoadingClients   = false;
+          _isLoadingClients = false;
           _isLoadingMaterials = false;
-          _isLoadingStates    = false;
+          _isLoadingStates = false;
         });
       }
       FerosSnackbar.error('Failed to load form data');
@@ -133,9 +135,9 @@ class _SupervisorCreateOrderViewState
 
   Future<void> _onRefresh() async {
     setState(() {
-      _isLoadingClients   = true;
+      _isLoadingClients = true;
       _isLoadingMaterials = true;
-      _isLoadingStates    = true;
+      _isLoadingStates = true;
     });
     final futures = <Future<void>>[_loadMasterData()];
     if (_srcState != null) futures.add(_loadSrcCities(_srcState!['id'] as int));
@@ -144,20 +146,34 @@ class _SupervisorCreateOrderViewState
   }
 
   Future<void> _loadSrcCities(int stateId) async {
-    setState(() { _isLoadingSrcCities = true; _srcCities = []; });
+    setState(() {
+      _isLoadingSrcCities = true;
+      _srcCities = [];
+    });
     try {
-      final res  = await _api.get(ApiEndpoints.cities, params: {'stateId': stateId});
-      final data = ((res.data as Map)['data'] as List? ?? []).cast<Map<String, dynamic>>();
+      final res = await _api.get(
+        ApiEndpoints.cities,
+        params: {'stateId': stateId},
+      );
+      final data = ((res.data as Map)['data'] as List? ?? [])
+          .cast<Map<String, dynamic>>();
       if (mounted) setState(() => _srcCities = data);
     } catch (_) {}
     if (mounted) setState(() => _isLoadingSrcCities = false);
   }
 
   Future<void> _loadDstCities(int stateId) async {
-    setState(() { _isLoadingDstCities = true; _dstCities = []; });
+    setState(() {
+      _isLoadingDstCities = true;
+      _dstCities = [];
+    });
     try {
-      final res  = await _api.get(ApiEndpoints.cities, params: {'stateId': stateId});
-      final data = ((res.data as Map)['data'] as List? ?? []).cast<Map<String, dynamic>>();
+      final res = await _api.get(
+        ApiEndpoints.cities,
+        params: {'stateId': stateId},
+      );
+      final data = ((res.data as Map)['data'] as List? ?? [])
+          .cast<Map<String, dynamic>>();
       if (mounted) setState(() => _dstCities = data);
     } catch (_) {}
     if (mounted) setState(() => _isLoadingDstCities = false);
@@ -166,25 +182,27 @@ class _SupervisorCreateOrderViewState
   // ── Client auto-fill ───────────────────────────────────────────────────────
   void _onClientSelected(Map<String, dynamic> client) {
     setState(() {
-      _selectedClient   = client;
+      _selectedClient = client;
       _clientAutoFilled = false;
     });
 
     final stateId = client['stateId'] as int?;
-    final cityId  = client['cityId']  as int?;
+    final cityId = client['cityId'] as int?;
     final address = client['address'] as String?;
 
     if (stateId != null) {
       final stateMatches = _states.where((s) => s['id'] == stateId);
       setState(() {
-        _dstState  = stateMatches.isEmpty ? null : stateMatches.first;
-        _dstCity   = null;
+        _dstState = stateMatches.isEmpty ? null : stateMatches.first;
+        _dstCity = null;
         _dstCities = [];
       });
       _loadDstCities(stateId).then((_) {
         if (cityId != null && mounted) {
           final cityMatches = _dstCities.where((c) => c['id'] == cityId);
-          setState(() => _dstCity = cityMatches.isEmpty ? null : cityMatches.first);
+          setState(
+            () => _dstCity = cityMatches.isEmpty ? null : cityMatches.first,
+          );
         }
       });
     }
@@ -198,20 +216,24 @@ class _SupervisorCreateOrderViewState
   bool _validate() {
     final e = <String, String>{};
 
-    if (_selectedClient == null)                              e['client']      = 'Select a client';
-    if (_selectedMaterial == null)                            e['material']    = 'Select material type';
-    if (_selectedMaterial?['id'] == -1 && _customMaterialCtrl.text.trim().isEmpty)
-                                                              e['material']    = 'Enter material name';
+    if (_selectedClient == null) e['client'] = 'Select a client';
+    if (_selectedMaterial == null) e['material'] = 'Select material type';
+    if (_selectedMaterial?['id'] == -1 &&
+        _customMaterialCtrl.text.trim().isEmpty)
+      e['material'] = 'Enter material name';
     final w = double.tryParse(_weightCtrl.text.trim());
-    if (w == null || w <= 0)                                  e['weight']      = 'Enter a valid weight';
-    if (_srcState == null)                                    e['srcState']    = 'Select source state';
-    if (_srcCity  == null)                                    e['srcCity']     = 'Select source city';
-    if (_dstState == null)                                    e['dstState']    = 'Select destination state';
-    if (_dstCity  == null)                                    e['dstCity']     = 'Select destination city';
+    if (w == null || w <= 0) e['weight'] = 'Enter a valid weight';
+    if (_srcState == null) e['srcState'] = 'Select source state';
+    if (_srcCity == null) e['srcCity'] = 'Select source city';
+    if (_dstState == null) e['dstState'] = 'Select destination state';
+    if (_dstCity == null) e['dstCity'] = 'Select destination city';
     final r = double.tryParse(_freightRateCtrl.text.trim());
-    if (r == null || r <= 0)                                  e['freightRate'] = 'Enter freight rate';
+    if (r == null || r <= 0) e['freightRate'] = 'Enter freight rate';
 
-    setState(() { _errors.clear(); _errors.addAll(e); });
+    setState(() {
+      _errors.clear();
+      _errors.addAll(e);
+    });
     return e.isEmpty;
   }
 
@@ -221,14 +243,14 @@ class _SupervisorCreateOrderViewState
     setState(() => _isSubmitting = true);
     try {
       final body = <String, dynamic>{
-        'clientId':           _selectedClient!['id'],
-        'totalWeight':        double.parse(_weightCtrl.text.trim()),
-        'sourceStateId':      _srcState!['id'],
-        'sourceCityId':       _srcCity!['id'],
+        'clientId': _selectedClient!['id'],
+        'totalWeight': double.parse(_weightCtrl.text.trim()),
+        'sourceStateId': _srcState!['id'],
+        'sourceCityId': _srcCity!['id'],
         'destinationStateId': _dstState!['id'],
-        'destinationCityId':  _dstCity!['id'],
-        'freightRateType':    _selectedRateType['id'],
-        'freightRate':        double.parse(_freightRateCtrl.text.trim()),
+        'destinationCityId': _dstCity!['id'],
+        'freightRateType': _selectedRateType['id'],
+        'freightRate': double.parse(_freightRateCtrl.text.trim()),
       };
 
       if (_selectedMaterial?['id'] == -1) {
@@ -236,16 +258,33 @@ class _SupervisorCreateOrderViewState
       } else if (_selectedMaterial != null) {
         body['materialTypeId'] = _selectedMaterial!['id'];
       }
-      if (_srcAddressCtrl.text.trim().isNotEmpty)  body['sourceAddress']       = _srcAddressCtrl.text.trim();
-      if (_dstAddressCtrl.text.trim().isNotEmpty)  body['destinationAddress']  = _dstAddressCtrl.text.trim();
-      if (_selectedRateType['id'] == 'PER_TON')    body['billingOn']           = _selectedBillingOn['id'];
-      if (_specialInstCtrl.text.trim().isNotEmpty) body['specialInstructions'] = _specialInstCtrl.text.trim();
-      if (_remarksCtrl.text.trim().isNotEmpty)     body['remarks']             = _remarksCtrl.text.trim();
-      if (_orderDate != null)            body['orderDate']            = _orderDate!.toIso8601String().substring(0, 10);
-      if (_expectedDeliveryDate != null) body['expectedDeliveryDate'] = _expectedDeliveryDate!.toIso8601String().substring(0, 10);
-      if (_ewayBillNoCtrl.text.trim().isNotEmpty)  body['ewayBillNumber']      = _ewayBillNoCtrl.text.trim();
-      if (_ewayBillDate != null)         body['ewayBillDate']         = _ewayBillDate!.toIso8601String().substring(0, 10);
-      if (_ewayBillValidUpto != null)    body['ewayBillValidUpto']    = _ewayBillValidUpto!.toIso8601String().substring(0, 10);
+      if (_srcAddressCtrl.text.trim().isNotEmpty)
+        body['sourceAddress'] = _srcAddressCtrl.text.trim();
+      if (_dstAddressCtrl.text.trim().isNotEmpty)
+        body['destinationAddress'] = _dstAddressCtrl.text.trim();
+      if (_selectedRateType['id'] == 'PER_TON')
+        body['billingOn'] = _selectedBillingOn['id'];
+      if (_specialInstCtrl.text.trim().isNotEmpty)
+        body['specialInstructions'] = _specialInstCtrl.text.trim();
+      if (_remarksCtrl.text.trim().isNotEmpty)
+        body['remarks'] = _remarksCtrl.text.trim();
+      if (_orderDate != null)
+        body['orderDate'] = _orderDate!.toIso8601String().substring(0, 10);
+      if (_expectedDeliveryDate != null)
+        body['expectedDeliveryDate'] = _expectedDeliveryDate!
+            .toIso8601String()
+            .substring(0, 10);
+      if (_ewayBillNoCtrl.text.trim().isNotEmpty)
+        body['ewayBillNumber'] = _ewayBillNoCtrl.text.trim();
+      if (_ewayBillDate != null)
+        body['ewayBillDate'] = _ewayBillDate!.toIso8601String().substring(
+          0,
+          10,
+        );
+      if (_ewayBillValidUpto != null)
+        body['ewayBillValidUpto'] = _ewayBillValidUpto!
+            .toIso8601String()
+            .substring(0, 10);
 
       await _api.post(ApiEndpoints.orders, data: body);
 
@@ -269,9 +308,9 @@ class _SupervisorCreateOrderViewState
       appBar: AppBar(
         backgroundColor: AppColors.navy,
         elevation: 0,
-        leading: IconButton(
-          onPressed: Get.back,
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
         ),
         title: const Text(
           'New Order',
@@ -290,56 +329,54 @@ class _SupervisorCreateOrderViewState
               color: AppColors.navy,
               onRefresh: _onRefresh,
               child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              child: Column(
-                children: [
-                  _Section(
-                    title: 'Basic Info',
-                    children: _buildBasicInfo(),
-                  ),
-                  const SizedBox(height: 16),
-                  _Section(
-                    title: 'Source (From)',
-                    children: _buildSource(),
-                  ),
-                  const SizedBox(height: 16),
-                  _Section(
-                    title: 'Destination (To)',
-                    badge: _clientAutoFilled ? 'Auto-filled from client' : null,
-                    children: _buildDestination(),
-                  ),
-                  const SizedBox(height: 16),
-                  _Section(
-                    title: 'Freight',
-                    children: _buildFreight(),
-                  ),
-                  const SizedBox(height: 16),
-                  _Section(
-                    title: 'Additional Info',
-                    children: _buildAdditional(),
-                  ),
-                  const SizedBox(height: 16),
-                  _Section(
-                    title: 'E-way Bill',
-                    isOptional: true,
-                    children: _buildEwayBill(),
-                  ),
-                ],
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                child: Column(
+                  children: [
+                    _Section(title: 'Basic Info', children: _buildBasicInfo()),
+                    const SizedBox(height: 16),
+                    _Section(title: 'Source (From)', children: _buildSource()),
+                    const SizedBox(height: 16),
+                    _Section(
+                      title: 'Destination (To)',
+                      badge: _clientAutoFilled
+                          ? 'Auto-filled from client'
+                          : null,
+                      children: _buildDestination(),
+                    ),
+                    const SizedBox(height: 16),
+                    _Section(title: 'Freight', children: _buildFreight()),
+                    const SizedBox(height: 16),
+                    _Section(
+                      title: 'Additional Info',
+                      children: _buildAdditional(),
+                    ),
+                    const SizedBox(height: 16),
+                    _Section(
+                      title: 'E-way Bill',
+                      isOptional: true,
+                      children: _buildEwayBill(),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
           ),
           // ── Sticky footer ──────────────────────────────────────────
           Container(
             padding: EdgeInsets.fromLTRB(
-                16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
+              16,
+              12,
+              16,
+              MediaQuery.of(context).padding.bottom + 12,
+            ),
             decoration: const BoxDecoration(
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                    color: Color(0x15000000),
-                    blurRadius: 10,
-                    offset: Offset(0, -4)),
+                  color: Color(0x15000000),
+                  blurRadius: 10,
+                  offset: Offset(0, -4),
+                ),
               ],
             ),
             child: SizedBox(
@@ -352,14 +389,17 @@ class _SupervisorCreateOrderViewState
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 child: _isSubmitting
                     ? const SizedBox(
                         width: 22,
                         height: 22,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : const Text(
                         'Create Order',
@@ -439,21 +479,22 @@ class _SupervisorCreateOrderViewState
                 const SizedBox(height: 6),
                 TextField(
                   controller: _weightCtrl,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                   ],
                   style: AppTextStyles.body,
-                  decoration: _deco(
-                    hasError: _errors.containsKey('weight'),
-                  ).copyWith(
-                    hintText: '25.00',
-                    hintStyle: AppTextStyles.hint,
-                    suffixText: 'T',
-                    suffixStyle: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.mutedText),
-                  ),
+                  decoration: _deco(hasError: _errors.containsKey('weight'))
+                      .copyWith(
+                        hintText: '25.00',
+                        hintStyle: AppTextStyles.hint,
+                        suffixText: 'T',
+                        suffixStyle: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.mutedText,
+                        ),
+                      ),
                 ),
                 if (_errors.containsKey('weight')) _Err(_errors['weight']!),
               ],
@@ -506,8 +547,8 @@ class _SupervisorCreateOrderViewState
                     itemLabel: (s) => s['name'] as String? ?? '—',
                     onSelected: (s) {
                       setState(() {
-                        _srcState  = s;
-                        _srcCity   = null;
+                        _srcState = s;
+                        _srcCity = null;
                         _srcCities = [];
                       });
                       _loadSrcCities(s['id'] as int);
@@ -523,7 +564,9 @@ class _SupervisorCreateOrderViewState
                 : FerosSelectField<Map<String, dynamic>>(
                     label: 'City',
                     title: 'Select City',
-                    hint: _srcState == null ? 'Select state first' : 'Select city',
+                    hint: _srcState == null
+                        ? 'Select state first'
+                        : 'Select city',
                     isRequired: true,
                     selectedDisplay: _srcCity?['name'] as String?,
                     items: _srcCities,
@@ -568,8 +611,8 @@ class _SupervisorCreateOrderViewState
                     itemLabel: (s) => s['name'] as String? ?? '—',
                     onSelected: (s) {
                       setState(() {
-                        _dstState  = s;
-                        _dstCity   = null;
+                        _dstState = s;
+                        _dstCity = null;
                         _dstCities = [];
                       });
                       _loadDstCities(s['id'] as int);
@@ -585,7 +628,9 @@ class _SupervisorCreateOrderViewState
                 : FerosSelectField<Map<String, dynamic>>(
                     label: 'City',
                     title: 'Select City',
-                    hint: _dstState == null ? 'Select state first' : 'Select city',
+                    hint: _dstState == null
+                        ? 'Select state first'
+                        : 'Select city',
                     isRequired: true,
                     selectedDisplay: _dstCity?['name'] as String?,
                     items: _dstCities,
@@ -639,21 +684,24 @@ class _SupervisorCreateOrderViewState
                 const SizedBox(height: 6),
                 TextField(
                   controller: _freightRateCtrl,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                   ],
                   style: AppTextStyles.body,
-                  decoration: _deco(
-                    hasError: _errors.containsKey('freightRate'),
-                  ).copyWith(
-                    hintText: '1500.00',
-                    hintStyle: AppTextStyles.hint,
-                    prefixText: '₹ ',
-                    prefixStyle: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.mutedText),
-                  ),
+                  decoration:
+                      _deco(
+                        hasError: _errors.containsKey('freightRate'),
+                      ).copyWith(
+                        hintText: '1500.00',
+                        hintStyle: AppTextStyles.hint,
+                        prefixText: '₹ ',
+                        prefixStyle: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.mutedText,
+                        ),
+                      ),
                 ),
                 if (_errors.containsKey('freightRate'))
                   _Err(_errors['freightRate']!),
@@ -783,32 +831,33 @@ class _SupervisorCreateOrderViewState
 
   // ── Input decoration ───────────────────────────────────────────────────────
   InputDecoration _deco({bool hasError = false}) => InputDecoration(
-        filled: true,
-        fillColor: AppColors.background,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide:
-              BorderSide(color: hasError ? AppColors.error : AppColors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide:
-              BorderSide(color: hasError ? AppColors.error : AppColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(
-            color: hasError ? AppColors.error : AppColors.navy,
-            width: 1.5,
-          ),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.error),
-        ),
-      );
+    filled: true,
+    fillColor: AppColors.background,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(
+        color: hasError ? AppColors.error : AppColors.border,
+      ),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(
+        color: hasError ? AppColors.error : AppColors.border,
+      ),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(
+        color: hasError ? AppColors.error : AppColors.navy,
+        width: 1.5,
+      ),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: AppColors.error),
+    ),
+  );
 }
 
 // ── Field-level shimmer (label + field box) ────────────────────────────────────
@@ -868,9 +917,10 @@ class _Section extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x0A000000),
-              blurRadius: 8,
-              offset: Offset(0, 2)),
+            color: Color(0x0A000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       padding: const EdgeInsets.all(16),
@@ -890,15 +940,20 @@ class _Section extends StatelessWidget {
               ),
               if (isOptional) ...[
                 const SizedBox(width: 6),
-                Text('(optional)',
-                    style:
-                        AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                Text(
+                  '(optional)',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.mutedText,
+                  ),
+                ),
               ],
               const Spacer(),
               if (badge != null)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.infoLight,
                     borderRadius: BorderRadius.circular(20),
@@ -929,23 +984,23 @@ class _Label extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => RichText(
-        text: TextSpan(
-          text: text,
-          style: AppTextStyles.label,
-          children: isRequired
-              ? const [
-                  TextSpan(
-                    text: ' *',
-                    style: TextStyle(
-                      color: AppColors.error,
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  )
-                ]
-              : [],
-        ),
-      );
+    text: TextSpan(
+      text: text,
+      style: AppTextStyles.label,
+      children: isRequired
+          ? const [
+              TextSpan(
+                text: ' *',
+                style: TextStyle(
+                  color: AppColors.error,
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ]
+          : [],
+    ),
+  );
 }
 
 // ── Error text ─────────────────────────────────────────────────────────────────
@@ -955,10 +1010,12 @@ class _Err extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Text(text,
-            style: AppTextStyles.caption.copyWith(color: AppColors.error)),
-      );
+    padding: const EdgeInsets.only(top: 4),
+    child: Text(
+      text,
+      style: AppTextStyles.caption.copyWith(color: AppColors.error),
+    ),
+  );
 }
 
 // ── Date picker field ──────────────────────────────────────────────────────────
@@ -977,8 +1034,18 @@ class _DateField extends StatelessWidget {
 
   String _fmt(DateTime d) {
     const m = [
-      'Jan','Feb','Mar','Apr','May','Jun',
-      'Jul','Aug','Sep','Oct','Nov','Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${d.day} ${m[d.month - 1]} ${d.year}';
   }
@@ -987,7 +1054,7 @@ class _DateField extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () async {
-        final now    = DateTime.now();
+        final now = DateTime.now();
         final picked = await showDatePicker(
           context: context,
           initialDate: value ?? now,
@@ -1011,15 +1078,19 @@ class _DateField extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today_outlined,
-                size: 16, color: AppColors.mutedText),
+            const Icon(
+              Icons.calendar_today_outlined,
+              size: 16,
+              color: AppColors.mutedText,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 value != null ? _fmt(value!) : hint,
                 style: AppTextStyles.body.copyWith(
-                  color:
-                      value != null ? AppColors.bodyText : AppColors.hintText,
+                  color: value != null
+                      ? AppColors.bodyText
+                      : AppColors.hintText,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),

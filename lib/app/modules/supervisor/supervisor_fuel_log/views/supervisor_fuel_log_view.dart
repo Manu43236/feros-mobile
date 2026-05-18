@@ -16,6 +16,14 @@ class SupervisorFuelLogView extends GetView<SupervisorFuelLogController> {
       appBar: AppBar(
         backgroundColor: AppColors.navy,
         elevation: 0,
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white,
+            size: 18,
+          ),
+        ),
         title: const Text('Fuel Log',
             style: TextStyle(
                 color: Colors.white,

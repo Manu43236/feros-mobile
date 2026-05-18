@@ -23,8 +23,9 @@ String _fmtDate(dynamic d) {
 String _fmtDateTime(dynamic d) {
   if (d == null) return '—';
   try {
-    return DateFormat('dd MMM yyyy, h:mm a')
-        .format(DateTime.parse(d.toString()).toLocal());
+    return DateFormat(
+      'dd MMM yyyy, h:mm a',
+    ).format(DateTime.parse(d.toString()).toLocal());
   } catch (_) {
     return '—';
   }
@@ -63,8 +64,9 @@ class _OfficeServiceDetailViewState extends State<OfficeServiceDetailView> {
 
   Future<void> _loadParts() async {
     try {
-      final res = await _api
-          .get(ApiEndpoints.servicePartsByService(_service['id'] as int));
+      final res = await _api.get(
+        ApiEndpoints.servicePartsByService(_service['id'] as int),
+      );
       final data = (res.data as Map<String, dynamic>)['data'] as List? ?? [];
       if (mounted) {
         setState(() {
@@ -79,8 +81,9 @@ class _OfficeServiceDetailViewState extends State<OfficeServiceDetailView> {
 
   Future<void> _loadInvoice() async {
     try {
-      final res = await _api
-          .get(ApiEndpoints.serviceInvoiceByService(_service['id'] as int));
+      final res = await _api.get(
+        ApiEndpoints.serviceInvoiceByService(_service['id'] as int),
+      );
       final data = (res.data as Map<String, dynamic>)['data'];
       if (mounted) {
         setState(() {
@@ -97,11 +100,11 @@ class _OfficeServiceDetailViewState extends State<OfficeServiceDetailView> {
     final invoiceId = invoice['id'] as int?;
     if (invoiceId == null) return;
     try {
-      final bytes =
-          await _api.getBytes(ApiEndpoints.serviceInvoicePdf(invoiceId));
+      final bytes = await _api.getBytes(
+        ApiEndpoints.serviceInvoicePdf(invoiceId),
+      );
       final dir = await getTemporaryDirectory();
-      final file =
-          File('${dir.path}/service_invoice_$invoiceId.pdf');
+      final file = File('${dir.path}/service_invoice_$invoiceId.pdf');
       await file.writeAsBytes(bytes);
       Get.to(
         () => const PdfViewerView(),
@@ -115,22 +118,21 @@ class _OfficeServiceDetailViewState extends State<OfficeServiceDetailView> {
 
   @override
   Widget build(BuildContext context) {
-    final num         = _service['serviceNumber'] as String? ?? '—';
-    final status      = _service['displayStatus'] as String? ?? _status;
-    final triggeredBy = _service['triggeredBy']   as String?;
-    final serviceType = _service['serviceType']   as String?;
-    final vendor      = _service['vendorName']    as String?;
-    final location    = _service['location']      as String?;
-    final serviceDate = _service['serviceDate']   as String?;
-    final startedAt   = _service['startedAt']     as String?;
-    final completedAt = _service['completedAt']   as String?;
-    final odometer    = _service['odometer'];
-    final dueAt       = _service['dueAtOdometer'];
-    final totalCost   = _service['totalCost'];
-    final notes       = _service['notes']         as String?;
-    final tasks       = (_service['tasks'] as List?)
-            ?.cast<Map<String, dynamic>>() ??
-        [];
+    final num = _service['serviceNumber'] as String? ?? '—';
+    final status = _service['displayStatus'] as String? ?? _status;
+    final triggeredBy = _service['triggeredBy'] as String?;
+    final serviceType = _service['serviceType'] as String?;
+    final vendor = _service['vendorName'] as String?;
+    final location = _service['location'] as String?;
+    final serviceDate = _service['serviceDate'] as String?;
+    final startedAt = _service['startedAt'] as String?;
+    final completedAt = _service['completedAt'] as String?;
+    final odometer = _service['odometer'];
+    final dueAt = _service['dueAtOdometer'];
+    final totalCost = _service['totalCost'];
+    final notes = _service['notes'] as String?;
+    final tasks =
+        (_service['tasks'] as List?)?.cast<Map<String, dynamic>>() ?? [];
 
     final (statusColor, statusBg, statusLabel) = _statusStyle(status);
 
@@ -139,16 +141,18 @@ class _OfficeServiceDetailViewState extends State<OfficeServiceDetailView> {
       appBar: AppBar(
         backgroundColor: AppColors.navy,
         foregroundColor: Colors.white,
-        title: Text(num,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-              color: Colors.white,
-            )),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-          onPressed: () => Get.back(),
+        title: Text(
+          num,
+          style: const TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            color: Colors.white,
+          ),
+        ),
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
         ),
       ),
       body: ListView(
@@ -188,15 +192,15 @@ class _OfficeServiceDetailViewState extends State<OfficeServiceDetailView> {
                   _InfoRow('Started', _fmtDateTime(startedAt)),
                 if (completedAt != null)
                   _InfoRow('Completed', _fmtDateTime(completedAt)),
-                if (odometer != null)
-                  _InfoRow('Odometer', '$odometer km'),
-                if (dueAt != null)
-                  _InfoRow('Due at', '$dueAt km'),
-                if (location != null)
-                  _InfoRow('Location', location),
+                if (odometer != null) _InfoRow('Odometer', '$odometer km'),
+                if (dueAt != null) _InfoRow('Due at', '$dueAt km'),
+                if (location != null) _InfoRow('Location', location),
                 if (totalCost != null)
-                  _InfoRow('Total Cost', '₹$totalCost',
-                      valueColor: AppColors.success),
+                  _InfoRow(
+                    'Total Cost',
+                    '₹$totalCost',
+                    valueColor: AppColors.success,
+                  ),
               ],
             ),
           ),
@@ -209,23 +213,30 @@ class _OfficeServiceDetailViewState extends State<OfficeServiceDetailView> {
             _Card(
               child: Column(
                 children: tasks.asMap().entries.map((e) {
-                  final task      = e.value;
-                  final isLast    = e.key == tasks.length - 1;
-                  final tName     = task['taskTypeName'] as String? ??
-                      task['customName']  as String? ?? '—';
-                  final tStatus   = task['status'] as String? ?? 'PENDING';
+                  final task = e.value;
+                  final isLast = e.key == tasks.length - 1;
+                  final tName =
+                      task['taskTypeName'] as String? ??
+                      task['customName'] as String? ??
+                      '—';
+                  final tStatus = task['status'] as String? ?? 'PENDING';
                   final recurring = task['isRecurring'] as bool? ?? false;
-                  final freqKm    = task['frequencyKm'];
-                  final isDone    = tStatus == 'COMPLETED';
+                  final freqKm = task['frequencyKm'];
+                  final isDone = tStatus == 'COMPLETED';
                   return Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 12),
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       border: isLast
                           ? null
                           : const Border(
                               bottom: BorderSide(
-                                  color: AppColors.border, width: 0.8)),
+                                color: AppColors.border,
+                                width: 0.8,
+                              ),
+                            ),
                     ),
                     child: Row(
                       children: [
@@ -243,19 +254,24 @@ class _OfficeServiceDetailViewState extends State<OfficeServiceDetailView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(tName,
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    color: isDone
-                                        ? AppColors.mutedText
-                                        : AppColors.bodyText,
-                                    decoration: isDone
-                                        ? TextDecoration.lineThrough
-                                        : null,
-                                  )),
+                              Text(
+                                tName,
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: isDone
+                                      ? AppColors.mutedText
+                                      : AppColors.bodyText,
+                                  decoration: isDone
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                ),
+                              ),
                               if (recurring && freqKm != null)
-                                Text('Every ${freqKm}km',
-                                    style: AppTextStyles.caption.copyWith(
-                                        color: AppColors.mutedText)),
+                                Text(
+                                  'Every ${freqKm}km',
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.mutedText,
+                                  ),
+                                ),
                             ],
                           ),
                         ),
@@ -264,9 +280,7 @@ class _OfficeServiceDetailViewState extends State<OfficeServiceDetailView> {
                           bg: isDone
                               ? const Color(0xFFF0FDF4)
                               : AppColors.background,
-                          fg: isDone
-                              ? AppColors.success
-                              : AppColors.mutedText,
+                          fg: isDone ? AppColors.success : AppColors.mutedText,
                         ),
                       ],
                     ),
@@ -287,9 +301,12 @@ class _OfficeServiceDetailViewState extends State<OfficeServiceDetailView> {
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Text('No parts requested',
-                      style: AppTextStyles.body
-                          .copyWith(color: AppColors.mutedText)),
+                  child: Text(
+                    'No parts requested',
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.mutedText,
+                    ),
+                  ),
                 ),
               ),
             )
@@ -297,22 +314,27 @@ class _OfficeServiceDetailViewState extends State<OfficeServiceDetailView> {
             _Card(
               child: Column(
                 children: _parts.asMap().entries.map((e) {
-                  final part   = e.value;
+                  final part = e.value;
                   final isLast = e.key == _parts.length - 1;
-                  final pName  = part['partName']  as String? ?? '—';
-                  final pStatus= part['status']    as String? ?? '';
-                  final qty    = part['quantity'];
-                  final unit   = part['unit']      as String?;
+                  final pName = part['partName'] as String? ?? '—';
+                  final pStatus = part['status'] as String? ?? '';
+                  final qty = part['quantity'];
+                  final unit = part['unit'] as String?;
                   final (pColor, pBg, pLabel) = _partStatusStyle(pStatus);
                   return Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 12),
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       border: isLast
                           ? null
                           : const Border(
                               bottom: BorderSide(
-                                  color: AppColors.border, width: 0.8)),
+                                color: AppColors.border,
+                                width: 0.8,
+                              ),
+                            ),
                     ),
                     child: Row(
                       children: [
@@ -320,14 +342,19 @@ class _OfficeServiceDetailViewState extends State<OfficeServiceDetailView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(pName,
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                      color: AppColors.bodyText)),
+                              Text(
+                                pName,
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: AppColors.bodyText,
+                                ),
+                              ),
                               if (qty != null)
                                 Text(
-                                    'Qty: $qty${unit != null ? " $unit" : ""}',
-                                    style: AppTextStyles.caption.copyWith(
-                                        color: AppColors.mutedText)),
+                                  'Qty: $qty${unit != null ? " $unit" : ""}',
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.mutedText,
+                                  ),
+                                ),
                             ],
                           ),
                         ),
@@ -351,9 +378,12 @@ class _OfficeServiceDetailViewState extends State<OfficeServiceDetailView> {
                 child: Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Text('No invoice generated',
-                        style: AppTextStyles.body
-                            .copyWith(color: AppColors.mutedText)),
+                    child: Text(
+                      'No invoice generated',
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.mutedText,
+                      ),
+                    ),
                   ),
                 ),
               )
@@ -363,30 +393,34 @@ class _OfficeServiceDetailViewState extends State<OfficeServiceDetailView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _InfoRow(
-                        'Invoice No', _invoice!['invoiceNumber'] as String? ?? '—'),
-                    _InfoRow('Status',
-                        _invoice!['status'] as String? ?? '—'),
+                      'Invoice No',
+                      _invoice!['invoiceNumber'] as String? ?? '—',
+                    ),
+                    _InfoRow('Status', _invoice!['status'] as String? ?? '—'),
                     if (_invoice!['totalAmount'] != null)
-                      _InfoRow('Amount',
-                          '₹${_invoice!['totalAmount']}',
-                          valueColor: AppColors.success),
+                      _InfoRow(
+                        'Amount',
+                        '₹${_invoice!['totalAmount']}',
+                        valueColor: AppColors.success,
+                      ),
                     if (_invoice!['invoiceDate'] != null)
-                      _InfoRow('Date',
-                          _fmtDate(_invoice!['invoiceDate'])),
+                      _InfoRow('Date', _fmtDate(_invoice!['invoiceDate'])),
                     const SizedBox(height: 10),
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         onPressed: () => _viewPdf(_invoice!),
-                        icon: const Icon(Icons.picture_as_pdf_outlined,
-                            size: 16),
+                        icon: const Icon(
+                          Icons.picture_as_pdf_outlined,
+                          size: 16,
+                        ),
                         label: const Text('View Invoice PDF'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.navy,
-                          side:
-                              const BorderSide(color: AppColors.navy),
+                          side: const BorderSide(color: AppColors.navy),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ),
                     ),
@@ -401,9 +435,10 @@ class _OfficeServiceDetailViewState extends State<OfficeServiceDetailView> {
             _SectionTitle('Notes'),
             const SizedBox(height: 8),
             _Card(
-              child: Text(notes,
-                  style: AppTextStyles.body
-                      .copyWith(color: AppColors.mutedText)),
+              child: Text(
+                notes,
+                style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+              ),
             ),
           ],
         ],
@@ -416,7 +451,11 @@ class _OfficeServiceDetailViewState extends State<OfficeServiceDetailView> {
       case 'OPEN':
         return (const Color(0xFF1D4ED8), const Color(0xFFEFF6FF), 'Open');
       case 'IN_PROGRESS':
-        return (const Color(0xFFC2410C), const Color(0xFFFFF7ED), 'In Progress');
+        return (
+          const Color(0xFFC2410C),
+          const Color(0xFFFFF7ED),
+          'In Progress',
+        );
       case 'COMPLETED':
         return (const Color(0xFF15803D), const Color(0xFFF0FDF4), 'Completed');
       case 'OVERDUE':
@@ -443,17 +482,17 @@ class _OfficeServiceDetailViewState extends State<OfficeServiceDetailView> {
 
   static String _triggerLabel(String t) {
     const m = {
-      'SCHEDULED':  'Scheduled',
-      'BREAKDOWN':  'Breakdown',
-      'ACCIDENT':   'Accident',
+      'SCHEDULED': 'Scheduled',
+      'BREAKDOWN': 'Breakdown',
+      'ACCIDENT': 'Accident',
       'COMPLIANCE': 'Compliance',
-      'WARRANTY':   'Warranty',
+      'WARRANTY': 'Warranty',
     };
     return m[t] ?? t;
   }
 
   static String _typeLabel(String t, String? vendor) {
-    if (t == 'INTERNAL')   return 'Internal';
+    if (t == 'INTERNAL') return 'Internal';
     if (t == 'OEM_CENTER') return 'OEM${vendor != null ? ": $vendor" : ""}';
     return vendor ?? '3rd Party';
   }
@@ -486,9 +525,13 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text,
-        style: AppTextStyles.bodyMedium
-            .copyWith(color: AppColors.mutedText, fontSize: 13));
+    return Text(
+      text,
+      style: AppTextStyles.bodyMedium.copyWith(
+        color: AppColors.mutedText,
+        fontSize: 13,
+      ),
+    );
   }
 }
 
@@ -507,16 +550,19 @@ class _InfoRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 110,
-            child: Text(label,
-                style: AppTextStyles.caption
-                    .copyWith(color: AppColors.mutedText)),
+            child: Text(
+              label,
+              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: AppTextStyles.caption.copyWith(
-                  color: valueColor ?? AppColors.bodyText,
-                  fontWeight: FontWeight.w500,
-                )),
+            child: Text(
+              value,
+              style: AppTextStyles.caption.copyWith(
+                color: valueColor ?? AppColors.bodyText,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),
@@ -539,13 +585,15 @@ class _Chip extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: fg.withValues(alpha: 0.3)),
       ),
-      child: Text(label,
-          style: TextStyle(
-            color: fg,
-            fontFamily: 'Inter',
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-          )),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: fg,
+          fontFamily: 'Inter',
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }
@@ -563,8 +611,7 @@ class _LoadingCard extends StatelessWidget {
         border: Border.all(color: AppColors.border),
       ),
       child: const Center(
-        child: CircularProgressIndicator(
-            color: AppColors.navy, strokeWidth: 2),
+        child: CircularProgressIndicator(color: AppColors.navy, strokeWidth: 2),
       ),
     );
   }

@@ -19,12 +19,12 @@ class OfficeCreateInvoiceView extends StatefulWidget {
 class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
   final _api = Get.find<ApiClient>();
 
-  bool _isLoadingClients  = true;
-  bool _isLoadingLrs      = false;
-  bool _isSubmitting      = false;
+  bool _isLoadingClients = true;
+  bool _isLoadingLrs = false;
+  bool _isSubmitting = false;
 
-  List<Map<String, dynamic>> _clients        = [];
-  List<Map<String, dynamic>> _availableLrs   = [];
+  List<Map<String, dynamic>> _clients = [];
+  List<Map<String, dynamic>> _availableLrs = [];
   final Set<int> _selectedLrIds = {};
 
   Map<String, dynamic>? _selectedClient;
@@ -32,8 +32,8 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
   DateTime? _invoiceDate = DateTime.now();
   DateTime? _dueDate;
 
-  final _cgstCtrl    = TextEditingController(text: '0');
-  final _sgstCtrl    = TextEditingController(text: '0');
+  final _cgstCtrl = TextEditingController(text: '0');
+  final _sgstCtrl = TextEditingController(text: '0');
   final _remarksCtrl = TextEditingController();
 
   @override
@@ -52,10 +52,14 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
 
   Future<void> _loadClients() async {
     try {
-      final res  = await _api.get(ApiEndpoints.clients);
+      final res = await _api.get(ApiEndpoints.clients);
       final data = ((res.data as Map)['data'] as List? ?? [])
           .cast<Map<String, dynamic>>();
-      if (mounted) setState(() { _clients = data; _isLoadingClients = false; });
+      if (mounted)
+        setState(() {
+          _clients = data;
+          _isLoadingClients = false;
+        });
     } catch (_) {
       if (mounted) setState(() => _isLoadingClients = false);
       FerosSnackbar.error('Failed to load clients');
@@ -63,7 +67,11 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
   }
 
   Future<void> _loadLrsForClient(int clientId) async {
-    setState(() { _isLoadingLrs = true; _availableLrs = []; _selectedLrIds.clear(); });
+    setState(() {
+      _isLoadingLrs = true;
+      _availableLrs = [];
+      _selectedLrIds.clear();
+    });
     try {
       final results = await Future.wait([
         _api.get(ApiEndpoints.lrs),
@@ -78,8 +86,8 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
 
       final available = allLrs.where((lr) {
         final lrClientId = (lr['clientId'] as num?)?.toInt();
-        final status     = lr['lrStatus'] as String? ?? '';
-        final lrId       = (lr['id'] as num?)?.toInt() ?? -1;
+        final status = lr['lrStatus'] as String? ?? '';
+        final lrId = (lr['id'] as num?)?.toInt() ?? -1;
         return lrClientId == clientId &&
             status == 'DELIVERED' &&
             !invoicedIds.contains(lrId);
@@ -96,7 +104,7 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
   void _onClientSelected(Map<String, dynamic> client) {
     setState(() {
       _selectedClient = client;
-      _availableLrs   = [];
+      _availableLrs = [];
       _selectedLrIds.clear();
     });
     final id = (client['id'] as num?)?.toInt();
@@ -114,22 +122,31 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
   }
 
   Future<void> _submit() async {
-    if (_selectedClient == null) { FerosSnackbar.error('Select a client'); return; }
-    if (_selectedLrIds.isEmpty)  { FerosSnackbar.error('Select at least one LR'); return; }
+    if (_selectedClient == null) {
+      FerosSnackbar.error('Select a client');
+      return;
+    }
+    if (_selectedLrIds.isEmpty) {
+      FerosSnackbar.error('Select at least one LR');
+      return;
+    }
 
     setState(() => _isSubmitting = true);
     try {
       final body = <String, dynamic>{
         'clientId': _selectedClient!['id'],
-        'lrIds':    _selectedLrIds.toList(),
+        'lrIds': _selectedLrIds.toList(),
       };
       final cgst = double.tryParse(_cgstCtrl.text.trim());
       final sgst = double.tryParse(_sgstCtrl.text.trim());
       if (cgst != null) body['cgstPercentage'] = cgst;
       if (sgst != null) body['sgstPercentage'] = sgst;
-      if (_invoiceDate != null) body['invoiceDate'] = _invoiceDate!.toIso8601String().substring(0, 10);
-      if (_dueDate != null)     body['dueDate']     = _dueDate!.toIso8601String().substring(0, 10);
-      if (_remarksCtrl.text.trim().isNotEmpty) body['remarks'] = _remarksCtrl.text.trim();
+      if (_invoiceDate != null)
+        body['invoiceDate'] = _invoiceDate!.toIso8601String().substring(0, 10);
+      if (_dueDate != null)
+        body['dueDate'] = _dueDate!.toIso8601String().substring(0, 10);
+      if (_remarksCtrl.text.trim().isNotEmpty)
+        body['remarks'] = _remarksCtrl.text.trim();
 
       await _api.post(ApiEndpoints.invoices, data: body);
       Get.back();
@@ -148,15 +165,19 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
       appBar: AppBar(
         backgroundColor: AppColors.navy,
         elevation: 0,
-        leading: IconButton(
-          onPressed: Get.back,
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
         ),
-        title: const Text('New Invoice',
-            style: TextStyle(
-              fontFamily: 'Inter', fontWeight: FontWeight.w600,
-              fontSize: 16, color: Colors.white,
-            )),
+        title: const Text(
+          'New Invoice',
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            color: Colors.white,
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -176,8 +197,10 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
                               title: 'Select Client',
                               hint: 'Search client...',
                               items: _clients,
-                              itemLabel: (c) => c['clientName'] as String? ?? '',
-                              selectedDisplay: _selectedClient?['clientName'] as String?,
+                              itemLabel: (c) =>
+                                  c['clientName'] as String? ?? '',
+                              selectedDisplay:
+                                  _selectedClient?['clientName'] as String?,
                               onSelected: _onClientSelected,
                             ),
                     ],
@@ -194,32 +217,42 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
                       if (_selectedClient == null)
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Text('Select a client to see available LRs',
-                              style: AppTextStyles.body
-                                  .copyWith(color: AppColors.mutedText)),
+                          child: Text(
+                            'Select a client to see available LRs',
+                            style: AppTextStyles.body.copyWith(
+                              color: AppColors.mutedText,
+                            ),
+                          ),
                         )
                       else if (_isLoadingLrs)
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 16),
                           child: Center(
-                              child: CircularProgressIndicator(
-                                  color: AppColors.navy, strokeWidth: 2)),
+                            child: CircularProgressIndicator(
+                              color: AppColors.navy,
+                              strokeWidth: 2,
+                            ),
+                          ),
                         )
                       else if (_availableLrs.isEmpty)
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Text('No un-invoiced delivered LRs for this client',
-                              style: AppTextStyles.body
-                                  .copyWith(color: AppColors.mutedText)),
+                          child: Text(
+                            'No un-invoiced delivered LRs for this client',
+                            style: AppTextStyles.body.copyWith(
+                              color: AppColors.mutedText,
+                            ),
+                          ),
                         )
                       else
                         ..._availableLrs.map((lr) {
-                          final lrId   = (lr['id'] as num?)?.toInt() ?? -1;
-                          final lrNo   = lr['lrNumber']  as String? ?? '—';
-                          final from   = lr['fromCity']  as String? ?? '—';
-                          final to     = lr['toCity']    as String? ?? '—';
-                          final weight = lr['deliveredWeight'] ?? lr['loadedWeight'];
-                          final sel    = _selectedLrIds.contains(lrId);
+                          final lrId = (lr['id'] as num?)?.toInt() ?? -1;
+                          final lrNo = lr['lrNumber'] as String? ?? '—';
+                          final from = lr['fromCity'] as String? ?? '—';
+                          final to = lr['toCity'] as String? ?? '—';
+                          final weight =
+                              lr['deliveredWeight'] ?? lr['loadedWeight'];
+                          final sel = _selectedLrIds.contains(lrId);
                           return InkWell(
                             onTap: () => _toggleLr(lrId),
                             borderRadius: BorderRadius.circular(8),
@@ -232,7 +265,9 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
                                     : AppColors.background,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: sel ? AppColors.navy : AppColors.border,
+                                  color: sel
+                                      ? AppColors.navy
+                                      : AppColors.border,
                                   width: sel ? 1.5 : 1,
                                 ),
                               ),
@@ -253,24 +288,30 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(lrNo,
-                                            style: AppTextStyles.bodyMedium
-                                                .copyWith(
-                                                    fontWeight:
-                                                        FontWeight.w600)),
+                                        Text(
+                                          lrNo,
+                                          style: AppTextStyles.bodyMedium
+                                              .copyWith(
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                        ),
                                         const SizedBox(height: 2),
-                                        Text('$from → $to',
-                                            style: AppTextStyles.caption
-                                                .copyWith(
-                                                    color:
-                                                        AppColors.mutedText)),
+                                        Text(
+                                          '$from → $to',
+                                          style: AppTextStyles.caption.copyWith(
+                                            color: AppColors.mutedText,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
                                   if (weight != null)
-                                    Text('${weight}T',
-                                        style: AppTextStyles.caption.copyWith(
-                                            color: AppColors.mutedText)),
+                                    Text(
+                                      '${weight}T',
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: AppColors.mutedText,
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
@@ -293,13 +334,16 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
                                 controller: _cgstCtrl,
                                 keyboardType:
                                     const TextInputType.numberWithOptions(
-                                        decimal: true),
+                                      decimal: true,
+                                    ),
                                 inputFormatters: [
                                   FilteringTextInputFormatter.allow(
-                                      RegExp(r'^\d*\.?\d*'))
+                                    RegExp(r'^\d*\.?\d*'),
+                                  ),
                                 ],
-                                style: AppTextStyles.body
-                                    .copyWith(color: AppColors.bodyText),
+                                style: AppTextStyles.body.copyWith(
+                                  color: AppColors.bodyText,
+                                ),
                                 decoration: _inputDeco('e.g. 9'),
                               ),
                             ),
@@ -312,13 +356,16 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
                                 controller: _sgstCtrl,
                                 keyboardType:
                                     const TextInputType.numberWithOptions(
-                                        decimal: true),
+                                      decimal: true,
+                                    ),
                                 inputFormatters: [
                                   FilteringTextInputFormatter.allow(
-                                      RegExp(r'^\d*\.?\d*'))
+                                    RegExp(r'^\d*\.?\d*'),
+                                  ),
                                 ],
-                                style: AppTextStyles.body
-                                    .copyWith(color: AppColors.bodyText),
+                                style: AppTextStyles.body.copyWith(
+                                  color: AppColors.bodyText,
+                                ),
                                 decoration: _inputDeco('e.g. 9'),
                               ),
                             ),
@@ -331,8 +378,7 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
                         child: _DateField(
                           value: _invoiceDate,
                           hint: 'Select date',
-                          onPicked: (d) =>
-                              setState(() => _invoiceDate = d),
+                          onPicked: (d) => setState(() => _invoiceDate = d),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -350,8 +396,9 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
                         child: TextField(
                           controller: _remarksCtrl,
                           maxLines: 2,
-                          style: AppTextStyles.body
-                              .copyWith(color: AppColors.bodyText),
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.bodyText,
+                          ),
                           decoration: _inputDeco('Optional remarks'),
                         ),
                       ),
@@ -365,7 +412,11 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
           // ── Submit footer ────────────────────────────────────────────
           Container(
             padding: EdgeInsets.fromLTRB(
-                16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
+              16,
+              12,
+              16,
+              MediaQuery.of(context).padding.bottom + 12,
+            ),
             decoration: const BoxDecoration(
               color: AppColors.surface,
               border: Border(top: BorderSide(color: AppColors.border)),
@@ -377,22 +428,32 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
                 onPressed: _isSubmitting ? null : _submit,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.orange,
-                  disabledBackgroundColor:
-                      AppColors.orange.withValues(alpha: 0.5),
+                  disabledBackgroundColor: AppColors.orange.withValues(
+                    alpha: 0.5,
+                  ),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 child: _isSubmitting
                     ? const SizedBox(
-                        width: 20, height: 20,
+                        width: 20,
+                        height: 20,
                         child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : const Text('Create Invoice',
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Create Invoice',
                         style: TextStyle(
-                          fontFamily: 'Inter', fontWeight: FontWeight.w600,
-                          fontSize: 15, color: Colors.white,
-                        )),
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
             ),
           ),
@@ -402,22 +463,24 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
   }
 
   InputDecoration _inputDeco(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
-        filled: true,
-        fillColor: AppColors.surface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: AppColors.border)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: AppColors.border)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: AppColors.navy, width: 1.5)),
-      );
+    hintText: hint,
+    hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
+    filled: true,
+    fillColor: AppColors.surface,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: AppColors.border),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: AppColors.border),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
+    ),
+  );
 }
 
 // ── Reusable widgets (local) ───────────────────────────────────────────────────
@@ -440,27 +503,38 @@ class _Section extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Text(title.toUpperCase(),
+          Row(
+            children: [
+              Text(
+                title.toUpperCase(),
                 style: AppTextStyles.caption.copyWith(
-                    color: AppColors.navy,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5)),
-            if (badge != null) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.orange.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: AppColors.navy,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
                 ),
-                child: Text(badge!,
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.orange, fontSize: 10)),
               ),
+              if (badge != null) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    badge!,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.orange,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ],
             ],
-          ]),
+          ),
           const SizedBox(height: 14),
           ...children,
         ],
@@ -491,11 +565,27 @@ class _DateField extends StatelessWidget {
   final DateTime? value;
   final String hint;
   final ValueChanged<DateTime> onPicked;
-  const _DateField(
-      {required this.value, required this.hint, required this.onPicked});
+  const _DateField({
+    required this.value,
+    required this.hint,
+    required this.onPicked,
+  });
 
   String _fmt(DateTime d) {
-    const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const m = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${d.day.toString().padLeft(2, '0')} ${m[d.month - 1]} ${d.year}';
   }
 
@@ -510,8 +600,8 @@ class _DateField extends StatelessWidget {
           lastDate: DateTime(2030),
           builder: (ctx, child) => Theme(
             data: Theme.of(ctx).copyWith(
-                colorScheme:
-                    const ColorScheme.light(primary: AppColors.navy)),
+              colorScheme: const ColorScheme.light(primary: AppColors.navy),
+            ),
             child: child!,
           ),
         );
@@ -531,13 +621,17 @@ class _DateField extends StatelessWidget {
               child: Text(
                 value != null ? _fmt(value!) : hint,
                 style: AppTextStyles.body.copyWith(
-                    color: value != null
-                        ? AppColors.bodyText
-                        : AppColors.hintText),
+                  color: value != null
+                      ? AppColors.bodyText
+                      : AppColors.hintText,
+                ),
               ),
             ),
-            const Icon(Icons.calendar_today_outlined,
-                size: 16, color: AppColors.mutedText),
+            const Icon(
+              Icons.calendar_today_outlined,
+              size: 16,
+              color: AppColors.mutedText,
+            ),
           ],
         ),
       ),

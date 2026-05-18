@@ -79,6 +79,10 @@ class _OfficeReportFulfillmentRateState
       appBar: AppBar(
         backgroundColor: const Color(0xFF0284C7),
         foregroundColor: Colors.white,
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+        ),
         title: const Text('Fulfillment Rate'),
         actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _fetch)],
       ),

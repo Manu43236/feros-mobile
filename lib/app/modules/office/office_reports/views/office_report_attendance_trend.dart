@@ -54,6 +54,10 @@ class _OfficeReportAttendanceTrendState
       appBar: AppBar(
         backgroundColor: AppColors.orange,
         foregroundColor: Colors.white,
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+        ),
         title: const Text('Attendance Trend'),
         actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _fetch)],
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
@@ -6,10 +7,10 @@ import '../../../../../core/theme/app_text_styles.dart';
 // ── Date presets ──────────────────────────────────────────────────────────────
 
 const _presets = [
-  {'id': 'week',      'label': 'This Week'},
-  {'id': 'month',     'label': 'This Month'},
+  {'id': 'week', 'label': 'This Week'},
+  {'id': 'month', 'label': 'This Month'},
   {'id': 'lastMonth', 'label': 'Last Month'},
-  {'id': 'custom',    'label': 'Custom'},
+  {'id': 'custom', 'label': 'Custom'},
 ];
 
 (DateTime, DateTime) presetDates(String preset) {
@@ -60,8 +61,8 @@ class ReportDateBar extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: _presets.map((p) {
-                final id      = p['id']!;
-                final label   = p['label']!;
+                final id = p['id']!;
+                final label = p['label']!;
                 final selected = preset == id;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
@@ -69,24 +70,20 @@ class ReportDateBar extends StatelessWidget {
                     onTap: () => onPreset(id),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: selected
-                            ? AppColors.navy
-                            : AppColors.background,
+                        color: selected ? AppColors.navy : AppColors.background,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: selected
-                              ? AppColors.navy
-                              : AppColors.border,
+                          color: selected ? AppColors.navy : AppColors.border,
                         ),
                       ),
                       child: Text(
                         label,
                         style: AppTextStyles.caption.copyWith(
-                          color: selected
-                              ? Colors.white
-                              : AppColors.bodyText,
+                          color: selected ? Colors.white : AppColors.bodyText,
                           fontWeight: selected
                               ? FontWeight.w600
                               : FontWeight.normal,
@@ -102,19 +99,16 @@ class ReportDateBar extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              _DateChip(
-                label: _fmt(from),
-                onTap: onPickFrom,
-              ),
+              _DateChip(label: _fmt(from), onTap: onPickFrom),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8),
-                child: Icon(Icons.arrow_forward,
-                    size: 14, color: AppColors.mutedText),
+                child: Icon(
+                  Icons.arrow_forward,
+                  size: 14,
+                  color: AppColors.mutedText,
+                ),
               ),
-              _DateChip(
-                label: _fmt(to),
-                onTap: onPickTo,
-              ),
+              _DateChip(label: _fmt(to), onTap: onPickTo),
             ],
           ),
         ],
@@ -122,8 +116,7 @@ class ReportDateBar extends StatelessWidget {
     );
   }
 
-  String _fmt(DateTime dt) =>
-      DateFormat('dd MMM yyyy').format(dt);
+  String _fmt(DateTime dt) => DateFormat('dd MMM yyyy').format(dt);
 }
 
 class _DateChip extends StatelessWidget {
@@ -145,14 +138,19 @@ class _DateChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.calendar_today_outlined,
-                size: 12, color: AppColors.navy),
+            const Icon(
+              Icons.calendar_today_outlined,
+              size: 12,
+              color: AppColors.navy,
+            ),
             const SizedBox(width: 5),
-            Text(label,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.navy,
-                  fontWeight: FontWeight.w600,
-                )),
+            Text(
+              label,
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.navy,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),
@@ -167,8 +165,8 @@ class ReportSummaryStrip extends StatelessWidget {
   const ReportSummaryStrip({super.key, required this.items});
 
   factory ReportSummaryStrip.items(
-          List<({String label, String value, Color? color})> items) =>
-      ReportSummaryStrip(items: items);
+    List<({String label, String value, Color? color})> items,
+  ) => ReportSummaryStrip(items: items);
 
   @override
   Widget build(BuildContext context) {
@@ -177,14 +175,23 @@ class ReportSummaryStrip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       child: Row(
         children: items
-            .expand((item) => [
-                  Expanded(child: _SummaryItem(label: item.label, value: item.value, color: item.color)),
-                  if (item != items.last)
-                    Container(
-                        width: 1,
-                        height: 32,
-                        color: Colors.white.withValues(alpha: 0.2)),
-                ])
+            .expand(
+              (item) => [
+                Expanded(
+                  child: _SummaryItem(
+                    label: item.label,
+                    value: item.value,
+                    color: item.color,
+                  ),
+                ),
+                if (item != items.last)
+                  Container(
+                    width: 1,
+                    height: 32,
+                    color: Colors.white.withValues(alpha: 0.2),
+                  ),
+              ],
+            )
             .toList(),
       ),
     );
@@ -195,8 +202,7 @@ class _SummaryItem extends StatelessWidget {
   final String label;
   final String value;
   final Color? color;
-  const _SummaryItem(
-      {required this.label, required this.value, this.color});
+  const _SummaryItem({required this.label, required this.value, this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -274,10 +280,13 @@ class _ShimmerState extends State<_Shimmer>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1200))
-      ..repeat();
-    _anim = Tween<double>(begin: -1, end: 2).animate(
-        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+    _anim = Tween<double>(
+      begin: -1,
+      end: 2,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -320,11 +329,16 @@ class ReportEmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.bar_chart_outlined,
-              size: 52, color: AppColors.mutedText.withValues(alpha: 0.5)),
+          Icon(
+            Icons.bar_chart_outlined,
+            size: 52,
+            color: AppColors.mutedText.withValues(alpha: 0.5),
+          ),
           const SizedBox(height: 12),
-          Text(message,
-              style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+          Text(
+            message,
+            style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+          ),
         ],
       ),
     );
@@ -343,8 +357,10 @@ class ReportErrorState extends StatelessWidget {
         children: [
           const Icon(Icons.error_outline, size: 48, color: AppColors.error),
           const SizedBox(height: 12),
-          Text('Failed to load report',
-              style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+          Text(
+            'Failed to load report',
+            style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+          ),
           const SizedBox(height: 16),
           OutlinedButton(onPressed: onRetry, child: const Text('Retry')),
         ],
@@ -408,7 +424,10 @@ class ReportCard extends StatelessWidget {
         border: Border.all(color: AppColors.border),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x06000000), blurRadius: 4, offset: Offset(0, 1))
+            color: Color(0x06000000),
+            blurRadius: 4,
+            offset: Offset(0, 1),
+          ),
         ],
       ),
       child: child,
@@ -421,8 +440,11 @@ class ReportCard extends StatelessWidget {
 class ReportSearchBar extends StatelessWidget {
   final String hint;
   final ValueChanged<String> onChanged;
-  const ReportSearchBar(
-      {super.key, required this.hint, required this.onChanged});
+  const ReportSearchBar({
+    super.key,
+    required this.hint,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -434,17 +456,23 @@ class ReportSearchBar extends StatelessWidget {
         style: AppTextStyles.body,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle:
-              AppTextStyles.body.copyWith(color: AppColors.mutedText),
-          prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.mutedText),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          hintStyle: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+          prefixIcon: const Icon(
+            Icons.search,
+            size: 18,
+            color: AppColors.mutedText,
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 10,
+          ),
           isDense: true,
           filled: true,
           fillColor: AppColors.background,
           border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide.none),
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
         ),
       ),
     );
@@ -460,22 +488,21 @@ Future<DateTime?> pickDate(
   required DateTime initial,
   DateTime? first,
   DateTime? last,
-}) =>
-    showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: first ?? DateTime(2020),
-      lastDate: last ?? DateTime.now().add(const Duration(days: 1)),
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: AppColors.navy,
-            onPrimary: Colors.white,
-          ),
-        ),
-        child: child!,
+}) => showDatePicker(
+  context: context,
+  initialDate: initial,
+  firstDate: first ?? DateTime(2020),
+  lastDate: last ?? DateTime.now().add(const Duration(days: 1)),
+  builder: (ctx, child) => Theme(
+    data: Theme.of(ctx).copyWith(
+      colorScheme: const ColorScheme.light(
+        primary: AppColors.navy,
+        onPrimary: Colors.white,
       ),
-    );
+    ),
+    child: child!,
+  ),
+);
 
 // ── Section shell (AppBar + tile list) ────────────────────────────────────────
 
@@ -500,6 +527,14 @@ class ReportSectionShell extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: color,
         foregroundColor: Colors.white,
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white,
+            size: 18,
+          ),
+        ),
         title: Row(
           children: [
             Icon(icon, size: 18),
@@ -512,7 +547,8 @@ class ReportSectionShell extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         itemCount: tiles.length,
         separatorBuilder: (_, _) => const SizedBox(height: 10),
-        itemBuilder: (_, i) => _ReportTileCard(tile: tiles[i], accentColor: color),
+        itemBuilder: (_, i) =>
+            _ReportTileCard(tile: tiles[i], accentColor: color),
       ),
     );
   }
@@ -550,7 +586,10 @@ class _ReportTileCard extends StatelessWidget {
             border: Border.all(color: AppColors.border),
             boxShadow: const [
               BoxShadow(
-                  color: Color(0x07000000), blurRadius: 4, offset: Offset(0, 2))
+                color: Color(0x07000000),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
             ],
           ),
           padding: const EdgeInsets.all(14),
@@ -570,14 +609,20 @@ class _ReportTileCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(tile.label,
-                        style: AppTextStyles.bodyMedium
-                            .copyWith(fontWeight: FontWeight.w600)),
+                    Text(
+                      tile.label,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     const SizedBox(height: 3),
-                    Text(tile.description,
-                        style: AppTextStyles.caption
-                            .copyWith(color: AppColors.mutedText),
-                        maxLines: 2),
+                    Text(
+                      tile.description,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.mutedText,
+                      ),
+                      maxLines: 2,
+                    ),
                   ],
                 ),
               ),

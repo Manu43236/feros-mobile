@@ -57,7 +57,14 @@ class _StoreKeeperPartDetailViewState extends State<StoreKeeperPartDetailView>
       appBar: AppBar(
         backgroundColor: AppColors.navy,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white,
+            size: 18,
+          ),
+        ),
         title: Text(partName,
             style: const TextStyle(
                 color: Colors.white,

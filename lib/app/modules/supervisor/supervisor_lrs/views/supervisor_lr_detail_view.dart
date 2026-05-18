@@ -21,10 +21,9 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
       appBar: AppBar(
         backgroundColor: AppColors.navy,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: Colors.white, size: 18),
-          onPressed: Get.back,
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
         ),
         title: Obx(() {
           final lrNum =
@@ -43,19 +42,26 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
       body: Obx(() {
         if (controller.state.value == ViewState.loading) {
           return const Center(
-              child: CircularProgressIndicator(color: AppColors.navy));
+            child: CircularProgressIndicator(color: AppColors.navy),
+          );
         }
         if (controller.state.value == ViewState.error) {
           return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.error_outline,
-                    size: 48, color: AppColors.error),
+                const Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: AppColors.error,
+                ),
                 const SizedBox(height: 12),
-                Text('Failed to load LR',
-                    style:
-                        AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+                Text(
+                  'Failed to load LR',
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.mutedText,
+                  ),
+                ),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: controller.fetchAll,
@@ -63,7 +69,8 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
                     backgroundColor: AppColors.navy,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   child: const Text('Retry'),
                 ),
@@ -72,7 +79,7 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
           );
         }
 
-        final lr     = controller.lr.value!;
+        final lr = controller.lr.value!;
         final status = lr['lrStatus'] as String? ?? '';
 
         return RefreshIndicator(
@@ -111,8 +118,9 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
               if (controller.checkposts.isEmpty)
                 _EmptySection(label: 'No checkposts recorded')
               else
-                ...controller.checkposts
-                    .map((c) => _CheckpostCard(checkpost: c)),
+                ...controller.checkposts.map(
+                  (c) => _CheckpostCard(checkpost: c),
+                ),
               const SizedBox(height: 16),
 
               // ── Charges ────────────────────────────────────────────────
@@ -138,7 +146,8 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
                 _EmptySection(label: 'No proofs submitted yet')
               else
                 ...controller.proofs.map(
-                    (p) => _ProofCard(proof: p, controller: controller)),
+                  (p) => _ProofCard(proof: p, controller: controller),
+                ),
             ],
           ),
         );
@@ -158,8 +167,11 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
   void _showAddChargeSheet(BuildContext context) async {
     await controller.ensureChargeTypesLoaded();
     if (controller.chargeTypes.isEmpty) {
-      Get.snackbar('Error', 'Could not load charge types',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Could not load charge types',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
     showModalBottomSheet(
@@ -178,9 +190,9 @@ class _StatusBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status   = lr['lrStatus'] as String? ?? '';
-    final color    = _lrColor(status);
-    final label    = _lrLabel(status);
+    final status = lr['lrStatus'] as String? ?? '';
+    final color = _lrColor(status);
+    final label = _lrLabel(status);
     final isOverloaded = lr['isOverloaded'] as bool? ?? false;
 
     return Container(
@@ -216,12 +228,16 @@ class _StatusBanner extends StatelessWidget {
                 color: AppColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                    color: AppColors.error.withValues(alpha: 0.3)),
+                  color: AppColors.error.withValues(alpha: 0.3),
+                ),
               ),
-              child: Text('Overloaded',
-                  style: AppTextStyles.caption.copyWith(
-                      color: AppColors.error,
-                      fontWeight: FontWeight.w600)),
+              child: Text(
+                'Overloaded',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         ],
@@ -238,16 +254,16 @@ class _InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vehicleId  = lr['vehicleId']                 as int?;
-    final vehicle    = lr['vehicleRegistrationNumber'] as String? ?? '—';
-    final vehicleType= lr['vehicleTypeName']           as String?;
-    final fromCity   = lr['fromCity']                  as String? ?? '—';
-    final toCity     = lr['toCity']                    as String? ?? '—';
-    final client     = lr['clientName']                as String? ?? '—';
-    final orderNum   = lr['orderNumber']               as String?;
-    final driver     = lr['startedByName']             as String?;
-    final lrDate     = lr['lrDate']                    as String?;
-    final remarks    = lr['remarks']                   as String?;
+    final vehicleId = lr['vehicleId'] as int?;
+    final vehicle = lr['vehicleRegistrationNumber'] as String? ?? '—';
+    final vehicleType = lr['vehicleTypeName'] as String?;
+    final fromCity = lr['fromCity'] as String? ?? '—';
+    final toCity = lr['toCity'] as String? ?? '—';
+    final client = lr['clientName'] as String? ?? '—';
+    final orderNum = lr['orderNumber'] as String?;
+    final driver = lr['startedByName'] as String?;
+    final lrDate = lr['lrDate'] as String?;
+    final remarks = lr['remarks'] as String?;
 
     return _Card(
       child: Column(
@@ -256,59 +272,82 @@ class _InfoCard extends StatelessWidget {
           // Vehicle + PDF button
           Row(
             children: [
-              const Icon(Icons.local_shipping_outlined,
-                  size: 18, color: AppColors.navy),
+              const Icon(
+                Icons.local_shipping_outlined,
+                size: 18,
+                color: AppColors.navy,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: GestureDetector(
-                  onTap: vehicleId == null ? null : () => Get.to(
-                    () => const SupervisorVehicleDetailView(),
-                    binding: SupervisorVehicleDetailBinding(),
-                    arguments: vehicleId,
-                  ),
+                  onTap: vehicleId == null
+                      ? null
+                      : () => Get.to(
+                          () => const SupervisorVehicleDetailView(),
+                          binding: SupervisorVehicleDetailBinding(),
+                          arguments: vehicleId,
+                        ),
                   child: Row(
                     children: [
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(vehicle,
-                                style: AppTextStyles.bodyMedium.copyWith(
-                                    color: AppColors.navy,
-                                    fontWeight: FontWeight.w600)),
+                            Text(
+                              vehicle,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.navy,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                             if (vehicleType != null)
-                              Text(vehicleType,
-                                  style: AppTextStyles.caption
-                                      .copyWith(color: AppColors.mutedText)),
+                              Text(
+                                vehicleType,
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.mutedText,
+                                ),
+                              ),
                           ],
                         ),
                       ),
                       if (vehicleId != null)
-                        const Icon(Icons.chevron_right,
-                            size: 16, color: AppColors.mutedText),
+                        const Icon(
+                          Icons.chevron_right,
+                          size: 16,
+                          color: AppColors.mutedText,
+                        ),
                     ],
                   ),
                 ),
               ),
-              Obx(() => GestureDetector(
-                    onTap: controller.pdfLoading.value ? null : controller.viewPdf,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: AppColors.navy.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: controller.pdfLoading.value
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: AppColors.navy),
-                            )
-                          : const Icon(Icons.picture_as_pdf_outlined,
-                              size: 18, color: AppColors.navy),
+              Obx(
+                () => GestureDetector(
+                  onTap: controller.pdfLoading.value
+                      ? null
+                      : controller.viewPdf,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.navy.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  )),
+                    child: controller.pdfLoading.value
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.navy,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.picture_as_pdf_outlined,
+                            size: 18,
+                            color: AppColors.navy,
+                          ),
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -318,28 +357,35 @@ class _InfoCard extends StatelessWidget {
           // Route
           Row(
             children: [
-              const Icon(Icons.radio_button_checked,
-                  size: 14, color: AppColors.navy),
+              const Icon(
+                Icons.radio_button_checked,
+                size: 14,
+                color: AppColors.navy,
+              ),
               const SizedBox(width: 6),
               Expanded(
-                child: Text(fromCity,
-                    style: AppTextStyles.body
-                        .copyWith(color: AppColors.bodyText),
-                    overflow: TextOverflow.ellipsis),
+                child: Text(
+                  fromCity,
+                  style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8),
-                child: Icon(Icons.arrow_forward,
-                    size: 14, color: AppColors.mutedText),
+                child: Icon(
+                  Icons.arrow_forward,
+                  size: 14,
+                  color: AppColors.mutedText,
+                ),
               ),
-              const Icon(Icons.location_on,
-                  size: 14, color: AppColors.orange),
+              const Icon(Icons.location_on, size: 14, color: AppColors.orange),
               const SizedBox(width: 6),
               Expanded(
-                child: Text(toCity,
-                    style: AppTextStyles.body
-                        .copyWith(color: AppColors.bodyText),
-                    overflow: TextOverflow.ellipsis),
+                child: Text(
+                  toCity,
+                  style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -352,16 +398,14 @@ class _InfoCard extends StatelessWidget {
             spacing: 16,
             runSpacing: 8,
             children: [
-              if (client.isNotEmpty)
-                _MetaItem(label: 'Client', value: client),
-              if (orderNum != null)
-                _MetaItem(label: 'Order', value: orderNum),
-              if (driver != null)
-                _MetaItem(label: 'Driver', value: driver),
+              if (client.isNotEmpty) _MetaItem(label: 'Client', value: client),
+              if (orderNum != null) _MetaItem(label: 'Order', value: orderNum),
+              if (driver != null) _MetaItem(label: 'Driver', value: driver),
               if (lrDate != null)
                 _MetaItem(
-                    label: 'LR Date',
-                    value: FerosDateUtils.formatDate(lrDate)),
+                  label: 'LR Date',
+                  value: FerosDateUtils.formatDate(lrDate),
+                ),
             ],
           ),
 
@@ -369,13 +413,18 @@ class _InfoCard extends StatelessWidget {
             const SizedBox(height: 12),
             const Divider(height: 1, color: AppColors.border),
             const SizedBox(height: 8),
-            Text('Remarks',
-                style: AppTextStyles.caption.copyWith(
-                    color: AppColors.mutedText, fontWeight: FontWeight.w600)),
+            Text(
+              'Remarks',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.mutedText,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(remarks,
-                style: AppTextStyles.body
-                    .copyWith(color: AppColors.bodyText)),
+            Text(
+              remarks,
+              style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+            ),
           ],
         ],
       ),
@@ -390,7 +439,7 @@ class _DriverCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name  = lr['driverName']  as String?;
+    final name = lr['driverName'] as String?;
     final phone = lr['driverPhone'] as String?;
 
     if (name == null && phone == null) return const SizedBox.shrink();
@@ -419,29 +468,38 @@ class _DriverCard extends StatelessWidget {
               children: [
                 Text(
                   name ?? '—',
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(color: AppColors.bodyText),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.bodyText,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    const Icon(Icons.badge_outlined,
-                        size: 13, color: AppColors.mutedText),
+                    const Icon(
+                      Icons.badge_outlined,
+                      size: 13,
+                      color: AppColors.mutedText,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'Driver',
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.mutedText),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.mutedText,
+                      ),
                     ),
                     if (phone != null) ...[
                       const SizedBox(width: 10),
-                      const Icon(Icons.phone_outlined,
-                          size: 13, color: AppColors.mutedText),
+                      const Icon(
+                        Icons.phone_outlined,
+                        size: 13,
+                        color: AppColors.mutedText,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         phone,
-                        style: AppTextStyles.caption
-                            .copyWith(color: AppColors.mutedText),
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.mutedText,
+                        ),
                       ),
                     ],
                   ],
@@ -461,10 +519,14 @@ class _DriverCard extends StatelessWidget {
                   color: AppColors.success.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: AppColors.success.withValues(alpha: 0.3)),
+                    color: AppColors.success.withValues(alpha: 0.3),
+                  ),
                 ),
-                child: const Icon(Icons.call,
-                    color: AppColors.success, size: 20),
+                child: const Icon(
+                  Icons.call,
+                  color: AppColors.success,
+                  size: 20,
+                ),
               ),
             ),
         ],
@@ -480,10 +542,10 @@ class _WeightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final allocated  = lr['allocatedWeight'];
-    final loaded     = lr['loadedWeight'];
-    final delivered  = lr['deliveredWeight'];
-    final variance   = lr['weightVariance'];
+    final allocated = lr['allocatedWeight'];
+    final loaded = lr['loadedWeight'];
+    final delivered = lr['deliveredWeight'];
+    final variance = lr['weightVariance'];
 
     return _Card(
       child: Row(
@@ -528,9 +590,11 @@ class _WeightStat extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 2),
-          Text(label,
-              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
-              textAlign: TextAlign.center),
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
@@ -540,19 +604,18 @@ class _WeightStat extends StatelessWidget {
 class _Divider extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
-        width: 1,
-        height: 36,
-        color: AppColors.border,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-      );
+    width: 1,
+    height: 36,
+    color: AppColors.border,
+    margin: const EdgeInsets.symmetric(horizontal: 4),
+  );
 }
 
 // ── Action Buttons ────────────────────────────────────────────────────────────
 class _ActionButtons extends StatelessWidget {
   final SupervisorLrDetailController controller;
   final String status;
-  const _ActionButtons(
-      {required this.controller, required this.status});
+  const _ActionButtons({required this.controller, required this.status});
 
   @override
   Widget build(BuildContext context) {
@@ -569,19 +632,24 @@ class _ActionButtons extends StatelessWidget {
                 color: AppColors.warningLight,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                    color: AppColors.warning.withValues(alpha: 0.4)),
+                  color: AppColors.warning.withValues(alpha: 0.4),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline,
-                      size: 18, color: AppColors.warning),
+                  const Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: AppColors.warning,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Waiting for driver to start the trip. Follow up with the driver.',
                       style: AppTextStyles.caption.copyWith(
-                          color: AppColors.warning,
-                          fontWeight: FontWeight.w500),
+                        color: AppColors.warning,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
@@ -589,39 +657,39 @@ class _ActionButtons extends StatelessWidget {
             ),
           Row(
             children: [
-          if (status == 'CREATED')
-            Expanded(
-              child: _ActionBtn(
-                label: 'Record Loading',
-                icon: Icons.inventory_2_outlined,
-                color: AppColors.lrLoaded,
-                loading: busy,
-                onTap: () => showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (_) =>
-                      _RecordLoadingSheet(controller: controller),
+              if (status == 'CREATED')
+                Expanded(
+                  child: _ActionBtn(
+                    label: 'Record Loading',
+                    icon: Icons.inventory_2_outlined,
+                    color: AppColors.lrLoaded,
+                    loading: busy,
+                    onTap: () => showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) =>
+                          _RecordLoadingSheet(controller: controller),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          if (status == 'IN_TRANSIT') ...[
-            Expanded(
-              child: _ActionBtn(
-                label: 'Mark Delivered',
-                icon: Icons.check_circle_outline,
-                color: AppColors.lrDelivered,
-                loading: busy,
-                onTap: () => showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (_) =>
-                      _MarkDeliveredSheet(controller: controller),
+              if (status == 'IN_TRANSIT') ...[
+                Expanded(
+                  child: _ActionBtn(
+                    label: 'Mark Delivered',
+                    icon: Icons.check_circle_outline,
+                    color: AppColors.lrDelivered,
+                    loading: busy,
+                    onTap: () => showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) =>
+                          _MarkDeliveredSheet(controller: controller),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ],
+              ],
             ],
           ),
         ],
@@ -661,7 +729,9 @@ class _ActionBtn extends StatelessWidget {
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white),
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 ),
               )
             : Row(
@@ -690,16 +760,19 @@ class _SectionHeader extends StatelessWidget {
   final String title;
   final int count;
   final VoidCallback? onAdd;
-  const _SectionHeader(
-      {required this.title, required this.count, this.onAdd});
+  const _SectionHeader({required this.title, required this.count, this.onAdd});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text(title,
-            style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.navy, fontWeight: FontWeight.w700)),
+        Text(
+          title,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.navy,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         const SizedBox(width: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
@@ -707,32 +780,40 @@ class _SectionHeader extends StatelessWidget {
             color: AppColors.navy.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Text('$count',
-              style: AppTextStyles.caption.copyWith(
-                  color: AppColors.navy, fontWeight: FontWeight.w700)),
+          child: Text(
+            '$count',
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.navy,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
         const Spacer(),
         if (onAdd != null)
           GestureDetector(
-          onTap: onAdd!,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.navy,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.add, size: 14, color: Colors.white),
-                const SizedBox(width: 4),
-                Text('Add',
+            onTap: onAdd!,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.navy,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.add, size: 14, color: Colors.white),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Add',
                     style: AppTextStyles.caption.copyWith(
-                        color: Colors.white, fontWeight: FontWeight.w600)),
-              ],
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
       ],
     );
   }
@@ -745,11 +826,11 @@ class _CheckpostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name     = checkpost['checkpostName']    as String? ?? '—';
-    final location = checkpost['location']         as String?;
-    final fine     = checkpost['fineAmount'];
-    final receipt  = checkpost['fineReceiptNumber']as String?;
-    final remarks  = checkpost['remarks']          as String?;
+    final name = checkpost['checkpostName'] as String? ?? '—';
+    final location = checkpost['location'] as String?;
+    final fine = checkpost['fineAmount'];
+    final receipt = checkpost['fineReceiptNumber'] as String?;
+    final remarks = checkpost['remarks'] as String?;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -764,46 +845,56 @@ class _CheckpostCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.toll,
-                  size: 16, color: AppColors.navy),
+              const Icon(Icons.toll, size: 16, color: AppColors.navy),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(name,
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.bodyText)),
+                child: Text(
+                  name,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.bodyText,
+                  ),
+                ),
               ),
               if (fine != null)
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 3),
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.errorLight,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text('₹$fine',
-                      style: AppTextStyles.caption.copyWith(
-                          color: AppColors.error,
-                          fontWeight: FontWeight.w700)),
+                  child: Text(
+                    '₹$fine',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.error,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
             ],
           ),
           if (location != null) ...[
             const SizedBox(height: 4),
-            Text(location,
-                style: AppTextStyles.caption
-                    .copyWith(color: AppColors.mutedText)),
+            Text(
+              location,
+              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+            ),
           ],
           if (receipt != null) ...[
             const SizedBox(height: 4),
-            Text('Receipt: $receipt',
-                style: AppTextStyles.caption
-                    .copyWith(color: AppColors.mutedText)),
+            Text(
+              'Receipt: $receipt',
+              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+            ),
           ],
           if (remarks != null && remarks.isNotEmpty) ...[
             const SizedBox(height: 4),
-            Text(remarks,
-                style: AppTextStyles.caption
-                    .copyWith(color: AppColors.mutedText)),
+            Text(
+              remarks,
+              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+            ),
           ],
         ],
       ),
@@ -818,9 +909,9 @@ class _ChargeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final type    = charge['chargeTypeName'] as String? ?? '—';
-    final amount  = charge['amount'];
-    final remarks = charge['remarks']        as String?;
+    final type = charge['chargeTypeName'] as String? ?? '—';
+    final amount = charge['amount'];
+    final remarks = charge['remarks'] as String?;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -838,14 +929,18 @@ class _ChargeCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(type,
-                    style: AppTextStyles.body
-                        .copyWith(color: AppColors.bodyText)),
+                Text(
+                  type,
+                  style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+                ),
                 if (remarks != null && remarks.isNotEmpty) ...[
                   const SizedBox(height: 2),
-                  Text(remarks,
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.mutedText)),
+                  Text(
+                    remarks,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.mutedText,
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -853,7 +948,9 @@ class _ChargeCard extends StatelessWidget {
           Text(
             '₹$amount',
             style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.navy, fontWeight: FontWeight.w700),
+              color: AppColors.navy,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
@@ -870,7 +967,7 @@ class _RecordLoadingSheet extends StatefulWidget {
 }
 
 class _RecordLoadingSheetState extends State<_RecordLoadingSheet> {
-  final _weightCtrl  = TextEditingController();
+  final _weightCtrl = TextEditingController();
   final _remarksCtrl = TextEditingController();
   DateTime _loadedAt = DateTime.now();
 
@@ -882,9 +979,7 @@ class _RecordLoadingSheetState extends State<_RecordLoadingSheet> {
   }
 
   Future<void> _submit() async {
-    final data = <String, dynamic>{
-      'loadedAt': _loadedAt.toIso8601String(),
-    };
+    final data = <String, dynamic>{'loadedAt': _loadedAt.toIso8601String()};
     final w = double.tryParse(_weightCtrl.text.trim());
     if (w != null) data['loadedWeight'] = w;
     if (_remarksCtrl.text.trim().isNotEmpty) {
@@ -912,11 +1007,7 @@ class _RecordLoadingSheetState extends State<_RecordLoadingSheet> {
         const SizedBox(height: 16),
         _SheetLabel('Remarks'),
         const SizedBox(height: 6),
-        _SheetField(
-          controller: _remarksCtrl,
-          hint: 'Optional…',
-          maxLines: 2,
-        ),
+        _SheetField(controller: _remarksCtrl, hint: 'Optional…', maxLines: 2),
       ],
     );
   }
@@ -931,8 +1022,8 @@ class _MarkDeliveredSheet extends StatefulWidget {
 }
 
 class _MarkDeliveredSheetState extends State<_MarkDeliveredSheet> {
-  final _weightCtrl  = TextEditingController();
-  final _odomCtrl    = TextEditingController();
+  final _weightCtrl = TextEditingController();
+  final _odomCtrl = TextEditingController();
   final _remarksCtrl = TextEditingController();
 
   @override
@@ -946,8 +1037,11 @@ class _MarkDeliveredSheetState extends State<_MarkDeliveredSheet> {
   Future<void> _submit() async {
     final odometer = double.tryParse(_odomCtrl.text.trim());
     if (odometer == null) {
-      Get.snackbar('Required', 'Please enter the end odometer reading',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Required',
+        'Please enter the end odometer reading',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
     final data = <String, dynamic>{
@@ -989,11 +1083,7 @@ class _MarkDeliveredSheetState extends State<_MarkDeliveredSheet> {
         const SizedBox(height: 16),
         _SheetLabel('Remarks'),
         const SizedBox(height: 6),
-        _SheetField(
-          controller: _remarksCtrl,
-          hint: 'Optional…',
-          maxLines: 2,
-        ),
+        _SheetField(controller: _remarksCtrl, hint: 'Optional…', maxLines: 2),
       ],
     );
   }
@@ -1008,11 +1098,11 @@ class _AddCheckpostSheet extends StatefulWidget {
 }
 
 class _AddCheckpostSheetState extends State<_AddCheckpostSheet> {
-  final _nameCtrl     = TextEditingController();
+  final _nameCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
-  final _fineCtrl     = TextEditingController();
-  final _receiptCtrl  = TextEditingController();
-  final _remarksCtrl  = TextEditingController();
+  final _fineCtrl = TextEditingController();
+  final _receiptCtrl = TextEditingController();
+  final _remarksCtrl = TextEditingController();
 
   @override
   void dispose() {
@@ -1026,13 +1116,14 @@ class _AddCheckpostSheetState extends State<_AddCheckpostSheet> {
 
   Future<void> _submit() async {
     if (_nameCtrl.text.trim().isEmpty) {
-      Get.snackbar('Required', 'Please enter the checkpost name',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Required',
+        'Please enter the checkpost name',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
-    final data = <String, dynamic>{
-      'checkpostName': _nameCtrl.text.trim(),
-    };
+    final data = <String, dynamic>{'checkpostName': _nameCtrl.text.trim()};
     if (_locationCtrl.text.trim().isNotEmpty) {
       data['location'] = _locationCtrl.text.trim();
     }
@@ -1078,8 +1169,7 @@ class _AddCheckpostSheetState extends State<_AddCheckpostSheet> {
         const SizedBox(height: 16),
         _SheetLabel('Remarks'),
         const SizedBox(height: 6),
-        _SheetField(
-            controller: _remarksCtrl, hint: 'Optional…', maxLines: 2),
+        _SheetField(controller: _remarksCtrl, hint: 'Optional…', maxLines: 2),
       ],
     );
   }
@@ -1095,7 +1185,7 @@ class _AddChargeSheet extends StatefulWidget {
 
 class _AddChargeSheetState extends State<_AddChargeSheet> {
   Map<String, dynamic>? _selectedType;
-  final _amountCtrl  = TextEditingController();
+  final _amountCtrl = TextEditingController();
   final _remarksCtrl = TextEditingController();
 
   @override
@@ -1107,14 +1197,20 @@ class _AddChargeSheetState extends State<_AddChargeSheet> {
 
   Future<void> _submit() async {
     if (_selectedType == null) {
-      Get.snackbar('Required', 'Please select a charge type',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Required',
+        'Please select a charge type',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
     final amount = double.tryParse(_amountCtrl.text.trim());
     if (amount == null) {
-      Get.snackbar('Required', 'Please enter the amount',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Required',
+        'Please enter the amount',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
     final data = <String, dynamic>{
@@ -1140,19 +1236,24 @@ class _AddChargeSheetState extends State<_AddChargeSheet> {
         const SizedBox(height: 6),
         DropdownButtonFormField<Map<String, dynamic>>(
           value: _selectedType,
-          hint: Text('Select type',
-              style: AppTextStyles.body.copyWith(color: AppColors.hintText)),
+          hint: Text(
+            'Select type',
+            style: AppTextStyles.body.copyWith(color: AppColors.hintText),
+          ),
           isExpanded: true,
           decoration: _sheetInputDecoration(),
           items: widget.controller.chargeTypes
-              .map((t) => DropdownMenuItem(
-                    value: t,
-                    child: Text(
-                      t['name'] as String? ?? '—',
-                      style: AppTextStyles.body
-                          .copyWith(color: AppColors.bodyText),
+              .map(
+                (t) => DropdownMenuItem(
+                  value: t,
+                  child: Text(
+                    t['name'] as String? ?? '—',
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.bodyText,
                     ),
-                  ))
+                  ),
+                ),
+              )
               .toList(),
           onChanged: (v) => setState(() => _selectedType = v),
         ),
@@ -1167,8 +1268,7 @@ class _AddChargeSheetState extends State<_AddChargeSheet> {
         const SizedBox(height: 16),
         _SheetLabel('Remarks'),
         const SizedBox(height: 6),
-        _SheetField(
-            controller: _remarksCtrl, hint: 'Optional…', maxLines: 2),
+        _SheetField(controller: _remarksCtrl, hint: 'Optional…', maxLines: 2),
       ],
     );
   }
@@ -1193,7 +1293,8 @@ class _SimpleSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
@@ -1215,9 +1316,12 @@ class _SimpleSheet extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
               child: Row(
                 children: [
-                  Text(title,
-                      style: AppTextStyles.heading4
-                          .copyWith(color: AppColors.navy)),
+                  Text(
+                    title,
+                    style: AppTextStyles.heading4.copyWith(
+                      color: AppColors.navy,
+                    ),
+                  ),
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close, size: 20),
@@ -1241,31 +1345,36 @@ class _SimpleSheet extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-              child: Obx(() => ElevatedButton(
-                    onPressed: controller.value ? null : onSubmit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.navy,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+              child: Obx(
+                () => ElevatedButton(
+                  onPressed: controller.value ? null : onSubmit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.navy,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: controller.value
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
-                          )
-                        : Text(
-                            submitLabel,
-                            style: const TextStyle(
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                            ),
+                  ),
+                  child: controller.value
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
                           ),
-                  )),
+                        )
+                      : Text(
+                          submitLabel,
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                ),
+              ),
             ),
           ],
         ),
@@ -1280,10 +1389,12 @@ class _SheetLabel extends StatelessWidget {
   const _SheetLabel(this.text);
   @override
   Widget build(BuildContext context) => Text(
-        text,
-        style: AppTextStyles.caption.copyWith(
-            color: AppColors.mutedText, fontWeight: FontWeight.w600),
-      );
+    text,
+    style: AppTextStyles.caption.copyWith(
+      color: AppColors.mutedText,
+      fontWeight: FontWeight.w600,
+    ),
+  );
 }
 
 class _SheetField extends StatelessWidget {
@@ -1318,19 +1429,20 @@ class _Card extends StatelessWidget {
   const _Card({required this.child});
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [
-            BoxShadow(
-                color: Color(0x0A000000),
-                blurRadius: 8,
-                offset: Offset(0, 2)),
-          ],
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x0A000000),
+          blurRadius: 8,
+          offset: Offset(0, 2),
         ),
-        child: child,
-      );
+      ],
+    ),
+    child: child,
+  );
 }
 
 class _MetaItem extends StatelessWidget {
@@ -1339,17 +1451,22 @@ class _MetaItem extends StatelessWidget {
   const _MetaItem({required this.label, required this.value});
   @override
   Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: AppTextStyles.caption.copyWith(
-                  color: AppColors.mutedText, fontWeight: FontWeight.w500)),
-          const SizedBox(height: 2),
-          Text(value,
-              style:
-                  AppTextStyles.body.copyWith(color: AppColors.bodyText)),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: AppTextStyles.caption.copyWith(
+          color: AppColors.mutedText,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      const SizedBox(height: 2),
+      Text(
+        value,
+        style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+      ),
+    ],
+  );
 }
 
 class _EmptySection extends StatelessWidget {
@@ -1357,71 +1474,85 @@ class _EmptySection extends StatelessWidget {
   const _EmptySection({required this.label});
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Text(label,
-            style:
-                AppTextStyles.body.copyWith(color: AppColors.mutedText)),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Text(
+      label,
+      style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+    ),
+  );
 }
 
 InputDecoration _sheetInputDecoration() => InputDecoration(
-      filled: true,
-      fillColor: AppColors.background,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: AppColors.border),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: AppColors.border),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
-      ),
-    );
+  filled: true,
+  fillColor: AppColors.background,
+  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+  border: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(10),
+    borderSide: const BorderSide(color: AppColors.border),
+  ),
+  enabledBorder: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(10),
+    borderSide: const BorderSide(color: AppColors.border),
+  ),
+  focusedBorder: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(10),
+    borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
+  ),
+);
 
 Color _lrColor(String s) {
   switch (s) {
-    case 'CREATED':       return AppColors.lrCreated;
-    case 'WEIGHT_LOADED': return AppColors.lrLoaded;
-    case 'IN_TRANSIT':    return AppColors.lrInTransit;
-    case 'DELIVERED':     return AppColors.lrDelivered;
-    case 'INVOICED':      return AppColors.lrInvoiced;
-    case 'CANCELLED':     return AppColors.error;
-    default:              return AppColors.mutedText;
+    case 'CREATED':
+      return AppColors.lrCreated;
+    case 'WEIGHT_LOADED':
+      return AppColors.lrLoaded;
+    case 'IN_TRANSIT':
+      return AppColors.lrInTransit;
+    case 'DELIVERED':
+      return AppColors.lrDelivered;
+    case 'INVOICED':
+      return AppColors.lrInvoiced;
+    case 'CANCELLED':
+      return AppColors.error;
+    default:
+      return AppColors.mutedText;
   }
 }
 
 String _lrLabel(String s) {
   switch (s) {
-    case 'CREATED':       return 'Created';
-    case 'WEIGHT_LOADED': return 'Weight Loaded';
-    case 'IN_TRANSIT':    return 'In Transit';
-    case 'DELIVERED':     return 'Delivered';
-    case 'INVOICED':      return 'Invoiced';
-    case 'CANCELLED':     return 'Cancelled';
-    default:              return s;
+    case 'CREATED':
+      return 'Created';
+    case 'WEIGHT_LOADED':
+      return 'Weight Loaded';
+    case 'IN_TRANSIT':
+      return 'In Transit';
+    case 'DELIVERED':
+      return 'Delivered';
+    case 'INVOICED':
+      return 'Invoiced';
+    case 'CANCELLED':
+      return 'Cancelled';
+    default:
+      return s;
   }
 }
 
 // ── Proof Card ────────────────────────────────────────────────────────────────
 class _ProofCard extends StatelessWidget {
-  final Map<String, dynamic>          proof;
-  final SupervisorLrDetailController  controller;
+  final Map<String, dynamic> proof;
+  final SupervisorLrDetailController controller;
   const _ProofCard({required this.proof, required this.controller});
 
   @override
   Widget build(BuildContext context) {
-    final id          = proof['id'] as int? ?? 0;
-    final imageUrl    = proof['imageUrl']    as String?;
-    final userName    = proof['userName']    as String? ?? '—';
-    final capturedAt  = proof['capturedAt']  as String?;
-    final isReviewed  = proof['isReviewed']  as bool?  ?? false;
-    final reviewedBy  = proof['reviewedByName'] as String?;
-    final remarks     = proof['reviewRemarks']  as String?;
+    final id = proof['id'] as int? ?? 0;
+    final imageUrl = proof['imageUrl'] as String?;
+    final userName = proof['userName'] as String? ?? '—';
+    final capturedAt = proof['capturedAt'] as String?;
+    final isReviewed = proof['isReviewed'] as bool? ?? false;
+    final reviewedBy = proof['reviewedByName'] as String?;
+    final remarks = proof['reviewRemarks'] as String?;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -1436,8 +1567,9 @@ class _ProofCard extends StatelessWidget {
           // Image
           if (imageUrl != null)
             ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(10)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(10),
+              ),
               child: Image.network(
                 imageUrl,
                 height: 180,
@@ -1446,8 +1578,11 @@ class _ProofCard extends StatelessWidget {
                 errorBuilder: (_, __, ___) => Container(
                   height: 180,
                   color: AppColors.background,
-                  child: const Icon(Icons.broken_image_outlined,
-                      color: AppColors.mutedText, size: 40),
+                  child: const Icon(
+                    Icons.broken_image_outlined,
+                    color: AppColors.mutedText,
+                    size: 40,
+                  ),
                 ),
               ),
             ),
@@ -1458,18 +1593,25 @@ class _ProofCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.person_outline,
-                        size: 14, color: AppColors.mutedText),
+                    const Icon(
+                      Icons.person_outline,
+                      size: 14,
+                      color: AppColors.mutedText,
+                    ),
                     const SizedBox(width: 4),
-                    Text(userName,
-                        style: AppTextStyles.caption
-                            .copyWith(color: AppColors.mutedText)),
+                    Text(
+                      userName,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.mutedText,
+                      ),
+                    ),
                     const Spacer(),
                     if (capturedAt != null)
                       Text(
                         FerosDateUtils.formatDateTime(capturedAt),
-                        style: AppTextStyles.caption
-                            .copyWith(color: AppColors.mutedText),
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.mutedText,
+                        ),
                       ),
                   ],
                 ),
@@ -1477,23 +1619,30 @@ class _ProofCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 6),
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.success.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                          color: AppColors.success.withValues(alpha: 0.3)),
+                        color: AppColors.success.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.check_circle_outline,
-                            size: 14, color: AppColors.success),
+                        const Icon(
+                          Icons.check_circle_outline,
+                          size: 14,
+                          color: AppColors.success,
+                        ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             'Reviewed by ${reviewedBy ?? '—'}${remarks != null && remarks.isNotEmpty ? ' · "$remarks"' : ''}',
-                            style: AppTextStyles.caption
-                                .copyWith(color: AppColors.success),
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.success,
+                            ),
                           ),
                         ),
                       ],
@@ -1513,23 +1662,27 @@ class _ProofCard extends StatelessWidget {
                           backgroundColor: AppColors.navy,
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 10),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                         child: isLoading
                             ? const SizedBox(
                                 width: 16,
                                 height: 16,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white),
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
                               )
-                            : Text('Mark as Reviewed',
+                            : Text(
+                                'Mark as Reviewed',
                                 style: AppTextStyles.caption.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600)),
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                       ),
                     );
                   }),
@@ -1550,7 +1703,8 @@ class _ProofCard extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => Padding(
         padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom),
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
           decoration: const BoxDecoration(
@@ -1561,20 +1715,21 @@ class _ProofCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Review Proof',
-                  style: AppTextStyles.heading4
-                      .copyWith(color: AppColors.navy)),
+              Text(
+                'Review Proof',
+                style: AppTextStyles.heading4.copyWith(color: AppColors.navy),
+              ),
               const SizedBox(height: 16),
               TextField(
                 controller: remarksCtrl,
                 decoration: InputDecoration(
                   labelText: 'Remarks (optional)',
                   border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: AppColors.navy),
+                    borderSide: const BorderSide(color: AppColors.navy),
                   ),
                 ),
                 maxLines: 2,
@@ -1585,8 +1740,10 @@ class _ProofCard extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () async {
                     Navigator.of(context).pop();
-                    await controller.reviewProof(proofId,
-                        remarks: remarksCtrl.text.trim());
+                    await controller.reviewProof(
+                      proofId,
+                      remarks: remarksCtrl.text.trim(),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.navy,
@@ -1594,12 +1751,16 @@ class _ProofCard extends StatelessWidget {
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                  child: Text('Confirm Review',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600)),
+                  child: Text(
+                    'Confirm Review',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
             ],

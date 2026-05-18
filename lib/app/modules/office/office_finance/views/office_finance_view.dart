@@ -15,8 +15,12 @@ class OfficeFinanceView extends StatelessWidget {
   Widget build(BuildContext context) {
     // Register controllers for this screen's lifetime
     Get.lazyPut<OfficeInvoicesController>(() => OfficeInvoicesController());
-    Get.lazyPut<OfficeCreditNotesController>(() => OfficeCreditNotesController());
-    Get.lazyPut<OfficeClientAdvancesController>(() => OfficeClientAdvancesController());
+    Get.lazyPut<OfficeCreditNotesController>(
+      () => OfficeCreditNotesController(),
+    );
+    Get.lazyPut<OfficeClientAdvancesController>(
+      () => OfficeClientAdvancesController(),
+    );
 
     return DefaultTabController(
       length: 3,
@@ -25,9 +29,9 @@ class OfficeFinanceView extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: AppColors.navy,
           elevation: 0,
-          leading: IconButton(
-            onPressed: Get.back,
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          leading: GestureDetector(
+            onTap: Get.back,
+            child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
           ),
           title: const Text(
             'Finance',

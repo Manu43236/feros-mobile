@@ -12,7 +12,8 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => Scaffold(
+    return Obx(
+      () => Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: AppColors.navy,
@@ -20,14 +21,15 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
           title: Text(
             '${controller.lr.fromCity} → ${controller.lr.toCity}',
             style: const TextStyle(
-                color: Colors.white,
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w600,
-                fontSize: 15),
+              color: Colors.white,
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+            ),
           ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
-            onPressed: Get.back,
+          leading: GestureDetector(
+            onTap: Get.back,
+            child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
           ),
         ),
         body: ListView(
@@ -38,9 +40,12 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('LR Status',
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.mutedText)),
+                  Text(
+                    'LR Status',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.mutedText,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   _LrStatusBadge(status: controller.lrStatus.value),
 
@@ -89,17 +94,25 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                         child: controller.isUpdating.value
                             ? const SizedBox(
-                                width: 18, height: 18,
+                                width: 18,
+                                height: 18,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white))
-                            : Text('Start Trip',
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                'Start Trip',
                                 style: AppTextStyles.caption.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600)),
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                       ),
                     ),
                   ],
@@ -118,17 +131,25 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                         child: controller.isUpdating.value
                             ? const SizedBox(
-                                width: 18, height: 18,
+                                width: 18,
+                                height: 18,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white))
-                            : Text('Mark Delivered',
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                'Mark Delivered',
                                 style: AppTextStyles.caption.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600)),
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                       ),
                     ),
                   ],
@@ -144,7 +165,9 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                 onTap: controller.viewPdf,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 5),
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEFF6FF),
                     borderRadius: BorderRadius.circular(8),
@@ -154,19 +177,26 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                     children: [
                       if (controller.isPdfLoading.value)
                         const SizedBox(
-                          width: 13, height: 13,
+                          width: 13,
+                          height: 13,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: AppColors.navy),
+                            strokeWidth: 2,
+                            color: AppColors.navy,
+                          ),
                         )
                       else
-                        const Icon(Icons.picture_as_pdf_outlined,
-                            size: 15, color: AppColors.navy),
+                        const Icon(
+                          Icons.picture_as_pdf_outlined,
+                          size: 15,
+                          color: AppColors.navy,
+                        ),
                       const SizedBox(width: 5),
                       Text(
                         controller.isPdfLoading.value ? 'Loading…' : 'LR PDF',
                         style: AppTextStyles.caption.copyWith(
-                            color: AppColors.navy,
-                            fontWeight: FontWeight.w600),
+                          color: AppColors.navy,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -174,13 +204,16 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
               ),
               child: Column(
                 children: [
-                  InfoRow(label: 'Order',   value: controller.lr.orderNumber),
-                  InfoRow(label: 'Client',  value: controller.lr.clientName),
-                  InfoRow(label: 'From',    value: controller.lr.fromCity),
-                  InfoRow(label: 'To',      value: controller.lr.toCity),
+                  InfoRow(label: 'Order', value: controller.lr.orderNumber),
+                  InfoRow(label: 'Client', value: controller.lr.clientName),
+                  InfoRow(label: 'From', value: controller.lr.fromCity),
+                  InfoRow(label: 'To', value: controller.lr.toCity),
                   InfoRow(label: 'Vehicle', value: controller.lr.vehicleNumber),
                   if (controller.lr.vehicleTypeName != null)
-                    InfoRow(label: 'Type',  value: controller.lr.vehicleTypeName!),
+                    InfoRow(
+                      label: 'Type',
+                      value: controller.lr.vehicleTypeName!,
+                    ),
                   InfoRow(label: 'LR Date', value: controller.lr.lrDate),
                 ],
               ),
@@ -213,7 +246,8 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                       : const InfoRow(
                           label: 'Delivered',
                           value: '—',
-                          showDivider: false),
+                          showDivider: false,
+                        ),
                 ],
               ),
             ),
@@ -254,19 +288,23 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
             ),
           ],
         ),
-    ));
+      ),
+    );
   }
 
   // Sheets stay in the view (need BuildContext); results passed to controller.
   Future<void> _onStartTrip(
-      BuildContext context, DriverTripDetailController controller) async {
+    BuildContext context,
+    DriverTripDetailController controller,
+  ) async {
     final result = await showOdometerSheet(
       context,
       title: 'Start Trip — Record ODM',
       hint: 'Start Odometer (km)',
       buttonLabel: 'Start Trip',
       buttonColor: AppColors.navy,
-      instruction: 'Take a photo of the odometer before departure.\n'
+      instruction:
+          'Take a photo of the odometer before departure.\n'
           'Start ODM must be ≥ last recorded reading.',
     );
     if (result == null) return;
@@ -274,14 +312,17 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
   }
 
   Future<void> _onMarkDelivered(
-      BuildContext context, DriverTripDetailController controller) async {
+    BuildContext context,
+    DriverTripDetailController controller,
+  ) async {
     final odmResult = await showOdometerSheet(
       context,
       title: 'End Trip — Record ODM',
       hint: 'End Odometer (km)',
       buttonLabel: 'Next',
       buttonColor: AppColors.navy,
-      instruction: 'Take a photo of the odometer on arrival.\n'
+      instruction:
+          'Take a photo of the odometer on arrival.\n'
           'End ODM must be > ${controller.startOdometer.value?.toStringAsFixed(0) ?? 'start'} km.',
     );
     if (odmResult == null) return;
@@ -313,7 +354,11 @@ class _SectionCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
-          BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -323,9 +368,12 @@ class _SectionCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(title!,
-                      style: AppTextStyles.bodyMedium
-                          .copyWith(color: AppColors.navy)),
+                  child: Text(
+                    title!,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.navy,
+                    ),
+                  ),
                 ),
                 ?action,
               ],
@@ -369,8 +417,10 @@ class _InfoBanner extends StatelessWidget {
           Icon(icon, size: 16, color: color),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(message,
-                style: AppTextStyles.caption.copyWith(color: color)),
+            child: Text(
+              message,
+              style: AppTextStyles.caption.copyWith(color: color),
+            ),
           ),
         ],
       ),
@@ -389,24 +439,49 @@ class _LrStatusBadge extends StatelessWidget {
     String label;
     switch (status.toUpperCase()) {
       case 'CREATED':
-        bg = const Color(0xFFEFF6FF); fg = AppColors.navy; label = 'LR Created'; break;
+        bg = const Color(0xFFEFF6FF);
+        fg = AppColors.navy;
+        label = 'LR Created';
+        break;
       case 'WEIGHT_LOADED':
-        bg = const Color(0xFFF5F3FF); fg = const Color(0xFF7C3AED); label = 'Weight Loaded'; break;
+        bg = const Color(0xFFF5F3FF);
+        fg = const Color(0xFF7C3AED);
+        label = 'Weight Loaded';
+        break;
       case 'IN_TRANSIT':
-        bg = const Color(0xFFFFFBEB); fg = const Color(0xFFD97706); label = 'In Transit'; break;
+        bg = const Color(0xFFFFFBEB);
+        fg = const Color(0xFFD97706);
+        label = 'In Transit';
+        break;
       case 'DELIVERED':
-        bg = const Color(0xFFF0FDF4); fg = const Color(0xFF16A34A); label = 'Delivered'; break;
+        bg = const Color(0xFFF0FDF4);
+        fg = const Color(0xFF16A34A);
+        label = 'Delivered';
+        break;
       case 'CANCELLED':
-        bg = const Color(0xFFFEF2F2); fg = const Color(0xFFDC2626); label = 'Cancelled'; break;
+        bg = const Color(0xFFFEF2F2);
+        fg = const Color(0xFFDC2626);
+        label = 'Cancelled';
+        break;
       default:
-        bg = const Color(0xFFF1F5F9); fg = AppColors.mutedText; label = status; break;
+        bg = const Color(0xFFF1F5F9);
+        fg = AppColors.mutedText;
+        label = status;
+        break;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(label,
-          style: AppTextStyles.bodyMedium
-              .copyWith(color: fg, fontWeight: FontWeight.w600)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: fg,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }
@@ -426,9 +501,12 @@ class _AuditRow extends StatelessWidget {
 
   String _roleLabel(String? r) {
     switch (r) {
-      case 'DRIVER':  return 'Driver';
-      case 'CLEANER': return 'Cleaner';
-      default:        return r ?? '';
+      case 'DRIVER':
+        return 'Driver';
+      case 'CLEANER':
+        return 'Cleaner';
+      default:
+        return r ?? '';
     }
   }
 
@@ -438,12 +516,16 @@ class _AuditRow extends StatelessWidget {
       children: [
         Icon(icon, size: 14, color: AppColors.mutedText),
         const SizedBox(width: 6),
-        Text('$label: ',
-            style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+        Text(
+          '$label: ',
+          style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+        ),
         Text(
           '$name${role != null ? ' (${_roleLabel(role)})' : ''}',
           style: AppTextStyles.caption.copyWith(
-              color: AppColors.navy, fontWeight: FontWeight.w600),
+            color: AppColors.navy,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );

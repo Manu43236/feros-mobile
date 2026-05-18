@@ -76,6 +76,10 @@ class _OfficeReportTodayAttendanceState
       appBar: AppBar(
         backgroundColor: AppColors.navy,
         foregroundColor: Colors.white,
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+        ),
         title: const Text("Today's Attendance"),
         actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _fetch)],
       ),

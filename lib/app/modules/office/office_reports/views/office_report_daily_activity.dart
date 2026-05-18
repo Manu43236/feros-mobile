@@ -64,6 +64,10 @@ class _OfficeReportDailyActivityState
       appBar: AppBar(
         backgroundColor: AppColors.navy,
         foregroundColor: Colors.white,
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+        ),
         title: const Text('Fleet Today'),
         actions: [
           IconButton(

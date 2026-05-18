@@ -56,6 +56,10 @@ class _OfficeReportTripsInProgressState
       appBar: AppBar(
         backgroundColor: const Color(0xFF7C3AED),
         foregroundColor: Colors.white,
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+        ),
         title: const Text('Trips In Progress'),
         actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _fetch)],
       ),

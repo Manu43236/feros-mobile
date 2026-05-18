@@ -41,10 +41,18 @@ class SupervisorVehicleDetailView
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                const Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: AppColors.error,
+                ),
                 const SizedBox(height: 12),
-                Text('Failed to load vehicle',
-                    style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+                Text(
+                  'Failed to load vehicle',
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.mutedText,
+                  ),
+                ),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: controller.retryVehicle,
@@ -52,7 +60,8 @@ class SupervisorVehicleDetailView
                     backgroundColor: AppColors.navy,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   child: const Text('Retry'),
                 ),
@@ -62,7 +71,7 @@ class SupervisorVehicleDetailView
         );
       }
 
-      final v          = controller.vehicle.value!;
+      final v = controller.vehicle.value!;
       controller.ensureDocsLoaded();
       final alertCount = _complianceAlertCount(controller.docs);
       final tabCount = isOffice ? 8 : 7;
@@ -111,8 +120,13 @@ class SupervisorVehicleDetailView
                               count: alertCount,
                               backgroundColor: const Color(0xFFDC2626),
                               textStyle: const TextStyle(
-                                  fontSize: 9, fontFamily: 'Inter'),
-                              child: const Icon(Icons.shield_outlined, size: 15),
+                                fontSize: 9,
+                                fontFamily: 'Inter',
+                              ),
+                              child: const Icon(
+                                Icons.shield_outlined,
+                                size: 15,
+                              ),
                             )
                           : const Icon(Icons.shield_outlined, size: 15),
                       text: 'Compliance',
@@ -201,16 +215,16 @@ class _VehicleBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reg        = vehicle['registrationNumber'] as String? ?? '—';
-    final type       = vehicle['vehicleTypeName']    as String?;
-    final brand      = vehicle['brandName']          as String?;
-    final statusName = vehicle['currentStatusName']  as String?;
-    final statusType = vehicle['currentStatusType']  as String? ?? '';
-    final capacity   = vehicle['capacityInTons'];
-    final fuel       = vehicle['fuelTypeName']       as String?;
-    final ownership  = vehicle['ownershipTypeName']  as String?;
-    final odometer   = vehicle['currentOdometerReading'];
-    final isActive   = vehicle['active']             as bool? ?? true;
+    final reg = vehicle['registrationNumber'] as String? ?? '—';
+    final type = vehicle['vehicleTypeName'] as String?;
+    final brand = vehicle['brandName'] as String?;
+    final statusName = vehicle['currentStatusName'] as String?;
+    final statusType = vehicle['currentStatusType'] as String? ?? '';
+    final capacity = vehicle['capacityInTons'];
+    final fuel = vehicle['fuelTypeName'] as String?;
+    final ownership = vehicle['ownershipTypeName'] as String?;
+    final odometer = vehicle['currentOdometerReading'];
+    final isActive = vehicle['active'] as bool? ?? true;
 
     final (statusColor, statusBg) = _statusColors(statusType);
 
@@ -227,10 +241,16 @@ class _VehicleBanner extends StatelessWidget {
         child: Stack(
           children: [
             Positioned(
-              right: -10, top: 0, bottom: 0,
+              right: -10,
+              top: 0,
+              bottom: 0,
               child: const Opacity(
                 opacity: 0.05,
-                child: Icon(Icons.local_shipping, size: 160, color: Colors.white),
+                child: Icon(
+                  Icons.local_shipping,
+                  size: 160,
+                  color: Colors.white,
+                ),
               ),
             ),
             Padding(
@@ -243,8 +263,11 @@ class _VehicleBanner extends StatelessWidget {
                     children: [
                       IconButton(
                         onPressed: Get.back,
-                        icon: const Icon(Icons.arrow_back_ios_new,
-                            color: Colors.white, size: 18),
+                        icon: const Icon(
+                          Icons.arrow_back_ios,
+                          color: Colors.white,
+                          size: 18,
+                        ),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         visualDensity: VisualDensity.compact,
@@ -261,128 +284,151 @@ class _VehicleBanner extends StatelessWidget {
                             );
                             if (updated == true) controller.refreshVehicle();
                           },
-                          icon: const Icon(Icons.edit_outlined,
-                              color: Colors.white, size: 18),
+                          icon: const Icon(
+                            Icons.edit_outlined,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                           visualDensity: VisualDensity.compact,
                         ),
                         const SizedBox(width: 8),
                         // Toggle active/inactive
-                        Obx(() => controller.isToggling.value
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : GestureDetector(
-                                onTap: () async {
-                                  final label =
-                                      isActive ? 'deactivate' : 'activate';
-                                  final ok = await Get.dialog<bool>(
-                                    AlertDialog(
-                                      title: Text(
+                        Obx(
+                          () => controller.isToggling.value
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : GestureDetector(
+                                  onTap: () async {
+                                    final label = isActive
+                                        ? 'deactivate'
+                                        : 'activate';
+                                    final ok = await Get.dialog<bool>(
+                                      AlertDialog(
+                                        title: Text(
                                           isActive
                                               ? 'Deactivate Vehicle'
                                               : 'Activate Vehicle',
-                                          style: AppTextStyles.bodyMedium),
-                                      content: Text(
-                                        'Are you sure you want to $label this vehicle?',
-                                        style: AppTextStyles.body,
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Get.back(result: false),
-                                          child: const Text('Cancel'),
+                                          style: AppTextStyles.bodyMedium,
                                         ),
-                                        TextButton(
-                                          onPressed: () =>
-                                              Get.back(result: true),
-                                          child: Text(
-                                            isActive
-                                                ? 'Deactivate'
-                                                : 'Activate',
-                                            style: TextStyle(
-                                              color: isActive
-                                                  ? AppColors.error
-                                                  : AppColors.navy,
+                                        content: Text(
+                                          'Are you sure you want to $label this vehicle?',
+                                          style: AppTextStyles.body,
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Get.back(result: false),
+                                            child: const Text('Cancel'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () =>
+                                                Get.back(result: true),
+                                            child: Text(
+                                              isActive
+                                                  ? 'Deactivate'
+                                                  : 'Activate',
+                                              style: TextStyle(
+                                                color: isActive
+                                                    ? AppColors.error
+                                                    : AppColors.navy,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
+                                    );
+                                    if (ok == true) controller.toggleActive();
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
                                     ),
-                                  );
-                                  if (ok == true) controller.toggleActive();
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: isActive
-                                        ? Colors.red.withValues(alpha: 0.25)
-                                        : Colors.green.withValues(alpha: 0.25),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
+                                    decoration: BoxDecoration(
                                       color: isActive
-                                          ? Colors.red.withValues(alpha: 0.5)
-                                          : Colors.green.withValues(alpha: 0.5),
+                                          ? Colors.red.withValues(alpha: 0.25)
+                                          : Colors.green.withValues(
+                                              alpha: 0.25,
+                                            ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: isActive
+                                            ? Colors.red.withValues(alpha: 0.5)
+                                            : Colors.green.withValues(
+                                                alpha: 0.5,
+                                              ),
+                                      ),
                                     ),
-                                  ),
-                                  child: Text(
-                                    isActive ? 'Deactivate' : 'Activate',
-                                    style: TextStyle(
-                                      color: isActive
-                                          ? const Color(0xFFFCA5A5)
-                                          : const Color(0xFF86EFAC),
-                                      fontFamily: 'Inter',
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
+                                    child: Text(
+                                      isActive ? 'Deactivate' : 'Activate',
+                                      style: TextStyle(
+                                        color: isActive
+                                            ? const Color(0xFFFCA5A5)
+                                            : const Color(0xFF86EFAC),
+                                        fontFamily: 'Inter',
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              )),
+                        ),
                         const SizedBox(width: 8),
                       ],
                       if (!isActive)
                         Container(
                           margin: const EdgeInsets.only(right: 8),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.red.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                                color: Colors.red.withValues(alpha: 0.4)),
+                              color: Colors.red.withValues(alpha: 0.4),
+                            ),
                           ),
-                          child: const Text('Inactive',
-                              style: TextStyle(
-                                color: Color(0xFFFCA5A5),
-                                fontFamily: 'Inter',
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                              )),
+                          child: const Text(
+                            'Inactive',
+                            style: TextStyle(
+                              color: Color(0xFFFCA5A5),
+                              fontFamily: 'Inter',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       if (statusName != null)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: statusBg,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                                color: statusColor.withValues(alpha: 0.5)),
+                              color: statusColor.withValues(alpha: 0.5),
+                            ),
                           ),
-                          child: Text(statusName,
-                              style: TextStyle(
-                                color: statusColor,
-                                fontFamily: 'Inter',
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                              )),
+                          child: Text(
+                            statusName,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontFamily: 'Inter',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                     ],
                   ),
@@ -391,32 +437,40 @@ class _VehicleBanner extends StatelessWidget {
                   Row(
                     children: [
                       Flexible(
-                        child: Text(reg,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w800,
-                              fontSize: 26,
-                              letterSpacing: 1.5,
-                            )),
+                        child: Text(
+                          reg,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w800,
+                            fontSize: 26,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
                       ),
                       if (alertCount > 0) ...[
                         const SizedBox(width: 10),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.red.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                                color: Colors.red.withValues(alpha: 0.3)),
+                              color: Colors.red.withValues(alpha: 0.3),
+                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.warning_amber_rounded,
-                                  size: 11, color: Color(0xFFFCA5A5)),
+                              const Icon(
+                                Icons.warning_amber_rounded,
+                                size: 11,
+                                color: Color(0xFFFCA5A5),
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 '$alertCount alert${alertCount != 1 ? 's' : ''}',
@@ -437,9 +491,7 @@ class _VehicleBanner extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
-                        [brand, type, fuel]
-                            .where((s) => s != null)
-                            .join(' · '),
+                        [brand, type, fuel].where((s) => s != null).join(' · '),
                         style: const TextStyle(
                           color: Color(0xFF93C5FD),
                           fontFamily: 'Inter',
@@ -451,13 +503,19 @@ class _VehicleBanner extends StatelessWidget {
                   // Quick stats grid
                   Row(
                     children: [
-                      _StatCard(label: 'Type',      value: type      ?? '—'),
+                      _StatCard(label: 'Type', value: type ?? '—'),
                       const SizedBox(width: 8),
-                      _StatCard(label: 'Capacity',  value: capacity != null ? '$capacity T' : '—'),
+                      _StatCard(
+                        label: 'Capacity',
+                        value: capacity != null ? '$capacity T' : '—',
+                      ),
                       const SizedBox(width: 8),
                       _StatCard(label: 'Ownership', value: ownership ?? '—'),
                       const SizedBox(width: 8),
-                      _StatCard(label: 'Odometer',  value: odometer != null ? '$odometer km' : '—'),
+                      _StatCard(
+                        label: 'Odometer',
+                        value: odometer != null ? '$odometer km' : '—',
+                      ),
                     ],
                   ),
                 ],
@@ -471,12 +529,33 @@ class _VehicleBanner extends StatelessWidget {
 
   static (Color, Color) _statusColors(String type) {
     switch (type) {
-      case 'AVAILABLE': return (const Color(0xFF4ADE80), const Color(0xFF4ADE80).withValues(alpha: 0.15));
-      case 'ASSIGNED':  return (const Color(0xFF60A5FA), const Color(0xFF60A5FA).withValues(alpha: 0.15));
-      case 'ON_TRIP':   return (const Color(0xFFFB923C), const Color(0xFFFB923C).withValues(alpha: 0.15));
-      case 'IN_REPAIR': return (const Color(0xFFFCD34D), const Color(0xFFFCD34D).withValues(alpha: 0.15));
-      case 'BREAKDOWN': return (const Color(0xFFF87171), const Color(0xFFF87171).withValues(alpha: 0.15));
-      default:          return (Colors.white70, Colors.white.withValues(alpha: 0.1));
+      case 'AVAILABLE':
+        return (
+          const Color(0xFF4ADE80),
+          const Color(0xFF4ADE80).withValues(alpha: 0.15),
+        );
+      case 'ASSIGNED':
+        return (
+          const Color(0xFF60A5FA),
+          const Color(0xFF60A5FA).withValues(alpha: 0.15),
+        );
+      case 'ON_TRIP':
+        return (
+          const Color(0xFFFB923C),
+          const Color(0xFFFB923C).withValues(alpha: 0.15),
+        );
+      case 'IN_REPAIR':
+        return (
+          const Color(0xFFFCD34D),
+          const Color(0xFFFCD34D).withValues(alpha: 0.15),
+        );
+      case 'BREAKDOWN':
+        return (
+          const Color(0xFFF87171),
+          const Color(0xFFF87171).withValues(alpha: 0.15),
+        );
+      default:
+        return (Colors.white70, Colors.white.withValues(alpha: 0.1));
     }
   }
 }
@@ -499,22 +578,26 @@ class _StatCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label,
-                style: const TextStyle(
-                  color: Color(0xFF93C5FD),
-                  fontFamily: 'Inter',
-                  fontSize: 10,
-                )),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF93C5FD),
+                fontFamily: 'Inter',
+                fontSize: 10,
+              ),
+            ),
             const SizedBox(height: 3),
-            Text(value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontFamily: 'Inter',
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                )),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontFamily: 'Inter',
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),
@@ -529,49 +612,86 @@ class _BasicInfoTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ownership   = v['ownershipTypeName'] as String? ?? '';
-    final isHired     = ownership.isNotEmpty &&
-        !ownership.toUpperCase().contains('OWN');
-    final tankCap     = v['fuelTankCapacity'];
+    final ownership = v['ownershipTypeName'] as String? ?? '';
+    final isHired =
+        ownership.isNotEmpty && !ownership.toUpperCase().contains('OWN');
+    final tankCap = v['fuelTankCapacity'];
     final currentFuel = v['currentFuelLevel'];
-    final fuelPct     = (tankCap != null && currentFuel != null && (tankCap as num) > 0)
+    final fuelPct =
+        (tankCap != null && currentFuel != null && (tankCap as num) > 0)
         ? ((currentFuel as num) / (tankCap as num) * 100).round().clamp(0, 100)
         : null;
-    final fuelLabel   = currentFuel != null
+    final fuelLabel = currentFuel != null
         ? (fuelPct != null ? '$currentFuel L ($fuelPct%)' : '$currentFuel L')
         : null;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       children: [
-        _InfoSection(title: 'Vehicle Details', rows: [
-          _IR('Brand',        v['brandName']),
-          _IR('Vehicle Type', v['vehicleTypeName']),
-          _IR('Fuel Type',    v['fuelTypeName']),
-          _IR('Ownership',    ownership.isEmpty ? null : ownership),
-          _IR('Capacity',     v['capacityInTons'] != null ? '${v['capacityInTons']} Tons' : null),
-          _IR('Mfg. Year',    v['manufactureYear']?.toString()),
-          _IR('Color',        v['color']),
-          _IR('Odometer',     v['currentOdometerReading'] != null ? '${v['currentOdometerReading']} km' : null),
-          _IR('Tank Capacity',tankCap    != null ? '$tankCap L' : null),
-          _IR('Current Fuel', fuelLabel),
-        ]),
+        _InfoSection(
+          title: 'Vehicle Details',
+          rows: [
+            _IR('Brand', v['brandName']),
+            _IR('Vehicle Type', v['vehicleTypeName']),
+            _IR('Fuel Type', v['fuelTypeName']),
+            _IR('Ownership', ownership.isEmpty ? null : ownership),
+            _IR(
+              'Capacity',
+              v['capacityInTons'] != null
+                  ? '${v['capacityInTons']} Tons'
+                  : null,
+            ),
+            _IR('Mfg. Year', v['manufactureYear']?.toString()),
+            _IR('Color', v['color']),
+            _IR(
+              'Odometer',
+              v['currentOdometerReading'] != null
+                  ? '${v['currentOdometerReading']} km'
+                  : null,
+            ),
+            _IR('Tank Capacity', tankCap != null ? '$tankCap L' : null),
+            _IR('Current Fuel', fuelLabel),
+          ],
+        ),
         const SizedBox(height: 12),
-        _InfoSection(title: 'Identification', rows: [
-          _IR('Chassis No.',   v['chassisNumber']),
-          _IR('Engine No.',    v['engineNumber']),
-        ]),
+        _InfoSection(
+          title: 'Identification',
+          rows: [
+            _IR('Chassis No.', v['chassisNumber']),
+            _IR('Engine No.', v['engineNumber']),
+          ],
+        ),
         if (isHired) ...[
           const SizedBox(height: 12),
-          _InfoSection(title: 'Owner / Hired Details', rows: [
-            _IR('Owner Name',       v['ownerName']),
-            _IR('Phone',            v['ownerPhone']),
-            _IR('PAN Number',       v['ownerPan']),
-            _IR('Address',          v['ownerAddress']),
-            _IR('Agreement Start',  v['agreementStartDate'] != null ? FerosDateUtils.formatDate(v['agreementStartDate'] as String) : null),
-            _IR('Agreement End',    v['agreementEndDate']   != null ? FerosDateUtils.formatDate(v['agreementEndDate']   as String) : null),
-            _IR('Agreement Amount', v['agreementAmount'] != null ? '₹${v['agreementAmount']}' : null),
-          ]),
+          _InfoSection(
+            title: 'Owner / Hired Details',
+            rows: [
+              _IR('Owner Name', v['ownerName']),
+              _IR('Phone', v['ownerPhone']),
+              _IR('PAN Number', v['ownerPan']),
+              _IR('Address', v['ownerAddress']),
+              _IR(
+                'Agreement Start',
+                v['agreementStartDate'] != null
+                    ? FerosDateUtils.formatDate(
+                        v['agreementStartDate'] as String,
+                      )
+                    : null,
+              ),
+              _IR(
+                'Agreement End',
+                v['agreementEndDate'] != null
+                    ? FerosDateUtils.formatDate(v['agreementEndDate'] as String)
+                    : null,
+              ),
+              _IR(
+                'Agreement Amount',
+                v['agreementAmount'] != null
+                    ? '₹${v['agreementAmount']}'
+                    : null,
+              ),
+            ],
+          ),
         ],
       ],
     );
@@ -591,11 +711,11 @@ class _ComplianceTabState extends State<_ComplianceTab>
     with AutomaticKeepAliveClientMixin {
   static const _types = [
     ('Registration Certificate (RC)', 'registration'),
-    ('Insurance',                     'insurance'),
-    ('Permit',                        'permit'),
-    ('Fitness Certificate',           'fitness'),
-    ('PUC',                           'puc'),
-    ('Road Tax',                      'road'),
+    ('Insurance', 'insurance'),
+    ('Permit', 'permit'),
+    ('Fitness Certificate', 'fitness'),
+    ('PUC', 'puc'),
+    ('Road Tax', 'road'),
   ];
 
   @override
@@ -609,8 +729,11 @@ class _ComplianceTabState extends State<_ComplianceTab>
       final state = ctrl.docsState.value;
       if (state == ViewState.loading) {
         return const Center(
-            child: CircularProgressIndicator(
-                color: AppColors.navy, strokeWidth: 2));
+          child: CircularProgressIndicator(
+            color: AppColors.navy,
+            strokeWidth: 2,
+          ),
+        );
       }
       if (state == ViewState.error) {
         return _TabError(onRetry: ctrl.retryDocs);
@@ -628,21 +751,21 @@ class _ComplianceTabState extends State<_ComplianceTab>
             ),
             child: Column(
               children: _types.asMap().entries.map((e) {
-                final label   = e.value.$1;
-                final key     = e.value.$2;
-                final isLast  = e.key == _types.length - 1;
+                final label = e.value.$1;
+                final key = e.value.$2;
+                final isLast = e.key == _types.length - 1;
                 final doc = ctrl.docs.firstWhereOrNull(
                   (d) => (d['documentTypeName'] as String? ?? '')
                       .toLowerCase()
                       .contains(key),
                 );
                 final expiryDate = doc?['expiryDate'] as String?;
-                final docNumber  = doc?['documentNumber'] as String?;
+                final docNumber = doc?['documentNumber'] as String?;
                 return _ComplianceStatusRow(
-                  label:      label,
-                  docNumber:  docNumber,
+                  label: label,
+                  docNumber: docNumber,
                   expiryDate: expiryDate,
-                  isLast:     isLast,
+                  isLast: isLast,
                 );
               }).toList(),
             ),
@@ -654,10 +777,10 @@ class _ComplianceTabState extends State<_ComplianceTab>
 }
 
 class _ComplianceStatusRow extends StatelessWidget {
-  final String  label;
+  final String label;
   final String? docNumber;
   final String? expiryDate;
-  final bool    isLast;
+  final bool isLast;
   const _ComplianceStatusRow({
     required this.label,
     required this.isLast,
@@ -674,7 +797,8 @@ class _ComplianceStatusRow extends StatelessWidget {
         border: isLast
             ? null
             : const Border(
-                bottom: BorderSide(color: AppColors.border, width: 0.8)),
+                bottom: BorderSide(color: AppColors.border, width: 0.8),
+              ),
       ),
       child: Row(
         children: [
@@ -682,17 +806,26 @@ class _ComplianceStatusRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.bodyText)),
+                Text(
+                  label,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.bodyText,
+                  ),
+                ),
                 if (docNumber != null)
-                  Text(docNumber!,
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.mutedText)),
+                  Text(
+                    docNumber!,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.mutedText,
+                    ),
+                  ),
                 if (expiryDate != null)
-                  Text('Expires: ${FerosDateUtils.formatDate(expiryDate!)}',
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.mutedText)),
+                  Text(
+                    'Expires: ${FerosDateUtils.formatDate(expiryDate!)}',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.mutedText,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -703,13 +836,15 @@ class _ComplianceStatusRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: chipColor.withValues(alpha: 0.3)),
             ),
-            child: Text(chipText,
-                style: TextStyle(
-                  color: chipColor,
-                  fontFamily: 'Inter',
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                )),
+            child: Text(
+              chipText,
+              style: TextStyle(
+                color: chipColor,
+                fontFamily: 'Inter',
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -722,10 +857,29 @@ class _ComplianceStatusRow extends StatelessWidget {
     }
     try {
       final days = DateTime.parse(d).difference(DateTime.now()).inDays;
-      if (days < 0)   return (const Color(0xFFDC2626), const Color(0xFFFEE2E2), 'Expired ${days.abs()}d ago');
-      if (days <= 7)  return (const Color(0xFFEA580C), const Color(0xFFFFF7ED), '${days}d left');
-      if (days <= 30) return (const Color(0xFFD97706), const Color(0xFFFFFBEB), '${days}d left');
-      return              (const Color(0xFF16A34A), const Color(0xFFF0FDF4), 'Valid · ${days}d left');
+      if (days < 0)
+        return (
+          const Color(0xFFDC2626),
+          const Color(0xFFFEE2E2),
+          'Expired ${days.abs()}d ago',
+        );
+      if (days <= 7)
+        return (
+          const Color(0xFFEA580C),
+          const Color(0xFFFFF7ED),
+          '${days}d left',
+        );
+      if (days <= 30)
+        return (
+          const Color(0xFFD97706),
+          const Color(0xFFFFFBEB),
+          '${days}d left',
+        );
+      return (
+        const Color(0xFF16A34A),
+        const Color(0xFFF0FDF4),
+        'Valid · ${days}d left',
+      );
     } catch (_) {
       return (AppColors.mutedText, const Color(0xFFF9FAFB), 'Not recorded');
     }
@@ -755,8 +909,11 @@ class _DocumentsTabState extends State<_DocumentsTab>
       final state = ctrl.docsState.value;
       if (state == ViewState.loading) {
         return const Center(
-            child: CircularProgressIndicator(
-                color: AppColors.navy, strokeWidth: 2));
+          child: CircularProgressIndicator(
+            color: AppColors.navy,
+            strokeWidth: 2,
+          ),
+        );
       }
       if (state == ViewState.error) {
         return _TabError(onRetry: ctrl.retryDocs);
@@ -772,7 +929,9 @@ class _DocumentsTabState extends State<_DocumentsTab>
                   onTap: () => _showAddDocSheet(context),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.navy,
                       borderRadius: BorderRadius.circular(20),
@@ -782,13 +941,15 @@ class _DocumentsTabState extends State<_DocumentsTab>
                       children: [
                         Icon(Icons.add, size: 13, color: Colors.white),
                         SizedBox(width: 4),
-                        Text('Add Document',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontFamily: 'Inter',
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            )),
+                        Text(
+                          'Add Document',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'Inter',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -805,9 +966,12 @@ class _DocumentsTabState extends State<_DocumentsTab>
                 border: Border.all(color: AppColors.border),
               ),
               child: Center(
-                child: Text('No documents uploaded yet',
-                    style: AppTextStyles.body
-                        .copyWith(color: AppColors.mutedText)),
+                child: Text(
+                  'No documents uploaded yet',
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.mutedText,
+                  ),
+                ),
               ),
             )
           else
@@ -819,8 +983,11 @@ class _DocumentsTabState extends State<_DocumentsTab>
                   onDelete: () async {
                     final ok = await ctrl.deleteDocument(doc['id'] as int);
                     if (!ok && context.mounted) {
-                      Get.snackbar('Error', 'Failed to delete',
-                          snackPosition: SnackPosition.BOTTOM);
+                      Get.snackbar(
+                        'Error',
+                        'Failed to delete',
+                        snackPosition: SnackPosition.BOTTOM,
+                      );
                     }
                   },
                 );
@@ -1000,12 +1167,12 @@ class _GeneralServiceContent extends StatelessWidget {
       }
 
       final filters = [
-        _SF('all',         'All',         c.serviceCount('all')),
-        _SF('open',        'Open',        c.serviceCount('open')),
+        _SF('all', 'All', c.serviceCount('all')),
+        _SF('open', 'Open', c.serviceCount('open')),
         _SF('in_progress', 'In Progress', c.serviceCount('in_progress')),
-        _SF('due_soon',    'Due Soon',    c.serviceCount('due_soon')),
-        _SF('overdue',     'Overdue',     c.serviceCount('overdue')),
-        _SF('completed',   'Completed',   c.serviceCount('completed')),
+        _SF('due_soon', 'Due Soon', c.serviceCount('due_soon')),
+        _SF('overdue', 'Overdue', c.serviceCount('overdue')),
+        _SF('completed', 'Completed', c.serviceCount('completed')),
       ];
 
       final filtered = c.filteredServices;
@@ -1027,45 +1194,57 @@ class _GeneralServiceContent extends StatelessWidget {
                       onTap: () => c.serviceFilter.value = f.key,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          color: isSelected ? AppColors.navy : AppColors.surface,
+                          color: isSelected
+                              ? AppColors.navy
+                              : AppColors.surface,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: isSelected ? AppColors.navy : AppColors.border,
+                            color: isSelected
+                                ? AppColors.navy
+                                : AppColors.border,
                           ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(f.label,
-                                style: TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : AppColors.mutedText,
-                                )),
+                            Text(
+                              f.label,
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: isSelected
+                                    ? Colors.white
+                                    : AppColors.mutedText,
+                              ),
+                            ),
                             const SizedBox(width: 5),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 5, vertical: 1),
+                                horizontal: 5,
+                                vertical: 1,
+                              ),
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? Colors.white.withValues(alpha: 0.2)
                                     : AppColors.background,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Text('${f.count}',
-                                  style: TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: isSelected
-                                        ? Colors.white
-                                        : AppColors.mutedText,
-                                  )),
+                              child: Text(
+                                '${f.count}',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppColors.mutedText,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -1133,11 +1312,11 @@ class _BreakdownCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status   = breakdown['status'] as String? ?? '';
-    final type     = breakdown['breakdownType'] as String? ?? '';
+    final status = breakdown['status'] as String? ?? '';
+    final type = breakdown['breakdownType'] as String? ?? '';
     final duration = breakdown['breakdownDuration'] as String? ?? '';
-    final reason   = breakdown['reason'] as String?;
-    final date     = breakdown['breakdownDate'] as String?;
+    final reason = breakdown['reason'] as String?;
+    final date = breakdown['breakdownDate'] as String?;
     final location = breakdown['location'] as String?;
     final orderNum = breakdown['orderNumber'] as String?;
 
@@ -1147,8 +1326,8 @@ class _BreakdownCard extends StatelessWidget {
     final (statusColor, statusBg, statusLabel) = isInRepair
         ? (const Color(0xFFEA580C), const Color(0xFFFFF7ED), '🔧 In Repair')
         : isResolved
-            ? (const Color(0xFF16A34A), const Color(0xFFF0FDF4), '✓ Resolved')
-            : (const Color(0xFFDC2626), const Color(0xFFFEF2F2), '⚠ Open');
+        ? (const Color(0xFF16A34A), const Color(0xFFF0FDF4), '✓ Resolved')
+        : (const Color(0xFFDC2626), const Color(0xFFFEF2F2), '⚠ Open');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -1173,24 +1352,27 @@ class _BreakdownCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                 ),
-                child: Text(statusLabel,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: statusColor,
-                    )),
+                child: Text(
+                  statusLabel,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: statusColor,
+                  ),
+                ),
               ),
-              if (type.isNotEmpty)
-                _Chip(_formatBreakdownType(type)),
+              if (type.isNotEmpty) _Chip(_formatBreakdownType(type)),
               if (duration.isNotEmpty)
                 _Chip(duration == 'SHORT' ? 'Minor' : 'Major'),
             ],
           ),
           if (reason != null) ...[
             const SizedBox(height: 8),
-            Text(reason,
-                style: AppTextStyles.body.copyWith(color: AppColors.bodyText)),
+            Text(
+              reason,
+              style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+            ),
           ],
           const SizedBox(height: 8),
           Wrap(
@@ -1198,8 +1380,10 @@ class _BreakdownCard extends StatelessWidget {
             runSpacing: 4,
             children: [
               if (date != null)
-                _MetaChip(Icons.calendar_today_outlined,
-                    FerosDateUtils.formatDate(date)),
+                _MetaChip(
+                  Icons.calendar_today_outlined,
+                  FerosDateUtils.formatDate(date),
+                ),
               if (location != null)
                 _MetaChip(Icons.location_on_outlined, location),
               if (orderNum != null)
@@ -1226,8 +1410,10 @@ class _Chip extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
       ),
-      child: Text(label,
-          style: AppTextStyles.caption.copyWith(color: AppColors.bodyText)),
+      child: Text(
+        label,
+        style: AppTextStyles.caption.copyWith(color: AppColors.bodyText),
+      ),
     );
   }
 }
@@ -1235,9 +1421,11 @@ class _Chip extends StatelessWidget {
 String _formatBreakdownType(String type) {
   return type
       .split('_')
-      .map((w) => w.isEmpty
-          ? ''
-          : '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}')
+      .map(
+        (w) => w.isEmpty
+            ? ''
+            : '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}',
+      )
       .join(' ');
 }
 
@@ -1247,202 +1435,234 @@ class _ServiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final num         = record['serviceNumber'] as String? ?? '—';
-    final status      = record['displayStatus'] as String? ??
-        record['status'] as String? ?? '';
-    final triggeredBy = record['triggeredBy']   as String?;
-    final serviceType = record['serviceType']   as String?;
-    final vendor      = record['vendorName']    as String?;
-    final location    = record['location']      as String?;
-    final serviceDate = record['serviceDate']   as String?;
-    final odometer    = record['odometer'];
-    final dueAt       = record['dueAtOdometer'];
-    final totalCost   = record['totalCost'];
-    final tasks       = (record['tasks'] as List?)
-            ?.cast<Map<String, dynamic>>() ??
-        [];
-    final notes       = record['notes'] as String?;
+    final num = record['serviceNumber'] as String? ?? '—';
+    final status =
+        record['displayStatus'] as String? ?? record['status'] as String? ?? '';
+    final triggeredBy = record['triggeredBy'] as String?;
+    final serviceType = record['serviceType'] as String?;
+    final vendor = record['vendorName'] as String?;
+    final location = record['location'] as String?;
+    final serviceDate = record['serviceDate'] as String?;
+    final odometer = record['odometer'];
+    final dueAt = record['dueAtOdometer'];
+    final totalCost = record['totalCost'];
+    final tasks =
+        (record['tasks'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final notes = record['notes'] as String?;
 
     final (statusColor, statusBg) = _statusStyle(status);
 
     return GestureDetector(
-      onTap: () => Get.to(
-        () => OfficeServiceDetailView(service: record),
-      ),
+      onTap: () => Get.to(() => OfficeServiceDetailView(service: record)),
       child: Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header row: service number + status + trigger + type
-                Row(
-                  children: [
-                    Expanded(
-                      child: Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Text(num,
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header row: service number + status + trigger + type
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(
+                              num,
                               style: AppTextStyles.caption.copyWith(
                                 color: AppColors.mutedText,
                                 fontFamily: 'monospace',
-                              )),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: statusBg,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                  color: statusColor.withValues(alpha: 0.3)),
+                              ),
                             ),
-                            child: Text(_statusLabel(status),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: statusBg,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: statusColor.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Text(
+                                _statusLabel(status),
                                 style: TextStyle(
                                   color: statusColor,
                                   fontFamily: 'Inter',
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                )),
-                          ),
-                          if (triggeredBy != null)
-                            _MetaBadge(_triggerLabel(triggeredBy)),
-                          if (serviceType != null)
-                            _MetaBadge(_typeLabel(serviceType, vendor)),
-                        ],
+                                ),
+                              ),
+                            ),
+                            if (triggeredBy != null)
+                              _MetaBadge(_triggerLabel(triggeredBy)),
+                            if (serviceType != null)
+                              _MetaBadge(_typeLabel(serviceType, vendor)),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                // Tasks
-                if (tasks.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: tasks.map((t) {
-                        final name = t['taskTypeName'] as String? ??
-                            t['customName']  as String? ?? '—';
-                        final recurring = t['isRecurring'] as bool? ?? false;
-                        final freqKm    = t['frequencyKm'];
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.background,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: Text(
-                            recurring && freqKm != null
-                                ? '$name · 🔄 ${freqKm}km'
-                                : name,
-                            style: AppTextStyles.caption
-                                .copyWith(color: AppColors.bodyText),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                // Meta row
-                Padding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 12),
-                  child: Wrap(
-                    spacing: 14,
-                    runSpacing: 4,
-                    children: [
-                      if (dueAt != null)
-                        _MetaChip(Icons.refresh_outlined,
-                            'Due at $dueAt km'),
-                      if (odometer != null)
-                        _MetaChip(Icons.speed_outlined, '$odometer km'),
-                      if (serviceDate != null)
-                        _MetaChip(Icons.calendar_today_outlined,
-                            FerosDateUtils.formatDate(serviceDate)),
-                      if (location != null)
-                        _MetaChip(Icons.location_on_outlined, location),
-                      if (totalCost != null)
-                        _MetaChip(Icons.currency_rupee, '₹$totalCost',
-                            color: AppColors.success),
                     ],
                   ),
-                ),
-              ],
-            ),
-          ),
-          // In-progress notes
-          if (notes != null && notes.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
-              decoration: const BoxDecoration(
-                color: AppColors.background,
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(12)),
-                border: Border(
-                    top: BorderSide(color: AppColors.border, width: 0.8)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.notes_outlined,
-                      size: 13, color: AppColors.mutedText),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(notes,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.mutedText,
-                          fontStyle: FontStyle.italic,
-                        )),
+                  // Tasks
+                  if (tasks.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: tasks.map((t) {
+                          final name =
+                              t['taskTypeName'] as String? ??
+                              t['customName'] as String? ??
+                              '—';
+                          final recurring = t['isRecurring'] as bool? ?? false;
+                          final freqKm = t['frequencyKm'];
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.background,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Text(
+                              recurring && freqKm != null
+                                  ? '$name · 🔄 ${freqKm}km'
+                                  : name,
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.bodyText,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  // Meta row
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 12),
+                    child: Wrap(
+                      spacing: 14,
+                      runSpacing: 4,
+                      children: [
+                        if (dueAt != null)
+                          _MetaChip(Icons.refresh_outlined, 'Due at $dueAt km'),
+                        if (odometer != null)
+                          _MetaChip(Icons.speed_outlined, '$odometer km'),
+                        if (serviceDate != null)
+                          _MetaChip(
+                            Icons.calendar_today_outlined,
+                            FerosDateUtils.formatDate(serviceDate),
+                          ),
+                        if (location != null)
+                          _MetaChip(Icons.location_on_outlined, location),
+                        if (totalCost != null)
+                          _MetaChip(
+                            Icons.currency_rupee,
+                            '₹$totalCost',
+                            color: AppColors.success,
+                          ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-        ],
+            // In-progress notes
+            if (notes != null && notes.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+                decoration: const BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(12),
+                  ),
+                  border: Border(
+                    top: BorderSide(color: AppColors.border, width: 0.8),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.notes_outlined,
+                      size: 13,
+                      color: AppColors.mutedText,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        notes,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.mutedText,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   static (Color, Color) _statusStyle(String s) {
     switch (s) {
-      case 'OPEN':        return (const Color(0xFF2563EB), const Color(0xFFEFF6FF));
-      case 'IN_PROGRESS': return (const Color(0xFFEA580C), const Color(0xFFFFF7ED));
-      case 'DUE_SOON':    return (const Color(0xFFD97706), const Color(0xFFFFFBEB));
-      case 'OVERDUE':     return (const Color(0xFFDC2626), const Color(0xFFFEF2F2));
-      case 'COMPLETED':   return (const Color(0xFF16A34A), const Color(0xFFF0FDF4));
-      default:            return (AppColors.mutedText, AppColors.background);
+      case 'OPEN':
+        return (const Color(0xFF2563EB), const Color(0xFFEFF6FF));
+      case 'IN_PROGRESS':
+        return (const Color(0xFFEA580C), const Color(0xFFFFF7ED));
+      case 'DUE_SOON':
+        return (const Color(0xFFD97706), const Color(0xFFFFFBEB));
+      case 'OVERDUE':
+        return (const Color(0xFFDC2626), const Color(0xFFFEF2F2));
+      case 'COMPLETED':
+        return (const Color(0xFF16A34A), const Color(0xFFF0FDF4));
+      default:
+        return (AppColors.mutedText, AppColors.background);
     }
   }
 
   static String _statusLabel(String s) {
     const m = {
-      'OPEN': 'Open', 'IN_PROGRESS': 'In Progress', 'DUE_SOON': 'Due Soon',
-      'OVERDUE': 'Overdue', 'COMPLETED': 'Completed',
+      'OPEN': 'Open',
+      'IN_PROGRESS': 'In Progress',
+      'DUE_SOON': 'Due Soon',
+      'OVERDUE': 'Overdue',
+      'COMPLETED': 'Completed',
     };
     return m[s] ?? s;
   }
 
   static String _triggerLabel(String t) {
     const m = {
-      'BREAKDOWN': '⚡ Breakdown', 'ACCIDENT': '💥 Accident',
-      'COMPLIANCE': '📋 Compliance', 'WARRANTY': '🔒 Warranty',
+      'BREAKDOWN': '⚡ Breakdown',
+      'ACCIDENT': '💥 Accident',
+      'COMPLIANCE': '📋 Compliance',
+      'WARRANTY': '🔒 Warranty',
       'SCHEDULED': '📅 Scheduled',
     };
     return m[t] ?? t;
   }
 
   static String _typeLabel(String t, String? vendor) {
-    if (t == 'INTERNAL')    return '🏭 Internal';
-    if (t == 'OEM_CENTER')  return '🏢 ${vendor ?? 'OEM Center'}';
+    if (t == 'INTERNAL') return '🏭 Internal';
+    if (t == 'OEM_CENTER') return '🏢 ${vendor ?? 'OEM Center'}';
     return '🔧 ${vendor ?? '3rd Party'}';
   }
 }
@@ -1453,15 +1673,17 @@ class _MetaBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(label,
-        style: AppTextStyles.caption.copyWith(color: AppColors.mutedText));
+    return Text(
+      label,
+      style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+    );
   }
 }
 
 class _MetaChip extends StatelessWidget {
   final IconData icon;
-  final String   label;
-  final Color?   color;
+  final String label;
+  final Color? color;
   const _MetaChip(this.icon, this.label, {this.color});
 
   @override
@@ -1472,8 +1694,7 @@ class _MetaChip extends StatelessWidget {
       children: [
         Icon(icon, size: 11, color: c),
         const SizedBox(width: 4),
-        Text(label,
-            style: AppTextStyles.caption.copyWith(color: c)),
+        Text(label, style: AppTextStyles.caption.copyWith(color: c)),
       ],
     );
   }
@@ -1513,13 +1734,17 @@ class _FuelTabBodyState extends State<_FuelTabBody>
       }
 
       final logs = c.fuelLogs;
-      final v    = c.vehicle.value!;
+      final v = c.vehicle.value!;
 
       // Summary calculations
-      final tankCap     = v['fuelTankCapacity'];
+      final tankCap = v['fuelTankCapacity'];
       final currentFuel = v['currentFuelLevel'];
-      final fuelPct     = (tankCap != null && currentFuel != null && (tankCap as num) > 0)
-          ? ((currentFuel as num) / (tankCap as num) * 100).round().clamp(0, 100)
+      final fuelPct =
+          (tankCap != null && currentFuel != null && (tankCap as num) > 0)
+          ? ((currentFuel as num) / (tankCap as num) * 100).round().clamp(
+              0,
+              100,
+            )
           : null;
 
       final validMileage = logs
@@ -1527,9 +1752,9 @@ class _FuelTabBodyState extends State<_FuelTabBody>
           .toList();
       final avgMileage = validMileage.isNotEmpty
           ? (validMileage
-                  .map((l) => (l['mileageKmPerLitre'] as num).toDouble())
-                  .reduce((a, b) => a + b) /
-              validMileage.length)
+                    .map((l) => (l['mileageKmPerLitre'] as num).toDouble())
+                    .reduce((a, b) => a + b) /
+                validMileage.length)
           : null;
 
       final totalSpend = logs.fold<double>(0.0, (sum, l) {
@@ -1542,9 +1767,12 @@ class _FuelTabBodyState extends State<_FuelTabBody>
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           children: [
             _FuelSummaryCards(
-              tankCap: tankCap, currentFuel: currentFuel,
-              fuelPct: fuelPct, avgMileage: avgMileage,
-              totalSpend: totalSpend, logCount: 0,
+              tankCap: tankCap,
+              currentFuel: currentFuel,
+              fuelPct: fuelPct,
+              avgMileage: avgMileage,
+              totalSpend: totalSpend,
+              logCount: 0,
             ),
             const SizedBox(height: 16),
             Row(
@@ -1554,7 +1782,9 @@ class _FuelTabBodyState extends State<_FuelTabBody>
                   onTap: () => _showFuelSheet(context, c),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.navy,
                       borderRadius: BorderRadius.circular(8),
@@ -1564,13 +1794,15 @@ class _FuelTabBodyState extends State<_FuelTabBody>
                       children: [
                         Icon(Icons.add, size: 14, color: Colors.white),
                         SizedBox(width: 4),
-                        Text('Add Fill-up',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            )),
+                        Text(
+                          'Add Fill-up',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1579,8 +1811,9 @@ class _FuelTabBodyState extends State<_FuelTabBody>
             ),
             const SizedBox(height: 32),
             const _EmptyTabState(
-                icon: Icons.local_gas_station_outlined,
-                message: 'No fuel logs yet'),
+              icon: Icons.local_gas_station_outlined,
+              message: 'No fuel logs yet',
+            ),
           ],
         );
       }
@@ -1589,9 +1822,12 @@ class _FuelTabBodyState extends State<_FuelTabBody>
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           _FuelSummaryCards(
-            tankCap: tankCap, currentFuel: currentFuel,
-            fuelPct: fuelPct, avgMileage: avgMileage,
-            totalSpend: totalSpend, logCount: logs.length,
+            tankCap: tankCap,
+            currentFuel: currentFuel,
+            fuelPct: fuelPct,
+            avgMileage: avgMileage,
+            totalSpend: totalSpend,
+            logCount: logs.length,
           ),
           const SizedBox(height: 16),
           Row(
@@ -1601,7 +1837,9 @@ class _FuelTabBodyState extends State<_FuelTabBody>
                 onTap: () => _showFuelSheet(context, c),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.navy,
                     borderRadius: BorderRadius.circular(8),
@@ -1611,13 +1849,15 @@ class _FuelTabBodyState extends State<_FuelTabBody>
                     children: [
                       Icon(Icons.add, size: 14, color: Colors.white),
                       SizedBox(width: 4),
-                      Text('Add Fill-up',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          )),
+                      Text(
+                        'Add Fill-up',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1637,26 +1877,29 @@ class _FuelTabBodyState extends State<_FuelTabBody>
                 // Table header
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 10),
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: const BoxDecoration(
                     color: AppColors.background,
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(12)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
                   ),
                   child: Row(
                     children: const [
-                      _TH('Date',     flex: 3),
-                      _TH('Litres',   flex: 2),
+                      _TH('Date', flex: 3),
+                      _TH('Litres', flex: 2),
                       _TH('Odometer', flex: 3),
-                      _TH('Cost/L',   flex: 2),
-                      _TH('Total',    flex: 3),
-                      _TH('Mileage',  flex: 3),
+                      _TH('Cost/L', flex: 2),
+                      _TH('Total', flex: 3),
+                      _TH('Mileage', flex: 3),
                     ],
                   ),
                 ),
                 ...logs.asMap().entries.map((e) {
                   final log = e.value;
-                  final id  = log['id'] is int
+                  final id = log['id'] is int
                       ? log['id'] as int
                       : int.tryParse(log['id'].toString()) ?? 0;
                   return _FuelRow(
@@ -1681,9 +1924,12 @@ class _FuelSummaryCards extends StatelessWidget {
   final double totalSpend;
   final int logCount;
   const _FuelSummaryCards({
-    required this.tankCap, required this.currentFuel,
-    required this.fuelPct, required this.avgMileage,
-    required this.totalSpend, required this.logCount,
+    required this.tankCap,
+    required this.currentFuel,
+    required this.fuelPct,
+    required this.avgMileage,
+    required this.totalSpend,
+    required this.logCount,
   });
 
   @override
@@ -1714,20 +1960,26 @@ class _FuelSummaryCards extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Current Fuel',
-                    style: TextStyle(
-                      fontFamily: 'Inter', fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFFF97316),
-                      letterSpacing: 0.4,
-                    )),
+                const Text(
+                  'Current Fuel',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFF97316),
+                    letterSpacing: 0.4,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(currentFuel != null ? '$currentFuel L' : '—',
-                    style: const TextStyle(
-                      fontFamily: 'Inter', fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFFC2410C),
-                    )),
+                Text(
+                  currentFuel != null ? '$currentFuel L' : '—',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFC2410C),
+                  ),
+                ),
                 if (fuelPct != null) ...[
                   const SizedBox(height: 6),
                   ClipRRect(
@@ -1736,16 +1988,20 @@ class _FuelSummaryCards extends StatelessWidget {
                       value: fuelPct! / 100,
                       backgroundColor: const Color(0xFFFED7AA),
                       valueColor: const AlwaysStoppedAnimation(
-                          Color(0xFFFB923C)),
+                        Color(0xFFFB923C),
+                      ),
                       minHeight: 5,
                     ),
                   ),
                   const SizedBox(height: 3),
-                  Text('$fuelPct% full',
-                      style: const TextStyle(
-                        fontFamily: 'Inter', fontSize: 10,
-                        color: Color(0xFFF97316),
-                      )),
+                  Text(
+                    '$fuelPct% full',
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 10,
+                      color: Color(0xFFF97316),
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -1771,9 +2027,7 @@ class _FuelSummaryCards extends StatelessWidget {
         Expanded(
           child: _SummaryCard(
             label: 'Total Spend',
-            value: totalSpend > 0
-                ? '₹${totalSpend.toStringAsFixed(0)}'
-                : '—',
+            value: totalSpend > 0 ? '₹${totalSpend.toStringAsFixed(0)}' : '—',
             sub: '$logCount fill-up${logCount != 1 ? 's' : ''}',
             bg: const Color(0xFFFAF5FF),
             border: const Color(0xFFE9D5FF),
@@ -1791,10 +2045,13 @@ class _SummaryCard extends StatelessWidget {
   final String? sub;
   final Color bg, border, labelColor, valueColor;
   const _SummaryCard({
-    required this.label, required this.value,
+    required this.label,
+    required this.value,
     this.sub,
-    required this.bg, required this.border,
-    required this.labelColor, required this.valueColor,
+    required this.bg,
+    required this.border,
+    required this.labelColor,
+    required this.valueColor,
   });
 
   @override
@@ -1809,24 +2066,35 @@ class _SummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label.toUpperCase(),
-              style: TextStyle(
-                fontFamily: 'Inter', fontSize: 9,
-                fontWeight: FontWeight.w600,
-                color: labelColor,
-                letterSpacing: 0.4,
-              )),
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+              color: labelColor,
+              letterSpacing: 0.4,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(value,
-              style: TextStyle(
-                fontFamily: 'Inter', fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: valueColor,
-              )),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: valueColor,
+            ),
+          ),
           if (sub != null)
-            Text(sub!,
-                style: TextStyle(
-                    fontFamily: 'Inter', fontSize: 9, color: labelColor)),
+            Text(
+              sub!,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 9,
+                color: labelColor,
+              ),
+            ),
         ],
       ),
     );
@@ -1842,13 +2110,15 @@ class _TH extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       flex: flex,
-      child: Text(text,
-          style: AppTextStyles.caption.copyWith(
-            fontWeight: FontWeight.w600,
-            color: AppColors.mutedText,
-            fontSize: 10,
-            letterSpacing: 0.4,
-          )),
+      child: Text(
+        text,
+        style: AppTextStyles.caption.copyWith(
+          fontWeight: FontWeight.w600,
+          color: AppColors.mutedText,
+          fontSize: 10,
+          letterSpacing: 0.4,
+        ),
+      ),
     );
   }
 }
@@ -1867,21 +2137,22 @@ class _FuelRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date        = log['fillDate']          as String?;
-    final litres      = log['litresFilled'];
-    final odometer    = log['odometerReading'];
-    final cpl         = log['costPerLitre'];
-    final cost        = log['totalCost'];
-    final mileage     = log['mileageKmPerLitre'];
-    final isFullTank  = log['fullTank']           as bool?   ?? false;
-    final payment     = log['paymentMode']        as String?;
-    final stationName = log['fuelStationName']    as String?;
-    final stationCity = log['fuelStationCity']    as String?;
-    final receiptUrl  = log['receiptUrl']         as String?;
+    final date = log['fillDate'] as String?;
+    final litres = log['litresFilled'];
+    final odometer = log['odometerReading'];
+    final cpl = log['costPerLitre'];
+    final cost = log['totalCost'];
+    final mileage = log['mileageKmPerLitre'];
+    final isFullTank = log['fullTank'] as bool? ?? false;
+    final payment = log['paymentMode'] as String?;
+    final stationName = log['fuelStationName'] as String?;
+    final stationCity = log['fuelStationCity'] as String?;
+    final receiptUrl = log['receiptUrl'] as String?;
 
-    final station = [stationName, stationCity]
-        .where((s) => s != null && s.isNotEmpty)
-        .join(', ');
+    final station = [
+      stationName,
+      stationCity,
+    ].where((s) => s != null && s.isNotEmpty).join(', ');
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
@@ -1889,7 +2160,8 @@ class _FuelRow extends StatelessWidget {
         border: isLast
             ? null
             : const Border(
-                bottom: BorderSide(color: AppColors.border, width: 0.6)),
+                bottom: BorderSide(color: AppColors.border, width: 0.6),
+              ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1905,24 +2177,30 @@ class _FuelRow extends StatelessWidget {
                     Text(
                       date != null ? FerosDateUtils.formatDate(date) : '—',
                       style: AppTextStyles.caption.copyWith(
-                          color: AppColors.bodyText, fontWeight: FontWeight.w500),
+                        color: AppColors.bodyText,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     if (isFullTank)
                       Container(
                         margin: const EdgeInsets.only(top: 2),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1),
+                          horizontal: 5,
+                          vertical: 1,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF0FDF4),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text('Full',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF16A34A),
-                            )),
+                        child: const Text(
+                          'Full',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF16A34A),
+                          ),
+                        ),
                       ),
                   ],
                 ),
@@ -1932,21 +2210,27 @@ class _FuelRow extends StatelessWidget {
                 child: Text(
                   litres != null ? '$litres L' : '—',
                   style: AppTextStyles.caption.copyWith(
-                      color: const Color(0xFF1D4ED8), fontWeight: FontWeight.w600),
+                    color: const Color(0xFF1D4ED8),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               Expanded(
                 flex: 3,
                 child: Text(
                   odometer != null ? '$odometer km' : '—',
-                  style: AppTextStyles.caption.copyWith(color: AppColors.bodyText),
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.bodyText,
+                  ),
                 ),
               ),
               Expanded(
                 flex: 2,
                 child: Text(
                   cpl != null ? '₹$cpl' : '—',
-                  style: AppTextStyles.caption.copyWith(color: AppColors.bodyText),
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.bodyText,
+                  ),
                 ),
               ),
               Expanded(
@@ -1954,7 +2238,9 @@ class _FuelRow extends StatelessWidget {
                 child: Text(
                   cost != null ? '₹$cost' : '—',
                   style: AppTextStyles.caption.copyWith(
-                      color: AppColors.bodyText, fontWeight: FontWeight.w600),
+                    color: AppColors.bodyText,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               Expanded(
@@ -1965,8 +2251,9 @@ class _FuelRow extends StatelessWidget {
                     color: mileage != null
                         ? const Color(0xFF15803D)
                         : AppColors.mutedText,
-                    fontWeight:
-                        mileage != null ? FontWeight.w600 : FontWeight.w400,
+                    fontWeight: mileage != null
+                        ? FontWeight.w600
+                        : FontWeight.w400,
                   ),
                 ),
               ),
@@ -1985,8 +2272,11 @@ class _FuelRow extends StatelessWidget {
                   if (station.isNotEmpty)
                     _MetaChip(Icons.local_gas_station_outlined, station),
                   if (receiptUrl != null)
-                    _MetaChip(Icons.receipt_long_outlined, 'Receipt',
-                        color: AppColors.navy),
+                    _MetaChip(
+                      Icons.receipt_long_outlined,
+                      'Receipt',
+                      color: AppColors.navy,
+                    ),
                 ],
               ),
             ),
@@ -2021,10 +2311,14 @@ class _FuelRow extends StatelessWidget {
 
   static String _paymentLabel(String mode) {
     switch (mode) {
-      case 'CASH':            return 'Cash';
-      case 'COMPANY_ACCOUNT': return 'Company Account';
-      case 'REIMBURSEMENT':   return 'Reimbursement';
-      default:                return mode;
+      case 'CASH':
+        return 'Cash';
+      case 'COMPANY_ACCOUNT':
+        return 'Company Account';
+      case 'REIMBURSEMENT':
+        return 'Reimbursement';
+      default:
+        return mode;
     }
   }
 }
@@ -2033,7 +2327,11 @@ class _ActionIcon extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
-  const _ActionIcon({required this.icon, required this.color, required this.onTap});
+  const _ActionIcon({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -2073,15 +2371,21 @@ void _confirmDeleteFuel(
   showDialog(
     context: context,
     builder: (_) => AlertDialog(
-      title: const Text('Delete Fuel Log',
-          style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600)),
-      content: const Text('Are you sure you want to delete this fuel log?',
-          style: TextStyle(fontFamily: 'Inter')),
+      title: const Text(
+        'Delete Fuel Log',
+        style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
+      ),
+      content: const Text(
+        'Are you sure you want to delete this fuel log?',
+        style: TextStyle(fontFamily: 'Inter'),
+      ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel',
-              style: TextStyle(color: AppColors.mutedText, fontFamily: 'Inter')),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: AppColors.mutedText, fontFamily: 'Inter'),
+          ),
         ),
         TextButton(
           onPressed: () async {
@@ -2093,9 +2397,14 @@ void _confirmDeleteFuel(
               );
             }
           },
-          child: const Text('Delete',
-              style: TextStyle(color: AppColors.error, fontFamily: 'Inter',
-                  fontWeight: FontWeight.w600)),
+          child: const Text(
+            'Delete',
+            style: TextStyle(
+              color: AppColors.error,
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ],
     ),
@@ -2128,8 +2437,8 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
   late final TextEditingController _notesCtrl;
 
   String _paymentMode = 'CASH';
-  bool   _isFullTank  = false;
-  bool   _saving      = false;
+  bool _isFullTank = false;
+  bool _saving = false;
 
   // Auto-calculate total when litres or cpl changes
   void _recalcTotal() {
@@ -2144,18 +2453,31 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
   void initState() {
     super.initState();
     final e = widget.existing;
-    _dateCtrl        = TextEditingController(text: e?['fillDate']        as String? ?? _today());
-    _litresCtrl      = TextEditingController(text: e?['litresFilled']    ?.toString() ?? '');
-    _odometerCtrl    = TextEditingController(
-        text: e?['odometerReading']?.toString() ??
-            widget._currentOdometer?.toString() ?? '');
-    _cplCtrl         = TextEditingController(text: e?['costPerLitre']    ?.toString() ?? '');
-    _totalCtrl       = TextEditingController(text: e?['totalCost']       ?.toString() ?? '');
-    _stationNameCtrl = TextEditingController(text: e?['fuelStationName'] as String? ?? '');
-    _stationCityCtrl = TextEditingController(text: e?['fuelStationCity'] as String? ?? '');
-    _notesCtrl       = TextEditingController(text: e?['notes']           as String? ?? '');
-    _paymentMode     = e?['paymentMode'] as String? ?? 'CASH';
-    _isFullTank      = e?['fullTank']    as bool?   ?? false;
+    _dateCtrl = TextEditingController(
+      text: e?['fillDate'] as String? ?? _today(),
+    );
+    _litresCtrl = TextEditingController(
+      text: e?['litresFilled']?.toString() ?? '',
+    );
+    _odometerCtrl = TextEditingController(
+      text:
+          e?['odometerReading']?.toString() ??
+          widget._currentOdometer?.toString() ??
+          '',
+    );
+    _cplCtrl = TextEditingController(
+      text: e?['costPerLitre']?.toString() ?? '',
+    );
+    _totalCtrl = TextEditingController(text: e?['totalCost']?.toString() ?? '');
+    _stationNameCtrl = TextEditingController(
+      text: e?['fuelStationName'] as String? ?? '',
+    );
+    _stationCityCtrl = TextEditingController(
+      text: e?['fuelStationCity'] as String? ?? '',
+    );
+    _notesCtrl = TextEditingController(text: e?['notes'] as String? ?? '');
+    _paymentMode = e?['paymentMode'] as String? ?? 'CASH';
+    _isFullTank = e?['fullTank'] as bool? ?? false;
 
     _litresCtrl.addListener(_recalcTotal);
     _cplCtrl.addListener(_recalcTotal);
@@ -2163,8 +2485,16 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
 
   @override
   void dispose() {
-    for (final c in [_dateCtrl, _litresCtrl, _odometerCtrl, _cplCtrl,
-        _totalCtrl, _stationNameCtrl, _stationCityCtrl, _notesCtrl]) {
+    for (final c in [
+      _dateCtrl,
+      _litresCtrl,
+      _odometerCtrl,
+      _cplCtrl,
+      _totalCtrl,
+      _stationNameCtrl,
+      _stationCityCtrl,
+      _notesCtrl,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -2181,22 +2511,26 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
 
     final editId = widget.existing != null
         ? (widget.existing!['id'] is int
-            ? widget.existing!['id'] as int
-            : int.tryParse(widget.existing!['id'].toString()))
+              ? widget.existing!['id'] as int
+              : int.tryParse(widget.existing!['id'].toString()))
         : null;
 
     final data = {
-      'vehicleId':       widget.controller.vehicleId,
-      'fillDate':        _dateCtrl.text,
-      'litresFilled':    double.tryParse(_litresCtrl.text),
+      'vehicleId': widget.controller.vehicleId,
+      'fillDate': _dateCtrl.text,
+      'litresFilled': double.tryParse(_litresCtrl.text),
       'odometerReading': double.tryParse(_odometerCtrl.text),
-      'costPerLitre':    double.tryParse(_cplCtrl.text),
-      'totalCost':       double.tryParse(_totalCtrl.text),
-      'isFullTank':      _isFullTank,
-      'paymentMode':     _paymentMode,
-      'fuelStationName': _stationNameCtrl.text.trim().isEmpty ? null : _stationNameCtrl.text.trim(),
-      'fuelStationCity': _stationCityCtrl.text.trim().isEmpty ? null : _stationCityCtrl.text.trim(),
-      'notes':           _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+      'costPerLitre': double.tryParse(_cplCtrl.text),
+      'totalCost': double.tryParse(_totalCtrl.text),
+      'isFullTank': _isFullTank,
+      'paymentMode': _paymentMode,
+      'fuelStationName': _stationNameCtrl.text.trim().isEmpty
+          ? null
+          : _stationNameCtrl.text.trim(),
+      'fuelStationCity': _stationCityCtrl.text.trim().isEmpty
+          ? null
+          : _stationCityCtrl.text.trim(),
+      'notes': _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
     };
 
     final ok = await widget.controller.saveFuelLog(data, editId: editId);
@@ -2205,9 +2539,9 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
       Navigator.pop(context);
     } else {
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to save fuel log')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to save fuel log')));
     }
   }
 
@@ -2232,7 +2566,8 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
               // Handle
               Center(
                 child: Container(
-                  width: 36, height: 4,
+                  width: 36,
+                  height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
                     color: AppColors.border,
@@ -2260,13 +2595,15 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
                   onTap: () async {
                     final picked = await showDatePicker(
                       context: context,
-                      initialDate: DateTime.tryParse(_dateCtrl.text) ?? DateTime.now(),
+                      initialDate:
+                          DateTime.tryParse(_dateCtrl.text) ?? DateTime.now(),
                       firstDate: DateTime(2020),
                       lastDate: DateTime.now(),
                       builder: (ctx, child) => Theme(
                         data: Theme.of(ctx).copyWith(
                           colorScheme: const ColorScheme.light(
-                              primary: AppColors.navy),
+                            primary: AppColors.navy,
+                          ),
                         ),
                         child: child!,
                       ),
@@ -2284,49 +2621,69 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
               const SizedBox(height: 12),
 
               // Litres + Odometer
-              Row(children: [
-                Expanded(child: _SheetField(
-                  label: 'Litres Filled *',
-                  child: TextFormField(
-                    controller: _litresCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: _inputDec('e.g. 150'),
-                    validator: (v) =>
-                        (v == null || v.isEmpty) ? 'Required' : null,
+              Row(
+                children: [
+                  Expanded(
+                    child: _SheetField(
+                      label: 'Litres Filled *',
+                      child: TextFormField(
+                        controller: _litresCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: _inputDec('e.g. 150'),
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? 'Required' : null,
+                      ),
+                    ),
                   ),
-                )),
-                const SizedBox(width: 12),
-                Expanded(child: _SheetField(
-                  label: 'Odometer (km)',
-                  child: TextFormField(
-                    controller: _odometerCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: _inputDec('e.g. 48200'),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _SheetField(
+                      label: 'Odometer (km)',
+                      child: TextFormField(
+                        controller: _odometerCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: _inputDec('e.g. 48200'),
+                      ),
+                    ),
                   ),
-                )),
-              ]),
+                ],
+              ),
               const SizedBox(height: 12),
 
               // Cost per Litre + Total Cost
-              Row(children: [
-                Expanded(child: _SheetField(
-                  label: 'Cost / Litre (₹)',
-                  child: TextFormField(
-                    controller: _cplCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: _inputDec('e.g. 105.50'),
+              Row(
+                children: [
+                  Expanded(
+                    child: _SheetField(
+                      label: 'Cost / Litre (₹)',
+                      child: TextFormField(
+                        controller: _cplCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: _inputDec('e.g. 105.50'),
+                      ),
+                    ),
                   ),
-                )),
-                const SizedBox(width: 12),
-                Expanded(child: _SheetField(
-                  label: 'Total Cost (₹)',
-                  child: TextFormField(
-                    controller: _totalCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: _inputDec('Auto-calculated'),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _SheetField(
+                      label: 'Total Cost (₹)',
+                      child: TextFormField(
+                        controller: _totalCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: _inputDec('Auto-calculated'),
+                      ),
+                    ),
                   ),
-                )),
-              ]),
+                ],
+              ),
               const SizedBox(height: 12),
 
               // Payment Mode
@@ -2336,11 +2693,20 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
                   value: _paymentMode,
                   decoration: _inputDec(null),
                   style: const TextStyle(
-                      fontFamily: 'Inter', fontSize: 13, color: AppColors.bodyText),
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    color: AppColors.bodyText,
+                  ),
                   items: const [
-                    DropdownMenuItem(value: 'CASH',            child: Text('Cash')),
-                    DropdownMenuItem(value: 'COMPANY_ACCOUNT', child: Text('Company Account')),
-                    DropdownMenuItem(value: 'REIMBURSEMENT',   child: Text('Reimbursement')),
+                    DropdownMenuItem(value: 'CASH', child: Text('Cash')),
+                    DropdownMenuItem(
+                      value: 'COMPANY_ACCOUNT',
+                      child: Text('Company Account'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'REIMBURSEMENT',
+                      child: Text('Reimbursement'),
+                    ),
                   ],
                   onChanged: (v) => setState(() => _paymentMode = v ?? 'CASH'),
                 ),
@@ -2348,23 +2714,29 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
               const SizedBox(height: 12),
 
               // Station Name + City
-              Row(children: [
-                Expanded(child: _SheetField(
-                  label: 'Station Name',
-                  child: TextFormField(
-                    controller: _stationNameCtrl,
-                    decoration: _inputDec('Indian Oil, HP…'),
+              Row(
+                children: [
+                  Expanded(
+                    child: _SheetField(
+                      label: 'Station Name',
+                      child: TextFormField(
+                        controller: _stationNameCtrl,
+                        decoration: _inputDec('Indian Oil, HP…'),
+                      ),
+                    ),
                   ),
-                )),
-                const SizedBox(width: 12),
-                Expanded(child: _SheetField(
-                  label: 'Station City',
-                  child: TextFormField(
-                    controller: _stationCityCtrl,
-                    decoration: _inputDec('City'),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _SheetField(
+                      label: 'Station City',
+                      child: TextFormField(
+                        controller: _stationCityCtrl,
+                        decoration: _inputDec('City'),
+                      ),
+                    ),
                   ),
-                )),
-              ]),
+                ],
+              ),
               const SizedBox(height: 12),
 
               // Notes
@@ -2384,17 +2756,26 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
                 child: Row(
                   children: [
                     Container(
-                      width: 20, height: 20,
+                      width: 20,
+                      height: 20,
                       decoration: BoxDecoration(
-                        color: _isFullTank ? AppColors.navy : Colors.transparent,
+                        color: _isFullTank
+                            ? AppColors.navy
+                            : Colors.transparent,
                         border: Border.all(
-                          color: _isFullTank ? AppColors.navy : AppColors.border,
+                          color: _isFullTank
+                              ? AppColors.navy
+                              : AppColors.border,
                           width: 1.5,
                         ),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: _isFullTank
-                          ? const Icon(Icons.check, size: 13, color: Colors.white)
+                          ? const Icon(
+                              Icons.check,
+                              size: 13,
+                              color: Colors.white,
+                            )
                           : null,
                     ),
                     const SizedBox(width: 10),
@@ -2402,19 +2783,23 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Full tank fill-up',
-                              style: TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.bodyText,
-                              )),
-                          Text('Enables accurate mileage calculation',
-                              style: TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 11,
-                                color: AppColors.mutedText,
-                              )),
+                          Text(
+                            'Full tank fill-up',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.bodyText,
+                            ),
+                          ),
+                          Text(
+                            'Enables accurate mileage calculation',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 11,
+                              color: AppColors.mutedText,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -2433,20 +2818,27 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     elevation: 0,
                   ),
                   child: _saving
                       ? const SizedBox(
-                          width: 18, height: 18,
+                          width: 18,
+                          height: 18,
                           child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2))
-                      : Text(isEdit ? 'Save Changes' : 'Add Fill-up',
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          isEdit ? 'Save Changes' : 'Add Fill-up',
                           style: const TextStyle(
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
-                          )),
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -2457,30 +2849,32 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
   }
 
   InputDecoration _inputDec(String? hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(
-            fontFamily: 'Inter', fontSize: 13, color: AppColors.mutedText),
-        filled: true,
-        fillColor: AppColors.background,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.error),
-        ),
-      );
+    hintText: hint,
+    hintStyle: const TextStyle(
+      fontFamily: 'Inter',
+      fontSize: 13,
+      color: AppColors.mutedText,
+    ),
+    filled: true,
+    fillColor: AppColors.background,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: AppColors.border),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: AppColors.border),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: AppColors.error),
+    ),
+  );
 }
 
 class _SheetField extends StatelessWidget {
@@ -2493,13 +2887,15 @@ class _SheetField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: AppColors.bodyText,
-            )),
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: AppColors.bodyText,
+          ),
+        ),
         const SizedBox(height: 5),
         child,
       ],
@@ -2540,11 +2936,12 @@ class _MeterTabBodyState extends State<_MeterTabBody>
         return _TabError(onRetry: c.retryMeter);
       }
 
-      final list     = c.meterReadings;
+      final list = c.meterReadings;
       final latestKm = list.isNotEmpty ? list.first['readingKm'] : null;
       final lastKmNum = latestKm != null
           ? (latestKm as num).toDouble()
-          : (c.vehicle.value?['currentOdometerReading'] as num?)?.toDouble() ?? 0.0;
+          : (c.vehicle.value?['currentOdometerReading'] as num?)?.toDouble() ??
+                0.0;
 
       return Column(
         children: [
@@ -2560,22 +2957,29 @@ class _MeterTabBodyState extends State<_MeterTabBody>
             child: Row(
               children: [
                 Container(
-                  width: 40, height: 40,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: const Color(0xFFEFF6FF),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.speed_outlined,
-                      size: 20, color: Color(0xFF2563EB)),
+                  child: const Icon(
+                    Icons.speed_outlined,
+                    size: 20,
+                    color: Color(0xFF2563EB),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Current Odometer',
-                          style: AppTextStyles.caption
-                              .copyWith(color: AppColors.mutedText)),
+                      Text(
+                        'Current Odometer',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.mutedText,
+                        ),
+                      ),
                       Text(
                         latestKm != null ? '$latestKm km' : '—',
                         style: const TextStyle(
@@ -2592,7 +2996,9 @@ class _MeterTabBodyState extends State<_MeterTabBody>
                   onTap: () => _showMeterSheet(context, c, lastKmNum),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 7),
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.navy,
                       borderRadius: BorderRadius.circular(8),
@@ -2602,13 +3008,15 @@ class _MeterTabBodyState extends State<_MeterTabBody>
                       children: [
                         Icon(Icons.add, size: 14, color: Colors.white),
                         SizedBox(width: 4),
-                        Text('Add Reading',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            )),
+                        Text(
+                          'Add Reading',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -2620,7 +3028,9 @@ class _MeterTabBodyState extends State<_MeterTabBody>
           if (list.isEmpty)
             const Expanded(
               child: _EmptyTabState(
-                  icon: Icons.speed_outlined, message: 'No meter readings'),
+                icon: Icons.speed_outlined,
+                message: 'No meter readings',
+              ),
             )
           else
             Expanded(
@@ -2636,19 +3046,22 @@ class _MeterTabBodyState extends State<_MeterTabBody>
                     // Table header
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                       decoration: const BoxDecoration(
                         color: AppColors.background,
-                        borderRadius:
-                            BorderRadius.vertical(top: Radius.circular(12)),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(12),
+                        ),
                       ),
                       child: Row(
                         children: const [
-                          _TH('Date',        flex: 3),
-                          _TH('Odometer',    flex: 3),
-                          _TH('Type',        flex: 2),
+                          _TH('Date', flex: 3),
+                          _TH('Odometer', flex: 3),
+                          _TH('Type', flex: 2),
                           _TH('Recorded By', flex: 3),
-                          _TH('Notes',       flex: 3),
+                          _TH('Notes', flex: 3),
                         ],
                       ),
                     ),
@@ -2657,7 +3070,9 @@ class _MeterTabBodyState extends State<_MeterTabBody>
                         padding: const EdgeInsets.only(bottom: 16),
                         itemCount: list.length,
                         itemBuilder: (_, i) => _MeterRow(
-                            reading: list[i], isLast: i == list.length - 1),
+                          reading: list[i],
+                          isLast: i == list.length - 1,
+                        ),
                       ),
                     ),
                   ],
@@ -2678,11 +3093,11 @@ class _MeterRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final km         = reading['readingKm'];
-    final type       = reading['readingType']    as String?;
-    final recordedAt = reading['recordedAt']     as String?;
+    final km = reading['readingKm'];
+    final type = reading['readingType'] as String?;
+    final recordedAt = reading['recordedAt'] as String?;
     final recordedBy = reading['recordedByName'] as String?;
-    final notes      = reading['notes']          as String?;
+    final notes = reading['notes'] as String?;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -2690,28 +3105,36 @@ class _MeterRow extends StatelessWidget {
         border: isLast
             ? null
             : const Border(
-                bottom: BorderSide(color: AppColors.border, width: 0.6)),
+                bottom: BorderSide(color: AppColors.border, width: 0.6),
+              ),
       ),
       child: Row(
         children: [
-          Expanded(flex: 3,
+          Expanded(
+            flex: 3,
             child: Text(
-              recordedAt != null
-                  ? FerosDateUtils.formatDate(recordedAt)
-                  : '—',
+              recordedAt != null ? FerosDateUtils.formatDate(recordedAt) : '—',
               style: AppTextStyles.caption.copyWith(color: AppColors.bodyText),
-            )),
-          Expanded(flex: 3,
+            ),
+          ),
+          Expanded(
+            flex: 3,
             child: Text(
               km != null ? '$km km' : '—',
               style: AppTextStyles.caption.copyWith(
-                  color: AppColors.navy, fontWeight: FontWeight.w600),
-            )),
-          Expanded(flex: 2,
+                color: AppColors.navy,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
             child: type != null
                 ? Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 5, vertical: 2),
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFEFF6FF),
                       borderRadius: BorderRadius.circular(4),
@@ -2726,23 +3149,26 @@ class _MeterRow extends StatelessWidget {
                       ),
                     ),
                   )
-                : Text('—', style: AppTextStyles.caption)),
-          Expanded(flex: 3,
+                : Text('—', style: AppTextStyles.caption),
+          ),
+          Expanded(
+            flex: 3,
             child: Text(
               recordedBy ?? '—',
-              style: AppTextStyles.caption
-                  .copyWith(color: AppColors.mutedText),
+              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-            )),
-          Expanded(flex: 3,
+            ),
+          ),
+          Expanded(
+            flex: 3,
             child: Text(
               notes ?? '—',
-              style: AppTextStyles.caption
-                  .copyWith(color: AppColors.mutedText),
+              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-            )),
+            ),
+          ),
         ],
       ),
     );
@@ -2787,7 +3213,7 @@ class _MeterReadingSheetState extends State<_MeterReadingSheet> {
   @override
   void initState() {
     super.initState();
-    _kmCtrl    = TextEditingController();
+    _kmCtrl = TextEditingController();
     _notesCtrl = TextEditingController();
   }
 
@@ -2803,11 +3229,11 @@ class _MeterReadingSheetState extends State<_MeterReadingSheet> {
     setState(() => _saving = true);
 
     final data = {
-      'vehicleId':   widget.controller.vehicleId,
-      'readingKm':   double.parse(_kmCtrl.text),
+      'vehicleId': widget.controller.vehicleId,
+      'readingKm': double.parse(_kmCtrl.text),
       'readingType': 'GENERAL',
-      'recordedAt':  '${_date}T00:00:00',
-      'notes':       _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+      'recordedAt': '${_date}T00:00:00',
+      'notes': _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
     };
 
     final ok = await widget.controller.createMeterReading(data);
@@ -2816,9 +3242,9 @@ class _MeterReadingSheetState extends State<_MeterReadingSheet> {
       Navigator.pop(context);
     } else {
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to save reading')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to save reading')));
     }
   }
 
@@ -2834,7 +3260,8 @@ class _MeterReadingSheetState extends State<_MeterReadingSheet> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
         child: Form(
@@ -2844,7 +3271,8 @@ class _MeterReadingSheetState extends State<_MeterReadingSheet> {
             children: [
               Center(
                 child: Container(
-                  width: 36, height: 4,
+                  width: 36,
+                  height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
                     color: AppColors.border,
@@ -2852,13 +3280,15 @@ class _MeterReadingSheetState extends State<_MeterReadingSheet> {
                   ),
                 ),
               ),
-              const Text('Add Meter Reading',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    color: AppColors.navy,
-                  )),
+              const Text(
+                'Add Meter Reading',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  color: AppColors.navy,
+                ),
+              ),
               const SizedBox(height: 20),
 
               // Odometer km
@@ -2868,28 +3298,43 @@ class _MeterReadingSheetState extends State<_MeterReadingSheet> {
                     : 'Odometer (km) *',
                 child: TextFormField(
                   controller: _kmCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: InputDecoration(
-                    hintText: lastFmt != null ? 'Enter km > $lastFmt' : 'e.g. 48200',
+                    hintText: lastFmt != null
+                        ? 'Enter km > $lastFmt'
+                        : 'e.g. 48200',
                     hintStyle: const TextStyle(
-                        fontFamily: 'Inter', fontSize: 13, color: AppColors.mutedText),
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      color: AppColors.mutedText,
+                    ),
                     filled: true,
                     fillColor: AppColors.background,
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppColors.border)),
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
                     enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppColors.border)),
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
                     focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(
-                            color: AppColors.navy, width: 1.5)),
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: AppColors.navy,
+                        width: 1.5,
+                      ),
+                    ),
                     errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppColors.error)),
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppColors.error),
+                    ),
                   ),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Required';
@@ -2917,7 +3362,8 @@ class _MeterReadingSheetState extends State<_MeterReadingSheet> {
                       builder: (ctx, child) => Theme(
                         data: Theme.of(ctx).copyWith(
                           colorScheme: const ColorScheme.light(
-                              primary: AppColors.navy),
+                            primary: AppColors.navy,
+                          ),
                         ),
                         child: child!,
                       ),
@@ -2932,18 +3378,22 @@ class _MeterReadingSheetState extends State<_MeterReadingSheet> {
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 11),
+                      horizontal: 12,
+                      vertical: 11,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.background,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.border),
                     ),
-                    child: Text(_date,
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 13,
-                          color: AppColors.bodyText,
-                        )),
+                    child: Text(
+                      _date,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        color: AppColors.bodyText,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -2958,22 +3408,31 @@ class _MeterReadingSheetState extends State<_MeterReadingSheet> {
                   decoration: InputDecoration(
                     hintText: 'Optional',
                     hintStyle: const TextStyle(
-                        fontFamily: 'Inter', fontSize: 13,
-                        color: AppColors.mutedText),
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      color: AppColors.mutedText,
+                    ),
                     filled: true,
                     fillColor: AppColors.background,
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppColors.border)),
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
                     enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppColors.border)),
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
                     focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(
-                            color: AppColors.navy, width: 1.5)),
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: AppColors.navy,
+                        width: 1.5,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -2988,20 +3447,27 @@ class _MeterReadingSheetState extends State<_MeterReadingSheet> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     elevation: 0,
                   ),
                   child: _saving
                       ? const SizedBox(
-                          width: 18, height: 18,
+                          width: 18,
+                          height: 18,
                           child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2))
-                      : const Text('Save Reading',
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Save Reading',
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
-                          )),
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -3025,13 +3491,20 @@ class _GpsNotesTab extends StatelessWidget {
       children: [
         _SectionHeader('GPS Tracking'),
         const SizedBox(height: 8),
-        _InfoSection(title: '', rows: [
-          _IR('Device No.',  v['gpsDeviceNumber']),
-          _IR('IMEI',        v['gpsDeviceImei']),
-          _IR('Provider',    v['gpsProvider']),
-          _IR('Odometer',    v['currentOdometerReading'] != null
-              ? '${v['currentOdometerReading']} km' : null),
-        ]),
+        _InfoSection(
+          title: '',
+          rows: [
+            _IR('Device No.', v['gpsDeviceNumber']),
+            _IR('IMEI', v['gpsDeviceImei']),
+            _IR('Provider', v['gpsProvider']),
+            _IR(
+              'Odometer',
+              v['currentOdometerReading'] != null
+                  ? '${v['currentOdometerReading']} km'
+                  : null,
+            ),
+          ],
+        ),
         if (notes != null && notes.isNotEmpty) ...[
           const SizedBox(height: 20),
           _SectionHeader('Notes'),
@@ -3044,8 +3517,10 @@ class _GpsNotesTab extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.border),
             ),
-            child: Text(notes,
-                style: AppTextStyles.body.copyWith(color: AppColors.bodyText)),
+            child: Text(
+              notes,
+              style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+            ),
           ),
         ],
       ],
@@ -3095,8 +3570,7 @@ class _InfoSection extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
               decoration: const BoxDecoration(
                 color: AppColors.background,
-                borderRadius:
-                    BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
               ),
               child: Text(
                 title.toUpperCase(),
@@ -3112,7 +3586,10 @@ class _InfoSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Column(
               children: rows.asMap().entries.map((e) {
-                return _IRWidget(row: e.value, isLast: e.key == rows.length - 1);
+                return _IRWidget(
+                  row: e.value,
+                  isLast: e.key == rows.length - 1,
+                );
               }).toList(),
             ),
           ),
@@ -3129,7 +3606,7 @@ class _IR {
 }
 
 class _IRWidget extends StatelessWidget {
-  final _IR  row;
+  final _IR row;
   final bool isLast;
   const _IRWidget({required this.row, required this.isLast});
 
@@ -3141,16 +3618,18 @@ class _IRWidget extends StatelessWidget {
         border: isLast
             ? null
             : const Border(
-                bottom: BorderSide(color: AppColors.border, width: 0.6)),
+                bottom: BorderSide(color: AppColors.border, width: 0.6),
+              ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             flex: 4,
-            child: Text(row.label,
-                style: AppTextStyles.caption
-                    .copyWith(color: AppColors.mutedText)),
+            child: Text(
+              row.label,
+              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+            ),
           ),
           Expanded(
             flex: 5,
@@ -3159,7 +3638,9 @@ class _IRWidget extends StatelessWidget {
                   ? row.value.toString()
                   : '—',
               style: AppTextStyles.caption.copyWith(
-                  color: AppColors.bodyText, fontWeight: FontWeight.w500),
+                color: AppColors.bodyText,
+                fontWeight: FontWeight.w500,
+              ),
               textAlign: TextAlign.end,
             ),
           ),
@@ -3192,14 +3673,20 @@ class _TabError extends StatelessWidget {
         children: [
           const Icon(Icons.error_outline, size: 40, color: AppColors.mutedText),
           const SizedBox(height: 10),
-          Text('Failed to load',
-              style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+          Text(
+            'Failed to load',
+            style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+          ),
           const SizedBox(height: 12),
           TextButton(
             onPressed: onRetry,
-            child: const Text('Retry',
-                style: TextStyle(
-                    color: AppColors.navy, fontWeight: FontWeight.w600)),
+            child: const Text(
+              'Retry',
+              style: TextStyle(
+                color: AppColors.navy,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -3209,7 +3696,7 @@ class _TabError extends StatelessWidget {
 
 class _EmptyTabState extends StatelessWidget {
   final IconData icon;
-  final String   message;
+  final String message;
   const _EmptyTabState({required this.icon, required this.message});
 
   @override
@@ -3220,8 +3707,10 @@ class _EmptyTabState extends StatelessWidget {
         children: [
           Icon(icon, size: 40, color: AppColors.border),
           const SizedBox(height: 12),
-          Text(message,
-              style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+          Text(
+            message,
+            style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+          ),
         ],
       ),
     );
@@ -3257,9 +3746,7 @@ class _UploadedDocCard extends StatelessWidget {
           child: Stack(
             children: [
               InteractiveViewer(
-                child: Center(
-                  child: Image.network(url, fit: BoxFit.contain),
-                ),
+                child: Center(child: Image.network(url, fit: BoxFit.contain)),
               ),
               Positioned(
                 top: 40,
@@ -3272,8 +3759,11 @@ class _UploadedDocCard extends StatelessWidget {
                       color: Colors.black54,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Icon(Icons.close,
-                        color: Colors.white, size: 20),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ),
               ),
@@ -3289,19 +3779,21 @@ class _UploadedDocCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final docType    = doc['documentTypeName'] as String? ?? '—';
-    final docNum     = doc['documentNumber']   as String?;
-    final issuerName = doc['issuerName']        as String?;
-    final permitType = doc['permitType']        as String?;
-    final issueDate  = doc['issueDate']         as String?;
-    final expiryDate = doc['expiryDate']        as String?;
-    final fileUrl    = doc['fileUrl']           as String?;
+    final docType = doc['documentTypeName'] as String? ?? '—';
+    final docNum = doc['documentNumber'] as String?;
+    final issuerName = doc['issuerName'] as String?;
+    final permitType = doc['permitType'] as String?;
+    final issueDate = doc['issueDate'] as String?;
+    final expiryDate = doc['expiryDate'] as String?;
+    final fileUrl = doc['fileUrl'] as String?;
 
     final (expiryColor, expiryBg, expiryText) = _expiryStyle(expiryDate);
 
     final dateParts = <String>[];
-    if (issueDate  != null) dateParts.add('Issued: ${FerosDateUtils.formatDate(issueDate)}');
-    if (expiryDate != null) dateParts.add('Expires: ${FerosDateUtils.formatDate(expiryDate)}');
+    if (issueDate != null)
+      dateParts.add('Issued: ${FerosDateUtils.formatDate(issueDate)}');
+    if (expiryDate != null)
+      dateParts.add('Expires: ${FerosDateUtils.formatDate(expiryDate)}');
     final dateLine = dateParts.join(' · ');
 
     return Container(
@@ -3323,8 +3815,11 @@ class _UploadedDocCard extends StatelessWidget {
               color: AppColors.navy.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.description_outlined,
-                size: 16, color: AppColors.navy),
+            child: const Icon(
+              Icons.description_outlined,
+              size: 16,
+              color: AppColors.navy,
+            ),
           ),
           const SizedBox(width: 12),
           // Content column
@@ -3332,30 +3827,45 @@ class _UploadedDocCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(docType,
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.bodyText)),
+                Text(
+                  docType,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.bodyText,
+                  ),
+                ),
                 if (docNum != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 1),
-                    child: Text('No: $docNum',
-                        style: AppTextStyles.caption
-                            .copyWith(color: AppColors.mutedText)),
+                    child: Text(
+                      'No: $docNum',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.mutedText,
+                      ),
+                    ),
                   ),
                 if (issuerName != null)
-                  Text('Issuer: $issuerName',
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.mutedText)),
+                  Text(
+                    'Issuer: $issuerName',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.mutedText,
+                    ),
+                  ),
                 if (permitType != null)
-                  Text('Type: $permitType',
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.mutedText)),
+                  Text(
+                    'Type: $permitType',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.mutedText,
+                    ),
+                  ),
                 if (dateLine.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
-                    child: Text(dateLine,
-                        style: AppTextStyles.caption
-                            .copyWith(color: AppColors.mutedText)),
+                    child: Text(
+                      dateLine,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.mutedText,
+                      ),
+                    ),
                   ),
                 // Expiry chip below date
                 if (expiryDate != null)
@@ -3363,20 +3873,25 @@ class _UploadedDocCard extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 6),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: expiryBg,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                            color: expiryColor.withValues(alpha: 0.3)),
+                          color: expiryColor.withValues(alpha: 0.3),
+                        ),
                       ),
-                      child: Text(expiryText,
-                          style: TextStyle(
-                            color: expiryColor,
-                            fontFamily: 'Inter',
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          )),
+                      child: Text(
+                        expiryText,
+                        style: TextStyle(
+                          color: expiryColor,
+                          fontFamily: 'Inter',
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                 // View + Delete row
@@ -3390,13 +3905,15 @@ class _UploadedDocCard extends StatelessWidget {
                             onTap: () => _viewFile(context, fileUrl),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.navy.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                    color:
-                                        AppColors.navy.withValues(alpha: 0.2)),
+                                  color: AppColors.navy.withValues(alpha: 0.2),
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -3409,13 +3926,15 @@ class _UploadedDocCard extends StatelessWidget {
                                     color: AppColors.navy,
                                   ),
                                   const SizedBox(width: 3),
-                                  const Text('View',
-                                      style: TextStyle(
-                                        color: AppColors.navy,
-                                        fontFamily: 'Inter',
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                      )),
+                                  const Text(
+                                    'View',
+                                    style: TextStyle(
+                                      color: AppColors.navy,
+                                      fontFamily: 'Inter',
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -3428,18 +3947,22 @@ class _UploadedDocCard extends StatelessWidget {
                                 AlertDialog(
                                   title: const Text('Delete Document'),
                                   content: Text(
-                                      'Delete "$docType"? This cannot be undone.'),
+                                    'Delete "$docType"? This cannot be undone.',
+                                  ),
                                   actions: [
                                     TextButton(
-                                        onPressed: () =>
-                                            Get.back(result: false),
-                                        child: const Text('Cancel')),
+                                      onPressed: () => Get.back(result: false),
+                                      child: const Text('Cancel'),
+                                    ),
                                     TextButton(
-                                        onPressed: () =>
-                                            Get.back(result: true),
-                                        child: const Text('Delete',
-                                            style: TextStyle(
-                                                color: AppColors.error))),
+                                      onPressed: () => Get.back(result: true),
+                                      child: const Text(
+                                        'Delete',
+                                        style: TextStyle(
+                                          color: AppColors.error,
+                                        ),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               );
@@ -3447,10 +3970,13 @@ class _UploadedDocCard extends StatelessWidget {
                             },
                             child: Padding(
                               padding: const EdgeInsets.all(4),
-                              child: Icon(Icons.delete_outline,
-                                  size: 18,
-                                  color: AppColors.mutedText
-                                      .withValues(alpha: 0.6)),
+                              child: Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: AppColors.mutedText.withValues(
+                                  alpha: 0.6,
+                                ),
+                              ),
                             ),
                           ),
                       ],
@@ -3465,13 +3991,33 @@ class _UploadedDocCard extends StatelessWidget {
   }
 
   static (Color, Color, String) _expiryStyle(String? d) {
-    if (d == null) return (AppColors.mutedText, const Color(0xFFF9FAFB), 'No expiry');
+    if (d == null)
+      return (AppColors.mutedText, const Color(0xFFF9FAFB), 'No expiry');
     try {
       final days = DateTime.parse(d).difference(DateTime.now()).inDays;
-      if (days < 0)   return (const Color(0xFFDC2626), const Color(0xFFFEE2E2), 'Expired ${days.abs()}d ago');
-      if (days <= 7)  return (const Color(0xFFEA580C), const Color(0xFFFFF7ED), '${days}d left');
-      if (days <= 30) return (const Color(0xFFD97706), const Color(0xFFFFFBEB), '${days}d left');
-      return              (const Color(0xFF16A34A), const Color(0xFFF0FDF4), 'Valid · ${days}d left');
+      if (days < 0)
+        return (
+          const Color(0xFFDC2626),
+          const Color(0xFFFEE2E2),
+          'Expired ${days.abs()}d ago',
+        );
+      if (days <= 7)
+        return (
+          const Color(0xFFEA580C),
+          const Color(0xFFFFF7ED),
+          '${days}d left',
+        );
+      if (days <= 30)
+        return (
+          const Color(0xFFD97706),
+          const Color(0xFFFFFBEB),
+          '${days}d left',
+        );
+      return (
+        const Color(0xFF16A34A),
+        const Color(0xFFF0FDF4),
+        'Valid · ${days}d left',
+      );
     } catch (_) {
       return (AppColors.mutedText, const Color(0xFFF9FAFB), '—');
     }
@@ -3489,19 +4035,19 @@ class _AddDocumentSheet extends StatefulWidget {
 }
 
 class _AddDocumentSheetState extends State<_AddDocumentSheet> {
-  final _api    = Get.find<ApiClient>();
+  final _api = Get.find<ApiClient>();
   final _upload = Get.find<UploadService>();
 
   bool _loadingTypes = true;
-  bool _uploading    = false;
-  bool _saving       = false;
+  bool _uploading = false;
+  bool _saving = false;
 
   List<Map<String, dynamic>> _docTypes = [];
   Map<String, dynamic>? _selectedType;
 
-  final _docNumCtrl    = TextEditingController();
+  final _docNumCtrl = TextEditingController();
   final _issuerNameCtrl = TextEditingController();
-  final _remarksCtrl   = TextEditingController();
+  final _remarksCtrl = TextEditingController();
   DateTime? _issueDate;
   DateTime? _expiryDate;
   String? _permitType;
@@ -3527,8 +4073,9 @@ class _AddDocumentSheetState extends State<_AddDocumentSheet> {
       final res = await _api.get(ApiEndpoints.documentTypes);
       if (mounted) {
         setState(() {
-          _docTypes = ((res.data as Map<String, dynamic>)['data'] as List? ?? [])
-              .cast<Map<String, dynamic>>();
+          _docTypes =
+              ((res.data as Map<String, dynamic>)['data'] as List? ?? [])
+                  .cast<Map<String, dynamic>>();
           _loadingTypes = false;
         });
       }
@@ -3545,66 +4092,87 @@ class _AddDocumentSheetState extends State<_AddDocumentSheet> {
     setState(() => _uploading = true);
     try {
       final file = File(picked.path);
-      final key  = await _upload.uploadFile(
+      final key = await _upload.uploadFile(
         file,
         folder: 'tenants/images/vehicles/${widget.vehicleId}/documents',
       );
       setState(() {
-        _uploadedFileUrl  = key;
+        _uploadedFileUrl = key;
         _attachedFileName = picked.name;
-        _uploading        = false;
+        _uploading = false;
       });
     } catch (_) {
       if (mounted) {
         setState(() => _uploading = false);
-        Get.snackbar('Error', 'Failed to upload file',
-            snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar(
+          'Error',
+          'Failed to upload file',
+          snackPosition: SnackPosition.BOTTOM,
+        );
       }
     }
   }
 
   Future<void> _save() async {
     if (_selectedType == null) {
-      Get.snackbar('Error', 'Please select a document type',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Please select a document type',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
     setState(() => _saving = true);
     try {
-      final body = <String, dynamic>{
-        'documentTypeId': _selectedType!['id'],
-      };
+      final body = <String, dynamic>{'documentTypeId': _selectedType!['id']};
       if (_docNumCtrl.text.trim().isNotEmpty)
         body['documentNumber'] = _docNumCtrl.text.trim();
       if (_issuerNameCtrl.text.trim().isNotEmpty)
         body['issuerName'] = _issuerNameCtrl.text.trim();
       if (_permitType != null) body['permitType'] = _permitType;
-      if (_issueDate  != null) body['issueDate']  = _fmtDate(_issueDate!);
+      if (_issueDate != null) body['issueDate'] = _fmtDate(_issueDate!);
       if (_expiryDate != null) body['expiryDate'] = _fmtDate(_expiryDate!);
       if (_uploadedFileUrl != null) body['fileUrl'] = _uploadedFileUrl;
       if (_remarksCtrl.text.trim().isNotEmpty)
         body['remarks'] = _remarksCtrl.text.trim();
 
       await _api.post(
-          ApiEndpoints.vehicleDocuments(widget.vehicleId), data: body);
+        ApiEndpoints.vehicleDocuments(widget.vehicleId),
+        data: body,
+      );
 
       Navigator.pop(context);
       widget.onAdded();
     } catch (e) {
-      Get.snackbar('Error', 'Failed to add document',
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error',
+        'Failed to add document',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
   String _fmtDate(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2,'0')}-${d.day.toString().padLeft(2,'0')}';
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   String _fmtDisplay(DateTime d) {
-    const m = ['Jan','Feb','Mar','Apr','May','Jun',
-                'Jul','Aug','Sep','Oct','Nov','Dec'];
-    return '${d.day.toString().padLeft(2,'0')} ${m[d.month-1]} ${d.year}';
+    const m = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${d.day.toString().padLeft(2, '0')} ${m[d.month - 1]} ${d.year}';
   }
 
   Future<DateTime?> _pickDate(DateTime? initial) => showDatePicker(
@@ -3613,8 +4181,9 @@ class _AddDocumentSheetState extends State<_AddDocumentSheet> {
     firstDate: DateTime(2000),
     lastDate: DateTime(2040),
     builder: (ctx, child) => Theme(
-      data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(primary: AppColors.navy)),
+      data: Theme.of(
+        ctx,
+      ).copyWith(colorScheme: const ColorScheme.light(primary: AppColors.navy)),
       child: child!,
     ),
   );
@@ -3627,7 +4196,8 @@ class _AddDocumentSheetState extends State<_AddDocumentSheet> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
         child: Column(
@@ -3635,20 +4205,24 @@ class _AddDocumentSheetState extends State<_AddDocumentSheet> {
           children: [
             Center(
               child: Container(
-                width: 36, height: 4,
+                width: 36,
+                height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(2)),
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-            const Text('Upload Document',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                  color: AppColors.navy,
-                )),
+            const Text(
+              'Upload Document',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+                color: AppColors.navy,
+              ),
+            ),
             const SizedBox(height: 20),
 
             // Doc type
@@ -3671,9 +4245,10 @@ class _AddDocumentSheetState extends State<_AddDocumentSheet> {
 
             // Doc number
             _SheetTextField(
-                label: 'Document Number',
-                ctrl: _docNumCtrl,
-                hint: 'e.g. MH-RC-1234567'),
+              label: 'Document Number',
+              ctrl: _docNumCtrl,
+              hint: 'e.g. MH-RC-1234567',
+            ),
             const SizedBox(height: 14),
 
             // Issuer name (Insurance only)
@@ -3682,9 +4257,10 @@ class _AddDocumentSheetState extends State<_AddDocumentSheet> {
                     .toLowerCase()
                     .contains('insurance')) ...[
               _SheetTextField(
-                  label: 'Insurance Company',
-                  ctrl: _issuerNameCtrl,
-                  hint: 'e.g. HDFC Ergo'),
+                label: 'Insurance Company',
+                ctrl: _issuerNameCtrl,
+                hint: 'e.g. HDFC Ergo',
+              ),
               const SizedBox(height: 14),
             ],
 
@@ -3695,59 +4271,67 @@ class _AddDocumentSheetState extends State<_AddDocumentSheet> {
                     .contains('permit')) ...[
               Text('Permit Type', style: AppTextStyles.label),
               const SizedBox(height: 6),
-              Row(children: [
-                _PermitToggleChip(
-                  label: 'National',
-                  selected: _permitType == 'NATIONAL',
-                  onTap: () => setState(() =>
-                      _permitType = _permitType == 'NATIONAL' ? null : 'NATIONAL'),
-                ),
-                const SizedBox(width: 10),
-                _PermitToggleChip(
-                  label: 'State',
-                  selected: _permitType == 'STATE',
-                  onTap: () => setState(() =>
-                      _permitType = _permitType == 'STATE' ? null : 'STATE'),
-                ),
-              ]),
+              Row(
+                children: [
+                  _PermitToggleChip(
+                    label: 'National',
+                    selected: _permitType == 'NATIONAL',
+                    onTap: () => setState(
+                      () => _permitType = _permitType == 'NATIONAL'
+                          ? null
+                          : 'NATIONAL',
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  _PermitToggleChip(
+                    label: 'State',
+                    selected: _permitType == 'STATE',
+                    onTap: () => setState(
+                      () =>
+                          _permitType = _permitType == 'STATE' ? null : 'STATE',
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 14),
             ],
 
             // Issue + Expiry dates
-            Row(children: [
-              Expanded(
-                child: _SheetDateField(
-                  label: 'Issue Date',
-                  value: _issueDate,
-                  onTap: () async {
-                    final d = await _pickDate(_issueDate);
-                    if (d != null) setState(() => _issueDate = d);
-                  },
-                  display: _issueDate != null
-                      ? _fmtDisplay(_issueDate!)
-                      : null,
+            Row(
+              children: [
+                Expanded(
+                  child: _SheetDateField(
+                    label: 'Issue Date',
+                    value: _issueDate,
+                    onTap: () async {
+                      final d = await _pickDate(_issueDate);
+                      if (d != null) setState(() => _issueDate = d);
+                    },
+                    display: _issueDate != null
+                        ? _fmtDisplay(_issueDate!)
+                        : null,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _SheetDateField(
-                  label: 'Expiry Date',
-                  value: _expiryDate,
-                  onTap: () async {
-                    final d = await _pickDate(_expiryDate);
-                    if (d != null) setState(() => _expiryDate = d);
-                  },
-                  display: _expiryDate != null
-                      ? _fmtDisplay(_expiryDate!)
-                      : null,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _SheetDateField(
+                    label: 'Expiry Date',
+                    value: _expiryDate,
+                    onTap: () async {
+                      final d = await _pickDate(_expiryDate);
+                      if (d != null) setState(() => _expiryDate = d);
+                    },
+                    display: _expiryDate != null
+                        ? _fmtDisplay(_expiryDate!)
+                        : null,
+                  ),
                 ),
-              ),
-            ]),
+              ],
+            ),
             const SizedBox(height: 14),
 
             // File attachment
-            Text('Attach File',
-                style: AppTextStyles.label),
+            Text('Attach File', style: AppTextStyles.label),
             const SizedBox(height: 6),
             GestureDetector(
               onTap: _uploading ? null : _pickFile,
@@ -3763,53 +4347,64 @@ class _AddDocumentSheetState extends State<_AddDocumentSheet> {
                         : AppColors.border,
                   ),
                 ),
-                child: Row(children: [
-                  Expanded(
-                    child: _uploading
-                        ? const Row(children: [
-                            SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _uploading
+                          ? const Row(
+                              children: [
+                                SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: AppColors.navy)),
-                            SizedBox(width: 8),
-                            Text('Uploading…',
-                                style: TextStyle(
+                                    color: AppColors.navy,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Uploading…',
+                                  style: TextStyle(
                                     fontFamily: 'Inter',
                                     fontSize: 13,
-                                    color: AppColors.mutedText)),
-                          ])
-                        : Text(
-                            _attachedFileName ?? 'Tap to pick image from gallery',
-                            style: AppTextStyles.body.copyWith(
-                              color: _attachedFileName != null
-                                  ? AppColors.bodyText
-                                  : AppColors.hintText,
+                                    color: AppColors.mutedText,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              _attachedFileName ??
+                                  'Tap to pick image from gallery',
+                              style: AppTextStyles.body.copyWith(
+                                color: _attachedFileName != null
+                                    ? AppColors.bodyText
+                                    : AppColors.hintText,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                  ),
-                  Icon(
-                    _attachedFileName != null
-                        ? Icons.check_circle_outline
-                        : Icons.attach_file_outlined,
-                    size: 18,
-                    color: _attachedFileName != null
-                        ? AppColors.navy
-                        : AppColors.mutedText,
-                  ),
-                ]),
+                    ),
+                    Icon(
+                      _attachedFileName != null
+                          ? Icons.check_circle_outline
+                          : Icons.attach_file_outlined,
+                      size: 18,
+                      color: _attachedFileName != null
+                          ? AppColors.navy
+                          : AppColors.mutedText,
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 14),
 
             // Remarks
             _SheetTextField(
-                label: 'Remarks',
-                ctrl: _remarksCtrl,
-                hint: 'Optional remarks',
-                maxLines: 2),
+              label: 'Remarks',
+              ctrl: _remarksCtrl,
+              hint: 'Optional remarks',
+              maxLines: 2,
+            ),
             const SizedBox(height: 24),
 
             SizedBox(
@@ -3822,18 +4417,26 @@ class _AddDocumentSheetState extends State<_AddDocumentSheet> {
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 child: _saving
                     ? const SizedBox(
-                        width: 18, height: 18,
+                        width: 18,
+                        height: 18,
                         child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : const Text('Save Document',
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Save Document',
                         style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14)),
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
               ),
             ),
           ],
@@ -3857,33 +4460,40 @@ class _SheetTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: AppTextStyles.label),
-      const SizedBox(height: 6),
-      TextField(
-        controller: ctrl,
-        maxLines: maxLines,
-        style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
-          filled: true,
-          fillColor: AppColors.background,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          border: OutlineInputBorder(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTextStyles.label),
+        const SizedBox(height: 6),
+        TextField(
+          controller: ctrl,
+          maxLines: maxLines,
+          style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
+            filled: true,
+            fillColor: AppColors.background,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
+            border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.border)),
-          enabledBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.border)),
-          focusedBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide:
-                  const BorderSide(color: AppColors.navy, width: 1.5)),
+              borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
+            ),
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 }
 
@@ -3901,36 +4511,44 @@ class _SheetDateField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: AppTextStyles.label),
-      const SizedBox(height: 6),
-      GestureDetector(
-        onTap: onTap,
-        child: Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: AppColors.background,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(children: [
-            Expanded(
-              child: Text(
-                display ?? 'Select date',
-                style: AppTextStyles.body.copyWith(
-                  color: display != null
-                      ? AppColors.bodyText
-                      : AppColors.hintText,
-                ),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTextStyles.label),
+        const SizedBox(height: 6),
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.border),
             ),
-            const Icon(Icons.calendar_today_outlined,
-                size: 15, color: AppColors.mutedText),
-          ]),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    display ?? 'Select date',
+                    style: AppTextStyles.body.copyWith(
+                      color: display != null
+                          ? AppColors.bodyText
+                          : AppColors.hintText,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 15,
+                  color: AppColors.mutedText,
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 }
 
@@ -3942,19 +4560,27 @@ class _SheetFieldShimmer extends StatelessWidget {
     return Shimmer.fromColors(
       baseColor: const Color(0xFFE2E8F0),
       highlightColor: const Color(0xFFF8FAFC),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-            width: 120, height: 13,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 120,
+            height: 13,
             decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4))),
-        const SizedBox(height: 6),
-        Container(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
             height: 48,
             decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8))),
-      ]),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -3964,8 +4590,11 @@ class _PermitToggleChip extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  const _PermitToggleChip(
-      {required this.label, required this.selected, required this.onTap});
+  const _PermitToggleChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -3977,7 +4606,8 @@ class _PermitToggleChip extends StatelessWidget {
           color: selected ? AppColors.navy : AppColors.background,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-              color: selected ? AppColors.navy : AppColors.border),
+            color: selected ? AppColors.navy : AppColors.border,
+          ),
         ),
         child: Text(
           label,
@@ -4021,7 +4651,8 @@ class _ImagesTabBodyState extends State<_ImagesTabBody>
       final state = widget.controller.imagesState.value;
       if (state == ViewState.loading) {
         return const Center(
-            child: CircularProgressIndicator(color: AppColors.navy));
+          child: CircularProgressIndicator(color: AppColors.navy),
+        );
       }
       if (state == ViewState.error) {
         return _TabError(onRetry: widget.controller.retryImages);
@@ -4054,9 +4685,9 @@ class _ImageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final url   = image['imageUrl']   as String?;
-    final label = image['imageType']  as String? ?? 'Image';
-    final date  = image['createdAt']  as String?;
+    final url = image['imageUrl'] as String?;
+    final label = image['imageType'] as String? ?? 'Image';
+    final date = image['createdAt'] as String?;
 
     return Container(
       decoration: BoxDecoration(
@@ -4069,22 +4700,29 @@ class _ImageCard extends StatelessWidget {
         children: [
           Expanded(
             child: ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(9)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(9),
+              ),
               child: url != null
                   ? Image.network(
                       url,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         color: AppColors.background,
-                        child: const Icon(Icons.broken_image_outlined,
-                            size: 32, color: AppColors.border),
+                        child: const Icon(
+                          Icons.broken_image_outlined,
+                          size: 32,
+                          color: AppColors.border,
+                        ),
                       ),
                     )
                   : Container(
                       color: AppColors.background,
-                      child: const Icon(Icons.photo_outlined,
-                          size: 32, color: AppColors.border),
+                      child: const Icon(
+                        Icons.photo_outlined,
+                        size: 32,
+                        color: AppColors.border,
+                      ),
                     ),
             ),
           ),
@@ -4093,17 +4731,22 @@ class _ImageCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.caption.copyWith(
-                        color: AppColors.bodyText,
-                        fontWeight: FontWeight.w600)),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.bodyText,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 if (date != null)
                   Text(
                     FerosDateUtils.formatDate(date),
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.mutedText, fontSize: 10),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.mutedText,
+                      fontSize: 10,
+                    ),
                   ),
               ],
             ),

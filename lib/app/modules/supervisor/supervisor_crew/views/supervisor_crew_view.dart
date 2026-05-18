@@ -25,10 +25,9 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
             fontSize: 16,
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: Colors.white, size: 18),
-          onPressed: Get.back,
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
         ),
       ),
       body: Column(
@@ -42,10 +41,14 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
               style: AppTextStyles.body,
               decoration: InputDecoration(
                 hintText: 'Search by name or phone…',
-                hintStyle:
-                    AppTextStyles.body.copyWith(color: AppColors.mutedText),
-                prefixIcon: const Icon(Icons.search,
-                    color: AppColors.mutedText, size: 20),
+                hintStyle: AppTextStyles.body.copyWith(
+                  color: AppColors.mutedText,
+                ),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: AppColors.mutedText,
+                  size: 20,
+                ),
                 filled: true,
                 fillColor: AppColors.background,
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -59,8 +62,10 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide:
-                      const BorderSide(color: AppColors.navy, width: 1.5),
+                  borderSide: const BorderSide(
+                    color: AppColors.navy,
+                    width: 1.5,
+                  ),
                 ),
               ),
             ),
@@ -72,15 +77,15 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
               return const SizedBox.shrink();
             }
             final roleOptions = [
-              _RF('ALL',     'All',      null),
-              _RF('DRIVER',  'Drivers',  controller.driverCount),
+              _RF('ALL', 'All', null),
+              _RF('DRIVER', 'Drivers', controller.driverCount),
               _RF('CLEANER', 'Cleaners', controller.cleanerCount),
             ];
             final statusOptions = [
-              _RF('ALL',       'All',       null),
+              _RF('ALL', 'All', null),
               _RF('AVAILABLE', 'Available', controller.availableCount),
-              _RF('ON_TRIP',   'On Trip',   controller.onTripCount),
-              _RF('INACTIVE',  'Inactive',  null),
+              _RF('ON_TRIP', 'On Trip', controller.onTripCount),
+              _RF('INACTIVE', 'Inactive', null),
             ];
             return Container(
               color: AppColors.surface,
@@ -94,13 +99,13 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: roleOptions
-                          .map((opt) => _FilterChip(
-                                opt: opt,
-                                selected:
-                                    controller.roleFilter.value == opt.key,
-                                onTap: () =>
-                                    controller.onRoleFilter(opt.key),
-                              ))
+                          .map(
+                            (opt) => _FilterChip(
+                              opt: opt,
+                              selected: controller.roleFilter.value == opt.key,
+                              onTap: () => controller.onRoleFilter(opt.key),
+                            ),
+                          )
                           .toList(),
                     ),
                   ),
@@ -111,14 +116,15 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: statusOptions
-                          .map((opt) => _FilterChip(
-                                opt: opt,
-                                selected:
-                                    controller.statusFilter.value == opt.key,
-                                onTap: () =>
-                                    controller.onStatusFilter(opt.key),
-                                activeColor: _statusChipColor(opt.key),
-                              ))
+                          .map(
+                            (opt) => _FilterChip(
+                              opt: opt,
+                              selected:
+                                  controller.statusFilter.value == opt.key,
+                              onTap: () => controller.onStatusFilter(opt.key),
+                              activeColor: _statusChipColor(opt.key),
+                            ),
+                          )
                           .toList(),
                     ),
                   ),
@@ -142,12 +148,18 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.error_outline,
-                          size: 48, color: AppColors.error),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: AppColors.error,
+                      ),
                       const SizedBox(height: 12),
-                      Text('Failed to load staff',
-                          style: AppTextStyles.body
-                              .copyWith(color: AppColors.mutedText)),
+                      Text(
+                        'Failed to load staff',
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.mutedText,
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: controller.fetchCrew,
@@ -155,7 +167,8 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
                           backgroundColor: AppColors.navy,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                         child: const Text('Retry'),
                       ),
@@ -170,12 +183,18 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.badge_outlined,
-                          size: 52, color: AppColors.mutedText),
+                      const Icon(
+                        Icons.badge_outlined,
+                        size: 52,
+                        color: AppColors.mutedText,
+                      ),
                       const SizedBox(height: 12),
-                      Text('No staff found',
-                          style: AppTextStyles.body
-                              .copyWith(color: AppColors.mutedText)),
+                      Text(
+                        'No staff found',
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.mutedText,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -206,10 +225,14 @@ class _RF {
 
 Color _statusChipColor(String key) {
   switch (key) {
-    case 'AVAILABLE': return const Color(0xFF16A34A);
-    case 'ON_TRIP':   return const Color(0xFFEA580C);
-    case 'INACTIVE':  return const Color(0xFF9CA3AF);
-    default:          return AppColors.navy;
+    case 'AVAILABLE':
+      return const Color(0xFF16A34A);
+    case 'ON_TRIP':
+      return const Color(0xFFEA580C);
+    case 'INACTIVE':
+      return const Color(0xFF9CA3AF);
+    default:
+      return AppColors.navy;
   }
 }
 
@@ -246,15 +269,13 @@ class _FilterChip extends StatelessWidget {
               opt.label,
               style: AppTextStyles.caption.copyWith(
                 color: selected ? Colors.white : AppColors.bodyText,
-                fontWeight:
-                    selected ? FontWeight.w600 : FontWeight.w400,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
               ),
             ),
             if (opt.count != null) ...[
               const SizedBox(width: 5),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                 decoration: BoxDecoration(
                   color: selected
                       ? Colors.white.withValues(alpha: 0.25)
@@ -286,14 +307,14 @@ class _CrewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name        = member['name']             as String? ?? '—';
-    final phone       = member['phone']            as String? ?? '';
-    final role        = member['role']             as String? ?? '';
-    final designation = member['designationName']  as String?;
-    final isActive    = member['isActive']         as bool?   ?? true;
-    final isAssigned  = member['isAssigned']       as bool?   ?? false;
-    final orderNum    = member['activeOrderNumber'] as String?;
-    final trips       = member['completedTripsCount'] ?? 0;
+    final name = member['name'] as String? ?? '—';
+    final phone = member['phone'] as String? ?? '';
+    final role = member['role'] as String? ?? '';
+    final designation = member['designationName'] as String?;
+    final isActive = member['isActive'] as bool? ?? true;
+    final isAssigned = member['isAssigned'] as bool? ?? false;
+    final orderNum = member['activeOrderNumber'] as String?;
+    final trips = member['completedTripsCount'] ?? 0;
 
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
 
@@ -312,22 +333,10 @@ class _CrewCard extends StatelessWidget {
           );
 
     final (statusBg, statusColor, statusLabel) = !isActive
-        ? (
-            const Color(0xFFF3F4F6),
-            const Color(0xFF9CA3AF),
-            'Inactive',
-          )
+        ? (const Color(0xFFF3F4F6), const Color(0xFF9CA3AF), 'Inactive')
         : isAssigned
-            ? (
-                const Color(0xFFFFF7ED),
-                const Color(0xFFEA580C),
-                'On Trip',
-              )
-            : (
-                const Color(0xFFF0FDF4),
-                const Color(0xFF16A34A),
-                'Available',
-              );
+        ? (const Color(0xFFFFF7ED), const Color(0xFFEA580C), 'On Trip')
+        : (const Color(0xFFF0FDF4), const Color(0xFF16A34A), 'Available');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -395,7 +404,9 @@ class _CrewCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: roleBg,
                             borderRadius: BorderRadius.circular(20),
@@ -417,23 +428,36 @@ class _CrewCard extends StatelessWidget {
                     // Phone + designation
                     Row(
                       children: [
-                        const Icon(Icons.phone_outlined,
-                            size: 11, color: AppColors.mutedText),
+                        const Icon(
+                          Icons.phone_outlined,
+                          size: 11,
+                          color: AppColors.mutedText,
+                        ),
                         const SizedBox(width: 3),
-                        Text(phone,
-                            style: AppTextStyles.caption
-                                .copyWith(color: AppColors.mutedText)),
+                        Text(
+                          phone,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.mutedText,
+                          ),
+                        ),
                         if (designation != null) ...[
                           const SizedBox(width: 8),
-                          const Text('·',
-                              style: TextStyle(
-                                  color: AppColors.mutedText, fontSize: 10)),
+                          const Text(
+                            '·',
+                            style: TextStyle(
+                              color: AppColors.mutedText,
+                              fontSize: 10,
+                            ),
+                          ),
                           const SizedBox(width: 4),
                           Flexible(
-                            child: Text(designation,
-                                style: AppTextStyles.caption
-                                    .copyWith(color: AppColors.mutedText),
-                                overflow: TextOverflow.ellipsis),
+                            child: Text(
+                              designation,
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.mutedText,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ],
@@ -443,13 +467,17 @@ class _CrewCard extends StatelessWidget {
                     // Trips count
                     Row(
                       children: [
-                        const Icon(Icons.route_outlined,
-                            size: 12, color: AppColors.mutedText),
+                        const Icon(
+                          Icons.route_outlined,
+                          size: 12,
+                          color: AppColors.mutedText,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           '$trips trip${trips != 1 ? 's' : ''} completed',
-                          style: AppTextStyles.caption
-                              .copyWith(color: AppColors.mutedText),
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.mutedText,
+                          ),
                         ),
                       ],
                     ),
@@ -460,7 +488,9 @@ class _CrewCard extends StatelessWidget {
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: statusBg,
                             borderRadius: BorderRadius.circular(20),
@@ -506,10 +536,14 @@ class _CrewCard extends StatelessWidget {
                       color: AppColors.success.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                       border: Border.all(
-                          color: AppColors.success.withValues(alpha: 0.3)),
+                        color: AppColors.success.withValues(alpha: 0.3),
+                      ),
                     ),
-                    child: const Icon(Icons.call,
-                        color: AppColors.success, size: 18),
+                    child: const Icon(
+                      Icons.call,
+                      color: AppColors.success,
+                      size: 18,
+                    ),
                   ),
                 ),
               ],

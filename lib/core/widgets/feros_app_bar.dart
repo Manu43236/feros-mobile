@@ -32,13 +32,22 @@ class FerosAppBar extends StatelessWidget implements PreferredSizeWidget {
         statusBarIconBrightness: Brightness.light,
       ),
       automaticallyImplyLeading: false,
-      leading: leading ?? (showBack
-          ? IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.white, size: 20),
-              onPressed: onBack ?? () => Get.back(),
-            )
-          : null),
-      title: Text(title, style: AppTextStyles.heading4.copyWith(color: AppColors.white)),
+      leading:
+          leading ??
+          (showBack
+              ? GestureDetector(
+                  onTap: onBack ?? Get.back,
+                  child: const Icon(
+                    Icons.arrow_back_ios,
+                    color: AppColors.white,
+                    size: 18,
+                  ),
+                )
+              : null),
+      title: Text(
+        title,
+        style: AppTextStyles.heading4.copyWith(color: AppColors.white),
+      ),
       actions: actions,
     );
   }

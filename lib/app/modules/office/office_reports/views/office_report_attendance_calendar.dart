@@ -18,7 +18,7 @@ class _OfficeReportAttendanceCalendarState
     extends State<OfficeReportAttendanceCalendar> {
   final _api = Get.find<ApiClient>();
 
-  int _year  = DateTime.now().year;
+  int _year = DateTime.now().year;
   int _month = DateTime.now().month;
 
   bool _loading = true;
@@ -28,10 +28,16 @@ class _OfficeReportAttendanceCalendarState
   String _search = '';
 
   @override
-  void initState() { super.initState(); _fetch(); }
+  void initState() {
+    super.initState();
+    _fetch();
+  }
 
   Future<void> _fetch() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final res = await _api.get(
         ApiEndpoints.reportAttendanceCalendar,
@@ -40,8 +46,7 @@ class _OfficeReportAttendanceCalendarState
       final d = (res.data as Map?)?['data'] as Map<String, dynamic>? ?? {};
       setState(() {
         _staff = (d['staff'] as List? ?? []).cast<Map<String, dynamic>>();
-        _workingDays = (d['workingDays'] as List? ?? [])
-            .cast<int>()..sort();
+        _workingDays = (d['workingDays'] as List? ?? []).cast<int>()..sort();
         if (_workingDays.isEmpty) {
           // Fallback: generate days in month
           final daysInMonth = DateTime(_year, _month + 1, 0).day;
@@ -50,14 +55,20 @@ class _OfficeReportAttendanceCalendarState
         _loading = false;
       });
     } catch (e) {
-      setState(() { _loading = false; _error = e.toString(); });
+      setState(() {
+        _loading = false;
+        _error = e.toString();
+      });
     }
   }
 
   void _prevMonth() {
     setState(() {
       _month--;
-      if (_month < 1) { _month = 12; _year--; }
+      if (_month < 1) {
+        _month = 12;
+        _year--;
+      }
     });
     _fetch();
   }
@@ -67,7 +78,10 @@ class _OfficeReportAttendanceCalendarState
     if (_year >= now.year && _month >= now.month) return;
     setState(() {
       _month++;
-      if (_month > 12) { _month = 1; _year++; }
+      if (_month > 12) {
+        _month = 1;
+        _year++;
+      }
     });
     _fetch();
   }
@@ -75,9 +89,13 @@ class _OfficeReportAttendanceCalendarState
   List<Map<String, dynamic>> get _filtered {
     if (_search.isEmpty) return _staff;
     final q = _search.toLowerCase();
-    return _staff.where((s) =>
-        (s['name'] as String? ?? '').toLowerCase().contains(q) ||
-        (s['role'] as String? ?? '').toLowerCase().contains(q)).toList();
+    return _staff
+        .where(
+          (s) =>
+              (s['name'] as String? ?? '').toLowerCase().contains(q) ||
+              (s['role'] as String? ?? '').toLowerCase().contains(q),
+        )
+        .toList();
   }
 
   @override
@@ -87,19 +105,31 @@ class _OfficeReportAttendanceCalendarState
       appBar: AppBar(
         backgroundColor: AppColors.orange,
         foregroundColor: Colors.white,
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+        ),
         title: const Text('Attendance Calendar'),
-        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _fetch)],
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetch),
+        ],
       ),
       body: Column(
         children: [
           _MonthPicker(
-            year: _year, month: _month,
-            onPrev: _prevMonth, onNext: _nextMonth,
+            year: _year,
+            month: _month,
+            onPrev: _prevMonth,
+            onNext: _nextMonth,
           ),
           if (!_loading && _staff.isNotEmpty)
             ReportSummaryStrip.items([
               (label: 'Staff', value: '${_staff.length}', color: null),
-              (label: 'Working Days', value: '${_workingDays.length}', color: null),
+              (
+                label: 'Working Days',
+                value: '${_workingDays.length}',
+                color: null,
+              ),
             ]),
           ReportSearchBar(
             hint: 'Search staff…',
@@ -109,14 +139,12 @@ class _OfficeReportAttendanceCalendarState
             child: _loading
                 ? const ReportLoadingList()
                 : _error != null
-                    ? ReportErrorState(onRetry: _fetch)
-                    : _filtered.isEmpty
-                        ? const ReportEmptyState(
-                            message: 'No attendance data for this month')
-                        : _AttendanceGrid(
-                            staff: _filtered,
-                            workingDays: _workingDays,
-                          ),
+                ? ReportErrorState(onRetry: _fetch)
+                : _filtered.isEmpty
+                ? const ReportEmptyState(
+                    message: 'No attendance data for this month',
+                  )
+                : _AttendanceGrid(staff: _filtered, workingDays: _workingDays),
           ),
         ],
       ),
@@ -130,13 +158,26 @@ class _MonthPicker extends StatelessWidget {
   final VoidCallback onPrev;
   final VoidCallback onNext;
   const _MonthPicker({
-    required this.year, required this.month,
-    required this.onPrev, required this.onNext,
+    required this.year,
+    required this.month,
+    required this.onPrev,
+    required this.onNext,
   });
 
   static const _months = [
-    '', 'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    '',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   @override
@@ -151,7 +192,7 @@ class _MonthPicker extends StatelessWidget {
         children: [
           IconButton(
             onPressed: onPrev,
-            icon: const Icon(Icons.chevron_left, size: 22),
+            icon: const Icon(Icons.arrow_back_ios, size: 22),
             padding: EdgeInsets.zero,
             visualDensity: VisualDensity.compact,
           ),
@@ -159,14 +200,18 @@ class _MonthPicker extends StatelessWidget {
             child: Text(
               '${_months[month]} $year',
               textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium
-                  .copyWith(fontWeight: FontWeight.w700),
+              style: AppTextStyles.bodyMedium.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           IconButton(
             onPressed: isCurrentOrFuture ? null : onNext,
-            icon: Icon(Icons.chevron_right, size: 22,
-                color: isCurrentOrFuture ? AppColors.border : null),
+            icon: Icon(
+              Icons.chevron_right,
+              size: 22,
+              color: isCurrentOrFuture ? AppColors.border : null,
+            ),
             padding: EdgeInsets.zero,
             visualDensity: VisualDensity.compact,
           ),
@@ -201,10 +246,11 @@ class _AttendanceGrid extends StatelessWidget {
           const Divider(height: 1),
           const SizedBox(height: 4),
           ...staff.map((s) {
-            final name       = s['name'] as String? ?? '—';
-            final role       = s['role'] as String? ?? '';
-            final attendance = (s['attendance'] as Map?)
-                ?.map((k, v) => MapEntry(int.tryParse(k.toString()) ?? 0, v));
+            final name = s['name'] as String? ?? '—';
+            final role = s['role'] as String? ?? '';
+            final attendance = (s['attendance'] as Map?)?.map(
+              (k, v) => MapEntry(int.tryParse(k.toString()) ?? 0, v),
+            );
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 4),
@@ -217,12 +263,18 @@ class _AttendanceGrid extends StatelessWidget {
                       Text(
                         name.length > 12 ? '${name.substring(0, 12)}…' : name,
                         style: AppTextStyles.caption.copyWith(
-                            fontWeight: FontWeight.w600, fontSize: 11),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
-                      Text(_roleShort(role),
-                          style: AppTextStyles.caption.copyWith(
-                              color: AppColors.mutedText, fontSize: 9)),
+                      Text(
+                        _roleShort(role),
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.mutedText,
+                          fontSize: 9,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -235,12 +287,15 @@ class _AttendanceGrid extends StatelessWidget {
           }),
           const SizedBox(height: 12),
           // Legend
-          Wrap(spacing: 12, children: [
-            _LegendItem(AppColors.success, 'Present'),
-            _LegendItem(AppColors.error, 'Absent'),
-            _LegendItem(AppColors.warning, 'Leave'),
-            _LegendItem(AppColors.border, 'Holiday'),
-          ]),
+          Wrap(
+            spacing: 12,
+            children: [
+              _LegendItem(AppColors.success, 'Present'),
+              _LegendItem(AppColors.error, 'Absent'),
+              _LegendItem(AppColors.warning, 'Leave'),
+              _LegendItem(AppColors.border, 'Holiday'),
+            ],
+          ),
         ],
       ),
     );
@@ -248,8 +303,10 @@ class _AttendanceGrid extends StatelessWidget {
 
   static String _roleShort(String role) {
     final map = {
-      'DRIVER': 'Driver', 'CLEANER': 'Cleaner',
-      'SERVICE_MEN': 'Service', 'OFFICE_STAFF': 'Office',
+      'DRIVER': 'Driver',
+      'CLEANER': 'Cleaner',
+      'SERVICE_MEN': 'Service',
+      'OFFICE_STAFF': 'Office',
       'SUPERVISOR': 'Supervisor',
     };
     return map[role] ?? role;
@@ -284,11 +341,15 @@ class _DayHeader extends StatelessWidget {
   const _DayHeader(this.day);
   @override
   Widget build(BuildContext context) {
-    return Text(day,
-        textAlign: TextAlign.center,
-        style: AppTextStyles.caption.copyWith(
-            color: AppColors.mutedText, fontSize: 10,
-            fontWeight: FontWeight.w600));
+    return Text(
+      day,
+      textAlign: TextAlign.center,
+      style: AppTextStyles.caption.copyWith(
+        color: AppColors.mutedText,
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+      ),
+    );
   }
 }
 
@@ -299,10 +360,11 @@ class _AttendanceCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _color(status);
-    final icon  = _icon(status);
+    final icon = _icon(status);
 
     return Container(
-      width: 16, height: 16,
+      width: 16,
+      height: 16,
       margin: const EdgeInsets.symmetric(vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.2),
@@ -315,21 +377,31 @@ class _AttendanceCell extends StatelessWidget {
 
   Color _color(String? s) {
     switch (s) {
-      case 'PRESENT': return AppColors.success;
-      case 'ABSENT':  return AppColors.error;
-      case 'LEAVE':   return AppColors.warning;
-      case 'HOLIDAY': return AppColors.border;
-      default:        return AppColors.background;
+      case 'PRESENT':
+        return AppColors.success;
+      case 'ABSENT':
+        return AppColors.error;
+      case 'LEAVE':
+        return AppColors.warning;
+      case 'HOLIDAY':
+        return AppColors.border;
+      default:
+        return AppColors.background;
     }
   }
 
   IconData _icon(String? s) {
     switch (s) {
-      case 'PRESENT': return Icons.check;
-      case 'ABSENT':  return Icons.close;
-      case 'LEAVE':   return Icons.beach_access;
-      case 'HOLIDAY': return Icons.star;
-      default:        return Icons.remove;
+      case 'PRESENT':
+        return Icons.check;
+      case 'ABSENT':
+        return Icons.close;
+      case 'LEAVE':
+        return Icons.beach_access;
+      case 'HOLIDAY':
+        return Icons.star;
+      default:
+        return Icons.remove;
     }
   }
 }
@@ -341,19 +413,27 @@ class _LegendItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(
-        width: 12, height: 12,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(3),
-          border: Border.all(color: color.withValues(alpha: 0.4)),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(3),
+            border: Border.all(color: color.withValues(alpha: 0.4)),
+          ),
         ),
-      ),
-      const SizedBox(width: 4),
-      Text(label,
+        const SizedBox(width: 4),
+        Text(
+          label,
           style: AppTextStyles.caption.copyWith(
-              color: AppColors.mutedText, fontSize: 10)),
-    ]);
+            color: AppColors.mutedText,
+            fontSize: 10,
+          ),
+        ),
+      ],
+    );
   }
 }

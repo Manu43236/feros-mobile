@@ -23,23 +23,27 @@ class OfficePayrollView extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: AppColors.navy,
           elevation: 0,
-          leading: IconButton(
-            onPressed: Get.back,
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          leading: GestureDetector(
+            onTap: Get.back,
+            child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
           ),
-          title: const Text('Payroll',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-                color: Colors.white,
-              )),
+          title: const Text(
+            'Payroll',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: Colors.white,
+            ),
+          ),
           bottom: TabBar(
             indicatorColor: Colors.white,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white.withValues(alpha: 0.55),
-            labelStyle: AppTextStyles.caption
-                .copyWith(fontWeight: FontWeight.w600, fontSize: 12),
+            labelStyle: AppTextStyles.caption.copyWith(
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
             tabs: const [
               Tab(text: 'Payrolls'),
               Tab(text: 'Advances'),
@@ -91,7 +95,9 @@ class _PayrollsTab extends StatelessWidget {
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 180),
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 7),
+                              horizontal: 14,
+                              vertical: 7,
+                            ),
                             decoration: BoxDecoration(
                               color: active
                                   ? AppColors.navy
@@ -103,15 +109,17 @@ class _PayrollsTab extends StatelessWidget {
                                     : AppColors.border,
                               ),
                             ),
-                            child: Text(label,
-                                style: AppTextStyles.caption.copyWith(
-                                  color: active
-                                      ? Colors.white
-                                      : AppColors.mutedText,
-                                  fontWeight: active
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
-                                )),
+                            child: Text(
+                              label,
+                              style: AppTextStyles.caption.copyWith(
+                                color: active
+                                    ? Colors.white
+                                    : AppColors.mutedText,
+                                fontWeight: active
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
+                            ),
                           ),
                         ),
                       );
@@ -126,51 +134,70 @@ class _PayrollsTab extends StatelessWidget {
                 final s = controller.payrollState.value;
                 if (s == ViewState.loading) {
                   return const Center(
-                      child:
-                          CircularProgressIndicator(color: AppColors.navy));
+                    child: CircularProgressIndicator(color: AppColors.navy),
+                  );
                 }
                 if (s == ViewState.error) {
                   return Center(
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.error_outline,
-                          size: 48, color: AppColors.error),
-                      const SizedBox(height: 12),
-                      Text('Failed to load payrolls',
-                          style: AppTextStyles.body
-                              .copyWith(color: AppColors.mutedText)),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: controller.fetchPayrolls,
-                        style: ElevatedButton.styleFrom(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: AppColors.error,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Failed to load payrolls',
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.mutedText,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: controller.fetchPayrolls,
+                          style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.navy,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8))),
-                        child: const Text('Retry'),
-                      ),
-                    ]),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
                   );
                 }
                 final list = controller.filteredPayrolls;
                 if (list.isEmpty) {
                   return const Center(
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.payments_outlined,
-                          size: 52, color: AppColors.mutedText),
-                      SizedBox(height: 16),
-                      Text('No payrolls found',
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.payments_outlined,
+                          size: 52,
+                          color: AppColors.mutedText,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'No payrolls found',
                           style: TextStyle(
-                              fontFamily: 'Inter',
-                              color: AppColors.mutedText)),
-                    ]),
+                            fontFamily: 'Inter',
+                            color: AppColors.mutedText,
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 }
                 return RefreshIndicator(
                   color: AppColors.navy,
                   onRefresh: controller.fetchPayrolls,
                   child: ListView.builder(
-                    padding:
-                        const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                     itemCount: list.length,
                     itemBuilder: (_, i) => _PayrollCard(
                       p: list[i],
@@ -195,11 +222,14 @@ class _PayrollsTab extends StatelessWidget {
               backgroundColor: AppColors.navy,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add),
-              label: const Text('Generate',
-                  style: TextStyle(
-                      fontFamily: 'Inter', fontWeight: FontWeight.w600)),
-              onPressed: () =>
-                  _showGenerateSheet(context, controller),
+              label: const Text(
+                'Generate',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              onPressed: () => _showGenerateSheet(context, controller),
             ),
           ),
       ],
@@ -207,7 +237,9 @@ class _PayrollsTab extends StatelessWidget {
   }
 
   void _showGenerateSheet(
-      BuildContext context, OfficePayrollController controller) {
+    BuildContext context,
+    OfficePayrollController controller,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -216,8 +248,11 @@ class _PayrollsTab extends StatelessWidget {
     );
   }
 
-  void _showApproveSheet(BuildContext context,
-      OfficePayrollController controller, Map<String, dynamic> p) {
+  void _showApproveSheet(
+    BuildContext context,
+    OfficePayrollController controller,
+    Map<String, dynamic> p,
+  ) {
     final status = p['payrollStatus'] as String? ?? '';
     if (status != 'DRAFT') {
       FerosSnackbar.error('Only DRAFT payrolls can be approved');
@@ -227,13 +262,15 @@ class _PayrollsTab extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) =>
-          _ApprovePayrollSheet(controller: controller, payroll: p),
+      builder: (_) => _ApprovePayrollSheet(controller: controller, payroll: p),
     );
   }
 
-  Future<void> _handleCancel(BuildContext context,
-      OfficePayrollController controller, Map<String, dynamic> p) async {
+  Future<void> _handleCancel(
+    BuildContext context,
+    OfficePayrollController controller,
+    Map<String, dynamic> p,
+  ) async {
     final id = (p['id'] as num?)?.toInt() ?? 0;
     try {
       await controller.cancelPayroll(id);
@@ -250,30 +287,31 @@ class _PayrollCard extends StatelessWidget {
   final bool isAdmin;
   final VoidCallback onApprove;
   final VoidCallback onCancel;
-  const _PayrollCard(
-      {required this.p,
-      required this.isAdmin,
-      required this.onApprove,
-      required this.onCancel});
+  const _PayrollCard({
+    required this.p,
+    required this.isAdmin,
+    required this.onApprove,
+    required this.onCancel,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final name    = p['userName']         as String? ?? '—';
-    final role    = p['roleName']         as String? ?? '';
-    final from    = p['payCycleStartDate']as String? ?? '';
-    final to      = p['payCycleEndDate']  as String? ?? '';
-    final net     = p['netPay']           as num? ?? 0;
-    final gross   = p['grossPay']         as num? ?? 0;
-    final deduct  = p['totalDeductions']  as num? ?? 0;
-    final status  = p['payrollStatus']    as String? ?? '';
-    final present = (p['presentDays']     as num?)?.toInt() ?? 0;
-    final total   = (p['totalDays']       as num?)?.toInt() ?? 0;
+    final name = p['userName'] as String? ?? '—';
+    final role = p['roleName'] as String? ?? '';
+    final from = p['payCycleStartDate'] as String? ?? '';
+    final to = p['payCycleEndDate'] as String? ?? '';
+    final net = p['netPay'] as num? ?? 0;
+    final gross = p['grossPay'] as num? ?? 0;
+    final deduct = p['totalDeductions'] as num? ?? 0;
+    final status = p['payrollStatus'] as String? ?? '';
+    final present = (p['presentDays'] as num?)?.toInt() ?? 0;
+    final total = (p['totalDays'] as num?)?.toInt() ?? 0;
 
     final statusColor = switch (status) {
       'APPROVED' => AppColors.navy,
-      'PAID'     => AppColors.success,
-      'DRAFT'    => AppColors.warning,
-      _          => AppColors.mutedText,
+      'PAID' => AppColors.success,
+      'DRAFT' => AppColors.warning,
+      _ => AppColors.mutedText,
     };
 
     return Container(
@@ -284,100 +322,131 @@ class _PayrollCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x0A000000),
-              blurRadius: 8,
-              offset: Offset(0, 2)),
+            color: Color(0x0A000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name,
-                      style: AppTextStyles.bodyMedium
-                          .copyWith(fontWeight: FontWeight.w600)),
-                  Text(role,
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.mutedText)),
-                ],
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      role,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.mutedText,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(status,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  status,
                   style: AppTextStyles.caption.copyWith(
-                      color: statusColor,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 10)),
-            ),
-          ]),
+                    color: statusColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 10,
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 6),
-          Text('$from → $to',
-              style: AppTextStyles.caption
-                  .copyWith(color: AppColors.mutedText)),
+          Text(
+            '$from → $to',
+            style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+          ),
           const Divider(height: 16),
-          Row(children: [
-            _amt('Gross', '₹${gross.toStringAsFixed(0)}',
-                AppColors.bodyText),
-            const SizedBox(width: 16),
-            _amt('Deductions', '-₹${deduct.toStringAsFixed(0)}',
-                AppColors.error),
-            const SizedBox(width: 16),
-            _amt('Net Pay', '₹${net.toStringAsFixed(0)}',
-                AppColors.success),
-            const Spacer(),
-            Text('$present/$total days',
-                style: AppTextStyles.caption
-                    .copyWith(color: AppColors.mutedText)),
-          ]),
+          Row(
+            children: [
+              _amt('Gross', '₹${gross.toStringAsFixed(0)}', AppColors.bodyText),
+              const SizedBox(width: 16),
+              _amt(
+                'Deductions',
+                '-₹${deduct.toStringAsFixed(0)}',
+                AppColors.error,
+              ),
+              const SizedBox(width: 16),
+              _amt('Net Pay', '₹${net.toStringAsFixed(0)}', AppColors.success),
+              const Spacer(),
+              Text(
+                '$present/$total days',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.mutedText,
+                ),
+              ),
+            ],
+          ),
           if (isAdmin && status == 'DRAFT') ...[
             const SizedBox(height: 10),
-            Row(children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: onCancel,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    side: const BorderSide(color: AppColors.error),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: const Text('Cancel',
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onCancel,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                      side: const BorderSide(color: AppColors.error),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Cancel',
                       style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13)),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: onApprove,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
                   ),
-                  child: const Text('Approve & Pay',
-                      style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13)),
                 ),
-              ),
-            ]),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: onApprove,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.success,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Approve & Pay',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ],
       ),
@@ -385,16 +454,24 @@ class _PayrollCard extends StatelessWidget {
   }
 
   Widget _amt(String label, String value, Color color) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: AppTextStyles.caption
-                  .copyWith(color: AppColors.mutedText, fontSize: 10)),
-          Text(value,
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: color, fontWeight: FontWeight.w700)),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: AppTextStyles.caption.copyWith(
+          color: AppColors.mutedText,
+          fontSize: 10,
+        ),
+      ),
+      Text(
+        value,
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    ],
+  );
 }
 
 // ── Advances Tab ───────────────────────────────────────────────────────────────
@@ -411,41 +488,63 @@ class _AdvancesTab extends StatelessWidget {
           final s = controller.advanceState.value;
           if (s == ViewState.loading) {
             return const Center(
-                child: CircularProgressIndicator(color: AppColors.navy));
+              child: CircularProgressIndicator(color: AppColors.navy),
+            );
           }
           if (s == ViewState.error) {
             return Center(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.error_outline,
-                    size: 48, color: AppColors.error),
-                const SizedBox(height: 12),
-                Text('Failed to load advances',
-                    style: AppTextStyles.body
-                        .copyWith(color: AppColors.mutedText)),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: controller.fetchAdvances,
-                  style: ElevatedButton.styleFrom(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: AppColors.error,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Failed to load advances',
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.mutedText,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: controller.fetchAdvances,
+                    style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.navy,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8))),
-                  child: const Text('Retry'),
-                ),
-              ]),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
             );
           }
           final list = controller.advances;
           if (list.isEmpty) {
             return const Center(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.money_off_outlined,
-                    size: 52, color: AppColors.mutedText),
-                SizedBox(height: 16),
-                Text('No salary advances',
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.money_off_outlined,
+                    size: 52,
+                    color: AppColors.mutedText,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'No salary advances',
                     style: TextStyle(
-                        fontFamily: 'Inter', color: AppColors.mutedText)),
-              ]),
+                      fontFamily: 'Inter',
+                      color: AppColors.mutedText,
+                    ),
+                  ),
+                ],
+              ),
             );
           }
           return RefreshIndicator(
@@ -467,9 +566,13 @@ class _AdvancesTab extends StatelessWidget {
               backgroundColor: AppColors.navy,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add),
-              label: const Text('New Advance',
-                  style: TextStyle(
-                      fontFamily: 'Inter', fontWeight: FontWeight.w600)),
+              label: const Text(
+                'New Advance',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               onPressed: () => _showAdvanceSheet(context, controller),
             ),
           ),
@@ -478,7 +581,9 @@ class _AdvancesTab extends StatelessWidget {
   }
 
   void _showAdvanceSheet(
-      BuildContext context, OfficePayrollController controller) {
+    BuildContext context,
+    OfficePayrollController controller,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -494,13 +599,13 @@ class _AdvanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name     = a['userName']      as String? ?? '—';
-    final date     = a['advanceDate']   as String? ?? '';
-    final amount   = a['amount']        as num? ?? 0;
-    final balance  = a['balanceAmount'] as num? ?? 0;
-    final repaid   = a['totalRepaid']   as num? ?? 0;
-    final isDone   = a['isFullyRepaid'] as bool? ?? false;
-    final reason   = a['reason']        as String? ?? '';
+    final name = a['userName'] as String? ?? '—';
+    final date = a['advanceDate'] as String? ?? '';
+    final amount = a['amount'] as num? ?? 0;
+    final balance = a['balanceAmount'] as num? ?? 0;
+    final repaid = a['totalRepaid'] as num? ?? 0;
+    final isDone = a['isFullyRepaid'] as bool? ?? false;
+    final reason = a['reason'] as String? ?? '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -510,74 +615,101 @@ class _AdvanceCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x0A000000),
-              blurRadius: 8,
-              offset: Offset(0, 2)),
+            color: Color(0x0A000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Expanded(
-              child: Text(name,
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(fontWeight: FontWeight.w600)),
-            ),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: isDone
-                    ? AppColors.success.withValues(alpha: 0.1)
-                    : AppColors.warning.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  name,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-              child: Text(isDone ? 'Repaid' : 'Outstanding',
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: isDone
+                      ? AppColors.success.withValues(alpha: 0.1)
+                      : AppColors.warning.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  isDone ? 'Repaid' : 'Outstanding',
                   style: AppTextStyles.caption.copyWith(
-                      color: isDone
-                          ? AppColors.success
-                          : AppColors.warning,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 10)),
-            ),
-          ]),
+                    color: isDone ? AppColors.success : AppColors.warning,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 10,
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 4),
           if (date.isNotEmpty)
-            Text(date,
-                style: AppTextStyles.caption
-                    .copyWith(color: AppColors.mutedText)),
+            Text(
+              date,
+              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+            ),
           if (reason.isNotEmpty)
-            Text(reason,
-                style: AppTextStyles.caption
-                    .copyWith(color: AppColors.mutedText)),
+            Text(
+              reason,
+              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+            ),
           const SizedBox(height: 8),
-          Row(children: [
-            _col('Amount', '₹${amount.toStringAsFixed(0)}',
-                AppColors.bodyText),
-            const SizedBox(width: 16),
-            _col('Repaid', '₹${repaid.toStringAsFixed(0)}',
-                AppColors.success),
-            const SizedBox(width: 16),
-            _col('Balance', '₹${balance.toStringAsFixed(0)}',
-                isDone ? AppColors.mutedText : AppColors.error),
-          ]),
+          Row(
+            children: [
+              _col(
+                'Amount',
+                '₹${amount.toStringAsFixed(0)}',
+                AppColors.bodyText,
+              ),
+              const SizedBox(width: 16),
+              _col(
+                'Repaid',
+                '₹${repaid.toStringAsFixed(0)}',
+                AppColors.success,
+              ),
+              const SizedBox(width: 16),
+              _col(
+                'Balance',
+                '₹${balance.toStringAsFixed(0)}',
+                isDone ? AppColors.mutedText : AppColors.error,
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
   Widget _col(String label, String value, Color color) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: AppTextStyles.caption
-                  .copyWith(color: AppColors.mutedText, fontSize: 10)),
-          Text(value,
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: color, fontWeight: FontWeight.w700)),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: AppTextStyles.caption.copyWith(
+          color: AppColors.mutedText,
+          fontSize: 10,
+        ),
+      ),
+      Text(
+        value,
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    ],
+  );
 }
 
 // ── Generate Payroll Sheet ─────────────────────────────────────────────────────
@@ -590,12 +722,12 @@ class _GeneratePayrollSheet extends StatefulWidget {
 }
 
 class _GeneratePayrollSheetState extends State<_GeneratePayrollSheet> {
-  final _userIdCtr    = TextEditingController();
-  final _rateCtr      = TextEditingController();
-  final _remarksCtr   = TextEditingController();
-  DateTime _from      = DateTime.now().subtract(const Duration(days: 30));
-  DateTime _to        = DateTime.now();
-  bool _loading       = false;
+  final _userIdCtr = TextEditingController();
+  final _rateCtr = TextEditingController();
+  final _remarksCtr = TextEditingController();
+  DateTime _from = DateTime.now().subtract(const Duration(days: 30));
+  DateTime _to = DateTime.now();
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -610,7 +742,7 @@ class _GeneratePayrollSheetState extends State<_GeneratePayrollSheet> {
 
   Future<void> _submit() async {
     final userId = int.tryParse(_userIdCtr.text.trim());
-    final rate   = double.tryParse(_rateCtr.text.trim());
+    final rate = double.tryParse(_rateCtr.text.trim());
     if (userId == null || rate == null) {
       FerosSnackbar.error('Fill in all required fields correctly');
       return;
@@ -651,42 +783,58 @@ class _GeneratePayrollSheetState extends State<_GeneratePayrollSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
-              Text('Generate Payroll',
-                  style: AppTextStyles.heading4
-                      .copyWith(color: AppColors.navy)),
-              const Spacer(),
-              IconButton(
+            Row(
+              children: [
+                Text(
+                  'Generate Payroll',
+                  style: AppTextStyles.heading4.copyWith(color: AppColors.navy),
+                ),
+                const Spacer(),
+                IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close)),
-            ]),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
 
             _label('Staff ID *'),
             const SizedBox(height: 6),
-            _field(_userIdCtr, 'Enter user ID',
-                type: TextInputType.number),
+            _field(_userIdCtr, 'Enter user ID', type: TextInputType.number),
             const SizedBox(height: 12),
 
             _label('Pay Cycle'),
             const SizedBox(height: 6),
-            Row(children: [
-              Expanded(
-                child: _datePicker(
-                    context, 'From', _from, (d) => setState(() => _from = d)),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _datePicker(
-                    context, 'To', _to, (d) => setState(() => _to = d)),
-              ),
-            ]),
+            Row(
+              children: [
+                Expanded(
+                  child: _datePicker(
+                    context,
+                    'From',
+                    _from,
+                    (d) => setState(() => _from = d),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _datePicker(
+                    context,
+                    'To',
+                    _to,
+                    (d) => setState(() => _to = d),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
 
             _label('Daily Rate (₹) *'),
             const SizedBox(height: 6),
-            _field(_rateCtr, 'e.g. 500',
-                type: const TextInputType.numberWithOptions(decimal: true)),
+            _field(
+              _rateCtr,
+              'e.g. 500',
+              type: const TextInputType.numberWithOptions(decimal: true),
+            ),
             const SizedBox(height: 12),
 
             _label('Remarks'),
@@ -703,18 +851,25 @@ class _GeneratePayrollSheetState extends State<_GeneratePayrollSheet> {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 child: _loading
                     ? const SizedBox(
                         height: 18,
                         width: 18,
                         child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : const Text('Generate',
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Generate',
                         style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w600)),
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
             ),
           ],
@@ -723,8 +878,12 @@ class _GeneratePayrollSheetState extends State<_GeneratePayrollSheet> {
     );
   }
 
-  Widget _datePicker(BuildContext context, String label, DateTime date,
-      void Function(DateTime) onPick) {
+  Widget _datePicker(
+    BuildContext context,
+    String label,
+    DateTime date,
+    void Function(DateTime) onPick,
+  ) {
     final text =
         '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
     return GestureDetector(
@@ -736,8 +895,7 @@ class _GeneratePayrollSheetState extends State<_GeneratePayrollSheet> {
           lastDate: DateTime.now().add(const Duration(days: 365)),
           builder: (_, child) => Theme(
             data: ThemeData.light().copyWith(
-              colorScheme:
-                  const ColorScheme.light(primary: AppColors.navy),
+              colorScheme: const ColorScheme.light(primary: AppColors.navy),
             ),
             child: child!,
           ),
@@ -745,67 +903,77 @@ class _GeneratePayrollSheetState extends State<_GeneratePayrollSheet> {
         if (picked != null) onPick(picked);
       },
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
         decoration: BoxDecoration(
           color: AppColors.background,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: AppColors.border),
         ),
-        child: Row(children: [
-          const Icon(Icons.calendar_today_outlined,
-              size: 14, color: AppColors.mutedText),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text('$label: $text',
-                style: AppTextStyles.caption
-                    .copyWith(color: AppColors.bodyText),
-                overflow: TextOverflow.ellipsis),
-          ),
-        ]),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.calendar_today_outlined,
+              size: 14,
+              color: AppColors.mutedText,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                '$label: $text',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.bodyText,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _label(String text) => Text(text,
-      style: AppTextStyles.caption.copyWith(
-          color: AppColors.bodyText, fontWeight: FontWeight.w600));
+  Widget _label(String text) => Text(
+    text,
+    style: AppTextStyles.caption.copyWith(
+      color: AppColors.bodyText,
+      fontWeight: FontWeight.w600,
+    ),
+  );
 
-  Widget _field(TextEditingController ctr, String hint,
-      {TextInputType type = TextInputType.text}) =>
-      TextField(
-        controller: ctr,
-        keyboardType: type,
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
-          filled: true,
-          fillColor: AppColors.background,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: AppColors.border),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: AppColors.border),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide:
-                const BorderSide(color: AppColors.navy, width: 1.5),
-          ),
-        ),
-      );
+  Widget _field(
+    TextEditingController ctr,
+    String hint, {
+    TextInputType type = TextInputType.text,
+  }) => TextField(
+    controller: ctr,
+    keyboardType: type,
+    decoration: InputDecoration(
+      hintText: hint,
+      hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
+      filled: true,
+      fillColor: AppColors.background,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
+      ),
+    ),
+  );
 }
 
 // ── Approve Payroll Sheet ──────────────────────────────────────────────────────
 class _ApprovePayrollSheet extends StatefulWidget {
   final OfficePayrollController controller;
   final Map<String, dynamic> payroll;
-  const _ApprovePayrollSheet(
-      {required this.controller, required this.payroll});
+  const _ApprovePayrollSheet({required this.controller, required this.payroll});
 
   @override
   State<_ApprovePayrollSheet> createState() => _ApprovePayrollSheetState();
@@ -813,9 +981,9 @@ class _ApprovePayrollSheet extends StatefulWidget {
 
 class _ApprovePayrollSheetState extends State<_ApprovePayrollSheet> {
   static const _modes = ['CASH', 'CHEQUE', 'NEFT', 'UPI', 'RTGS'];
-  String  _mode    = 'CASH';
-  final   _refCtr  = TextEditingController();
-  bool    _loading = false;
+  String _mode = 'CASH';
+  final _refCtr = TextEditingController();
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -846,8 +1014,8 @@ class _ApprovePayrollSheetState extends State<_ApprovePayrollSheet> {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
-    final name   = widget.payroll['userName']  as String? ?? '—';
-    final net    = widget.payroll['netPay']     as num? ?? 0;
+    final name = widget.payroll['userName'] as String? ?? '—';
+    final net = widget.payroll['netPay'] as num? ?? 0;
 
     return Container(
       margin: const EdgeInsets.all(12),
@@ -860,19 +1028,24 @@ class _ApprovePayrollSheetState extends State<_ApprovePayrollSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Text('Approve & Pay',
-                style: AppTextStyles.heading4
-                    .copyWith(color: AppColors.navy)),
-            const Spacer(),
-            IconButton(
+          Row(
+            children: [
+              Text(
+                'Approve & Pay',
+                style: AppTextStyles.heading4.copyWith(color: AppColors.navy),
+              ),
+              const Spacer(),
+              IconButton(
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close)),
-          ]),
+                icon: const Icon(Icons.close),
+              ),
+            ],
+          ),
           const SizedBox(height: 4),
-          Text('$name — ₹${net.toStringAsFixed(0)}',
-              style: AppTextStyles.body
-                  .copyWith(color: AppColors.mutedText)),
+          Text(
+            '$name — ₹${net.toStringAsFixed(0)}',
+            style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+          ),
           const SizedBox(height: 16),
 
           _label('Payment Mode'),
@@ -905,18 +1078,25 @@ class _ApprovePayrollSheetState extends State<_ApprovePayrollSheet> {
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               child: _loading
                   ? const SizedBox(
                       height: 18,
                       width: 18,
                       child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2))
-                  : const Text('Confirm Payment',
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Confirm Payment',
                       style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w600)),
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
             ),
           ),
         ],
@@ -924,31 +1104,33 @@ class _ApprovePayrollSheetState extends State<_ApprovePayrollSheet> {
     );
   }
 
-  Widget _label(String text) => Text(text,
-      style: AppTextStyles.caption.copyWith(
-          color: AppColors.bodyText, fontWeight: FontWeight.w600));
+  Widget _label(String text) => Text(
+    text,
+    style: AppTextStyles.caption.copyWith(
+      color: AppColors.bodyText,
+      fontWeight: FontWeight.w600,
+    ),
+  );
 
   InputDecoration _inputDec(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
-        filled: true,
-        fillColor: AppColors.background,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide:
-              const BorderSide(color: AppColors.navy, width: 1.5),
-        ),
-      );
+    hintText: hint,
+    hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
+    filled: true,
+    fillColor: AppColors.background,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: AppColors.border),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: AppColors.border),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
+    ),
+  );
 }
 
 // ── Advance Sheet ──────────────────────────────────────────────────────────────
@@ -961,10 +1143,10 @@ class _AdvanceSheet extends StatefulWidget {
 }
 
 class _AdvanceSheetState extends State<_AdvanceSheet> {
-  final _idCtr     = TextEditingController();
-  final _amtCtr    = TextEditingController();
+  final _idCtr = TextEditingController();
+  final _amtCtr = TextEditingController();
   final _reasonCtr = TextEditingController();
-  bool _loading    = false;
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -986,8 +1168,7 @@ class _AdvanceSheetState extends State<_AdvanceSheet> {
       await widget.controller.createAdvance({
         'userId': userId,
         'amount': amount,
-        if (_reasonCtr.text.trim().isNotEmpty)
-          'reason': _reasonCtr.text.trim(),
+        if (_reasonCtr.text.trim().isNotEmpty) 'reason': _reasonCtr.text.trim(),
       });
       if (mounted) {
         Navigator.pop(context);
@@ -1014,27 +1195,33 @@ class _AdvanceSheetState extends State<_AdvanceSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Text('New Salary Advance',
-                style: AppTextStyles.heading4
-                    .copyWith(color: AppColors.navy)),
-            const Spacer(),
-            IconButton(
+          Row(
+            children: [
+              Text(
+                'New Salary Advance',
+                style: AppTextStyles.heading4.copyWith(color: AppColors.navy),
+              ),
+              const Spacer(),
+              IconButton(
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close)),
-          ]),
+                icon: const Icon(Icons.close),
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
 
           _label('Staff ID *'),
           const SizedBox(height: 6),
-          _field(_idCtr, 'Enter user ID',
-              type: TextInputType.number),
+          _field(_idCtr, 'Enter user ID', type: TextInputType.number),
           const SizedBox(height: 12),
 
           _label('Amount (₹) *'),
           const SizedBox(height: 6),
-          _field(_amtCtr, 'e.g. 2000',
-              type: const TextInputType.numberWithOptions(decimal: true)),
+          _field(
+            _amtCtr,
+            'e.g. 2000',
+            type: const TextInputType.numberWithOptions(decimal: true),
+          ),
           const SizedBox(height: 12),
 
           _label('Reason'),
@@ -1051,18 +1238,25 @@ class _AdvanceSheetState extends State<_AdvanceSheet> {
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               child: _loading
                   ? const SizedBox(
                       height: 18,
                       width: 18,
                       child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2))
-                  : const Text('Record Advance',
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Record Advance',
                       style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w600)),
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
             ),
           ),
         ],
@@ -1070,35 +1264,39 @@ class _AdvanceSheetState extends State<_AdvanceSheet> {
     );
   }
 
-  Widget _label(String text) => Text(text,
-      style: AppTextStyles.caption.copyWith(
-          color: AppColors.bodyText, fontWeight: FontWeight.w600));
+  Widget _label(String text) => Text(
+    text,
+    style: AppTextStyles.caption.copyWith(
+      color: AppColors.bodyText,
+      fontWeight: FontWeight.w600,
+    ),
+  );
 
-  Widget _field(TextEditingController ctr, String hint,
-          {TextInputType type = TextInputType.text}) =>
-      TextField(
-        controller: ctr,
-        keyboardType: type,
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
-          filled: true,
-          fillColor: AppColors.background,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: AppColors.border),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: AppColors.border),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide:
-                const BorderSide(color: AppColors.navy, width: 1.5),
-          ),
-        ),
-      );
+  Widget _field(
+    TextEditingController ctr,
+    String hint, {
+    TextInputType type = TextInputType.text,
+  }) => TextField(
+    controller: ctr,
+    keyboardType: type,
+    decoration: InputDecoration(
+      hintText: hint,
+      hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
+      filled: true,
+      fillColor: AppColors.background,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
+      ),
+    ),
+  );
 }

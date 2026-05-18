@@ -19,6 +19,10 @@ class OfficeReportsView extends StatelessWidget {
         backgroundColor: AppColors.navy,
         foregroundColor: Colors.white,
         title: const Text('Reports'),
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -26,7 +30,8 @@ class OfficeReportsView extends StatelessWidget {
           _SectionCard(
             icon: Icons.today_outlined,
             label: 'Daily Operations',
-            description: 'Fleet activity, idle drivers, document expiry, delays',
+            description:
+                'Fleet activity, idle drivers, document expiry, delays',
             reportCount: 7,
             color: AppColors.navy,
             onTap: () => Get.to(() => const ReportSectionDailyOps()),
@@ -35,7 +40,8 @@ class OfficeReportsView extends StatelessWidget {
           _SectionCard(
             icon: Icons.assignment_outlined,
             label: 'Orders & Assignments',
-            description: 'Order health, fulfillment rate, lead time, driver assignments',
+            description:
+                'Order health, fulfillment rate, lead time, driver assignments',
             reportCount: 5,
             color: const Color(0xFF0284C7),
             onTap: () => Get.to(() => const ReportSectionOrders()),
@@ -44,7 +50,8 @@ class OfficeReportsView extends StatelessWidget {
           _SectionCard(
             icon: Icons.receipt_long_outlined,
             label: 'Trips & LRs',
-            description: 'LR register, trips in progress, unbilled LRs, weight variance',
+            description:
+                'LR register, trips in progress, unbilled LRs, weight variance',
             reportCount: 8,
             color: const Color(0xFF7C3AED),
             onTap: () => Get.to(() => const ReportSectionLrs()),
@@ -53,7 +60,8 @@ class OfficeReportsView extends StatelessWidget {
           _SectionCard(
             icon: Icons.people_outline,
             label: 'Driver & Staff',
-            description: 'Driver performance, attendance calendar, payroll summary',
+            description:
+                'Driver performance, attendance calendar, payroll summary',
             reportCount: 6,
             color: AppColors.orange,
             onTap: () => Get.to(() => const ReportSectionDriverStaff()),
@@ -62,7 +70,8 @@ class OfficeReportsView extends StatelessWidget {
           _SectionCard(
             icon: Icons.account_balance_outlined,
             label: 'Finance',
-            description: 'Revenue trend, outstanding, collections, GST, route profitability',
+            description:
+                'Revenue trend, outstanding, collections, GST, route profitability',
             reportCount: 8,
             color: const Color(0xFF059669),
             onTap: () => Get.to(() => const ReportSectionFinance()),
@@ -104,7 +113,10 @@ class _SectionCard extends StatelessWidget {
             border: Border(left: BorderSide(color: color, width: 4)),
             boxShadow: const [
               BoxShadow(
-                  color: Color(0x09000000), blurRadius: 6, offset: Offset(0, 2))
+                color: Color(0x09000000),
+                blurRadius: 6,
+                offset: Offset(0, 2),
+              ),
             ],
           ),
           padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
@@ -126,28 +138,40 @@ class _SectionCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(label,
-                            style: AppTextStyles.bodyMedium
-                                .copyWith(fontWeight: FontWeight.w700)),
+                        Text(
+                          label,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 2),
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: color.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Text('$reportCount',
-                              style: AppTextStyles.caption.copyWith(
-                                  color: color, fontWeight: FontWeight.w700)),
+                          child: Text(
+                            '$reportCount',
+                            style: AppTextStyles.caption.copyWith(
+                              color: color,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text(description,
-                        style: AppTextStyles.caption
-                            .copyWith(color: AppColors.mutedText),
-                        maxLines: 2),
+                    Text(
+                      description,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.mutedText,
+                      ),
+                      maxLines: 2,
+                    ),
                   ],
                 ),
               ),

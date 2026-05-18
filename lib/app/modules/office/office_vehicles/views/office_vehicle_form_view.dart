@@ -26,20 +26,20 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
   final _api = Get.find<ApiClient>();
 
   // ── Loading ─────────────────────────────────────────────────────────────────
-  bool _isLoadingForm     = true;
-  bool _isLoadingTypes    = true;
-  bool _isLoadingBrands   = true;
-  bool _isLoadingFuels    = true;
-  bool _isLoadingOwnership= true;
+  bool _isLoadingForm = true;
+  bool _isLoadingTypes = true;
+  bool _isLoadingBrands = true;
+  bool _isLoadingFuels = true;
+  bool _isLoadingOwnership = true;
   bool _isLoadingStatuses = true;
-  bool _isSubmitting      = false;
+  bool _isSubmitting = false;
 
   // ── Master data ──────────────────────────────────────────────────────────────
-  List<Map<String, dynamic>> _vehicleTypes   = [];
-  List<Map<String, dynamic>> _brands         = [];
-  List<Map<String, dynamic>> _fuelTypes      = [];
+  List<Map<String, dynamic>> _vehicleTypes = [];
+  List<Map<String, dynamic>> _brands = [];
+  List<Map<String, dynamic>> _fuelTypes = [];
   List<Map<String, dynamic>> _ownershipTypes = [];
-  List<Map<String, dynamic>> _statuses       = [];
+  List<Map<String, dynamic>> _statuses = [];
 
   // ── Selections ───────────────────────────────────────────────────────────────
   Map<String, dynamic>? _selectedType;
@@ -53,30 +53,30 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
   DateTime? _agreementEnd;
 
   // ── Text controllers — Basic Info ────────────────────────────────────────────
-  final _regCtrl       = TextEditingController();
-  final _capacityCtrl  = TextEditingController();
-  final _yearCtrl      = TextEditingController();
-  final _colorCtrl     = TextEditingController();
-  final _chassisCtrl   = TextEditingController();
-  final _engineCtrl    = TextEditingController();
-  final _tankCapCtrl   = TextEditingController();
+  final _regCtrl = TextEditingController();
+  final _capacityCtrl = TextEditingController();
+  final _yearCtrl = TextEditingController();
+  final _colorCtrl = TextEditingController();
+  final _chassisCtrl = TextEditingController();
+  final _engineCtrl = TextEditingController();
+  final _tankCapCtrl = TextEditingController();
 
   // ── Text controllers — Owner / Hired ─────────────────────────────────────────
-  final _ownerNameCtrl     = TextEditingController();
-  final _ownerPhoneCtrl    = TextEditingController();
-  final _ownerPanCtrl      = TextEditingController();
-  final _ownerAddrCtrl     = TextEditingController();
-  final _agreementAmtCtrl  = TextEditingController();
+  final _ownerNameCtrl = TextEditingController();
+  final _ownerPhoneCtrl = TextEditingController();
+  final _ownerPanCtrl = TextEditingController();
+  final _ownerAddrCtrl = TextEditingController();
+  final _agreementAmtCtrl = TextEditingController();
 
   // ── Text controllers — GPS ────────────────────────────────────────────────────
-  final _gpsDeviceNumCtrl  = TextEditingController();
-  final _gpsImeiCtrl       = TextEditingController();
-  final _gpsProviderCtrl   = TextEditingController();
+  final _gpsDeviceNumCtrl = TextEditingController();
+  final _gpsImeiCtrl = TextEditingController();
+  final _gpsProviderCtrl = TextEditingController();
 
   // ── Text controllers — Operations & Notes ────────────────────────────────────
-  final _odometerCtrl      = TextEditingController();
-  final _fuelLevelCtrl     = TextEditingController();
-  final _notesCtrl         = TextEditingController();
+  final _odometerCtrl = TextEditingController();
+  final _fuelLevelCtrl = TextEditingController();
+  final _notesCtrl = TextEditingController();
 
   bool get _isHired {
     final name = _selectedOwnership?['name'] as String? ?? '';
@@ -92,11 +92,24 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
   @override
   void dispose() {
     for (final c in [
-      _regCtrl, _capacityCtrl, _yearCtrl, _colorCtrl, _chassisCtrl, _engineCtrl,
+      _regCtrl,
+      _capacityCtrl,
+      _yearCtrl,
+      _colorCtrl,
+      _chassisCtrl,
+      _engineCtrl,
       _tankCapCtrl,
-      _ownerNameCtrl, _ownerPhoneCtrl, _ownerPanCtrl, _ownerAddrCtrl,
-      _agreementAmtCtrl, _gpsDeviceNumCtrl, _gpsImeiCtrl, _gpsProviderCtrl,
-      _odometerCtrl, _fuelLevelCtrl, _notesCtrl,
+      _ownerNameCtrl,
+      _ownerPhoneCtrl,
+      _ownerPanCtrl,
+      _ownerAddrCtrl,
+      _agreementAmtCtrl,
+      _gpsDeviceNumCtrl,
+      _gpsImeiCtrl,
+      _gpsProviderCtrl,
+      _odometerCtrl,
+      _fuelLevelCtrl,
+      _notesCtrl,
     ]) {
       c.dispose();
     }
@@ -112,33 +125,36 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
         _api.get(ApiEndpoints.fuelTypes),
         _api.get(ApiEndpoints.ownershipTypes),
         _api.get(ApiEndpoints.vehicleStatuses),
-        if (widget.isEdit) _api.get(ApiEndpoints.vehicleById(widget.vehicleId!)),
+        if (widget.isEdit)
+          _api.get(ApiEndpoints.vehicleById(widget.vehicleId!)),
       ]);
 
-      final types      = _list(futures[0]);
-      final brands     = _list(futures[1]);
-      final fuels      = _list(futures[2]);
+      final types = _list(futures[0]);
+      final brands = _list(futures[1]);
+      final fuels = _list(futures[2]);
       final ownerships = _list(futures[3]);
-      final statuses   = _list(futures[4]);
+      final statuses = _list(futures[4]);
 
       if (mounted) {
         setState(() {
-          _vehicleTypes   = types;
-          _brands         = brands;
-          _fuelTypes      = fuels;
+          _vehicleTypes = types;
+          _brands = brands;
+          _fuelTypes = fuels;
           _ownershipTypes = ownerships;
-          _statuses       = statuses;
-          _isLoadingTypes     = false;
-          _isLoadingBrands    = false;
-          _isLoadingFuels     = false;
+          _statuses = statuses;
+          _isLoadingTypes = false;
+          _isLoadingBrands = false;
+          _isLoadingFuels = false;
           _isLoadingOwnership = false;
-          _isLoadingStatuses  = false;
+          _isLoadingStatuses = false;
         });
       }
 
       if (widget.isEdit && futures.length == 6) {
-        _prefill((futures[5].data as Map<String, dynamic>)['data']
-            as Map<String, dynamic>);
+        _prefill(
+          (futures[5].data as Map<String, dynamic>)['data']
+              as Map<String, dynamic>,
+        );
       }
     } catch (e) {
       FerosSnackbar.error('Failed to load form data');
@@ -152,27 +168,27 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
           .cast<Map<String, dynamic>>();
 
   void _prefill(Map<String, dynamic> v) {
-    _regCtrl.text      = v['registrationNumber'] as String? ?? '';
+    _regCtrl.text = v['registrationNumber'] as String? ?? '';
     _capacityCtrl.text = v['capacityInTons']?.toString() ?? '';
-    _yearCtrl.text     = v['manufactureYear']?.toString() ?? '';
-    _colorCtrl.text    = v['color'] as String? ?? '';
-    _chassisCtrl.text  = v['chassisNumber'] as String? ?? '';
-    _engineCtrl.text   = v['engineNumber'] as String? ?? '';
-    _tankCapCtrl.text  = v['fuelTankCapacity']?.toString() ?? '';
+    _yearCtrl.text = v['manufactureYear']?.toString() ?? '';
+    _colorCtrl.text = v['color'] as String? ?? '';
+    _chassisCtrl.text = v['chassisNumber'] as String? ?? '';
+    _engineCtrl.text = v['engineNumber'] as String? ?? '';
+    _tankCapCtrl.text = v['fuelTankCapacity']?.toString() ?? '';
 
-    _ownerNameCtrl.text    = v['ownerName']    as String? ?? '';
-    _ownerPhoneCtrl.text   = v['ownerPhone']   as String? ?? '';
-    _ownerPanCtrl.text     = v['ownerPan']     as String? ?? '';
-    _ownerAddrCtrl.text    = v['ownerAddress'] as String? ?? '';
+    _ownerNameCtrl.text = v['ownerName'] as String? ?? '';
+    _ownerPhoneCtrl.text = v['ownerPhone'] as String? ?? '';
+    _ownerPanCtrl.text = v['ownerPan'] as String? ?? '';
+    _ownerAddrCtrl.text = v['ownerAddress'] as String? ?? '';
     _agreementAmtCtrl.text = v['agreementAmount']?.toString() ?? '';
 
     _gpsDeviceNumCtrl.text = v['gpsDeviceNumber'] as String? ?? '';
-    _gpsImeiCtrl.text      = v['gpsDeviceImei']   as String? ?? '';
-    _gpsProviderCtrl.text  = v['gpsProvider']     as String? ?? '';
+    _gpsImeiCtrl.text = v['gpsDeviceImei'] as String? ?? '';
+    _gpsProviderCtrl.text = v['gpsProvider'] as String? ?? '';
 
-    _odometerCtrl.text  = v['currentOdometerReading']?.toString() ?? '';
+    _odometerCtrl.text = v['currentOdometerReading']?.toString() ?? '';
     _fuelLevelCtrl.text = v['currentFuelLevel']?.toString() ?? '';
-    _notesCtrl.text     = v['notes'] as String? ?? '';
+    _notesCtrl.text = v['notes'] as String? ?? '';
 
     // Match selections by id
     final vtId = v['vehicleTypeId'];
@@ -182,20 +198,26 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
     final stId = v['currentStatusId'];
 
     setState(() {
-      _selectedType      = _vehicleTypes.firstWhereOrNull((t) => t['id'] == vtId);
-      _selectedBrand     = _brands.firstWhereOrNull((b) => b['id'] == brId);
-      _selectedFuel      = _fuelTypes.firstWhereOrNull((f) => f['id'] == ftId);
-      _selectedOwnership = _ownershipTypes.firstWhereOrNull((o) => o['id'] == owId);
-      _selectedStatus    = _statuses.firstWhereOrNull((s) => s['id'] == stId);
+      _selectedType = _vehicleTypes.firstWhereOrNull((t) => t['id'] == vtId);
+      _selectedBrand = _brands.firstWhereOrNull((b) => b['id'] == brId);
+      _selectedFuel = _fuelTypes.firstWhereOrNull((f) => f['id'] == ftId);
+      _selectedOwnership = _ownershipTypes.firstWhereOrNull(
+        (o) => o['id'] == owId,
+      );
+      _selectedStatus = _statuses.firstWhereOrNull((s) => s['id'] == stId);
 
-      _agreementStart= _parseDate(v['agreementStartDate']);
-      _agreementEnd  = _parseDate(v['agreementEndDate']);
+      _agreementStart = _parseDate(v['agreementStartDate']);
+      _agreementEnd = _parseDate(v['agreementEndDate']);
     });
   }
 
   DateTime? _parseDate(dynamic d) {
     if (d == null) return null;
-    try { return DateTime.parse(d as String); } catch (_) { return null; }
+    try {
+      return DateTime.parse(d as String);
+    } catch (_) {
+      return null;
+    }
   }
 
   String _formatDate(DateTime d) =>
@@ -203,46 +225,61 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
 
   Future<void> _submit() async {
     final reg = _regCtrl.text.trim();
-    if (reg.isEmpty) { FerosSnackbar.error('Registration number is required'); return; }
+    if (reg.isEmpty) {
+      FerosSnackbar.error('Registration number is required');
+      return;
+    }
 
     setState(() => _isSubmitting = true);
     try {
-      final body = <String, dynamic>{
-        'registrationNumber': reg,
-      };
+      final body = <String, dynamic>{'registrationNumber': reg};
 
-      if (_selectedType      != null) body['vehicleTypeId']     = _selectedType!['id'];
-      if (_selectedBrand     != null) body['brandId']           = _selectedBrand!['id'];
-      if (_selectedFuel      != null) body['fuelTypeId']        = _selectedFuel!['id'];
-      if (_selectedOwnership != null) body['ownershipTypeId']   = _selectedOwnership!['id'];
-      if (_selectedStatus    != null) body['currentStatusId']   = _selectedStatus!['id'];
+      if (_selectedType != null) body['vehicleTypeId'] = _selectedType!['id'];
+      if (_selectedBrand != null) body['brandId'] = _selectedBrand!['id'];
+      if (_selectedFuel != null) body['fuelTypeId'] = _selectedFuel!['id'];
+      if (_selectedOwnership != null)
+        body['ownershipTypeId'] = _selectedOwnership!['id'];
+      if (_selectedStatus != null)
+        body['currentStatusId'] = _selectedStatus!['id'];
 
       final cap = double.tryParse(_capacityCtrl.text.trim());
       if (cap != null) body['capacityInTons'] = cap;
       final yr = int.tryParse(_yearCtrl.text.trim());
       if (yr != null) body['manufactureYear'] = yr;
-      if (_colorCtrl.text.trim().isNotEmpty)   body['color']         = _colorCtrl.text.trim();
-      if (_chassisCtrl.text.trim().isNotEmpty) body['chassisNumber'] = _chassisCtrl.text.trim();
-      if (_engineCtrl.text.trim().isNotEmpty)  body['engineNumber']  = _engineCtrl.text.trim();
+      if (_colorCtrl.text.trim().isNotEmpty)
+        body['color'] = _colorCtrl.text.trim();
+      if (_chassisCtrl.text.trim().isNotEmpty)
+        body['chassisNumber'] = _chassisCtrl.text.trim();
+      if (_engineCtrl.text.trim().isNotEmpty)
+        body['engineNumber'] = _engineCtrl.text.trim();
       final tank = double.tryParse(_tankCapCtrl.text.trim());
       if (tank != null) body['fuelTankCapacity'] = tank;
 
       // Owner / Hired
       if (_isHired) {
-        if (_ownerNameCtrl.text.trim().isNotEmpty)  body['ownerName']    = _ownerNameCtrl.text.trim();
-        if (_ownerPhoneCtrl.text.trim().isNotEmpty) body['ownerPhone']   = _ownerPhoneCtrl.text.trim();
-        if (_ownerPanCtrl.text.trim().isNotEmpty)   body['ownerPan']     = _ownerPanCtrl.text.trim();
-        if (_ownerAddrCtrl.text.trim().isNotEmpty)  body['ownerAddress'] = _ownerAddrCtrl.text.trim();
-        if (_agreementStart != null)                 body['agreementStartDate'] = _formatDate(_agreementStart!);
-        if (_agreementEnd != null)                   body['agreementEndDate']   = _formatDate(_agreementEnd!);
+        if (_ownerNameCtrl.text.trim().isNotEmpty)
+          body['ownerName'] = _ownerNameCtrl.text.trim();
+        if (_ownerPhoneCtrl.text.trim().isNotEmpty)
+          body['ownerPhone'] = _ownerPhoneCtrl.text.trim();
+        if (_ownerPanCtrl.text.trim().isNotEmpty)
+          body['ownerPan'] = _ownerPanCtrl.text.trim();
+        if (_ownerAddrCtrl.text.trim().isNotEmpty)
+          body['ownerAddress'] = _ownerAddrCtrl.text.trim();
+        if (_agreementStart != null)
+          body['agreementStartDate'] = _formatDate(_agreementStart!);
+        if (_agreementEnd != null)
+          body['agreementEndDate'] = _formatDate(_agreementEnd!);
         final amt = double.tryParse(_agreementAmtCtrl.text.trim());
         if (amt != null) body['agreementAmount'] = amt;
       }
 
       // GPS
-      if (_gpsDeviceNumCtrl.text.trim().isNotEmpty) body['gpsDeviceNumber'] = _gpsDeviceNumCtrl.text.trim();
-      if (_gpsImeiCtrl.text.trim().isNotEmpty)      body['gpsDeviceImei']   = _gpsImeiCtrl.text.trim();
-      if (_gpsProviderCtrl.text.trim().isNotEmpty)  body['gpsProvider']     = _gpsProviderCtrl.text.trim();
+      if (_gpsDeviceNumCtrl.text.trim().isNotEmpty)
+        body['gpsDeviceNumber'] = _gpsDeviceNumCtrl.text.trim();
+      if (_gpsImeiCtrl.text.trim().isNotEmpty)
+        body['gpsDeviceImei'] = _gpsImeiCtrl.text.trim();
+      if (_gpsProviderCtrl.text.trim().isNotEmpty)
+        body['gpsProvider'] = _gpsProviderCtrl.text.trim();
 
       // Operations
       final odo = double.tryParse(_odometerCtrl.text.trim());
@@ -251,7 +288,8 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
       if (fuel != null) body['currentFuelLevel'] = fuel;
 
       // Notes
-      if (_notesCtrl.text.trim().isNotEmpty) body['notes'] = _notesCtrl.text.trim();
+      if (_notesCtrl.text.trim().isNotEmpty)
+        body['notes'] = _notesCtrl.text.trim();
 
       if (widget.isEdit) {
         await _api.put(ApiEndpoints.vehicleById(widget.vehicleId!), data: body);
@@ -260,7 +298,9 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
       }
 
       Get.back(result: true);
-      FerosSnackbar.success(widget.isEdit ? 'Vehicle updated' : 'Vehicle added');
+      FerosSnackbar.success(
+        widget.isEdit ? 'Vehicle updated' : 'Vehicle added',
+      );
     } catch (e) {
       FerosSnackbar.error(e.toString());
     } finally {
@@ -275,9 +315,9 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
       appBar: AppBar(
         backgroundColor: AppColors.navy,
         elevation: 0,
-        leading: IconButton(
-          onPressed: Get.back,
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
         ),
         title: Text(
           widget.isEdit ? 'Edit Vehicle' : 'New Vehicle',
@@ -299,210 +339,288 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // ── 1. Basic Info ────────────────────────────────────────
-                      _Section('BASIC INFO', children: [
-                        _field('Registration Number *', _regCtrl,
+                      _Section(
+                        'BASIC INFO',
+                        children: [
+                          _field(
+                            'Registration Number *',
+                            _regCtrl,
                             'e.g. MH-12-AB-1234',
                             formatters: [
                               FilteringTextInputFormatter.allow(
-                                  RegExp(r'[A-Za-z0-9\-]'))
-                            ]),
-                        const SizedBox(height: 12),
-                        _isLoadingTypes
-                            ? const _FieldShimmer()
-                            : FerosSelectField<Map<String, dynamic>>(
-                                label: 'Vehicle Type',
-                                title: 'Select Vehicle Type',
-                                hint: 'Search type…',
-                                items: _vehicleTypes,
-                                itemLabel: (t) =>
-                                    t['name'] as String? ?? '',
-                                selectedDisplay:
-                                    _selectedType?['name'] as String?,
-                                onSelected: (t) =>
-                                    setState(() => _selectedType = t),
+                                RegExp(r'[A-Za-z0-9\-]'),
                               ),
-                        const SizedBox(height: 12),
-                        _isLoadingBrands
-                            ? const _FieldShimmer()
-                            : FerosSelectField<Map<String, dynamic>>(
-                                label: 'Brand',
-                                title: 'Select Brand',
-                                hint: 'Search brand…',
-                                items: _brands,
-                                itemLabel: (b) =>
-                                    b['name'] as String? ?? '',
-                                selectedDisplay:
-                                    _selectedBrand?['name'] as String?,
-                                onSelected: (b) =>
-                                    setState(() => _selectedBrand = b),
-                              ),
-                        const SizedBox(height: 12),
-                        _isLoadingFuels
-                            ? const _FieldShimmer()
-                            : FerosSelectField<Map<String, dynamic>>(
-                                label: 'Fuel Type',
-                                title: 'Select Fuel Type',
-                                hint: 'Search fuel type…',
-                                items: _fuelTypes,
-                                itemLabel: (f) =>
-                                    f['name'] as String? ?? '',
-                                selectedDisplay:
-                                    _selectedFuel?['name'] as String?,
-                                onSelected: (f) =>
-                                    setState(() => _selectedFuel = f),
-                              ),
-                        const SizedBox(height: 12),
-                        _isLoadingOwnership
-                            ? const _FieldShimmer()
-                            : FerosSelectField<Map<String, dynamic>>(
-                                label: 'Ownership Type',
-                                title: 'Select Ownership',
-                                hint: 'Search ownership…',
-                                items: _ownershipTypes,
-                                itemLabel: (o) =>
-                                    o['name'] as String? ?? '',
-                                selectedDisplay:
-                                    _selectedOwnership?['name'] as String?,
-                                onSelected: (o) =>
-                                    setState(() => _selectedOwnership = o),
-                              ),
-                        const SizedBox(height: 12),
-                        _isLoadingStatuses
-                            ? const _FieldShimmer()
-                            : FerosSelectField<Map<String, dynamic>>(
-                                label: 'Current Status',
-                                title: 'Select Status',
-                                hint: 'Search status…',
-                                items: _statuses,
-                                itemLabel: (s) =>
-                                    s['name'] as String? ?? '',
-                                selectedDisplay:
-                                    _selectedStatus?['name'] as String?,
-                                onSelected: (s) =>
-                                    setState(() => _selectedStatus = s),
-                              ),
-                        const SizedBox(height: 12),
-                        Row(children: [
-                          Expanded(
-                            child: _field('Capacity (Tons)', _capacityCtrl,
-                                'e.g. 20',
-                                inputType: const TextInputType
-                                    .numberWithOptions(decimal: true)),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _field(
-                                'Mfg. Year', _yearCtrl, 'e.g. 2020',
-                                inputType: TextInputType.number,
-                                formatters: [
-                                  FilteringTextInputFormatter.digitsOnly
-                                ]),
+                          const SizedBox(height: 12),
+                          _isLoadingTypes
+                              ? const _FieldShimmer()
+                              : FerosSelectField<Map<String, dynamic>>(
+                                  label: 'Vehicle Type',
+                                  title: 'Select Vehicle Type',
+                                  hint: 'Search type…',
+                                  items: _vehicleTypes,
+                                  itemLabel: (t) => t['name'] as String? ?? '',
+                                  selectedDisplay:
+                                      _selectedType?['name'] as String?,
+                                  onSelected: (t) =>
+                                      setState(() => _selectedType = t),
+                                ),
+                          const SizedBox(height: 12),
+                          _isLoadingBrands
+                              ? const _FieldShimmer()
+                              : FerosSelectField<Map<String, dynamic>>(
+                                  label: 'Brand',
+                                  title: 'Select Brand',
+                                  hint: 'Search brand…',
+                                  items: _brands,
+                                  itemLabel: (b) => b['name'] as String? ?? '',
+                                  selectedDisplay:
+                                      _selectedBrand?['name'] as String?,
+                                  onSelected: (b) =>
+                                      setState(() => _selectedBrand = b),
+                                ),
+                          const SizedBox(height: 12),
+                          _isLoadingFuels
+                              ? const _FieldShimmer()
+                              : FerosSelectField<Map<String, dynamic>>(
+                                  label: 'Fuel Type',
+                                  title: 'Select Fuel Type',
+                                  hint: 'Search fuel type…',
+                                  items: _fuelTypes,
+                                  itemLabel: (f) => f['name'] as String? ?? '',
+                                  selectedDisplay:
+                                      _selectedFuel?['name'] as String?,
+                                  onSelected: (f) =>
+                                      setState(() => _selectedFuel = f),
+                                ),
+                          const SizedBox(height: 12),
+                          _isLoadingOwnership
+                              ? const _FieldShimmer()
+                              : FerosSelectField<Map<String, dynamic>>(
+                                  label: 'Ownership Type',
+                                  title: 'Select Ownership',
+                                  hint: 'Search ownership…',
+                                  items: _ownershipTypes,
+                                  itemLabel: (o) => o['name'] as String? ?? '',
+                                  selectedDisplay:
+                                      _selectedOwnership?['name'] as String?,
+                                  onSelected: (o) =>
+                                      setState(() => _selectedOwnership = o),
+                                ),
+                          const SizedBox(height: 12),
+                          _isLoadingStatuses
+                              ? const _FieldShimmer()
+                              : FerosSelectField<Map<String, dynamic>>(
+                                  label: 'Current Status',
+                                  title: 'Select Status',
+                                  hint: 'Search status…',
+                                  items: _statuses,
+                                  itemLabel: (s) => s['name'] as String? ?? '',
+                                  selectedDisplay:
+                                      _selectedStatus?['name'] as String?,
+                                  onSelected: (s) =>
+                                      setState(() => _selectedStatus = s),
+                                ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _field(
+                                  'Capacity (Tons)',
+                                  _capacityCtrl,
+                                  'e.g. 20',
+                                  inputType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _field(
+                                  'Mfg. Year',
+                                  _yearCtrl,
+                                  'e.g. 2020',
+                                  inputType: TextInputType.number,
+                                  formatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                        ]),
-                        const SizedBox(height: 12),
-                        Row(children: [
-                          Expanded(
-                            child: _field('Color', _colorCtrl, 'e.g. White'),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _field(
+                                  'Color',
+                                  _colorCtrl,
+                                  'e.g. White',
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _field(
+                                  'Tank Capacity (L)',
+                                  _tankCapCtrl,
+                                  'e.g. 400',
+                                  inputType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _field(
-                                'Tank Capacity (L)', _tankCapCtrl, 'e.g. 400',
-                                inputType: const TextInputType
-                                    .numberWithOptions(decimal: true)),
+                          const SizedBox(height: 12),
+                          _field(
+                            'Chassis Number',
+                            _chassisCtrl,
+                            'e.g. MA1VC2HVXL1234567',
                           ),
-                        ]),
-                        const SizedBox(height: 12),
-                        _field('Chassis Number', _chassisCtrl,
-                            'e.g. MA1VC2HVXL1234567'),
-                        const SizedBox(height: 12),
-                        _field('Engine Number', _engineCtrl,
-                            'e.g. K9K892T1234567'),
-                      ]),
+                          const SizedBox(height: 12),
+                          _field(
+                            'Engine Number',
+                            _engineCtrl,
+                            'e.g. K9K892T1234567',
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 16),
 
                       // ── 2. Owner / Hired Info (conditional) ──────────────────
                       if (_isHired) ...[
-                        _Section('OWNER / HIRED INFO', children: [
-                          _field('Owner Name', _ownerNameCtrl,
-                              'Enter owner name'),
-                          const SizedBox(height: 12),
-                          _field('Phone', _ownerPhoneCtrl,
+                        _Section(
+                          'OWNER / HIRED INFO',
+                          children: [
+                            _field(
+                              'Owner Name',
+                              _ownerNameCtrl,
+                              'Enter owner name',
+                            ),
+                            const SizedBox(height: 12),
+                            _field(
+                              'Phone',
+                              _ownerPhoneCtrl,
                               'Enter owner phone',
-                              inputType: TextInputType.phone),
-                          const SizedBox(height: 12),
-                          _field('PAN Number', _ownerPanCtrl,
-                              'e.g. ABCDE1234F'),
-                          const SizedBox(height: 12),
-                          _field('Address', _ownerAddrCtrl,
+                              inputType: TextInputType.phone,
+                            ),
+                            const SizedBox(height: 12),
+                            _field(
+                              'PAN Number',
+                              _ownerPanCtrl,
+                              'e.g. ABCDE1234F',
+                            ),
+                            const SizedBox(height: 12),
+                            _field(
+                              'Address',
+                              _ownerAddrCtrl,
                               'Enter owner address',
-                              maxLines: 2),
-                          const SizedBox(height: 12),
-                          Row(children: [
-                            Expanded(
-                              child: _DatePickerField(
-                                label: 'Agreement Start',
-                                value: _agreementStart,
-                                hint: 'Select date',
-                                onPicked: (d) =>
-                                    setState(() => _agreementStart = d),
-                              ),
+                              maxLines: 2,
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _DatePickerField(
-                                label: 'Agreement End',
-                                value: _agreementEnd,
-                                hint: 'Select date',
-                                onPicked: (d) =>
-                                    setState(() => _agreementEnd = d),
-                              ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _DatePickerField(
+                                    label: 'Agreement Start',
+                                    value: _agreementStart,
+                                    hint: 'Select date',
+                                    onPicked: (d) =>
+                                        setState(() => _agreementStart = d),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _DatePickerField(
+                                    label: 'Agreement End',
+                                    value: _agreementEnd,
+                                    hint: 'Select date',
+                                    onPicked: (d) =>
+                                        setState(() => _agreementEnd = d),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ]),
-                          const SizedBox(height: 12),
-                          _field(
-                              'Agreement Amount (₹)', _agreementAmtCtrl,
+                            const SizedBox(height: 12),
+                            _field(
+                              'Agreement Amount (₹)',
+                              _agreementAmtCtrl,
                               'e.g. 50000',
-                              inputType: const TextInputType
-                                  .numberWithOptions(decimal: true)),
-                        ]),
+                              inputType: const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 16),
                       ],
 
                       // ── 3. GPS ────────────────────────────────────────────────
-                      _Section('GPS & TRACKING', children: [
-                        _field('Device Number', _gpsDeviceNumCtrl,
-                            'Enter GPS device number'),
-                        const SizedBox(height: 12),
-                        _field('IMEI', _gpsImeiCtrl,
+                      _Section(
+                        'GPS & TRACKING',
+                        children: [
+                          _field(
+                            'Device Number',
+                            _gpsDeviceNumCtrl,
+                            'Enter GPS device number',
+                          ),
+                          const SizedBox(height: 12),
+                          _field(
+                            'IMEI',
+                            _gpsImeiCtrl,
                             'Enter IMEI number',
-                            inputType: TextInputType.number),
-                        const SizedBox(height: 12),
-                        _field('Provider', _gpsProviderCtrl,
-                            'e.g. Tata, Jio'),
-                      ]),
+                            inputType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 12),
+                          _field(
+                            'Provider',
+                            _gpsProviderCtrl,
+                            'e.g. Tata, Jio',
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 16),
 
                       // ── 5. Operations ─────────────────────────────────────────
-                      _Section('OPERATIONS', children: [
-                        _field('Odometer (km)', _odometerCtrl,
+                      _Section(
+                        'OPERATIONS',
+                        children: [
+                          _field(
+                            'Odometer (km)',
+                            _odometerCtrl,
                             'e.g. 45000',
-                            inputType: const TextInputType
-                                .numberWithOptions(decimal: true)),
-                        const SizedBox(height: 12),
-                        _field('Current Fuel Level (L)', _fuelLevelCtrl,
+                            inputType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _field(
+                            'Current Fuel Level (L)',
+                            _fuelLevelCtrl,
                             'e.g. 250',
-                            inputType: const TextInputType
-                                .numberWithOptions(decimal: true)),
-                      ]),
+                            inputType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 16),
 
                       // ── 6. Notes ──────────────────────────────────────────────
-                      _Section('NOTES', children: [
-                        _field('Notes', _notesCtrl,
+                      _Section(
+                        'NOTES',
+                        children: [
+                          _field(
+                            'Notes',
+                            _notesCtrl,
                             'Optional notes about this vehicle',
-                            maxLines: 3),
-                      ]),
+                            maxLines: 3,
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -525,14 +643,18 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
                           foregroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                         child: _isSubmitting
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2))
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
                             : Text(
                                 widget.isEdit ? 'Save Changes' : 'Add Vehicle',
                                 style: const TextStyle(
@@ -558,45 +680,53 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
     List<TextInputFormatter>? formatters,
     int maxLines = 1,
   }) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: AppTextStyles.label),
-      const SizedBox(height: 6),
-      TextField(
-        controller: ctrl,
-        keyboardType: inputType,
-        inputFormatters: formatters,
-        maxLines: maxLines,
-        style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
-          filled: true,
-          fillColor: AppColors.surface,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          border: OutlineInputBorder(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTextStyles.label),
+        const SizedBox(height: 6),
+        TextField(
+          controller: ctrl,
+          keyboardType: inputType,
+          inputFormatters: formatters,
+          maxLines: maxLines,
+          style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
+            filled: true,
+            fillColor: AppColors.surface,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
+            border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.border)),
-          enabledBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.border)),
-          focusedBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.navy, width: 1.5)),
+              borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
+            ),
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 
   Widget _label(String text) => Text(
-        text.toUpperCase(),
-        style: AppTextStyles.caption.copyWith(
-          color: AppColors.mutedText,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
-          fontSize: 11,
-        ),
-      );
+    text.toUpperCase(),
+    style: AppTextStyles.caption.copyWith(
+      color: AppColors.mutedText,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.5,
+      fontSize: 11,
+    ),
+  );
 }
 
 // ── Section wrapper ─────────────────────────────────────────────────────────────
@@ -614,18 +744,27 @@ class _Section extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2))
+            color: Color(0x0A000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
             style: AppTextStyles.caption.copyWith(
-                color: AppColors.navy,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8)),
-        const SizedBox(height: 14),
-        ...children,
-      ]),
+              color: AppColors.navy,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: 14),
+          ...children,
+        ],
+      ),
     );
   }
 }
@@ -645,58 +784,76 @@ class _DatePickerField extends StatelessWidget {
 
   String _format(DateTime d) {
     const months = [
-      'Jan','Feb','Mar','Apr','May','Jun',
-      'Jul','Aug','Sep','Oct','Nov','Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
-    return '${d.day.toString().padLeft(2,'0')} ${months[d.month - 1]} ${d.year}';
+    return '${d.day.toString().padLeft(2, '0')} ${months[d.month - 1]} ${d.year}';
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: AppTextStyles.label),
-      const SizedBox(height: 6),
-      GestureDetector(
-        onTap: () async {
-          final picked = await showDatePicker(
-            context: context,
-            initialDate: value ?? DateTime.now(),
-            firstDate: DateTime(2000),
-            lastDate: DateTime(2040),
-            builder: (ctx, child) => Theme(
-              data: Theme.of(ctx).copyWith(
-                colorScheme: const ColorScheme.light(primary: AppColors.navy),
-              ),
-              child: child!,
-            ),
-          );
-          if (picked != null) onPicked(picked);
-        },
-        child: Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(children: [
-            Expanded(
-              child: Text(
-                value != null ? _format(value!) : hint,
-                style: AppTextStyles.body.copyWith(
-                  color: value != null
-                      ? AppColors.bodyText
-                      : AppColors.hintText,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTextStyles.label),
+        const SizedBox(height: 6),
+        GestureDetector(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: value ?? DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2040),
+              builder: (ctx, child) => Theme(
+                data: Theme.of(ctx).copyWith(
+                  colorScheme: const ColorScheme.light(primary: AppColors.navy),
                 ),
+                child: child!,
               ),
+            );
+            if (picked != null) onPicked(picked);
+          },
+          child: Container(
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.border),
             ),
-            const Icon(Icons.calendar_today_outlined,
-                size: 16, color: AppColors.mutedText),
-          ]),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    value != null ? _format(value!) : hint,
+                    style: AppTextStyles.body.copyWith(
+                      color: value != null
+                          ? AppColors.bodyText
+                          : AppColors.hintText,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 16,
+                  color: AppColors.mutedText,
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 }
 
@@ -709,20 +866,27 @@ class _FieldShimmer extends StatelessWidget {
     return Shimmer.fromColors(
       baseColor: const Color(0xFFE2E8F0),
       highlightColor: const Color(0xFFF8FAFC),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
             width: 100,
             height: 13,
             decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4))),
-        const SizedBox(height: 6),
-        Container(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
             height: 48,
             decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8))),
-      ]),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -738,15 +902,17 @@ class _FormSkeleton extends StatelessWidget {
       highlightColor: const Color(0xFFF8FAFC),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-        child: Column(children: [
-          _skeletonSection(fields: 8),
-          const SizedBox(height: 16),
-          _skeletonSection(fields: 6),
-          const SizedBox(height: 16),
-          _skeletonSection(fields: 3),
-          const SizedBox(height: 16),
-          _skeletonSection(fields: 2),
-        ]),
+        child: Column(
+          children: [
+            _skeletonSection(fields: 8),
+            const SizedBox(height: 16),
+            _skeletonSection(fields: 6),
+            const SizedBox(height: 16),
+            _skeletonSection(fields: 3),
+            const SizedBox(height: 16),
+            _skeletonSection(fields: 2),
+          ],
+        ),
       ),
     );
   }
@@ -755,33 +921,50 @@ class _FormSkeleton extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(12)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
             width: 120,
             height: 12,
             decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4))),
-        const SizedBox(height: 14),
-        ...List.generate(fields, (_) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(
-                width: 100,
-                height: 12,
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(4))),
-            const SizedBox(height: 6),
-            Container(
-                height: 48,
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8))),
-          ]),
-        )),
-      ]),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 14),
+          ...List.generate(
+            fields,
+            (_) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 100,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
