@@ -12,6 +12,7 @@ dependencies:
 
   # State management & navigation
   get: ^4.7.3
+  collection: ^1.18.0
 
   # HTTP
   dio: ^5.8.0+1

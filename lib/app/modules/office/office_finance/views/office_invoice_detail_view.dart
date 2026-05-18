@@ -123,7 +123,7 @@ class _OfficeInvoiceDetailViewState extends State<OfficeInvoiceDetailView> {
           backgroundColor: AppColors.navy, elevation: 0,
           leading: IconButton(
               onPressed: Get.back,
-              icon: const Icon(Icons.arrow_back, color: Colors.white)),
+              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white)),
           title: const Text('Invoice',
               style: TextStyle(color: Colors.white, fontFamily: 'Inter',
                   fontWeight: FontWeight.w600)),
@@ -173,7 +173,7 @@ class _OfficeInvoiceDetailViewState extends State<OfficeInvoiceDetailView> {
         elevation: 0,
         leading: IconButton(
           onPressed: Get.back,
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

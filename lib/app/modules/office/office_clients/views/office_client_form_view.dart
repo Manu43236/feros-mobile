@@ -268,7 +268,7 @@ class _OfficeClientFormViewState extends State<OfficeClientFormView> {
         elevation: 0,
         leading: IconButton(
           onPressed: Get.back,
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
         ),
         title: Text(
           widget.isEdit ? 'Edit Client' : 'New Client',

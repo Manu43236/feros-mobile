@@ -24,6 +24,9 @@ class AuthService extends GetxService {
     switch (currentUser.value?.role) {
       case 'SUPERVISOR':
         return Routes.SUPERVISOR_SHELL;
+      case 'OFFICE_STAFF':
+      case 'ADMIN':
+        return Routes.OFFICE_SHELL;
       default:
         return Routes.SHELL;
     }

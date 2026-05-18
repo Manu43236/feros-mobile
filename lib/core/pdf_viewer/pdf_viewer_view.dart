@@ -26,7 +26,7 @@ class PdfViewerView extends GetView<PdfViewerController> {
         backgroundColor: AppColors.navy,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
           onPressed: () => Get.back(),
         ),
         title: Column(

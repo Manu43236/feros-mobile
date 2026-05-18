@@ -26,7 +26,7 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                 fontSize: 15),
           ),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
             onPressed: Get.back,
           ),
         ),

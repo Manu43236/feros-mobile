@@ -11,6 +11,8 @@ import '../modules/supervisor/supervisor_shell/bindings/supervisor_shell_binding
 import '../modules/supervisor/supervisor_shell/views/supervisor_shell_view.dart';
 import '../modules/driver/driver_notifications/views/driver_notifications_view.dart';
 import '../modules/driver/driver_notifications/bindings/driver_notifications_binding.dart';
+import '../modules/office/office_shell/views/office_shell_view.dart';
+import '../modules/office/office_shell/bindings/office_shell_binding.dart';
 
 part 'app_routes.dart';
 
@@ -46,6 +48,12 @@ class AppPages {
       name: _Paths.NOTIFICATIONS,
       page: () => const DriverNotificationsView(),
       binding: DriverNotificationsBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: _Paths.OFFICE_SHELL,
+      page: () => const OfficeShellView(),
+      binding: OfficeShellBinding(),
       middlewares: [AuthMiddleware()],
     ),
   ];

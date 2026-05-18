@@ -24,7 +24,7 @@ class OfficeStaffView extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           onPressed: Get.back,
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
         ),
         title: const Text('Staff',
             style: TextStyle(

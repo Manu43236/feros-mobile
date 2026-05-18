@@ -1,14 +1,29 @@
+import 'dart:io';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
 import '../../../../../core/utils/date_utils.dart';
+import '../../../../../core/services/auth_service.dart';
+import '../../../../../core/services/upload_service.dart';
+import '../../../../../core/api/api_client.dart';
+import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/widgets/feros_select_field.dart';
 import '../controllers/supervisor_vehicle_detail_controller.dart';
+import '../../../office/office_vehicles/views/office_vehicle_form_view.dart';
+import '../../../office/office_vehicles/views/office_service_detail_view.dart';
 
 class SupervisorVehicleDetailView
     extends GetView<SupervisorVehicleDetailController> {
-  const SupervisorVehicleDetailView({super.key});
+  /// Set to true when navigating from the Office (ADMIN/OFFICE_STAFF) shell
+  /// to show the Documents + Images tabs and (for ADMIN) Edit + Toggle buttons.
+  final bool isOffice;
+  const SupervisorVehicleDetailView({super.key, this.isOffice = false});
 
   @override
   Widget build(BuildContext context) {
@@ -48,15 +63,22 @@ class SupervisorVehicleDetailView
       }
 
       final v          = controller.vehicle.value!;
-      final alertCount = _complianceAlertCount(v);
+      controller.ensureDocsLoaded();
+      final alertCount = _complianceAlertCount(controller.docs);
+      final tabCount = isOffice ? 8 : 7;
 
       return DefaultTabController(
-        length: 6,
+        length: tabCount,
         child: Scaffold(
           backgroundColor: AppColors.background,
           body: Column(
             children: [
-              _VehicleBanner(vehicle: v, alertCount: alertCount),
+              _VehicleBanner(
+                vehicle: v,
+                alertCount: alertCount,
+                canManage: isOffice,
+                controller: controller,
+              ),
               Container(
                 color: AppColors.surface,
                 child: TabBar(
@@ -96,6 +118,11 @@ class SupervisorVehicleDetailView
                       text: 'Compliance',
                     ),
                     const Tab(
+                      icon: Icon(Icons.description_outlined, size: 15),
+                      text: 'Documents',
+                      iconMargin: EdgeInsets.only(bottom: 2),
+                    ),
+                    const Tab(
                       icon: Icon(Icons.build_outlined, size: 15),
                       text: 'Service',
                       iconMargin: EdgeInsets.only(bottom: 2),
@@ -115,6 +142,12 @@ class SupervisorVehicleDetailView
                       text: 'GPS & Notes',
                       iconMargin: EdgeInsets.only(bottom: 2),
                     ),
+                    if (isOffice)
+                      const Tab(
+                        icon: Icon(Icons.photo_library_outlined, size: 15),
+                        text: 'Images',
+                        iconMargin: EdgeInsets.only(bottom: 2),
+                      ),
                   ],
                 ),
               ),
@@ -122,11 +155,14 @@ class SupervisorVehicleDetailView
                 child: TabBarView(
                   children: [
                     _BasicInfoTab(v: v),
-                    _ComplianceTab(v: v),
+                    _ComplianceTab(controller: controller),
+                    _DocumentsTab(controller: controller, canManage: isOffice),
                     _ServiceTabBody(controller: controller),
                     _FuelTabBody(controller: controller),
                     _MeterTabBody(controller: controller),
                     _GpsNotesTab(v: v),
+                    if (isOffice)
+                      _ImagesTabBody(controller: controller, canManage: true),
                   ],
                 ),
               ),
@@ -137,17 +173,13 @@ class SupervisorVehicleDetailView
     });
   }
 
-  static int _complianceAlertCount(Map<String, dynamic> v) {
+  static int _complianceAlertCount(List<Map<String, dynamic>> docs) {
     int count = 0;
-    for (final d in [
-      v['rcExpiryDate'], v['insuranceExpiryDate'], v['permitExpiryDate'],
-      v['fitnessExpiryDate'], v['pollutionExpiryDate'], v['roadTaxExpiryDate'],
-    ]) {
+    for (final doc in docs) {
+      final d = doc['expiryDate'] as String?;
       if (d == null) continue;
       try {
-        if (DateTime.parse(d as String).difference(DateTime.now()).inDays <= 7) {
-          count++;
-        }
+        if (DateTime.parse(d).difference(DateTime.now()).inDays <= 7) count++;
       } catch (_) {}
     }
     return count;
@@ -158,7 +190,14 @@ class SupervisorVehicleDetailView
 class _VehicleBanner extends StatelessWidget {
   final Map<String, dynamic> vehicle;
   final int alertCount;
-  const _VehicleBanner({required this.vehicle, required this.alertCount});
+  final bool canManage;
+  final SupervisorVehicleDetailController controller;
+  const _VehicleBanner({
+    required this.vehicle,
+    required this.alertCount,
+    required this.canManage,
+    required this.controller,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -211,6 +250,103 @@ class _VehicleBanner extends StatelessWidget {
                         visualDensity: VisualDensity.compact,
                       ),
                       const Spacer(),
+                      if (canManage) ...[
+                        // Edit button — navigate to form in edit mode
+                        IconButton(
+                          onPressed: () async {
+                            final updated = await Get.to(
+                              () => OfficeVehicleFormView(
+                                vehicleId: controller.vehicleId,
+                              ),
+                            );
+                            if (updated == true) controller.refreshVehicle();
+                          },
+                          icon: const Icon(Icons.edit_outlined,
+                              color: Colors.white, size: 18),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        const SizedBox(width: 8),
+                        // Toggle active/inactive
+                        Obx(() => controller.isToggling.value
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : GestureDetector(
+                                onTap: () async {
+                                  final label =
+                                      isActive ? 'deactivate' : 'activate';
+                                  final ok = await Get.dialog<bool>(
+                                    AlertDialog(
+                                      title: Text(
+                                          isActive
+                                              ? 'Deactivate Vehicle'
+                                              : 'Activate Vehicle',
+                                          style: AppTextStyles.bodyMedium),
+                                      content: Text(
+                                        'Are you sure you want to $label this vehicle?',
+                                        style: AppTextStyles.body,
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Get.back(result: false),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Get.back(result: true),
+                                          child: Text(
+                                            isActive
+                                                ? 'Deactivate'
+                                                : 'Activate',
+                                            style: TextStyle(
+                                              color: isActive
+                                                  ? AppColors.error
+                                                  : AppColors.navy,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (ok == true) controller.toggleActive();
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: isActive
+                                        ? Colors.red.withValues(alpha: 0.25)
+                                        : Colors.green.withValues(alpha: 0.25),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: isActive
+                                          ? Colors.red.withValues(alpha: 0.5)
+                                          : Colors.green.withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    isActive ? 'Deactivate' : 'Activate',
+                                    style: TextStyle(
+                                      color: isActive
+                                          ? const Color(0xFFFCA5A5)
+                                          : const Color(0xFF86EFAC),
+                                      fontFamily: 'Inter',
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              )),
+                        const SizedBox(width: 8),
+                      ],
                       if (!isActive)
                         Container(
                           margin: const EdgeInsets.only(right: 8),
@@ -424,11 +560,6 @@ class _BasicInfoTab extends StatelessWidget {
         _InfoSection(title: 'Identification', rows: [
           _IR('Chassis No.',   v['chassisNumber']),
           _IR('Engine No.',    v['engineNumber']),
-          _IR('RC Number',     v['rcNumber']),
-          _IR('Permit No.',    v['permitNumber']),
-          _IR('Permit Type',   v['permitType']),
-          _IR('PUC No.',       v['pucNumber']),
-          _IR('Fitness Cert.', v['fitnessCertificateNumber']),
         ]),
         if (isHired) ...[
           const SizedBox(height: 12),
@@ -447,97 +578,96 @@ class _BasicInfoTab extends StatelessWidget {
   }
 }
 
-// ── Compliance Tab ────────────────────────────────────────────────────────────
-class _ComplianceTab extends StatelessWidget {
-  final Map<String, dynamic> v;
-  const _ComplianceTab({required this.v});
+// ── Compliance Tab (fixed 6-row status overview) ──────────────────────────────
+class _ComplianceTab extends StatefulWidget {
+  final SupervisorVehicleDetailController controller;
+  const _ComplianceTab({required this.controller});
+
+  @override
+  State<_ComplianceTab> createState() => _ComplianceTabState();
+}
+
+class _ComplianceTabState extends State<_ComplianceTab>
+    with AutomaticKeepAliveClientMixin {
+  static const _types = [
+    ('Registration Certificate (RC)', 'registration'),
+    ('Insurance',                     'insurance'),
+    ('Permit',                        'permit'),
+    ('Fitness Certificate',           'fitness'),
+    ('PUC',                           'puc'),
+    ('Road Tax',                      'road'),
+  ];
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
-    final items = [
-      _CI('Registration Certificate (RC)', v['rcNumber']   as String?, null,                          v['rcExpiryDate']          as String?),
-      _CI('Insurance',                     v['insurancePolicyNumber'] as String?, v['insuranceCompanyName'] as String?, v['insuranceExpiryDate']   as String?),
-      _CI('Permit',                        _permitLabel(v),              null,                          v['permitExpiryDate']      as String?),
-      _CI('Fitness Certificate',           v['fitnessCertificateNumber'] as String?, null,             v['fitnessExpiryDate']     as String?),
-      _CI('Pollution (PUC)',               v['pucNumber']  as String?, null,                           v['pollutionExpiryDate']   as String?),
-      _CI('Road Tax',                      v['roadTaxPaidDate'] != null ? 'Paid: ${FerosDateUtils.formatDate(v['roadTaxPaidDate'] as String)}' : null, null, v['roadTaxExpiryDate'] as String?),
-    ];
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      children: [
-        // ── Document Status ──────────────────────────────────────────────────
-        _SectionHeader('Document Status'),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+    super.build(context);
+    final ctrl = widget.controller;
+    return Obx(() {
+      final state = ctrl.docsState.value;
+      if (state == ViewState.loading) {
+        return const Center(
+            child: CircularProgressIndicator(
+                color: AppColors.navy, strokeWidth: 2));
+      }
+      if (state == ViewState.error) {
+        return _TabError(onRetry: ctrl.retryDocs);
+      }
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        children: [
+          const _SectionHeader('Document Status'),
+          const SizedBox(height: 10),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              children: _types.asMap().entries.map((e) {
+                final label   = e.value.$1;
+                final key     = e.value.$2;
+                final isLast  = e.key == _types.length - 1;
+                final doc = ctrl.docs.firstWhereOrNull(
+                  (d) => (d['documentTypeName'] as String? ?? '')
+                      .toLowerCase()
+                      .contains(key),
+                );
+                final expiryDate = doc?['expiryDate'] as String?;
+                final docNumber  = doc?['documentNumber'] as String?;
+                return _ComplianceStatusRow(
+                  label:      label,
+                  docNumber:  docNumber,
+                  expiryDate: expiryDate,
+                  isLast:     isLast,
+                );
+              }).toList(),
+            ),
           ),
-          child: Column(
-            children: items.asMap().entries.map((e) =>
-              _ComplianceRow(item: e.value, isLast: e.key == items.length - 1),
-            ).toList(),
-          ),
-        ),
-        const SizedBox(height: 20),
-        // ── Insurance Details ────────────────────────────────────────────────
-        _SectionHeader('Insurance Details'),
-        const SizedBox(height: 8),
-        _InfoSection(title: '', rows: [
-          _IR('Company',    v['insuranceCompanyName']),
-          _IR('Policy No.', v['insurancePolicyNumber']),
-          _IR('Start Date', v['insuranceStartDate'] != null ? FerosDateUtils.formatDate(v['insuranceStartDate'] as String) : null),
-          _IR('Expiry Date',v['insuranceExpiryDate'] != null ? FerosDateUtils.formatDate(v['insuranceExpiryDate'] as String) : null),
-        ]),
-        const SizedBox(height: 20),
-        // ── Permit Details ───────────────────────────────────────────────────
-        _SectionHeader('Permit Details'),
-        const SizedBox(height: 8),
-        _InfoSection(title: '', rows: [
-          _IR('Permit No.', v['permitNumber']),
-          _IR('Type',       v['permitType']),
-          _IR('Start Date', v['permitStartDate'] != null ? FerosDateUtils.formatDate(v['permitStartDate'] as String) : null),
-          _IR('Expiry Date',v['permitExpiryDate'] != null ? FerosDateUtils.formatDate(v['permitExpiryDate'] as String) : null),
-        ]),
-        const SizedBox(height: 20),
-        // ── Road Tax ─────────────────────────────────────────────────────────
-        _SectionHeader('Road Tax'),
-        const SizedBox(height: 8),
-        _InfoSection(title: '', rows: [
-          _IR('Paid Date',  v['roadTaxPaidDate']  != null ? FerosDateUtils.formatDate(v['roadTaxPaidDate']  as String) : null),
-          _IR('Expiry Date',v['roadTaxExpiryDate'] != null ? FerosDateUtils.formatDate(v['roadTaxExpiryDate'] as String) : null),
-        ]),
-      ],
-    );
-  }
-
-  static String? _permitLabel(Map<String, dynamic> v) {
-    final num  = v['permitNumber'] as String?;
-    final type = v['permitType']   as String?;
-    if (num == null) return null;
-    return type != null ? '$num · $type' : num;
+        ],
+      );
+    });
   }
 }
 
-class _CI {
-  final String label;
+class _ComplianceStatusRow extends StatelessWidget {
+  final String  label;
   final String? docNumber;
-  final String? subInfo;
   final String? expiryDate;
-  const _CI(this.label, this.docNumber, this.subInfo, this.expiryDate);
-}
-
-class _ComplianceRow extends StatelessWidget {
-  final _CI  item;
-  final bool isLast;
-  const _ComplianceRow({required this.item, required this.isLast});
+  final bool    isLast;
+  const _ComplianceStatusRow({
+    required this.label,
+    required this.isLast,
+    this.docNumber,
+    this.expiryDate,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final (statusColor, statusBg, statusIcon, statusText) =
-        _statusStyle(item.expiryDate);
+    final (chipColor, chipBg, chipText) = _chip(expiryDate);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
@@ -547,86 +677,170 @@ class _ComplianceRow extends StatelessWidget {
                 bottom: BorderSide(color: AppColors.border, width: 0.8)),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.label,
+                Text(label,
                     style: AppTextStyles.bodyMedium
                         .copyWith(color: AppColors.bodyText)),
-                if (item.docNumber != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Text(item.docNumber!,
-                        style: AppTextStyles.caption
-                            .copyWith(color: AppColors.mutedText)),
-                  ),
-                if (item.subInfo != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Text(item.subInfo!,
-                        style: AppTextStyles.caption
-                            .copyWith(color: AppColors.mutedText)),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 3),
-                  child: Text(
-                    'Expiry: ${item.expiryDate != null ? FerosDateUtils.formatDate(item.expiryDate!) : '—'}',
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.mutedText),
-                  ),
-                ),
+                if (docNumber != null)
+                  Text(docNumber!,
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.mutedText)),
+                if (expiryDate != null)
+                  Text('Expires: ${FerosDateUtils.formatDate(expiryDate!)}',
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.mutedText)),
               ],
             ),
           ),
-          const SizedBox(width: 12),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: statusBg,
-              borderRadius: BorderRadius.circular(8),
-              border:
-                  Border.all(color: statusColor.withValues(alpha: 0.3)),
+              color: chipBg,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: chipColor.withValues(alpha: 0.3)),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(statusIcon, size: 11, color: statusColor),
-                const SizedBox(width: 4),
-                Text(statusText,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontFamily: 'Inter',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    )),
-              ],
-            ),
+            child: Text(chipText,
+                style: TextStyle(
+                  color: chipColor,
+                  fontFamily: 'Inter',
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                )),
           ),
         ],
       ),
     );
   }
 
-  static (Color, Color, IconData, String) _statusStyle(String? d) {
+  static (Color, Color, String) _chip(String? d) {
     if (d == null) {
-      return (AppColors.mutedText, const Color(0xFFF9FAFB),
-          Icons.remove_circle_outline, 'Not recorded');
+      return (AppColors.mutedText, const Color(0xFFF9FAFB), 'Not recorded');
     }
     try {
-      final days =
-          DateTime.parse(d).difference(DateTime.now()).inDays;
-      if (days < 0)   return (const Color(0xFFDC2626), const Color(0xFFFEE2E2), Icons.warning_amber_rounded,  'Expired ${days.abs()}d ago');
-      if (days <= 7)  return (const Color(0xFFEA580C), const Color(0xFFFFF7ED), Icons.warning_amber_rounded,  '${days}d left');
-      if (days <= 30) return (const Color(0xFFD97706), const Color(0xFFFFFBEB), Icons.schedule_outlined,      '${days}d left');
-      return              (const Color(0xFF16A34A), const Color(0xFFF0FDF4), Icons.check_circle_outline,  'Valid · ${days}d left');
+      final days = DateTime.parse(d).difference(DateTime.now()).inDays;
+      if (days < 0)   return (const Color(0xFFDC2626), const Color(0xFFFEE2E2), 'Expired ${days.abs()}d ago');
+      if (days <= 7)  return (const Color(0xFFEA580C), const Color(0xFFFFF7ED), '${days}d left');
+      if (days <= 30) return (const Color(0xFFD97706), const Color(0xFFFFFBEB), '${days}d left');
+      return              (const Color(0xFF16A34A), const Color(0xFFF0FDF4), 'Valid · ${days}d left');
     } catch (_) {
-      return (AppColors.mutedText, const Color(0xFFF9FAFB),
-          Icons.remove_circle_outline, 'Not recorded');
+      return (AppColors.mutedText, const Color(0xFFF9FAFB), 'Not recorded');
     }
+  }
+}
+
+// ── Documents Tab ─────────────────────────────────────────────────────────────
+class _DocumentsTab extends StatefulWidget {
+  final SupervisorVehicleDetailController controller;
+  final bool canManage;
+  const _DocumentsTab({required this.controller, this.canManage = false});
+
+  @override
+  State<_DocumentsTab> createState() => _DocumentsTabState();
+}
+
+class _DocumentsTabState extends State<_DocumentsTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final ctrl = widget.controller;
+    return Obx(() {
+      final state = ctrl.docsState.value;
+      if (state == ViewState.loading) {
+        return const Center(
+            child: CircularProgressIndicator(
+                color: AppColors.navy, strokeWidth: 2));
+      }
+      if (state == ViewState.error) {
+        return _TabError(onRetry: ctrl.retryDocs);
+      }
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        children: [
+          Row(
+            children: [
+              const Expanded(child: _SectionHeader('Uploaded Documents')),
+              if (widget.canManage)
+                GestureDetector(
+                  onTap: () => _showAddDocSheet(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.navy,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add, size: 13, color: Colors.white),
+                        SizedBox(width: 4),
+                        Text('Add Document',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Inter',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            )),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (ctrl.docs.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Center(
+                child: Text('No documents uploaded yet',
+                    style: AppTextStyles.body
+                        .copyWith(color: AppColors.mutedText)),
+              ),
+            )
+          else
+            Column(
+              children: ctrl.docs.map((doc) {
+                return _UploadedDocCard(
+                  doc: doc,
+                  canManage: widget.canManage,
+                  onDelete: () async {
+                    final ok = await ctrl.deleteDocument(doc['id'] as int);
+                    if (!ok && context.mounted) {
+                      Get.snackbar('Error', 'Failed to delete',
+                          snackPosition: SnackPosition.BOTTOM);
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+        ],
+      );
+    });
+  }
+
+  void _showAddDocSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _AddDocumentSheet(
+        vehicleId: widget.controller.vehicleId,
+        onAdded: widget.controller.retryDocs,
+      ),
+    );
   }
 }
 
@@ -1051,7 +1265,11 @@ class _ServiceCard extends StatelessWidget {
 
     final (statusColor, statusBg) = _statusStyle(status);
 
-    return Container(
+    return GestureDetector(
+      onTap: () => Get.to(
+        () => OfficeServiceDetailView(service: record),
+      ),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -1191,7 +1409,7 @@ class _ServiceCard extends StatelessWidget {
             ),
         ],
       ),
-    );
+    ));
   }
 
   static (Color, Color) _statusStyle(String s) {
@@ -3004,6 +3222,892 @@ class _EmptyTabState extends StatelessWidget {
           const SizedBox(height: 12),
           Text(message,
               style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Uploaded Doc Card — matches web Documents tab layout ──────────────────────
+class _UploadedDocCard extends StatelessWidget {
+  final Map<String, dynamic> doc;
+  final bool canManage;
+  final VoidCallback onDelete;
+  const _UploadedDocCard({
+    required this.doc,
+    required this.canManage,
+    required this.onDelete,
+  });
+
+  static bool _isImage(String url) {
+    final lower = url.toLowerCase().split('?').first;
+    return lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.webp');
+  }
+
+  void _viewFile(BuildContext context, String url) {
+    if (_isImage(url)) {
+      showDialog(
+        context: context,
+        builder: (_) => Dialog(
+          backgroundColor: Colors.black,
+          insetPadding: EdgeInsets.zero,
+          child: Stack(
+            children: [
+              InteractiveViewer(
+                child: Center(
+                  child: Image.network(url, fit: BoxFit.contain),
+                ),
+              ),
+              Positioned(
+                top: 40,
+                right: 16,
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(Icons.close,
+                        color: Colors.white, size: 20),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      final uri = Uri.tryParse(url);
+      if (uri != null) launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final docType    = doc['documentTypeName'] as String? ?? '—';
+    final docNum     = doc['documentNumber']   as String?;
+    final issuerName = doc['issuerName']        as String?;
+    final permitType = doc['permitType']        as String?;
+    final issueDate  = doc['issueDate']         as String?;
+    final expiryDate = doc['expiryDate']        as String?;
+    final fileUrl    = doc['fileUrl']           as String?;
+
+    final (expiryColor, expiryBg, expiryText) = _expiryStyle(expiryDate);
+
+    final dateParts = <String>[];
+    if (issueDate  != null) dateParts.add('Issued: ${FerosDateUtils.formatDate(issueDate)}');
+    if (expiryDate != null) dateParts.add('Expires: ${FerosDateUtils.formatDate(expiryDate)}');
+    final dateLine = dateParts.join(' · ');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Icon
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: AppColors.navy.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.description_outlined,
+                size: 16, color: AppColors.navy),
+          ),
+          const SizedBox(width: 12),
+          // Content column
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(docType,
+                    style: AppTextStyles.bodyMedium
+                        .copyWith(color: AppColors.bodyText)),
+                if (docNum != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 1),
+                    child: Text('No: $docNum',
+                        style: AppTextStyles.caption
+                            .copyWith(color: AppColors.mutedText)),
+                  ),
+                if (issuerName != null)
+                  Text('Issuer: $issuerName',
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.mutedText)),
+                if (permitType != null)
+                  Text('Type: $permitType',
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.mutedText)),
+                if (dateLine.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(dateLine,
+                        style: AppTextStyles.caption
+                            .copyWith(color: AppColors.mutedText)),
+                  ),
+                // Expiry chip below date
+                if (expiryDate != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: expiryBg,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                            color: expiryColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(expiryText,
+                          style: TextStyle(
+                            color: expiryColor,
+                            fontFamily: 'Inter',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          )),
+                    ),
+                  ),
+                // View + Delete row
+                if (fileUrl != null || canManage)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Row(
+                      children: [
+                        if (fileUrl != null)
+                          GestureDetector(
+                            onTap: () => _viewFile(context, fileUrl),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.navy.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                    color:
+                                        AppColors.navy.withValues(alpha: 0.2)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _isImage(fileUrl)
+                                        ? Icons.image_outlined
+                                        : Icons.open_in_new,
+                                    size: 10,
+                                    color: AppColors.navy,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  const Text('View',
+                                      style: TextStyle(
+                                        color: AppColors.navy,
+                                        fontFamily: 'Inter',
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                      )),
+                                ],
+                              ),
+                            ),
+                          ),
+                        const Spacer(),
+                        if (canManage)
+                          GestureDetector(
+                            onTap: () async {
+                              final ok = await Get.dialog<bool>(
+                                AlertDialog(
+                                  title: const Text('Delete Document'),
+                                  content: Text(
+                                      'Delete "$docType"? This cannot be undone.'),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () =>
+                                            Get.back(result: false),
+                                        child: const Text('Cancel')),
+                                    TextButton(
+                                        onPressed: () =>
+                                            Get.back(result: true),
+                                        child: const Text('Delete',
+                                            style: TextStyle(
+                                                color: AppColors.error))),
+                                  ],
+                                ),
+                              );
+                              if (ok == true) onDelete();
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: Icon(Icons.delete_outline,
+                                  size: 18,
+                                  color: AppColors.mutedText
+                                      .withValues(alpha: 0.6)),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static (Color, Color, String) _expiryStyle(String? d) {
+    if (d == null) return (AppColors.mutedText, const Color(0xFFF9FAFB), 'No expiry');
+    try {
+      final days = DateTime.parse(d).difference(DateTime.now()).inDays;
+      if (days < 0)   return (const Color(0xFFDC2626), const Color(0xFFFEE2E2), 'Expired ${days.abs()}d ago');
+      if (days <= 7)  return (const Color(0xFFEA580C), const Color(0xFFFFF7ED), '${days}d left');
+      if (days <= 30) return (const Color(0xFFD97706), const Color(0xFFFFFBEB), '${days}d left');
+      return              (const Color(0xFF16A34A), const Color(0xFFF0FDF4), 'Valid · ${days}d left');
+    } catch (_) {
+      return (AppColors.mutedText, const Color(0xFFF9FAFB), '—');
+    }
+  }
+}
+
+// ── Add Document Sheet ─────────────────────────────────────────────────────────
+class _AddDocumentSheet extends StatefulWidget {
+  final int vehicleId;
+  final VoidCallback onAdded;
+  const _AddDocumentSheet({required this.vehicleId, required this.onAdded});
+
+  @override
+  State<_AddDocumentSheet> createState() => _AddDocumentSheetState();
+}
+
+class _AddDocumentSheetState extends State<_AddDocumentSheet> {
+  final _api    = Get.find<ApiClient>();
+  final _upload = Get.find<UploadService>();
+
+  bool _loadingTypes = true;
+  bool _uploading    = false;
+  bool _saving       = false;
+
+  List<Map<String, dynamic>> _docTypes = [];
+  Map<String, dynamic>? _selectedType;
+
+  final _docNumCtrl    = TextEditingController();
+  final _issuerNameCtrl = TextEditingController();
+  final _remarksCtrl   = TextEditingController();
+  DateTime? _issueDate;
+  DateTime? _expiryDate;
+  String? _permitType;
+  String? _uploadedFileUrl;
+  String? _attachedFileName;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDocTypes();
+  }
+
+  @override
+  void dispose() {
+    _docNumCtrl.dispose();
+    _issuerNameCtrl.dispose();
+    _remarksCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadDocTypes() async {
+    try {
+      final res = await _api.get(ApiEndpoints.documentTypes);
+      if (mounted) {
+        setState(() {
+          _docTypes = ((res.data as Map<String, dynamic>)['data'] as List? ?? [])
+              .cast<Map<String, dynamic>>();
+          _loadingTypes = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingTypes = false);
+    }
+  }
+
+  Future<void> _pickFile() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
+
+    setState(() => _uploading = true);
+    try {
+      final file = File(picked.path);
+      final key  = await _upload.uploadFile(
+        file,
+        folder: 'tenants/images/vehicles/${widget.vehicleId}/documents',
+      );
+      setState(() {
+        _uploadedFileUrl  = key;
+        _attachedFileName = picked.name;
+        _uploading        = false;
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() => _uploading = false);
+        Get.snackbar('Error', 'Failed to upload file',
+            snackPosition: SnackPosition.BOTTOM);
+      }
+    }
+  }
+
+  Future<void> _save() async {
+    if (_selectedType == null) {
+      Get.snackbar('Error', 'Please select a document type',
+          snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      final body = <String, dynamic>{
+        'documentTypeId': _selectedType!['id'],
+      };
+      if (_docNumCtrl.text.trim().isNotEmpty)
+        body['documentNumber'] = _docNumCtrl.text.trim();
+      if (_issuerNameCtrl.text.trim().isNotEmpty)
+        body['issuerName'] = _issuerNameCtrl.text.trim();
+      if (_permitType != null) body['permitType'] = _permitType;
+      if (_issueDate  != null) body['issueDate']  = _fmtDate(_issueDate!);
+      if (_expiryDate != null) body['expiryDate'] = _fmtDate(_expiryDate!);
+      if (_uploadedFileUrl != null) body['fileUrl'] = _uploadedFileUrl;
+      if (_remarksCtrl.text.trim().isNotEmpty)
+        body['remarks'] = _remarksCtrl.text.trim();
+
+      await _api.post(
+          ApiEndpoints.vehicleDocuments(widget.vehicleId), data: body);
+
+      Navigator.pop(context);
+      widget.onAdded();
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to add document',
+          snackPosition: SnackPosition.BOTTOM);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  String _fmtDate(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2,'0')}-${d.day.toString().padLeft(2,'0')}';
+
+  String _fmtDisplay(DateTime d) {
+    const m = ['Jan','Feb','Mar','Apr','May','Jun',
+                'Jul','Aug','Sep','Oct','Nov','Dec'];
+    return '${d.day.toString().padLeft(2,'0')} ${m[d.month-1]} ${d.year}';
+  }
+
+  Future<DateTime?> _pickDate(DateTime? initial) => showDatePicker(
+    context: context,
+    initialDate: initial ?? DateTime.now(),
+    firstDate: DateTime(2000),
+    lastDate: DateTime(2040),
+    builder: (ctx, child) => Theme(
+      data: Theme.of(ctx).copyWith(
+          colorScheme: const ColorScheme.light(primary: AppColors.navy)),
+      child: child!,
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36, height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const Text('Upload Document',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  color: AppColors.navy,
+                )),
+            const SizedBox(height: 20),
+
+            // Doc type
+            _loadingTypes
+                ? const _SheetFieldShimmer()
+                : FerosSelectField<Map<String, dynamic>>(
+                    label: 'Document Type *',
+                    title: 'Select Document Type',
+                    hint: 'Search…',
+                    items: _docTypes,
+                    itemLabel: (t) => t['name'] as String? ?? '',
+                    selectedDisplay: _selectedType?['name'] as String?,
+                    onSelected: (t) => setState(() {
+                      _selectedType = t;
+                      _issuerNameCtrl.clear();
+                      _permitType = null;
+                    }),
+                  ),
+            const SizedBox(height: 14),
+
+            // Doc number
+            _SheetTextField(
+                label: 'Document Number',
+                ctrl: _docNumCtrl,
+                hint: 'e.g. MH-RC-1234567'),
+            const SizedBox(height: 14),
+
+            // Issuer name (Insurance only)
+            if (_selectedType != null &&
+                (_selectedType!['name'] as String? ?? '')
+                    .toLowerCase()
+                    .contains('insurance')) ...[
+              _SheetTextField(
+                  label: 'Insurance Company',
+                  ctrl: _issuerNameCtrl,
+                  hint: 'e.g. HDFC Ergo'),
+              const SizedBox(height: 14),
+            ],
+
+            // Permit type toggle (Permit only)
+            if (_selectedType != null &&
+                (_selectedType!['name'] as String? ?? '')
+                    .toLowerCase()
+                    .contains('permit')) ...[
+              Text('Permit Type', style: AppTextStyles.label),
+              const SizedBox(height: 6),
+              Row(children: [
+                _PermitToggleChip(
+                  label: 'National',
+                  selected: _permitType == 'NATIONAL',
+                  onTap: () => setState(() =>
+                      _permitType = _permitType == 'NATIONAL' ? null : 'NATIONAL'),
+                ),
+                const SizedBox(width: 10),
+                _PermitToggleChip(
+                  label: 'State',
+                  selected: _permitType == 'STATE',
+                  onTap: () => setState(() =>
+                      _permitType = _permitType == 'STATE' ? null : 'STATE'),
+                ),
+              ]),
+              const SizedBox(height: 14),
+            ],
+
+            // Issue + Expiry dates
+            Row(children: [
+              Expanded(
+                child: _SheetDateField(
+                  label: 'Issue Date',
+                  value: _issueDate,
+                  onTap: () async {
+                    final d = await _pickDate(_issueDate);
+                    if (d != null) setState(() => _issueDate = d);
+                  },
+                  display: _issueDate != null
+                      ? _fmtDisplay(_issueDate!)
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _SheetDateField(
+                  label: 'Expiry Date',
+                  value: _expiryDate,
+                  onTap: () async {
+                    final d = await _pickDate(_expiryDate);
+                    if (d != null) setState(() => _expiryDate = d);
+                  },
+                  display: _expiryDate != null
+                      ? _fmtDisplay(_expiryDate!)
+                      : null,
+                ),
+              ),
+            ]),
+            const SizedBox(height: 14),
+
+            // File attachment
+            Text('Attach File',
+                style: AppTextStyles.label),
+            const SizedBox(height: 6),
+            GestureDetector(
+              onTap: _uploading ? null : _pickFile,
+              child: Container(
+                height: 48,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _attachedFileName != null
+                        ? AppColors.navy
+                        : AppColors.border,
+                  ),
+                ),
+                child: Row(children: [
+                  Expanded(
+                    child: _uploading
+                        ? const Row(children: [
+                            SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.navy)),
+                            SizedBox(width: 8),
+                            Text('Uploading…',
+                                style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 13,
+                                    color: AppColors.mutedText)),
+                          ])
+                        : Text(
+                            _attachedFileName ?? 'Tap to pick image from gallery',
+                            style: AppTextStyles.body.copyWith(
+                              color: _attachedFileName != null
+                                  ? AppColors.bodyText
+                                  : AppColors.hintText,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                  ),
+                  Icon(
+                    _attachedFileName != null
+                        ? Icons.check_circle_outline
+                        : Icons.attach_file_outlined,
+                    size: 18,
+                    color: _attachedFileName != null
+                        ? AppColors.navy
+                        : AppColors.mutedText,
+                  ),
+                ]),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Remarks
+            _SheetTextField(
+                label: 'Remarks',
+                ctrl: _remarksCtrl,
+                hint: 'Optional remarks',
+                maxLines: 2),
+            const SizedBox(height: 24),
+
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: (_saving || _uploading) ? null : _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.navy,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                child: _saving
+                    ? const SizedBox(
+                        width: 18, height: 18,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : const Text('Save Document',
+                        style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SheetTextField extends StatelessWidget {
+  final String label;
+  final TextEditingController ctrl;
+  final String hint;
+  final int maxLines;
+  const _SheetTextField({
+    required this.label,
+    required this.ctrl,
+    required this.hint,
+    this.maxLines = 1,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: AppTextStyles.label),
+      const SizedBox(height: 6),
+      TextField(
+        controller: ctrl,
+        maxLines: maxLines,
+        style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
+          filled: true,
+          fillColor: AppColors.background,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.border)),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.border)),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide:
+                  const BorderSide(color: AppColors.navy, width: 1.5)),
+        ),
+      ),
+    ]);
+  }
+}
+
+class _SheetDateField extends StatelessWidget {
+  final String label;
+  final DateTime? value;
+  final String? display;
+  final VoidCallback onTap;
+  const _SheetDateField({
+    required this.label,
+    required this.value,
+    required this.display,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: AppTextStyles.label),
+      const SizedBox(height: 6),
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(children: [
+            Expanded(
+              child: Text(
+                display ?? 'Select date',
+                style: AppTextStyles.body.copyWith(
+                  color: display != null
+                      ? AppColors.bodyText
+                      : AppColors.hintText,
+                ),
+              ),
+            ),
+            const Icon(Icons.calendar_today_outlined,
+                size: 15, color: AppColors.mutedText),
+          ]),
+        ),
+      ),
+    ]);
+  }
+}
+
+class _SheetFieldShimmer extends StatelessWidget {
+  const _SheetFieldShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: const Color(0xFFE2E8F0),
+      highlightColor: const Color(0xFFF8FAFC),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+            width: 120, height: 13,
+            decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(4))),
+        const SizedBox(height: 6),
+        Container(
+            height: 48,
+            decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8))),
+      ]),
+    );
+  }
+}
+
+// ── Permit Toggle Chip ─────────────────────────────────────────────────────────
+class _PermitToggleChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _PermitToggleChip(
+      {required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.navy : AppColors.background,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+              color: selected ? AppColors.navy : AppColors.border),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: selected ? Colors.white : AppColors.bodyText,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Images Tab (ADMIN / OFFICE_STAFF) ─────────────────────────────────────────
+class _ImagesTabBody extends StatefulWidget {
+  final SupervisorVehicleDetailController controller;
+  final bool canManage;
+  const _ImagesTabBody({required this.controller, required this.canManage});
+
+  @override
+  State<_ImagesTabBody> createState() => _ImagesTabBodyState();
+}
+
+class _ImagesTabBodyState extends State<_ImagesTabBody>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.ensureImagesLoaded();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return Obx(() {
+      final state = widget.controller.imagesState.value;
+      if (state == ViewState.loading) {
+        return const Center(
+            child: CircularProgressIndicator(color: AppColors.navy));
+      }
+      if (state == ViewState.error) {
+        return _TabError(onRetry: widget.controller.retryImages);
+      }
+      final list = widget.controller.images;
+      if (list.isEmpty) {
+        return const _EmptyTabState(
+          icon: Icons.photo_library_outlined,
+          message: 'No images uploaded yet',
+        );
+      }
+      return GridView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 1.2,
+        ),
+        itemCount: list.length,
+        itemBuilder: (_, i) => _ImageCard(image: list[i]),
+      );
+    });
+  }
+}
+
+class _ImageCard extends StatelessWidget {
+  final Map<String, dynamic> image;
+  const _ImageCard({required this.image});
+
+  @override
+  Widget build(BuildContext context) {
+    final url   = image['imageUrl']   as String?;
+    final label = image['imageType']  as String? ?? 'Image';
+    final date  = image['createdAt']  as String?;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(9)),
+              child: url != null
+                  ? Image.network(
+                      url,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: AppColors.background,
+                        child: const Icon(Icons.broken_image_outlined,
+                            size: 32, color: AppColors.border),
+                      ),
+                    )
+                  : Container(
+                      color: AppColors.background,
+                      child: const Icon(Icons.photo_outlined,
+                          size: 32, color: AppColors.border),
+                    ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.caption.copyWith(
+                        color: AppColors.bodyText,
+                        fontWeight: FontWeight.w600)),
+                if (date != null)
+                  Text(
+                    FerosDateUtils.formatDate(date),
+                    style: AppTextStyles.caption
+                        .copyWith(color: AppColors.mutedText, fontSize: 10),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );

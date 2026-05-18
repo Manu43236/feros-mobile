@@ -207,6 +207,107 @@ class SupervisorVehicleDetailController extends GetxController {
     }
   }
 
+  // ── Documents (ADMIN / OFFICE_STAFF) ─────────────────────────────────────────
+  final docsState  = ViewState.loading.obs;
+  final docs       = <Map<String, dynamic>>[].obs;
+  bool _docsLoaded = false;
+
+  void ensureDocsLoaded() {
+    if (_docsLoaded) return;
+    _docsLoaded = true;
+    _fetchDocs();
+  }
+
+  Future<void> retryDocs() {
+    _docsLoaded = true;
+    return _fetchDocs();
+  }
+
+  Future<void> _fetchDocs() async {
+    docsState.value = ViewState.loading;
+    try {
+      final res = await _api.get(ApiEndpoints.vehicleDocuments(vehicleId));
+      docs.assignAll(
+          ((res.data as Map<String, dynamic>)['data'] as List)
+              .cast<Map<String, dynamic>>());
+      docsState.value = ViewState.success;
+    } catch (e) {
+      debugPrint('[VehicleDetail] docs error: $e');
+      docsState.value = ViewState.error;
+    }
+  }
+
+  Future<bool> verifyDocument(int docId) async {
+    try {
+      await _api.put(ApiEndpoints.vehicleDocumentVerify(docId), data: {});
+      await _fetchDocs();
+      return true;
+    } catch (e) {
+      debugPrint('[VehicleDetail] verify doc error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteDocument(int docId) async {
+    try {
+      await _api.delete(ApiEndpoints.vehicleDocumentById(docId));
+      await _fetchDocs();
+      return true;
+    } catch (e) {
+      debugPrint('[VehicleDetail] delete doc error: $e');
+      return false;
+    }
+  }
+
+  // ── Images (ADMIN / OFFICE_STAFF) ────────────────────────────────────────────
+  final imagesState  = ViewState.loading.obs;
+  final images       = <Map<String, dynamic>>[].obs;
+  bool _imagesLoaded = false;
+
+  void ensureImagesLoaded() {
+    if (_imagesLoaded) return;
+    _imagesLoaded = true;
+    _fetchImages();
+  }
+
+  Future<void> retryImages() {
+    _imagesLoaded = true;
+    return _fetchImages();
+  }
+
+  Future<void> _fetchImages() async {
+    imagesState.value = ViewState.loading;
+    try {
+      final res = await _api.get(ApiEndpoints.vehicleImages(vehicleId));
+      images.assignAll(
+          ((res.data as Map<String, dynamic>)['data'] as List)
+              .cast<Map<String, dynamic>>());
+      imagesState.value = ViewState.success;
+    } catch (e) {
+      debugPrint('[VehicleDetail] images error: $e');
+      imagesState.value = ViewState.error;
+    }
+  }
+
+  // ── Toggle Active (ADMIN) ─────────────────────────────────────────────────────
+  final isToggling = false.obs;
+
+  Future<bool> toggleActive() async {
+    isToggling.value = true;
+    try {
+      await _api.patch(ApiEndpoints.vehicleToggleActive(vehicleId), data: {});
+      await _fetchVehicle();
+      isToggling.value = false;
+      return true;
+    } catch (e) {
+      debugPrint('[VehicleDetail] toggle active error: $e');
+      isToggling.value = false;
+      return false;
+    }
+  }
+
+  Future<void> refreshVehicle() => _fetchVehicle();
+
   // ── Meter CRUD ────────────────────────────────────────────────────────────────
   final isMeterSaving = false.obs;
 
