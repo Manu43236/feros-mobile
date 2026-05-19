@@ -38,8 +38,8 @@ class _OfficeReportAttendanceGapsState
       );
       final list = ((res.data as Map)['data'] as List? ?? [])
           .cast<Map<String, dynamic>>();
-      list.sort((a, b) => ((b['consecutiveAbsences'] as num?) ?? 0)
-          .compareTo((a['consecutiveAbsences'] as num?) ?? 0));
+      list.sort((a, b) => ((b['totalGapDays'] as num?) ?? 0)
+          .compareTo((a['totalGapDays'] as num?) ?? 0));
       setState(() { _data = list; _loading = false; });
     } catch (e) {
       setState(() { _loading = false; _error = e.toString(); });
@@ -56,7 +56,7 @@ class _OfficeReportAttendanceGapsState
   @override
   Widget build(BuildContext context) {
     final critical = _data.where((r) =>
-        ((r['consecutiveAbsences'] as num?) ?? 0) >= 3).length;
+        ((r['totalGapDays'] as num?) ?? 0) > 7).length;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -87,7 +87,7 @@ class _OfficeReportAttendanceGapsState
           if (!_loading && _data.isNotEmpty)
             ReportSummaryStrip.items([
               (label: 'Staff with Gaps', value: '${_data.length}', color: null),
-              (label: 'Critical (≥3 days)', value: '$critical',
+              (label: 'Critical (>7d)', value: '$critical',
                   color: critical > 0 ? const Color(0xFFFCA5A5) : null),
             ]),
           Expanded(
@@ -120,18 +120,23 @@ class _GapRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name       = r['staffName']           as String? ?? '—';
-    final role       = r['role']                as String? ?? '—';
-    final consec     = (r['consecutiveAbsences'] as num?)?.toInt() ?? 0;
-    final totalAbs   = (r['totalAbsences']       as num?)?.toInt() ?? 0;
-    final lastAbsent = r['lastAbsentDate']       as String?;
+    final name      = r['userName']      as String? ?? '—';
+    final role      = r['roleName']      as String? ?? '';
+    final gapDays   = (r['totalGapDays'] as num?)?.toInt() ?? 0;
+    final gapDates  = (r['gapDates']     as List? ?? []).cast<String>();
 
-    final isCritical = consec >= 3;
-    final badgeColor = isCritical ? AppColors.error : AppColors.warning;
+    final isCritical = gapDays > 7;
+    final isWarning  = !isCritical && gapDays > 3;
+    final badgeColor = isCritical ? AppColors.error
+        : isWarning ? AppColors.warning : AppColors.mutedText;
+
+    final preview = gapDates.take(5).join(', ') +
+        (gapDates.length > 5 ? ' +${gapDates.length - 5} more' : '');
 
     return ReportCard(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 40, height: 40,
@@ -150,20 +155,14 @@ class _GapRow extends StatelessWidget {
                     style: AppTextStyles.bodyMedium
                         .copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
-                Text(_roleLabel(role),
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.mutedText)),
-                Row(children: [
-                  Text('Total absent: $totalAbs days',
+                if (role.isNotEmpty)
+                  Text(_roleLabel(role),
                       style: AppTextStyles.caption
-                          .copyWith(color: AppColors.mutedText, fontSize: 10)),
-                  if (lastAbsent != null) ...[
-                    const SizedBox(width: 8),
-                    Text('Last: ${lastAbsent.length >= 10 ? lastAbsent.substring(0, 10) : lastAbsent}',
-                        style: AppTextStyles.caption.copyWith(
-                            color: AppColors.mutedText, fontSize: 10)),
-                  ],
-                ]),
+                          .copyWith(color: AppColors.mutedText)),
+                if (gapDates.isNotEmpty)
+                  Text(preview,
+                      style: AppTextStyles.caption.copyWith(
+                          color: AppColors.mutedText, fontSize: 10)),
               ],
             ),
           ),
@@ -176,11 +175,11 @@ class _GapRow extends StatelessWidget {
             ),
             child: Column(
               children: [
-                Text('$consec',
+                Text('$gapDays',
                     style: TextStyle(
                         color: badgeColor, fontWeight: FontWeight.w800,
                         fontFamily: 'Inter', fontSize: 16)),
-                Text('consec.',
+                Text('gap days',
                     style: AppTextStyles.caption.copyWith(
                         color: badgeColor, fontSize: 9)),
               ],

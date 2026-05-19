@@ -18,7 +18,7 @@ class OfficeReportDocExpiry extends StatefulWidget {
 class _OfficeReportDocExpiryState extends State<OfficeReportDocExpiry> {
   final _api = Get.find<ApiClient>();
 
-  int _daysAhead = 30;
+  int _daysAhead = 60;
   bool _loading = true;
   List<Map<String, dynamic>> _data = [];
   String? _error;
@@ -44,7 +44,7 @@ class _OfficeReportDocExpiryState extends State<OfficeReportDocExpiry> {
   }
 
   int get _expiredCount =>
-      _data.where((r) => ((r['daysUntilExpiry'] as num?) ?? 1) <= 0).length;
+      _data.where((r) => r['expired'] as bool? ?? ((r['daysUntilExpiry'] as num?) ?? 1) <= 0).length;
   int get _criticalCount =>
       _data.where((r) {
         final d = (r['daysUntilExpiry'] as num?)?.toInt() ?? 999;
@@ -73,7 +73,7 @@ class _OfficeReportDocExpiryState extends State<OfficeReportDocExpiry> {
           ),
           if (!_loading && _data.isNotEmpty)
             ReportSummaryStrip.items([
-              (label: 'Expiring Soon', value: '${_data.length}', color: null),
+              (label: 'Expiring Soon', value: '${_data.length - _expiredCount}', color: null),
               (label: 'Expired', value: '$_expiredCount',
                   color: _expiredCount > 0 ? const Color(0xFFFCA5A5) : null),
               (label: 'Critical (≤7d)', value: '$_criticalCount',
@@ -152,13 +152,14 @@ class _DocExpiryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final entity   = r['entityName']      as String? ?? '—';
-    final type     = r['entityType']      as String? ?? '—';
-    final docType  = r['documentType']    as String? ?? '—';
-    final expDate  = r['expiryDate']      as String? ?? '—';
-    final days     = (r['daysUntilExpiry'] as num?)?.toInt() ?? 0;
+    final entity   = r['registrationNumber'] as String? ?? '—';
+    final docType  = r['documentType']       as String? ?? '—';
+    final docNo    = r['documentNumber']     as String?;
+    final expDate  = r['expiryDate']         as String? ?? '—';
+    final days     = (r['daysUntilExpiry']   as num?)?.toInt() ?? 0;
+    final isExpiredFlag = r['expired']       as bool? ?? (days <= 0);
 
-    final isExpired  = days <= 0;
+    final isExpired  = isExpiredFlag;
     final isCritical = !isExpired && days <= 7;
     final badgeColor = isExpired
         ? AppColors.error
@@ -166,13 +167,12 @@ class _DocExpiryRow extends StatelessWidget {
             ? AppColors.warning
             : AppColors.orange;
 
+    final daysAgo    = days.abs();
     final badgeLabel = isExpired
-        ? 'EXPIRED'
+        ? '${daysAgo}d ago'
         : '${days}d left';
 
-    final entityColor = type == 'VEHICLE'
-        ? const Color(0xFF0284C7)
-        : AppColors.orange;
+    const entityColor = Color(0xFF0284C7);
 
     return ReportCard(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -184,11 +184,8 @@ class _DocExpiryRow extends StatelessWidget {
               color: entityColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              type == 'VEHICLE'
-                  ? Icons.directions_bus_outlined
-                  : Icons.badge_outlined,
-              size: 18, color: entityColor),
+            child: const Icon(Icons.directions_bus_outlined,
+                size: 18, color: entityColor),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -196,12 +193,18 @@ class _DocExpiryRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(entity,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.bodyMedium
                         .copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
                 Text(docType,
                     style: AppTextStyles.caption
                         .copyWith(color: AppColors.mutedText)),
+                if (docNo != null)
+                  Text(docNo,
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.mutedText, fontSize: 10)),
                 Text('Expires $expDate',
                     style: AppTextStyles.caption
                         .copyWith(color: AppColors.mutedText)),

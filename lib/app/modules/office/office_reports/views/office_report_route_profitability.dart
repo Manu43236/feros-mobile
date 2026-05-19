@@ -39,8 +39,8 @@ class _OfficeReportRouteProfitabilityState
       );
       final list = ((res.data as Map)['data'] as List? ?? [])
           .cast<Map<String, dynamic>>();
-      list.sort((a, b) => ((b['margin'] as num?) ?? 0)
-          .compareTo((a['margin'] as num?) ?? 0));
+      list.sort((a, b) => ((b['netProfit'] as num?) ?? 0)
+          .compareTo((a['netProfit'] as num?) ?? 0));
       setState(() { _data = list; _loading = false; });
     } catch (e) {
       setState(() { _loading = false; _error = e.toString(); });
@@ -55,9 +55,9 @@ class _OfficeReportRouteProfitabilityState
   }
 
   double get _totalRevenue => _data.fold(
-      0.0, (s, r) => s + ((r['revenue'] as num?)?.toDouble() ?? 0));
+      0.0, (s, r) => s + ((r['totalRevenue'] as num?)?.toDouble() ?? 0));
   double get _totalMargin => _data.fold(
-      0.0, (s, r) => s + ((r['margin'] as num?)?.toDouble() ?? 0));
+      0.0, (s, r) => s + ((r['netProfit'] as num?)?.toDouble() ?? 0));
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +92,7 @@ class _OfficeReportRouteProfitabilityState
               (label: 'Revenue',
                   value: FerosNumberUtils.formatCurrencyCompact(_totalRevenue),
                   color: const Color(0xFF4ADE80)),
-              (label: 'Net Margin',
+              (label: 'Net Profit',
                   value: FerosNumberUtils.formatCurrencyCompact(_totalMargin),
                   color: _totalMargin >= 0
                       ? const Color(0xFF4ADE80)
@@ -128,12 +128,16 @@ class _RouteRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final route   = r['routeName']  as String? ?? '—';
-    final revenue = (r['revenue']   as num?)?.toDouble() ?? 0;
-    final cost    = (r['cost']      as num?)?.toDouble() ?? 0;
-    final margin  = (r['margin']    as num?)?.toDouble() ?? revenue - cost;
-    final trips   = (r['tripCount'] as num?)?.toInt() ?? 0;
-    final marginPct = revenue > 0 ? (margin / revenue * 100) : 0.0;
+    final fromCity  = r['fromCity']        as String? ?? '';
+    final toCity    = r['toCity']          as String? ?? '';
+    final route     = fromCity.isNotEmpty && toCity.isNotEmpty
+        ? '$fromCity → $toCity' : '—';
+    final revenue   = (r['totalRevenue']   as num?)?.toDouble() ?? 0;
+    final cost      = (r['totalCharges']   as num?)?.toDouble() ?? 0;
+    final margin    = (r['netProfit']      as num?)?.toDouble() ?? revenue - cost;
+    final trips     = (r['tripCount']      as num?)?.toInt() ?? 0;
+    final marginPct = (r['profitMarginPct'] as num?)?.toDouble()
+        ?? (revenue > 0 ? (margin / revenue * 100) : 0.0);
 
     final color = marginPct >= 30 ? AppColors.success
         : marginPct >= 10 ? AppColors.warning : AppColors.error;

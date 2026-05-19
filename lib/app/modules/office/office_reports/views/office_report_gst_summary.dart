@@ -22,8 +22,7 @@ class _OfficeReportGstSummaryState extends State<OfficeReportGstSummary> {
   String _preset = 'month';
 
   bool _loading = true;
-  Map<String, dynamic> _summary = {};
-  List<Map<String, dynamic>> _breakdown = [];
+  List<Map<String, dynamic>> _data = [];
   String? _error;
 
   @override
@@ -36,16 +35,26 @@ class _OfficeReportGstSummaryState extends State<OfficeReportGstSummary> {
         ApiEndpoints.reportGstSummary,
         params: {'from': fmtApiDate(_from), 'to': fmtApiDate(_to)},
       );
-      final d = (res.data as Map?)?['data'] as Map<String, dynamic>? ?? {};
       setState(() {
-        _summary   = d['summary']   as Map<String, dynamic>? ?? d;
-        _breakdown = (d['breakdown'] as List? ?? []).cast<Map<String, dynamic>>();
-        _loading   = false;
+        _data = ((res.data as Map)['data'] as List? ?? [])
+            .cast<Map<String, dynamic>>();
+        _loading = false;
       });
     } catch (e) {
       setState(() { _loading = false; _error = e.toString(); });
     }
   }
+
+  double get _totalSubtotal => _data.fold(
+      0.0, (s, r) => s + ((r['subtotal'] as num?)?.toDouble() ?? 0));
+  double get _totalCgst => _data.fold(
+      0.0, (s, r) => s + ((r['cgstAmount'] as num?)?.toDouble() ?? 0));
+  double get _totalSgst => _data.fold(
+      0.0, (s, r) => s + ((r['sgstAmount'] as num?)?.toDouble() ?? 0));
+  double get _totalTax => _data.fold(
+      0.0, (s, r) => s + ((r['totalTax'] as num?)?.toDouble() ?? 0));
+  int get _totalInvoices => _data.fold(
+      0, (s, r) => s + ((r['invoiceCount'] as num?)?.toInt() ?? 0));
 
   void _setPreset(String p) {
     if (p == 'custom') { setState(() => _preset = 'custom'); return; }
@@ -56,14 +65,6 @@ class _OfficeReportGstSummaryState extends State<OfficeReportGstSummary> {
 
   @override
   Widget build(BuildContext context) {
-    final taxable   = (_summary['taxableAmount'] as num?)?.toDouble() ?? 0;
-    final cgst      = (_summary['cgst']          as num?)?.toDouble() ?? 0;
-    final sgst      = (_summary['sgst']          as num?)?.toDouble() ?? 0;
-    final igst      = (_summary['igst']          as num?)?.toDouble() ?? 0;
-    final totalTax  = (_summary['totalTax']      as num?)?.toDouble()
-        ?? cgst + sgst + igst;
-    final invoicesCnt = (_summary['invoiceCount'] as num?)?.toInt() ?? 0;
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -90,51 +91,52 @@ class _OfficeReportGstSummaryState extends State<OfficeReportGstSummary> {
               if (d != null) { setState(() { _to = d; _preset = 'custom'; }); _fetch(); }
             },
           ),
+          if (!_loading && _data.isNotEmpty)
+            ReportSummaryStrip.items([
+              (label: 'Taxable',
+                  value: FerosNumberUtils.formatCurrencyCompact(_totalSubtotal),
+                  color: null),
+              (label: 'Total Tax',
+                  value: FerosNumberUtils.formatCurrencyCompact(_totalTax),
+                  color: AppColors.warning),
+              (label: 'Invoices',
+                  value: '$_totalInvoices', color: null),
+            ]),
           Expanded(
             child: _loading
                 ? const ReportLoadingList()
                 : _error != null
                     ? ReportErrorState(onRetry: _fetch)
-                    : RefreshIndicator(
-                        onRefresh: _fetch,
-                        color: AppColors.navy,
-                        child: ListView(
-                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                          children: [
-                            // Tax summary tiles
-                            _TaxCard(
-                              title: 'Tax Summary',
-                              items: [
-                                ('Taxable Amount', taxable, AppColors.navy),
-                                ('Total Tax',      totalTax, AppColors.success),
-                                ('Invoices',       invoicesCnt.toDouble(),
-                                    AppColors.mutedText),
+                    : _data.isEmpty
+                        ? const ReportEmptyState(message: 'No GST data for this period')
+                        : RefreshIndicator(
+                            onRefresh: _fetch,
+                            color: AppColors.navy,
+                            child: ListView(
+                              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                              children: [
+                                if (_totalCgst > 0 || _totalSgst > 0)
+                                  _TaxCard(
+                                    title: 'Tax Breakup',
+                                    items: [
+                                      if (_totalCgst > 0)
+                                        ('CGST', _totalCgst, const Color(0xFF0284C7)),
+                                      if (_totalSgst > 0)
+                                        ('SGST', _totalSgst, const Color(0xFF7C3AED)),
+                                    ],
+                                  ),
+                                if (_totalCgst > 0 || _totalSgst > 0)
+                                  const SizedBox(height: 12),
+                                Text('Monthly Breakdown',
+                                    style: AppTextStyles.caption.copyWith(
+                                        color: AppColors.mutedText,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.4)),
+                                const SizedBox(height: 8),
+                                ..._data.map((r) => _GstMonthRow(r)),
                               ],
-                              isCount: {2: true},
                             ),
-                            const SizedBox(height: 12),
-                            if (cgst > 0 || sgst > 0 || igst > 0)
-                              _TaxCard(
-                                title: 'Tax Breakup',
-                                items: [
-                                  if (cgst > 0) ('CGST', cgst, const Color(0xFF0284C7)),
-                                  if (sgst > 0) ('SGST', sgst, const Color(0xFF7C3AED)),
-                                  if (igst > 0) ('IGST', igst, const Color(0xFF059669)),
-                                ],
-                              ),
-                            if (_breakdown.isNotEmpty) ...[
-                              const SizedBox(height: 12),
-                              Text('By Tax Rate',
-                                  style: AppTextStyles.caption.copyWith(
-                                      color: AppColors.mutedText,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.4)),
-                              const SizedBox(height: 8),
-                              ..._breakdown.map((r) => _GstRateRow(r)),
-                            ],
-                          ],
-                        ),
-                      ),
+                          ),
           ),
         ],
       ),
@@ -196,48 +198,53 @@ class _TaxCard extends StatelessWidget {
   }
 }
 
-class _GstRateRow extends StatelessWidget {
+class _GstMonthRow extends StatelessWidget {
   final Map<String, dynamic> r;
-  const _GstRateRow(this.r);
+  const _GstMonthRow(this.r);
 
   @override
   Widget build(BuildContext context) {
-    final rate    = r['gstRate']       as String? ?? '—';
-    final taxable = (r['taxableAmount'] as num?)?.toDouble() ?? 0;
-    final tax     = (r['taxAmount']     as num?)?.toDouble() ?? 0;
-    final count   = (r['invoiceCount']  as num?)?.toInt() ?? 0;
+    final period   = r['period']      as String? ?? '—';
+    final subtotal = (r['subtotal']   as num?)?.toDouble() ?? 0;
+    final cgst     = (r['cgstAmount'] as num?)?.toDouble() ?? 0;
+    final sgst     = (r['sgstAmount'] as num?)?.toDouble() ?? 0;
+    final tax      = (r['totalTax']   as num?)?.toDouble() ?? cgst + sgst;
+    final count    = (r['invoiceCount'] as num?)?.toInt() ?? 0;
 
     return ReportCard(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.navy.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text('$rate%',
-                style: AppTextStyles.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w800, color: AppColors.navy)),
-          ),
-          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Taxable: ${FerosNumberUtils.formatCurrencyCompact(taxable)}',
+                Text(period,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600, color: AppColors.bodyText)),
+                const SizedBox(height: 2),
+                Text('Taxable: ${FerosNumberUtils.formatCurrencyCompact(subtotal)}'
+                    '  ·  $count inv',
                     style: AppTextStyles.caption
                         .copyWith(color: AppColors.mutedText)),
-                Text('$count invoice${count != 1 ? 's' : ''}',
-                    style: AppTextStyles.caption.copyWith(
-                        color: AppColors.mutedText, fontSize: 10)),
+                if (cgst > 0 || sgst > 0)
+                  Text('CGST ${FerosNumberUtils.formatCurrencyCompact(cgst)}'
+                      '  SGST ${FerosNumberUtils.formatCurrencyCompact(sgst)}',
+                      style: AppTextStyles.caption.copyWith(
+                          color: AppColors.mutedText, fontSize: 10)),
               ],
             ),
           ),
-          Text(FerosNumberUtils.formatCurrencyCompact(tax),
-              style: AppTextStyles.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w700, color: AppColors.success)),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(FerosNumberUtils.formatCurrencyCompact(tax),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w700, color: AppColors.warning)),
+              Text('tax', style: AppTextStyles.caption
+                  .copyWith(color: AppColors.mutedText, fontSize: 10)),
+            ],
+          ),
         ],
       ),
     );

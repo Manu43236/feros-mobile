@@ -26,16 +26,40 @@ class _OfficeReportInvoiceAgingState extends State<OfficeReportInvoiceAging> {
   @override
   void initState() { super.initState(); _fetch(); }
 
+  // Bucket key → API key mapping
+  static const _bucketKeys = {
+    '0_30':   'bucket0to30',
+    '31_60':  'bucket31to60',
+    '61_90':  'bucket61to90',
+    '90plus': 'bucket90plus',
+  };
+
   Future<void> _fetch() async {
     setState(() { _loading = true; _error = null; });
     try {
       final res = await _api.get(ApiEndpoints.reportInvoiceAging);
       final d = (res.data as Map?)?['data'] as Map<String, dynamic>? ?? {};
-      final all = (d['invoices'] as List? ?? []).cast<Map<String, dynamic>>();
-      all.sort((a, b) => ((b['daysOverdue'] as num?) ?? 0)
-          .compareTo((a['daysOverdue'] as num?) ?? 0));
+
+      // Build per-bucket data map from API keys
+      final buckets = <String, dynamic>{};
+      _bucketKeys.forEach((id, apiKey) {
+        buckets[id] = d[apiKey] as Map<String, dynamic>? ?? {};
+      });
+
+      // Collect all invoices across all buckets, tag with bucket id
+      final all = <Map<String, dynamic>>[];
+      _bucketKeys.forEach((id, apiKey) {
+        final bucket = d[apiKey] as Map<String, dynamic>? ?? {};
+        final invList = (bucket['invoices'] as List? ?? []).cast<Map<String, dynamic>>();
+        for (final inv in invList) {
+          all.add({...inv, '_bucket': id});
+        }
+      });
+      all.sort((a, b) => ((b['ageInDays'] as num?) ?? 0)
+          .compareTo((a['ageInDays'] as num?) ?? 0));
+
       setState(() {
-        _buckets  = d['buckets'] as Map<String, dynamic>? ?? {};
+        _buckets  = buckets;
         _invoices = all;
         _loading  = false;
       });
@@ -46,16 +70,7 @@ class _OfficeReportInvoiceAgingState extends State<OfficeReportInvoiceAging> {
 
   List<Map<String, dynamic>> get _filtered {
     if (_selectedBucket == 'all') return _invoices;
-    return _invoices.where((r) {
-      final days = (r['daysOverdue'] as num?)?.toInt() ?? 0;
-      switch (_selectedBucket) {
-        case 'current': return days <= 0;
-        case '1_30':    return days > 0 && days <= 30;
-        case '31_60':   return days > 30 && days <= 60;
-        case '60plus':  return days > 60;
-        default:        return true;
-      }
-    }).toList();
+    return _invoices.where((r) => r['_bucket'] == _selectedBucket).toList();
   }
 
   @override
@@ -127,10 +142,10 @@ class _BucketFilter extends StatelessWidget {
 
   static final _options = [
     ('all',     'All',      AppColors.navy),
-    ('current', 'Current',  AppColors.success),
-    ('1_30',    '1–30d',    AppColors.warning),
-    ('31_60',   '31–60d',   AppColors.orange),
-    ('60plus',  '60+ days', AppColors.error),
+    ('0_30',    '0–30d',    AppColors.success),
+    ('31_60',   '31–60d',   AppColors.warning),
+    ('61_90',   '61–90d',   AppColors.orange),
+    ('90plus',  '90+ days', AppColors.error),
   ];
 
   @override
@@ -200,17 +215,16 @@ class _AgingInvoiceRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final invNo   = r['invoiceNumber'] as String? ?? '—';
     final client  = r['clientName']    as String? ?? '—';
+    final invDate = r['invoiceDate']   as String?;
     final balance = (r['balanceDue']   as num?)?.toDouble() ?? 0;
-    final days    = (r['daysOverdue']  as num?)?.toInt() ?? 0;
+    final days    = (r['ageInDays']    as num?)?.toInt() ?? 0;
 
-    final isOverdue = days > 0;
-    final color     = days > 60 ? AppColors.error
-        : days > 30 ? AppColors.orange
-        : days > 0  ? AppColors.warning
+    final color = days > 90 ? AppColors.error
+        : days > 60 ? AppColors.orange
+        : days > 30 ? AppColors.warning
         : AppColors.success;
 
-    final daysLabel = days <= 0 ? 'Current'
-        : '${days}d overdue';
+    final daysLabel = '${days}d old';
 
     return ReportCard(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -221,12 +235,18 @@ class _AgingInvoiceRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(invNo,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.bodyMedium.copyWith(
                         fontWeight: FontWeight.w700, color: AppColors.navy)),
                 const SizedBox(height: 2),
                 Text(client,
                     style: AppTextStyles.caption
-                        .copyWith(color: AppColors.mutedText)),
+                        .copyWith(color: AppColors.bodyText)),
+                if (invDate != null)
+                  Text(invDate,
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.mutedText, fontSize: 10)),
               ],
             ),
           ),
@@ -236,7 +256,7 @@ class _AgingInvoiceRow extends StatelessWidget {
               Text(FerosNumberUtils.formatCurrencyCompact(balance),
                   style: AppTextStyles.bodyMedium.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: isOverdue ? color : AppColors.bodyText)),
+                      color: color)),
               const SizedBox(height: 4),
               Container(
                 padding: const EdgeInsets.symmetric(

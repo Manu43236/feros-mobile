@@ -125,7 +125,7 @@ class _CreditNoteRow extends StatelessWidget {
     final client  = r['clientName']       as String? ?? '—';
     final amount  = (r['amount']          as num?)?.toDouble() ?? 0;
     final reason  = r['reason']           as String?;
-    final date    = r['date']             as String?;
+    final date    = r['creditNoteDate']   as String?;
     final status  = r['status']           as String? ?? '—';
 
     return ReportCard(

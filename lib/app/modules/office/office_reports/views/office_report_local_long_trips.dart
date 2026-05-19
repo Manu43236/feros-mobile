@@ -43,11 +43,13 @@ class _OfficeReportLocalLongTripsState
 
   @override
   Widget build(BuildContext context) {
-    final local     = _data['local']     as List? ?? [];
-    final longDist  = _data['longDistance'] as List? ?? [];
-    final localCnt  = (_data['localCount']  as num?)?.toInt() ?? local.length;
-    final longCnt   = (_data['longDistanceCount'] as num?)?.toInt() ?? longDist.length;
-    final total     = localCnt + longCnt;
+    final allTrips  = (_data['trips'] as List? ?? []).cast<Map<String, dynamic>>();
+    final localCnt  = (_data['localCount']        as num?)?.toInt() ?? 0;
+    final longCnt   = (_data['longDistanceCount'] as num?)?.toInt() ?? 0;
+    final total     = (_data['totalToday']        as num?)?.toInt() ?? allTrips.length;
+
+    final local    = allTrips.where((r) => r['tripType'] == 'LOCAL').toList();
+    final longDist = allTrips.where((r) => r['tripType'] != 'LOCAL').toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -85,10 +87,7 @@ class _OfficeReportLocalLongTripsState
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                           child: Column(
-                            children: local
-                                .cast<Map<String, dynamic>>()
-                                .map((r) => _TripRow(r, isLocal: true))
-                                .toList(),
+                            children: local.map((r) => _TripRow(r, isLocal: true)).toList(),
                           ),
                         ),
                       ],
@@ -98,10 +97,7 @@ class _OfficeReportLocalLongTripsState
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                           child: Column(
-                            children: longDist
-                                .cast<Map<String, dynamic>>()
-                                .map((r) => _TripRow(r, isLocal: false))
-                                .toList(),
+                            children: longDist.map((r) => _TripRow(r, isLocal: false)).toList(),
                           ),
                         ),
                       ],
@@ -207,15 +203,22 @@ class _TripRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vehicle = r['vehicleNumber'] as String? ?? '—';
-    final driver  = r['driverName']   as String? ?? '—';
-    final route   = r['routeName']    as String? ?? '—';
-    final status  = r['status']       as String? ?? '—';
-    final color   = isLocal ? const Color(0xFF16A34A) : const Color(0xFF2563EB);
+    final lrNumber  = r['lrNumber']          as String? ?? '—';
+    final vehicle   = r['registrationNumber'] as String? ?? '—';
+    final client    = r['clientName']         as String? ?? '—';
+    final fromCity  = r['fromCity']           as String? ?? '';
+    final fromState = r['fromState']          as String? ?? '';
+    final toCity    = r['toCity']             as String? ?? '';
+    final toState   = r['toState']            as String? ?? '';
+    final color     = isLocal ? const Color(0xFF16A34A) : const Color(0xFF2563EB);
+
+    final from = [fromCity, fromState].where((s) => s.isNotEmpty).join(', ');
+    final to   = [toCity,   toState  ].where((s) => s.isNotEmpty).join(', ');
 
     return ReportCard(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 40, height: 40,
@@ -232,21 +235,29 @@ class _TripRow extends StatelessWidget {
                 Text(vehicle,
                     style: AppTextStyles.bodyMedium.copyWith(
                         fontWeight: FontWeight.w700, color: AppColors.navy)),
+                Text.rich(
+                  TextSpan(children: [
+                    TextSpan(
+                      text: '# ',
+                      style: AppTextStyles.caption.copyWith(
+                          color: AppColors.mutedText, fontSize: 9),
+                    ),
+                    TextSpan(
+                      text: lrNumber,
+                      style: AppTextStyles.caption.copyWith(
+                          color: AppColors.mutedText, fontSize: 10),
+                    ),
+                  ]),
+                ),
                 const SizedBox(height: 2),
-                Text(route,
+                Text(client,
                     style: AppTextStyles.caption.copyWith(color: AppColors.bodyText)),
-                Text(driver,
-                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                if (from.isNotEmpty || to.isNotEmpty)
+                  Text('$from → $to',
+                      style: AppTextStyles.caption.copyWith(
+                          color: AppColors.mutedText, fontSize: 10)),
               ],
             ),
-          ),
-          ReportStatusChip(
-            status: status,
-            colorMap: {
-              'IN_TRANSIT': AppColors.warning,
-              'DELIVERED': AppColors.success,
-              'PENDING': AppColors.mutedText,
-            },
           ),
         ],
       ),

@@ -86,11 +86,11 @@ class _IdleDriverRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name        = r['driverName']    as String? ?? '—';
+    final name        = r['userName']      as String? ?? '—';
     final phone       = r['phone']         as String?;
     final idleSince   = r['idleSince']     as String?;
     final lastTrip    = r['lastTripDate']  as String?;
-    final designation = r['designation']   as String? ?? 'Driver';
+    final designation = r['roleName']      as String? ?? 'Driver';
 
     return ReportCard(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),

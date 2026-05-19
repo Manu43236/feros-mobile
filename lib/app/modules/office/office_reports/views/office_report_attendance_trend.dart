@@ -1,4 +1,3 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
@@ -19,8 +18,12 @@ class _OfficeReportAttendanceTrendState
     extends State<OfficeReportAttendanceTrend> {
   final _api = Get.find<ApiClient>();
 
+  DateTime _from = DateTime(DateTime.now().year, DateTime.now().month, 1);
+  DateTime _to   = DateTime.now();
+  String _preset = 'month';
+
   bool _loading = true;
-  List<Map<String, dynamic>> _weeks = [];
+  List<Map<String, dynamic>> _rows = [];
   String? _error;
 
   @override
@@ -29,9 +32,12 @@ class _OfficeReportAttendanceTrendState
   Future<void> _fetch() async {
     setState(() { _loading = true; _error = null; });
     try {
-      final res = await _api.get(ApiEndpoints.reportAttendanceTrend);
+      final res = await _api.get(
+        ApiEndpoints.reportAttendanceTrend,
+        params: {'from': fmtApiDate(_from), 'to': fmtApiDate(_to)},
+      );
       setState(() {
-        _weeks = ((res.data as Map)['data'] as List? ?? [])
+        _rows = ((res.data as Map)['data'] as List? ?? [])
             .cast<Map<String, dynamic>>();
         _loading = false;
       });
@@ -40,11 +46,11 @@ class _OfficeReportAttendanceTrendState
     }
   }
 
-  double get _avgRate {
-    if (_weeks.isEmpty) return 0;
-    final sum = _weeks.fold(0.0,
-        (s, w) => s + ((w['attendanceRate'] as num?)?.toDouble() ?? 0));
-    return sum / _weeks.length;
+  void _setPreset(String p) {
+    if (p == 'custom') { setState(() => _preset = 'custom'); return; }
+    final (f, t) = presetDates(p);
+    setState(() { _from = f; _to = t; _preset = p; });
+    _fetch();
   }
 
   @override
@@ -61,156 +67,37 @@ class _OfficeReportAttendanceTrendState
         title: const Text('Attendance Trend'),
         actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _fetch)],
       ),
-      body: _loading
-          ? const ReportLoadingList()
-          : _error != null
-              ? ReportErrorState(onRetry: _fetch)
-              : _weeks.isEmpty
-                  ? const ReportEmptyState()
-                  : RefreshIndicator(
-                      onRefresh: _fetch,
-                      color: AppColors.navy,
-                      child: ListView(
-                        children: [
-                          ReportSummaryStrip.items([
-                            (label: 'Avg Rate',
-                                value: '${_avgRate.toStringAsFixed(1)}%',
-                                color: _avgRate >= 90
-                                    ? const Color(0xFF4ADE80)
-                                    : _avgRate >= 70
-                                        ? AppColors.warning
-                                        : const Color(0xFFFCA5A5)),
-                            (label: 'Weeks', value: '${_weeks.length}',
-                                color: null),
-                          ]),
-                          _AttendanceLineChart(weeks: _weeks),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                            child: Column(
-                              children: _weeks.reversed
-                                  .map((w) => _WeekRow(w))
-                                  .toList(),
+      body: Column(
+        children: [
+          ReportDateBar(
+            from: _from, to: _to, preset: _preset,
+            onPreset: _setPreset,
+            onPickFrom: () async {
+              final d = await pickDate(context, initial: _from, last: _to);
+              if (d != null) { setState(() { _from = d; _preset = 'custom'; }); _fetch(); }
+            },
+            onPickTo: () async {
+              final d = await pickDate(context, initial: _to, first: _from);
+              if (d != null) { setState(() { _to = d; _preset = 'custom'; }); _fetch(); }
+            },
+          ),
+          Expanded(
+            child: _loading
+                ? const ReportLoadingList()
+                : _error != null
+                    ? ReportErrorState(onRetry: _fetch)
+                    : _rows.isEmpty
+                        ? const ReportEmptyState(
+                            message: 'No data for the selected period')
+                        : RefreshIndicator(
+                            onRefresh: _fetch,
+                            color: AppColors.navy,
+                            child: ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                              itemCount: _rows.length,
+                              itemBuilder: (_, i) => _TrendRow(_rows[i]),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-    );
-  }
-}
-
-class _AttendanceLineChart extends StatelessWidget {
-  final List<Map<String, dynamic>> weeks;
-  const _AttendanceLineChart({required this.weeks});
-
-  @override
-  Widget build(BuildContext context) {
-    final spots = weeks.asMap().entries.map((e) {
-      final rate = (e.value['attendanceRate'] as num?)?.toDouble() ?? 0;
-      return FlSpot(e.key.toDouble(), rate);
-    }).toList();
-
-    return Container(
-      color: AppColors.surface,
-      padding: const EdgeInsets.fromLTRB(8, 16, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 8, bottom: 12),
-            child: Text('Weekly Attendance Rate',
-                style: AppTextStyles.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w600, color: AppColors.bodyText)),
-          ),
-          SizedBox(
-            height: 180,
-            child: LineChart(
-              LineChartData(
-                minY: 0,
-                maxY: 100,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: spots,
-                    isCurved: true,
-                    color: AppColors.orange,
-                    barWidth: 2.5,
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: AppColors.orange.withValues(alpha: 0.1),
-                    ),
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, _, _, _) => FlDotCirclePainter(
-                        radius: 4,
-                        color: spot.y >= 90
-                            ? AppColors.success
-                            : spot.y >= 70
-                                ? AppColors.warning
-                                : AppColors.error,
-                        strokeColor: Colors.white,
-                        strokeWidth: 1.5,
-                      ),
-                    ),
-                  ),
-                ],
-                titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 24,
-                      getTitlesWidget: (value, meta) {
-                        final idx = value.toInt();
-                        if (idx < 0 || idx >= weeks.length) {
-                          return const SizedBox();
-                        }
-                        final label = weeks[idx]['weekLabel'] as String?
-                            ?? 'W${idx + 1}';
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            label.length > 4 ? label.substring(0, 4) : label,
-                            style: TextStyle(
-                                fontSize: 9, color: AppColors.mutedText),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: 25,
-                  getDrawingHorizontalLine: (_) => FlLine(
-                    color: AppColors.border, strokeWidth: 1,
-                    dashArray: [4, 4],
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                lineTouchData: LineTouchData(
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (_) => AppColors.navy,
-                    getTooltipItems: (spots) => spots.map((s) {
-                      final idx = s.x.toInt();
-                      final label = idx < weeks.length
-                          ? (weeks[idx]['weekLabel'] as String? ?? 'W${idx + 1}')
-                          : '';
-                      return LineTooltipItem(
-                        '$label\n${s.y.toStringAsFixed(1)}%',
-                        const TextStyle(color: Colors.white, fontSize: 11,
-                            fontWeight: FontWeight.w600),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-            ),
           ),
         ],
       ),
@@ -218,19 +105,22 @@ class _AttendanceLineChart extends StatelessWidget {
   }
 }
 
-class _WeekRow extends StatelessWidget {
-  final Map<String, dynamic> w;
-  const _WeekRow(this.w);
+class _TrendRow extends StatelessWidget {
+  final Map<String, dynamic> r;
+  const _TrendRow(this.r);
 
   @override
   Widget build(BuildContext context) {
-    final label   = w['weekLabel']      as String? ?? '—';
-    final rate    = (w['attendanceRate'] as num?)?.toDouble() ?? 0;
-    final present = (w['presentCount']  as num?)?.toInt() ?? 0;
-    final total   = (w['totalStaff']    as num?)?.toInt() ?? 0;
+    final date      = r['date']           as String? ?? '—';
+    final total     = (r['totalStaff']    as num?)?.toInt() ?? 0;
+    final present   = (r['presentCount']  as num?)?.toInt() ?? 0;
+    final absent    = (r['absentCount']   as num?)?.toInt() ?? 0;
+    final leave     = (r['leaveCount']    as num?)?.toInt() ?? 0;
+    final notMarked = (r['notMarkedCount'] as num?)?.toInt() ?? 0;
 
-    final color = rate >= 90 ? AppColors.success
-        : rate >= 70 ? AppColors.warning : AppColors.error;
+    final pct = total > 0 ? present / total : 0.0;
+    final pctColor = pct >= 0.9 ? AppColors.success
+        : pct >= 0.7 ? AppColors.warning : AppColors.error;
 
     return ReportCard(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -240,22 +130,58 @@ class _WeekRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
+                Text(date,
                     style: AppTextStyles.bodyMedium
                         .copyWith(fontWeight: FontWeight.w600)),
-                if (total > 0)
-                  Text('$present / $total staff present',
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.mutedText)),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    _Chip('P $present', AppColors.success),
+                    const SizedBox(width: 4),
+                    _Chip('A $absent', AppColors.error),
+                    const SizedBox(width: 4),
+                    _Chip('L $leave', const Color(0xFF2563EB)),
+                    const SizedBox(width: 4),
+                    _Chip('? $notMarked', AppColors.mutedText),
+                  ],
+                ),
               ],
             ),
           ),
-          Text('${rate.toStringAsFixed(1)}%',
-              style: TextStyle(
-                  color: color, fontWeight: FontWeight.w700,
-                  fontFamily: 'Inter', fontSize: 16)),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('${(pct * 100).toStringAsFixed(0)}%',
+                  style: TextStyle(
+                      color: pctColor, fontWeight: FontWeight.w700,
+                      fontFamily: 'Inter', fontSize: 15)),
+              Text('of $total',
+                  style: AppTextStyles.caption
+                      .copyWith(color: AppColors.mutedText, fontSize: 10)),
+            ],
+          ),
         ],
       ),
+    );
+  }
+}
+
+class _Chip extends StatelessWidget {
+  final String text;
+  final Color color;
+  const _Chip(this.text, this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(text,
+          style: AppTextStyles.caption.copyWith(
+              color: color, fontWeight: FontWeight.w600, fontSize: 10)),
     );
   }
 }

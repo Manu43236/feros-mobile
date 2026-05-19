@@ -31,8 +31,8 @@ class _OfficeReportOrdersBacklogState
       final res = await _api.get(ApiEndpoints.reportOrdersBacklog);
       final list = ((res.data as Map)['data'] as List? ?? [])
           .cast<Map<String, dynamic>>();
-      list.sort((a, b) => ((b['pendingDays'] as num?) ?? 0)
-          .compareTo((a['pendingDays'] as num?) ?? 0));
+      list.sort((a, b) => ((b['daysWaiting'] as num?) ?? 0)
+          .compareTo((a['daysWaiting'] as num?) ?? 0));
       setState(() { _data = list; _loading = false; });
     } catch (e) {
       setState(() { _loading = false; _error = e.toString(); });
@@ -51,7 +51,7 @@ class _OfficeReportOrdersBacklogState
   Widget build(BuildContext context) {
     final filtered = _filtered;
     final old = filtered.where((r) =>
-        ((r['pendingDays'] as num?) ?? 0) > 3).length;
+        ((r['daysWaiting'] as num?) ?? 0) > 3).length;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -69,8 +69,14 @@ class _OfficeReportOrdersBacklogState
         children: [
           if (!_loading && _data.isNotEmpty)
             ReportSummaryStrip.items([
-              (label: 'Unassigned', value: '${_data.length}', color: null),
-              (label: 'Waiting >3 days', value: '$old',
+              (label: 'Total Backlog', value: '${_data.length}', color: null),
+              (label: 'Pending',
+                  value: '${_data.where((r) => r['orderStatus'] == 'PENDING').length}',
+                  color: null),
+              (label: 'Partial',
+                  value: '${_data.where((r) => r['orderStatus'] == 'PARTIALLY_ASSIGNED').length}',
+                  color: null),
+              (label: 'Waiting >3d', value: '$old',
                   color: old > 0 ? const Color(0xFFFCA5A5) : null),
             ]),
           ReportSearchBar(
@@ -109,17 +115,28 @@ class _BacklogRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final orderNo  = r['orderNumber']  as String? ?? '—';
+    final orderDate = r['orderDate']   as String?;
     final client   = r['clientName']   as String? ?? '—';
-    final route    = r['routeName']    as String?;
-    final days     = (r['pendingDays'] as num?)?.toInt() ?? 0;
-    final lrCount  = (r['lrCount']     as num?)?.toInt() ?? 0;
+    final fromCity = r['fromCity']     as String?;
+    final toCity   = r['toCity']       as String?;
+    final material = r['materialType'] as String?;
+    final weight   = (r['totalWeight'] as num?)?.toDouble();
+    final status   = r['orderStatus']  as String? ?? '—';
+    final days     = (r['daysWaiting'] as num?)?.toInt() ?? 0;
 
     final isOld = days > 3;
     final badgeColor = isOld ? AppColors.error : AppColors.warning;
 
+    final statusColor = status == 'PENDING'
+        ? AppColors.warning
+        : status == 'PARTIALLY_ASSIGNED'
+            ? const Color(0xFF0284C7)
+            : AppColors.mutedText;
+
     return ReportCard(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 40, height: 40,
@@ -135,24 +152,51 @@ class _BacklogRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(orderNo,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w700, color: AppColors.navy)),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(orderNo,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w700, color: AppColors.navy)),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        status.replaceAll('_', ' '),
+                        style: AppTextStyles.caption.copyWith(
+                            color: statusColor, fontWeight: FontWeight.w600,
+                            fontSize: 9),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 2),
                 Text(client,
                     style: AppTextStyles.caption
                         .copyWith(color: AppColors.bodyText)),
-                if (route != null)
-                  Text(route,
+                if (fromCity != null && toCity != null)
+                  Text('$fromCity → $toCity',
                       style: AppTextStyles.caption
                           .copyWith(color: AppColors.mutedText)),
-                if (lrCount > 0)
-                  Text('$lrCount LR${lrCount != 1 ? 's' : ''}',
+                if (material != null || weight != null)
+                  Text([
+                    if (material != null) material,
+                    if (weight != null) '${weight.toStringAsFixed(1)}T',
+                  ].join(' • '),
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.mutedText, fontSize: 10)),
+                if (orderDate != null)
+                  Text('Order date: $orderDate',
                       style: AppTextStyles.caption
                           .copyWith(color: AppColors.mutedText, fontSize: 10)),
               ],
             ),
           ),
+          const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(

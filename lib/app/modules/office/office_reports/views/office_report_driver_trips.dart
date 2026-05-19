@@ -54,6 +54,8 @@ class _OfficeReportDriverTripsState extends State<OfficeReportDriverTrips> {
 
   int get _totalTrips =>
       _data.fold(0, (s, r) => s + ((r['tripCount'] as num?)?.toInt() ?? 0));
+  double get _totalLoaded =>
+      _data.fold(0.0, (s, r) => s + ((r['totalLoadedTons'] as num?)?.toDouble() ?? 0));
 
   @override
   Widget build(BuildContext context) {
@@ -85,8 +87,9 @@ class _OfficeReportDriverTripsState extends State<OfficeReportDriverTrips> {
           ),
           if (!_loading && _data.isNotEmpty)
             ReportSummaryStrip.items([
-              (label: 'Drivers', value: '${_data.length}', color: null),
-              (label: 'Total Trips', value: '$_totalTrips', color: null),
+              (label: 'Drivers',      value: '${_data.length}',                              color: null),
+              (label: 'Total Trips',  value: '$_totalTrips',                                 color: null),
+              (label: 'Loaded (T)',   value: _totalLoaded.toStringAsFixed(1),                color: null),
             ]),
           Expanded(
             child: _loading
@@ -118,10 +121,12 @@ class _DriverRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name      = r['driverName']       as String? ?? '—';
+    final name      = r['driverName']        as String? ?? '—';
+    final phone     = r['phone']             as String?;
+    final role      = r['roleName']          as String? ?? '';
     final trips     = (r['tripCount']        as num?)?.toInt() ?? 0;
-    final kmTotal   = (r['totalKm']          as num?)?.toDouble() ?? 0;
-    final onTimePct = (r['onTimePercentage'] as num?)?.toDouble();
+    final loaded    = (r['totalLoadedTons']  as num?)?.toDouble() ?? 0;
+    final delivered = (r['totalDeliveredTons'] as num?)?.toDouble() ?? 0;
 
     final rankColor = rank == 1 ? const Color(0xFFF59E0B)
         : rank == 2 ? const Color(0xFF9CA3AF)
@@ -156,38 +161,33 @@ class _DriverRow extends StatelessWidget {
                 Text(name,
                     style: AppTextStyles.bodyMedium
                         .copyWith(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Text('$trips trip${trips != 1 ? 's' : ''}',
-                        style: AppTextStyles.caption
-                            .copyWith(color: AppColors.mutedText)),
-                    if (kmTotal > 0) ...[
-                      const SizedBox(width: 8),
-                      Text('${kmTotal.toStringAsFixed(0)} km',
-                          style: AppTextStyles.caption
-                              .copyWith(color: AppColors.mutedText)),
-                    ],
-                  ],
-                ),
+                if (role.isNotEmpty)
+                  Text(role.replaceAll('_', ' ').toLowerCase()
+                      .split(' ').map((w) => w.isNotEmpty
+                          ? '${w[0].toUpperCase()}${w.substring(1)}' : '').join(' '),
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.mutedText)),
+                if (phone != null)
+                  Text(phone,
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.mutedText, fontSize: 10)),
               ],
             ),
           ),
-          if (onTimePct != null)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text('${onTimePct.toStringAsFixed(0)}%',
-                    style: TextStyle(
-                        color: onTimePct >= 90 ? AppColors.success
-                            : onTimePct >= 70 ? AppColors.warning : AppColors.error,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Inter', fontSize: 14)),
-                Text('on time',
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.mutedText, fontSize: 10)),
-              ],
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('$trips trip${trips != 1 ? 's' : ''}',
+                  style: AppTextStyles.caption.copyWith(
+                      color: AppColors.navy, fontWeight: FontWeight.w700)),
+              Text('${loaded.toStringAsFixed(1)}T loaded',
+                  style: AppTextStyles.caption
+                      .copyWith(color: AppColors.mutedText, fontSize: 10)),
+              Text('${delivered.toStringAsFixed(1)}T delivered',
+                  style: AppTextStyles.caption
+                      .copyWith(color: AppColors.mutedText, fontSize: 10)),
+            ],
+          ),
         ],
       ),
     );

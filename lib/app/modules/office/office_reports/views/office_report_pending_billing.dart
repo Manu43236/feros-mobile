@@ -32,8 +32,8 @@ class _OfficeReportPendingBillingState
       final res = await _api.get(ApiEndpoints.reportClientPendingBilling);
       final list = ((res.data as Map)['data'] as List? ?? [])
           .cast<Map<String, dynamic>>();
-      list.sort((a, b) => ((b['pendingLrCount'] as num?) ?? 0)
-          .compareTo((a['pendingLrCount'] as num?) ?? 0));
+      list.sort((a, b) => ((b['daysPending'] as num?) ?? 0)
+          .compareTo((a['daysPending'] as num?) ?? 0));
       setState(() { _data = list; _loading = false; });
     } catch (e) {
       setState(() { _loading = false; _error = e.toString(); });
@@ -47,8 +47,8 @@ class _OfficeReportPendingBillingState
         (r['clientName'] as String? ?? '').toLowerCase().contains(q)).toList();
   }
 
-  double get _totalValue => _filtered.fold(
-      0.0, (s, r) => s + ((r['totalFreight'] as num?)?.toDouble() ?? 0));
+  double get _totalTons => _filtered.fold(
+      0.0, (s, r) => s + ((r['totalDeliveredTons'] as num?)?.toDouble() ?? 0));
 
   @override
   Widget build(BuildContext context) {
@@ -70,8 +70,8 @@ class _OfficeReportPendingBillingState
           if (!_loading && _data.isNotEmpty)
             ReportSummaryStrip.items([
               (label: 'Clients', value: '${_data.length}', color: null),
-              (label: 'Pending Value',
-                  value: FerosNumberUtils.formatCurrencyCompact(_totalValue),
+              (label: 'Pending Tons',
+                  value: '${_totalTons.toStringAsFixed(1)} T',
                   color: AppColors.warning),
             ]),
           ReportSearchBar(
@@ -109,11 +109,12 @@ class _PendingClientRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final client   = r['clientName']       as String? ?? '—';
-    final lrCount  = (r['pendingLrCount']  as num?)?.toInt() ?? 0;
-    final freight  = (r['totalFreight']    as num?)?.toDouble() ?? 0;
-    final oldest   = r['oldestLrDate']     as String?;
-    final daysSince = oldest != null ? _daysSince(oldest) : null;
+    final client      = r['clientName']          as String? ?? '—';
+    final lrCount     = (r['pendingLrCount']     as num?)?.toInt() ?? 0;
+    final tons        = (r['totalDeliveredTons'] as num?)?.toDouble() ?? 0;
+    final daysPending = (r['daysPending']        as num?)?.toInt();
+    final oldest      = r['oldestDeliveryDate']  as String?;
+    final daysSince   = daysPending ?? (oldest != null ? _daysSince(oldest) : null);
 
     final isOld = daysSince != null && daysSince > 7;
     final badgeColor = isOld ? AppColors.error : AppColors.warning;
@@ -154,7 +155,7 @@ class _PendingClientRow extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(FerosNumberUtils.formatCurrencyCompact(freight),
+              Text('${tons.toStringAsFixed(1)} T',
                   style: AppTextStyles.bodyMedium.copyWith(
                       fontWeight: FontWeight.w700, color: AppColors.bodyText)),
               const SizedBox(height: 4),

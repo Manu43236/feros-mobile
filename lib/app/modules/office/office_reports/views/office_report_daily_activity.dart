@@ -205,6 +205,21 @@ class _VehicleRow extends StatelessWidget {
                 Text(reg,
                     style: AppTextStyles.bodyMedium
                         .copyWith(fontWeight: FontWeight.w700)),
+                if (lrNo != null)
+                  Text.rich(
+                    TextSpan(children: [
+                      TextSpan(
+                        text: '# ',
+                        style: AppTextStyles.caption.copyWith(
+                            color: AppColors.mutedText, fontSize: 9),
+                      ),
+                      TextSpan(
+                        text: lrNo,
+                        style: AppTextStyles.caption.copyWith(
+                            color: AppColors.mutedText, fontSize: 10),
+                      ),
+                    ]),
+                  ),
                 if (from.isNotEmpty && to.isNotEmpty)
                   Text('$from → $to',
                       style: AppTextStyles.caption
@@ -215,19 +230,10 @@ class _VehicleRow extends StatelessWidget {
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (lrNo != null)
-                Text(lrNo,
-                    style: AppTextStyles.caption.copyWith(
-                        color: AppColors.navy, fontWeight: FontWeight.w600)),
-              if (time != null)
-                Text(time.length > 10 ? time.substring(11, 16) : time,
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.mutedText)),
-            ],
-          ),
+          if (time != null)
+            Text(time.length > 10 ? time.substring(11, 16) : time,
+                style: AppTextStyles.caption
+                    .copyWith(color: AppColors.mutedText)),
         ],
       ),
     );

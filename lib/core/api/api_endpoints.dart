@@ -208,7 +208,7 @@ class ApiEndpoints {
   static const reportInvoiceAging        = '/reports/invoice-aging';
   static const reportRouteProfitability  = '/reports/route-profitability';
   static const reportGstSummary          = '/reports/gst-summary';
-  static const reportCreditNotesReport   = '/reports/credit-notes';
+  static const reportCreditNotesReport   = '/reports/credit-notes-summary';
   static const reportClientPendingBilling= '/reports/client-pending-billing';
   static const reportTopClients          = '/reports/top-clients';
   static const reportStockLevels         = '/reports/stock-levels';
