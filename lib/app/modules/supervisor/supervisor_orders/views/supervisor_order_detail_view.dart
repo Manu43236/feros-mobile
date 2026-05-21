@@ -70,11 +70,50 @@ class SupervisorOrderDetailView
         }
 
         final o = controller.order.value!;
+        final _assignableStatuses = const [
+          'PENDING',
+          'PARTIALLY_ASSIGNED',
+          'PARTIALLY_DELIVERED',
+        ];
+        final _orderStatus = o['orderStatus'] as String? ?? '';
+        final _canAssignOrder = _assignableStatuses.contains(_orderStatus);
+        final _remaining = o['remainingWeight'];
         return DefaultTabController(
           length: 2,
-          child: Scaffold(
-            backgroundColor: AppColors.background,
-            body: Column(
+          child: Builder(
+            builder: (tabContext) {
+              final tabCtrl = DefaultTabController.of(tabContext);
+              return AnimatedBuilder(
+                animation: tabCtrl,
+                builder: (_, __) => Scaffold(
+                  backgroundColor: AppColors.background,
+                  floatingActionButton: (_canAssignOrder && tabCtrl.index == 0)
+                      ? FloatingActionButton.extended(
+                          onPressed: () {
+                            controller.fetchVehicles();
+                            showModalBottomSheet(
+                              context: tabContext,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) => _AssignVehicleSheet(
+                                controller: controller,
+                                remainingWeight: _remaining,
+                              ),
+                            );
+                          },
+                          backgroundColor: AppColors.navy,
+                          foregroundColor: Colors.white,
+                          icon: const Icon(Icons.add),
+                          label: const Text(
+                            'Assign Vehicle',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        )
+                      : null,
+                  body: Column(
               children: [
                 // Sticky banner
                 _OrderBanner(order: o, controller: controller),
@@ -112,6 +151,9 @@ class SupervisorOrderDetailView
                 ),
               ],
             ),
+                ),
+              );
+            },
           ),
         );
       }),
@@ -289,9 +331,9 @@ class _OrderBanner extends StatelessWidget {
               ),
               // ── Status action buttons ──────────────────────────
               Obx(() {
+                final isLoading = controller.isUpdatingStatus.value;
                 final nextStatuses = _nextStatuses(status);
                 if (nextStatuses.isEmpty) return const SizedBox.shrink();
-                final isLoading = controller.isUpdatingStatus.value;
                 return Padding(
                   padding: const EdgeInsets.only(top: 12),
                   child: Row(
@@ -501,21 +543,6 @@ class _AssignmentsTab extends StatelessWidget {
   final SupervisorOrderDetailController controller;
   const _AssignmentsTab({required this.order, required this.controller});
 
-  bool get _canAssign => [
-    'PENDING',
-    'PARTIALLY_ASSIGNED',
-  ].contains(order['orderStatus'] as String? ?? '');
-
-  void _openAssignSheet(BuildContext context) {
-    controller.fetchVehicles();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _AssignVehicleSheet(controller: controller),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final allocations =
@@ -536,51 +563,6 @@ class _AssignmentsTab extends StatelessWidget {
                   ),
                 ),
         ),
-        // ── Assign Vehicle button (only for assignable statuses) ────────────
-        if (_canAssign)
-          Container(
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x15000000),
-                  blurRadius: 8,
-                  offset: Offset(0, -3),
-                ),
-              ],
-            ),
-            padding: EdgeInsets.fromLTRB(
-              16,
-              12,
-              16,
-              12 + MediaQuery.of(context).padding.bottom,
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                onPressed: () => _openAssignSheet(context),
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text(
-                  'Assign Vehicle',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.navy,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -887,12 +869,16 @@ class _AllocationCard extends StatelessWidget {
   }
 
   void _openCreateLrSheet(BuildContext context, int allocationId) {
+    final allocWeight = allocation['allocatedWeight'];
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) =>
-          _CreateLrSheet(allocationId: allocationId, controller: controller),
+      builder: (_) => _CreateLrSheet(
+        allocationId: allocationId,
+        controller: controller,
+        allocatedWeight: allocWeight,
+      ),
     );
   }
 
@@ -1088,7 +1074,8 @@ class _StaffButton extends StatelessWidget {
 // ── Assign Vehicle Bottom Sheet ───────────────────────────────────────────────
 class _AssignVehicleSheet extends StatefulWidget {
   final SupervisorOrderDetailController controller;
-  const _AssignVehicleSheet({required this.controller});
+  final dynamic remainingWeight;
+  const _AssignVehicleSheet({required this.controller, this.remainingWeight});
 
   @override
   State<_AssignVehicleSheet> createState() => _AssignVehicleSheetState();
@@ -1100,6 +1087,19 @@ class _AssignVehicleSheetState extends State<_AssignVehicleSheet> {
   final _remarksCtrl = TextEditingController();
   DateTime? _loadDate, _delivDate;
   final Map<String, String> _errors = {};
+
+  @override
+  void initState() {
+    super.initState();
+    final rw = widget.remainingWeight;
+    if (rw != null) {
+      _weightCtrl.text = rw.toString();
+      _weightCtrl.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _weightCtrl.text.length,
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -2039,8 +2039,13 @@ class _FieldShimmer extends StatelessWidget {
 class _CreateLrSheet extends StatefulWidget {
   final int allocationId;
   final SupervisorOrderDetailController controller;
+  final dynamic allocatedWeight;
 
-  const _CreateLrSheet({required this.allocationId, required this.controller});
+  const _CreateLrSheet({
+    required this.allocationId,
+    required this.controller,
+    this.allocatedWeight,
+  });
 
   @override
   State<_CreateLrSheet> createState() => _CreateLrSheetState();
@@ -2051,6 +2056,19 @@ class _CreateLrSheetState extends State<_CreateLrSheet> {
 
   final _weightCtrl = TextEditingController();
   final _remarksCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    final aw = widget.allocatedWeight;
+    if (aw != null) {
+      _weightCtrl.text = aw.toString();
+      _weightCtrl.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _weightCtrl.text.length,
+      );
+    }
+  }
 
   @override
   void dispose() {

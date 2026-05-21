@@ -304,6 +304,11 @@ const Map<String, String> en = {
 
   // ── Breakdown ─────────────────────────────────────────────────────────────
   'btn_report_breakdown': 'Report Breakdown',
+  'btn_yes_report': 'Yes, Report',
+  'lbl_confirm_breakdown_title': 'Report Vehicle Breakdown?',
+  'lbl_confirm_breakdown_body': 'This will immediately notify your supervisor. Only do this if the vehicle cannot continue the trip.',
+  'lbl_breakdown_reported_waiting': 'Breakdown Reported — Waiting for supervisor action',
+  'lbl_tap_to_refresh': 'Tap to refresh status after supervisor resolves',
   'btn_resolve_breakdown': 'Resolve Breakdown',
   'lbl_breakdown_detail': 'Breakdown Detail',
   'lbl_breakdown_desc': 'Breakdown Description',

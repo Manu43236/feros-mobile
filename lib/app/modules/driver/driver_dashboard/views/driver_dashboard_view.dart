@@ -59,20 +59,24 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
 
       // ── State 3: ON TRIP ──────────────────────────────────────
       if (active != null) {
+        final breakdownActive = controller.hasActiveTripBreakdown.value;
         return _HomeState(
-          statusColor: const Color(0xFFD97706),
-          statusIcon: Icons.local_shipping,
-          statusLabel: 'lbl_on_trip'.tr,
+          statusColor: breakdownActive ? const Color(0xFFDC2626) : const Color(0xFFD97706),
+          statusIcon: breakdownActive ? Icons.car_crash_outlined : Icons.local_shipping,
+          statusLabel: breakdownActive ? 'lbl_breakdown_reported_waiting'.tr : 'lbl_on_trip'.tr,
           tripData: active,
           attended: attended,
-          actionLabel: 'btn_mark_done'.tr,
-          actionIcon: Icons.check_circle_outline,
-          actionColor: AppColors.navy,
-          onAction: () => _markDoneFromHome(context, active),
+          actionLabel: breakdownActive ? 'lbl_tap_to_refresh'.tr : 'btn_mark_done'.tr,
+          actionIcon: breakdownActive ? Icons.refresh : Icons.check_circle_outline,
+          actionColor: breakdownActive ? const Color(0xFFDC2626) : AppColors.navy,
+          onAction: breakdownActive
+              ? () => controller.fetchDashboard()
+              : () => _markDoneFromHome(context, active),
           secondaryActionLabel: 'btn_view_trip_details'.tr,
           onSecondaryAction: () => _openTrip(context, active),
           onCardTap: () => _openTrip(context, active),
           bottomRow: _BottomNav(controller: controller, attended: attended),
+          onRefresh: controller.fetchDashboard,
         );
       }
 
@@ -93,11 +97,12 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
               : () => _startTripFromHome(context, nextReady),
           onCardTap: () => _openTrip(context, nextReady),
           bottomRow: _BottomNav(controller: controller, attended: attended),
+          onRefresh: controller.fetchDashboard,
         );
       }
 
       // ── State 1: IDLE ─────────────────────────────────────────
-      return _IdleState(controller: controller);
+      return _IdleState(controller: controller, onRefresh: controller.fetchDashboard);
     });
   }
 
@@ -193,11 +198,20 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
 // ── State 1: Idle — no trip ───────────────────────────────────────────────────
 class _IdleState extends StatelessWidget {
   final DriverDashboardController controller;
-  const _IdleState({required this.controller});
+  final Future<void> Function() onRefresh;
+  const _IdleState({required this.controller, required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      color: AppColors.navy,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height - 160),
+          child: SafeArea(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
@@ -295,6 +309,9 @@ class _IdleState extends StatelessWidget {
           ],
         ),
       ),
+          ),  // ConstrainedBox
+        ),    // SingleChildScrollView
+      ),      // RefreshIndicator
     );
   }
 }
@@ -314,6 +331,7 @@ class _HomeState extends StatelessWidget {
   final VoidCallback? onSecondaryAction;
   final VoidCallback? onCardTap;
   final Widget bottomRow;
+  final Future<void> Function() onRefresh;
 
   const _HomeState({
     required this.statusColor,
@@ -329,11 +347,20 @@ class _HomeState extends StatelessWidget {
     this.onSecondaryAction,
     this.onCardTap,
     required this.bottomRow,
+    required this.onRefresh,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      color: AppColors.navy,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height - 160),
+          child: SafeArea(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
@@ -392,6 +419,9 @@ class _HomeState extends StatelessWidget {
           ],
         ),
       ),
+          ),  // ConstrainedBox
+        ),    // SingleChildScrollView
+      ),      // RefreshIndicator
     );
   }
 }

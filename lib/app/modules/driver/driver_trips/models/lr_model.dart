@@ -1,5 +1,6 @@
 class LrModel {
   final int id;
+  final int? allocationId;
   final String lrNumber;
   final String lrStatus;
   final String orderNumber;
@@ -22,6 +23,7 @@ class LrModel {
 
   LrModel({
     required this.id,
+    this.allocationId,
     required this.lrNumber,
     required this.lrStatus,
     required this.orderNumber,
@@ -45,6 +47,7 @@ class LrModel {
 
   factory LrModel.fromJson(Map<String, dynamic> j) => LrModel(
     id:              j['id'] as int? ?? 0,
+    allocationId:    j['vehicleAllocationId']       as int?,
     lrNumber:        j['lrNumber']                  as String? ?? '—',
     lrStatus:        j['lrStatus']                  as String? ?? 'CREATED',
     orderNumber:     j['orderNumber']               as String? ?? '—',

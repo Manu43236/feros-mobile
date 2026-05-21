@@ -6,6 +6,8 @@ import '../../../../../core/widgets/info_row.dart';
 import '../../../../../core/widgets/delivery_sheet.dart';
 import '../../../../../core/widgets/odometer_sheet.dart';
 import '../controllers/driver_trip_detail_controller.dart';
+import '../../driver_breakdown/views/driver_breakdown_view.dart';
+import '../../driver_breakdown/bindings/driver_breakdown_binding.dart';
 
 class DriverTripDetailView extends GetView<DriverTripDetailController> {
   const DriverTripDetailView({super.key});
@@ -32,7 +34,10 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
             child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
           ),
         ),
-        body: ListView(
+        body: RefreshIndicator(
+          onRefresh: controller.refresh,
+          color: AppColors.navy,
+          child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             // ── Status Card ───────────────────────────────────────
@@ -118,39 +123,126 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
 
                   if (controller.lrStatus.value == 'IN_TRANSIT') ...[
                     const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: controller.isUpdating.value
+                    if (controller.hasActiveBreakdown.value) ...[
+                      // ── Breakdown active banner ───────────────────
+                      GestureDetector(
+                        onTap: controller.isCheckingBreakdown.value
                             ? null
-                            : () => _onMarkDelivered(context, controller),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF16A34A),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
+                            : controller.checkBreakdown,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
                             borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFFECACA)),
                           ),
-                        ),
-                        child: controller.isUpdating.value
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : Text(
-                                'btn_mark_delivered'.tr,
-                                style: AppTextStyles.caption.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
+                          child: Row(
+                            children: [
+                              const Icon(Icons.warning_amber_rounded,
+                                  color: Color(0xFFDC2626), size: 20),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'lbl_breakdown_reported_waiting'.tr,
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: const Color(0xFFDC2626),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'lbl_tap_to_refresh'.tr,
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: const Color(0xFFDC2626)
+                                            .withValues(alpha: 0.7),
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
+                              controller.isCheckingBreakdown.value
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Color(0xFFDC2626),
+                                      ),
+                                    )
+                                  : const Icon(Icons.refresh,
+                                      color: Color(0xFFDC2626), size: 18),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+                    ] else ...[
+                      // ── Mark Delivered ───────────────────────────
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: controller.isUpdating.value
+                              ? null
+                              : () => _onMarkDelivered(context, controller),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF16A34A),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: controller.isUpdating.value
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Text(
+                                  'btn_mark_delivered'.tr,
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // ── Report Breakdown ─────────────────────────
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () =>
+                              _onReportBreakdown(context, controller),
+                          icon: const Icon(Icons.warning_amber_outlined,
+                              size: 18, color: Color(0xFFDC2626)),
+                          label: Text(
+                            'btn_report_breakdown'.tr,
+                            style: AppTextStyles.caption.copyWith(
+                              color: const Color(0xFFDC2626),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFFDC2626),
+                            side: const BorderSide(color: Color(0xFFDC2626)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ],
               ),
@@ -286,9 +378,101 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
               ),
             ),
           ],
+          ),  // close ListView
+        ),    // close RefreshIndicator
+      ),
+    );
+  }
+
+  Future<void> _onReportBreakdown(
+    BuildContext context,
+    DriverTripDetailController controller,
+  ) async {
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Icon(Icons.warning_amber_rounded,
+                color: Color(0xFFDC2626), size: 40),
+            const SizedBox(height: 12),
+            Text(
+              'lbl_confirm_breakdown_title'.tr,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.navy,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'lbl_confirm_breakdown_body'.tr,
+              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Get.back(result: false),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.navy,
+                      side: const BorderSide(color: AppColors.navy),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text('btn_cancel'.tr,
+                        style: AppTextStyles.caption
+                            .copyWith(fontWeight: FontWeight.w600)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Get.back(result: true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFDC2626),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text('btn_yes_report'.tr,
+                        style: AppTextStyles.caption.copyWith(
+                            color: Colors.white, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
+    if (confirmed != true) return;
+    await Get.to(
+      () => const DriverBreakdownView(),
+      binding: DriverBreakdownBinding(),
+      transition: Transition.cupertino,
+    );
+    // Always re-check after returning — more reliable than result flag
+    controller.onBreakdownReported();
   }
 
   // Sheets stay in the view (need BuildContext); results passed to controller.

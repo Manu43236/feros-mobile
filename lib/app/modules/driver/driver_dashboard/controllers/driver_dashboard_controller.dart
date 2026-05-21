@@ -12,8 +12,9 @@ class DriverDashboardController extends GetxController {
   final isAttendanceEnforced = false.obs;
   final unreadNotifications  = 0.obs;
 
-  final activeTrip    = Rxn<Map<String, dynamic>>();
-  final upcomingTrips = <Map<String, dynamic>>[].obs;
+  final activeTrip           = Rxn<Map<String, dynamic>>();
+  final upcomingTrips        = <Map<String, dynamic>>[].obs;
+  final hasActiveTripBreakdown = false.obs;
 
   @override
   void onReady() {
@@ -31,7 +32,9 @@ class DriverDashboardController extends GetxController {
       isAttendanceEnforced.value = data['attendanceEnforced']  as bool? ?? false;
       unreadNotifications.value  = data['unreadNotifications'] as int?  ?? 0;
 
-      activeTrip.value = data['activeTrip'] as Map<String, dynamic>?;
+      final trip = data['activeTrip'] as Map<String, dynamic>?;
+      activeTrip.value = trip;
+      hasActiveTripBreakdown.value = trip?['hasActiveBreakdown'] as bool? ?? false;
 
       final trips = (data['upcomingTrips'] as List?)
               ?.cast<Map<String, dynamic>>() ?? [];

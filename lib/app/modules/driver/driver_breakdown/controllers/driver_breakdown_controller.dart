@@ -67,9 +67,8 @@ class DriverBreakdownController extends GetxController {
           'location': '${pos.latitude.toStringAsFixed(6)}, ${pos.longitude.toStringAsFixed(6)}',
       });
       FerosSnackbar.success('Breakdown reported');
-      reasonCtrl.clear();
-      notesCtrl.clear();
-      position.value = null;
+      Get.back(result: true);
+      return;
     } catch (_) {
       FerosSnackbar.error('Failed to report breakdown');
     }

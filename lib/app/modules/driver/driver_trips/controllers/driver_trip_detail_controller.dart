@@ -15,13 +15,15 @@ class DriverTripDetailController extends GetxController {
 
   late final LrModel lr;
 
-  final lrStatus        = ''.obs;
-  final loadedWeight    = Rxn<double>();
-  final deliveredWeight = Rxn<double>();
-  final startOdometer   = Rxn<double>();
-  final endOdometer     = Rxn<double>();
-  final isUpdating      = false.obs;
-  final isPdfLoading    = false.obs;
+  final lrStatus           = ''.obs;
+  final loadedWeight       = Rxn<double>();
+  final deliveredWeight    = Rxn<double>();
+  final startOdometer      = Rxn<double>();
+  final endOdometer        = Rxn<double>();
+  final isUpdating         = false.obs;
+  final isPdfLoading       = false.obs;
+  final hasActiveBreakdown  = false.obs;
+  final isCheckingBreakdown = false.obs;
 
   @override
   void onInit() {
@@ -32,6 +34,44 @@ class DriverTripDetailController extends GetxController {
     deliveredWeight.value = lr.deliveredWeight;
     startOdometer.value   = lr.startOdometer;
     endOdometer.value     = lr.endOdometer;
+    if (lr.lrStatus == 'IN_TRANSIT') checkBreakdown();
+  }
+
+  Future<void> checkBreakdown() async {
+    final aId = lr.allocationId;
+    if (aId == null) return;
+    isCheckingBreakdown.value = true;
+    try {
+      final res = await _api.get(
+          ApiEndpoints.orderBreakdown(lr.orderId, aId));
+      final data = (res.data as Map<String, dynamic>)['data'];
+      if (data != null) {
+        final status = data['status'] as String? ?? '';
+        hasActiveBreakdown.value = status == 'REPORTED';
+      } else {
+        hasActiveBreakdown.value = false;
+      }
+    } catch (_) {
+      // 404 = no breakdown on record → allow buttons
+      hasActiveBreakdown.value = false;
+    }
+    isCheckingBreakdown.value = false;
+  }
+
+  void onBreakdownReported() => checkBreakdown();
+
+  Future<void> refresh() async {
+    try {
+      final res = await _api.get(ApiEndpoints.lrById(lr.id));
+      final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      final updated = LrModel.fromJson(data);
+      lrStatus.value        = updated.lrStatus;
+      loadedWeight.value    = updated.loadedWeight;
+      deliveredWeight.value = updated.deliveredWeight;
+      startOdometer.value   = updated.startOdometer;
+      endOdometer.value     = updated.endOdometer;
+    } catch (_) {}
+    if (lrStatus.value == 'IN_TRANSIT') await checkBreakdown();
   }
 
   // ── Start Trip ─────────────────────────────────────────────────────────────

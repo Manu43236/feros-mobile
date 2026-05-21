@@ -283,6 +283,11 @@ const Map<String, String> te = {
 
   // ── Breakdown ─────────────────────────────────────────────────────────────
   'btn_report_breakdown': 'బ్రేక్‌డౌన్ రిపోర్ట్ చేయండి',
+  'btn_yes_report': 'అవును, రిపోర్ట్ చేయి',
+  'lbl_confirm_breakdown_title': 'వెహికిల్ బ్రేక్‌డౌన్ రిపోర్ట్ చేయాలా?',
+  'lbl_confirm_breakdown_body': 'ఇది వెంటనే మీ supervisor కి నోటిఫై చేస్తుంది. వెహికిల్ ట్రిప్ కంటిన్యూ చేయలేకపోతే మాత్రమే చేయండి.',
+  'lbl_breakdown_reported_waiting': 'బ్రేక్‌డౌన్ రిపోర్ట్ చేయబడింది — supervisor యాక్షన్ కోసం వెయిట్ చేయండి',
+  'lbl_tap_to_refresh': 'Supervisor resolve చేసిన తర్వాత tap చేసి refresh చేయండి',
   'btn_resolve_breakdown': 'బ్రేక్‌డౌన్ రిసాల్వ్ చేయండి',
   'lbl_breakdown_detail': 'బ్రేక్‌డౌన్ వివరాలు',
   'lbl_breakdown_desc': 'బ్రేక్‌డౌన్ వివరణ',
