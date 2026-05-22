@@ -8,7 +8,7 @@ class EnvConfig {
       case _Env.dev:
         return 'http://192.168.1.100:8080/api/v1';
       case _Env.prod:
-        return 'http://feros.in/api/v1';
+        return 'https://console.feros.in/api/v1';
     }
   }
 
