@@ -12,6 +12,8 @@ import '../../office_payroll/views/office_payroll_view.dart';
 import '../../office_inventory/views/office_inventory_view.dart';
 import '../../office_reports/views/office_reports_view.dart';
 import '../../office_subscription/views/office_subscription_view.dart';
+import '../../../supervisor/supervisor_fuel_log/controllers/supervisor_fuel_log_controller.dart';
+import '../../../supervisor/supervisor_fuel_log/views/supervisor_fuel_log_view.dart';
 
 class OfficeMoreTab extends StatelessWidget {
   const OfficeMoreTab({super.key});
@@ -29,6 +31,10 @@ class OfficeMoreTab extends StatelessWidget {
       _Module(Icons.fact_check_outlined,       'Attendance', AppColors.success,   () => Get.to(() => const OfficeAttendanceView())),
       _Module(Icons.payments_outlined,         'Payroll',    const Color(0xFF0891B2), () => Get.to(() => const OfficePayrollView())),
       _Module(Icons.bar_chart_outlined,        'Reports',    const Color(0xFF6D28D9), () => Get.to(() => const OfficeReportsView())),
+      _Module(Icons.local_gas_station_outlined, 'Fuel Log',  const Color(0xFF0F766E), () {
+        Get.lazyPut(() => SupervisorFuelLogController());
+        Get.to(() => const SupervisorFuelLogView(), transition: Transition.cupertino);
+      }),
       if (isAdmin)
         _Module(Icons.workspace_premium_outlined, 'Subscription', AppColors.warning, () => Get.to(() => const OfficeSubscriptionView())),
     ];
