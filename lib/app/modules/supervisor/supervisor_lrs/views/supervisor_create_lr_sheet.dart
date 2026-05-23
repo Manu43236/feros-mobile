@@ -213,8 +213,13 @@ class _SupervisorCreateLrSheetState extends State<SupervisorCreateLrSheet> {
                           ),
                         );
                       }).toList(),
-                      onChanged: (v) =>
-                          setState(() => _selectedAllocation = v),
+                      onChanged: (v) {
+                        setState(() => _selectedAllocation = v);
+                        if (v != null) {
+                          final aw = v['allocatedWeight'];
+                          if (aw != null) _weightCtrl.text = aw.toString();
+                        }
+                      },
                     ),
                   const SizedBox(height: 16),
 

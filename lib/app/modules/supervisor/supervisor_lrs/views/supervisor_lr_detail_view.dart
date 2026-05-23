@@ -972,6 +972,13 @@ class _RecordLoadingSheetState extends State<_RecordLoadingSheet> {
   DateTime _loadedAt = DateTime.now();
 
   @override
+  void initState() {
+    super.initState();
+    final aw = widget.controller.lr.value?['allocatedWeight'];
+    if (aw != null) _weightCtrl.text = aw.toString();
+  }
+
+  @override
   void dispose() {
     _weightCtrl.dispose();
     _remarksCtrl.dispose();

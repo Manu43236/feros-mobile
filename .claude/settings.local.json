@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(cd /Users/manu/Documents/FEROS/mobile && flutter run)",
-      "Bash(flutter build apk --release 2>&1)"
+      "Bash(flutter build apk --release 2>&1)",
+      "Bash(curl -s ifconfig.me)"
     ]
   }
 }
