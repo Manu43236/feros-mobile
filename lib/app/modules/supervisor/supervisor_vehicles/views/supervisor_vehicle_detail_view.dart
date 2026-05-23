@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:feros/core/popups/feros_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -1004,6 +1005,7 @@ class _DocumentsTabState extends State<_DocumentsTab>
       builder: (_) => _AddDocumentSheet(
         vehicleId: widget.controller.vehicleId,
         onAdded: widget.controller.retryDocs,
+        existingDocs: List<Map<String, dynamic>>.from(widget.controller.docs),
       ),
     );
   }
@@ -4026,7 +4028,8 @@ class _UploadedDocCard extends StatelessWidget {
 class _AddDocumentSheet extends StatefulWidget {
   final int vehicleId;
   final VoidCallback onAdded;
-  const _AddDocumentSheet({required this.vehicleId, required this.onAdded});
+  final List<Map<String, dynamic>> existingDocs;
+  const _AddDocumentSheet({required this.vehicleId, required this.onAdded, this.existingDocs = const []});
 
   @override
   State<_AddDocumentSheet> createState() => _AddDocumentSheetState();
@@ -4120,6 +4123,21 @@ class _AddDocumentSheetState extends State<_AddDocumentSheet> {
       );
       return;
     }
+    // Block duplicate uploads for non-multiple document types (e.g. RC)
+    final allowMultiple = _selectedType!['allowMultiple'] as bool? ?? true;
+    if (!allowMultiple) {
+      final selectedTypeId = _selectedType!['id'] as int;
+      final alreadyExists = widget.existingDocs.any(
+        (d) => d['documentTypeId'] == selectedTypeId,
+      );
+      if (alreadyExists) {
+        FerosSnackbar.error(
+          '${_selectedType!['name']} already exists for this vehicle. Delete the existing one before uploading a new one.',
+        );
+        return;
+      }
+    }
+
     setState(() => _saving = true);
     try {
       final body = <String, dynamic>{'documentTypeId': _selectedType!['id']};
@@ -4231,13 +4249,30 @@ class _AddDocumentSheetState extends State<_AddDocumentSheet> {
                     title: 'Select Document Type',
                     hint: 'Search…',
                     items: _docTypes,
-                    itemLabel: (t) => t['name'] as String? ?? '',
+                    itemLabel: (t) {
+                      final name = t['name'] as String? ?? '';
+                      final allowMultiple = t['allowMultiple'] as bool? ?? true;
+                      final alreadyUploaded = !allowMultiple &&
+                          widget.existingDocs.any((d) => d['documentTypeId'] == t['id']);
+                      return alreadyUploaded ? '$name (already uploaded)' : name;
+                    },
                     selectedDisplay: _selectedType?['name'] as String?,
-                    onSelected: (t) => setState(() {
-                      _selectedType = t;
-                      _issuerNameCtrl.clear();
-                      _permitType = null;
-                    }),
+                    onSelected: (t) {
+                      final allowMultiple = t['allowMultiple'] as bool? ?? true;
+                      final alreadyUploaded = !allowMultiple &&
+                          widget.existingDocs.any((d) => d['documentTypeId'] == t['id']);
+                      if (alreadyUploaded) {
+                        FerosSnackbar.error(
+                          '${t['name']} already exists. Delete the existing one first.',
+                        );
+                        return;
+                      }
+                      setState(() {
+                        _selectedType = t;
+                        _issuerNameCtrl.clear();
+                        _permitType = null;
+                      });
+                    },
                   ),
             const SizedBox(height: 14),
 
