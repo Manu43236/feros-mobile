@@ -69,7 +69,7 @@ class ServiceMenDashboardView extends GetView<ServiceMenDashboardController> {
                 ),
                 const SizedBox(width: 12),
                 _QuickAction(
-                  label: 'lbl_tire_work'.tr,
+                  label: 'lbl_tyre_work'.tr,
                   icon: Icons.tire_repair_outlined,
                   color: const Color(0xFF7C3AED),
                   onTap: () => Get.find<DriverShellController>().onTabTapped(2),

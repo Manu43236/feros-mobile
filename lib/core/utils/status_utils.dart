@@ -62,7 +62,7 @@ const _statusKeyMap = <String, String>{
   // ── Breakdowns ────────────────────────────────────────────────────────────
   'REPORTED':         'status_created',
 
-  // ── Tires / Stock ─────────────────────────────────────────────────────────
+  // ── Tyres / Stock ─────────────────────────────────────────────────────────
   'ISSUED':           'status_approved',
   'LOW_STOCK':        'status_low_stock',
 };

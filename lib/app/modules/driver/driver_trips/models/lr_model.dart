@@ -14,6 +14,7 @@ class LrModel {
   final double? loadedWeight;
   final double? deliveredWeight;
   final String lrDate;
+  final double? currentVehicleOdometer;
   final double? startOdometer;
   final double? endOdometer;
   final String? startedByName;
@@ -37,6 +38,7 @@ class LrModel {
     this.loadedWeight,
     this.deliveredWeight,
     required this.lrDate,
+    this.currentVehicleOdometer,
     this.startOdometer,
     this.endOdometer,
     this.startedByName,
@@ -61,6 +63,7 @@ class LrModel {
     loadedWeight:    (j['loadedWeight']             as num?)?.toDouble(),
     deliveredWeight: (j['deliveredWeight']          as num?)?.toDouble(),
     lrDate:          j['lrDate']                    as String? ?? '—',
+    currentVehicleOdometer: (j['currentVehicleOdometer'] as num?)?.toDouble(),
     startOdometer:   (j['startOdometer']            as num?)?.toDouble(),
     endOdometer:     (j['endOdometer']              as num?)?.toDouble(),
     startedByName:   j['startedByName']             as String?,

@@ -11,14 +11,14 @@ class OfficeInventoryController extends GetxController {
   final stockState       = ViewState.loading.obs;
   final partsState       = ViewState.loading.obs;
   final requestsState    = ViewState.loading.obs;
-  final tireReqState     = ViewState.loading.obs;
+  final tyreReqState     = ViewState.loading.obs;
 
   // ── Data ──────────────────────────────────────────────────────────────────
   final stockItems    = <Map<String, dynamic>>[].obs;
   final spareParts    = <Map<String, dynamic>>[].obs;
   final partRequests  = <Map<String, dynamic>>[].obs;
-  final tireRequests  = <Map<String, dynamic>>[].obs;
-  final availableTires = <Map<String, dynamic>>[].obs;
+  final tyreRequests  = <Map<String, dynamic>>[].obs;
+  final availableTyres = <Map<String, dynamic>>[].obs;
 
   // ── Filters ───────────────────────────────────────────────────────────────
   final stockSearch   = ''.obs;
@@ -54,7 +54,7 @@ class OfficeInventoryController extends GetxController {
       partRequests.where((r) => r['status'] == 'REQUESTED').toList();
 
   int get pendingPartCount  => pendingPartRequests.length;
-  int get pendingTireCount  => tireRequests.length;
+  int get pendingTyreCount  => tyreRequests.length;
 
   int get lowStockCount => stockItems.where((i) => i['isLowStock'] == true).length;
   int get inStockCount  => stockItems.where((i) => (i['quantity'] as num? ?? 0) > 0).length;
@@ -77,7 +77,7 @@ class OfficeInventoryController extends GetxController {
       fetchStock(),
       fetchParts(),
       fetchPartRequests(),
-      fetchTireRequests(),
+      fetchTyreRequests(),
     ]);
   }
 
@@ -120,26 +120,26 @@ class OfficeInventoryController extends GetxController {
     }
   }
 
-  Future<void> fetchTireRequests() async {
-    tireReqState.value = ViewState.loading;
+  Future<void> fetchTyreRequests() async {
+    tyreReqState.value = ViewState.loading;
     try {
-      final res = await _api.get(ApiEndpoints.tireRequestsPending);
-      tireRequests.value = ((res.data as Map)['data'] as List? ?? [])
+      final res = await _api.get(ApiEndpoints.tyreRequestsPending);
+      tyreRequests.value = ((res.data as Map)['data'] as List? ?? [])
           .cast<Map<String, dynamic>>();
-      tireReqState.value = ViewState.success;
+      tyreReqState.value = ViewState.success;
     } catch (e) {
-      debugPrint('[OfficeInventory] tireRequests: $e');
-      tireReqState.value = ViewState.error;
+      debugPrint('[OfficeInventory] tyreRequests: $e');
+      tyreReqState.value = ViewState.error;
     }
   }
 
-  Future<void> fetchAvailableTires() async {
+  Future<void> fetchAvailableTyres() async {
     try {
-      final res = await _api.get(ApiEndpoints.tiresAvailable);
-      availableTires.value = ((res.data as Map)['data'] as List? ?? [])
+      final res = await _api.get(ApiEndpoints.tyresAvailable);
+      availableTyres.value = ((res.data as Map)['data'] as List? ?? [])
           .cast<Map<String, dynamic>>();
     } catch (e) {
-      debugPrint('[OfficeInventory] availableTires: $e');
+      debugPrint('[OfficeInventory] availableTyres: $e');
     }
   }
 
@@ -179,16 +179,16 @@ class OfficeInventoryController extends GetxController {
     await fetchPartRequests();
   }
 
-  // ── Tire Request Approve / Reject ─────────────────────────────────────────
-  Future<void> approveTireRequest(int id, Map<String, dynamic> body) async {
-    await _api.patch(ApiEndpoints.approveTireRequest(id), data: body);
-    await fetchTireRequests();
+  // ── Tyre Request Approve / Reject ─────────────────────────────────────────
+  Future<void> approveTyreRequest(int id, Map<String, dynamic> body) async {
+    await _api.patch(ApiEndpoints.approveTyreRequest(id), data: body);
+    await fetchTyreRequests();
   }
 
-  Future<void> rejectTireRequest(int id, String reason) async {
-    await _api.patch(ApiEndpoints.rejectTireRequest(id),
+  Future<void> rejectTyreRequest(int id, String reason) async {
+    await _api.patch(ApiEndpoints.rejectTyreRequest(id),
         data: {'rejectionReason': reason});
-    await fetchTireRequests();
+    await fetchTyreRequests();
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

@@ -110,19 +110,28 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
     final lrId = tripData['lrId'];
     if (lrId == null) return;
 
+    final rawStart = tripData['startOdometer'];
+    final startOdm = rawStart != null ? double.tryParse(rawStart.toString()) : null;
+    final rawLoaded = tripData['loadedWeight'];
+    final loadedWt = rawLoaded != null ? double.tryParse(rawLoaded.toString()) : null;
+
     final odmResult = await showOdometerSheet(
       context,
-      title: 'End Trip — Record ODM',
-      hint: 'End Odometer (km)',
-      buttonLabel: 'Next',
+      title: 'lbl_end_trip_odm_title'.tr,
+      hint: 'lbl_end_odometer_km'.tr,
+      buttonLabel: 'btn_next'.tr,
       buttonColor: AppColors.navy,
-      instruction: 'Take a photo of the odometer on arrival.',
+      instruction: 'lbl_end_trip_instruction'.trParams({
+        'value': startOdm?.toStringAsFixed(0) ?? '—',
+      }),
+      minOdometer: startOdm,
     );
     if (odmResult == null) return;
 
     final deliveryResult = await showDeliverySheet(
       context,
       endOdometer: odmResult.odometer,
+      loadedWeight: loadedWt,
     );
     if (deliveryResult == null) return;
 
@@ -136,7 +145,7 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
       });
       Get.find<DriverDashboardController>().fetchDashboard();
     } catch (_) {
-      Get.snackbar('Error', 'Failed to confirm delivery',
+      Get.snackbar('lbl_error'.tr, 'err_failed_delivery'.tr,
           backgroundColor: const Color(0xFFDC2626),
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM);
@@ -147,13 +156,17 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
     final lrId = tripData['lrId'];
     if (lrId == null) return;
 
+    final rawOdm = tripData['currentVehicleOdometer'];
+    final minOdm = rawOdm != null ? double.tryParse(rawOdm.toString()) : null;
+
     final result = await showOdometerSheet(
       context,
-      title: 'Start Trip — Record ODM',
-      hint: 'Start Odometer (km)',
-      buttonLabel: 'Start Trip',
+      title: 'lbl_start_trip_odm_title'.tr,
+      hint: 'lbl_start_odometer'.tr,
+      buttonLabel: 'btn_start_trip'.tr,
       buttonColor: AppColors.navy,
-      instruction: 'Take a photo of the odometer before departure.',
+      instruction: 'lbl_start_trip_instruction'.tr,
+      minOdometer: minOdm,
     );
     if (result == null) return;
 
@@ -164,8 +177,9 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
         'startOdometer': result.odometer,
       });
       Get.find<DriverDashboardController>().fetchDashboard(); // refreshes to ON TRIP state
-    } catch (_) {
-      Get.snackbar('Error', 'Failed to start trip',
+    } catch (e) {
+      final msg = (e as dynamic)?.response?.data?['message'] as String?;
+      Get.snackbar('lbl_error'.tr, msg ?? 'err_failed_start_trip'.tr,
           backgroundColor: const Color(0xFFDC2626),
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM);

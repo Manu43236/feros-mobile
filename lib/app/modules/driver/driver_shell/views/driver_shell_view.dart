@@ -6,7 +6,7 @@ import 'package:feros/app/modules/store_keeper/store_keeper_profile/views/store_
 import 'package:feros/app/modules/service_men/service_men_dashboard/views/service_men_dashboard_view.dart';
 import 'package:feros/app/modules/service_men/service_men_services/views/service_men_services_view.dart';
 import 'package:feros/app/modules/service_men/service_men_profile/views/service_men_profile_view.dart';
-import 'package:feros/app/modules/service_men/service_men_tires/views/service_men_tires_view.dart';
+import 'package:feros/app/modules/service_men/service_men_tyres/views/service_men_tyres_view.dart';
 import 'package:feros/app/modules/service_men/service_men_breakdowns/controllers/service_men_breakdowns_controller.dart';
 import 'package:feros/app/modules/service_men/service_men_breakdowns/bindings/service_men_breakdowns_binding.dart';
 import 'package:flutter/material.dart';
@@ -172,7 +172,7 @@ class DriverShellView extends GetView<DriverShellController> {
         return [
           const ServiceMenDashboardView(),
           const ServiceMenServicesView(),
-          const ServiceMenTiresView(),
+          const ServiceMenTyresView(),
           DriverAttendanceView(),
           const ServiceMenProfileView(),
         ];

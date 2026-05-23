@@ -462,12 +462,6 @@ class _LrCard extends StatelessWidget {
                       ),
                     ),
                   ],
-                  const Spacer(),
-                  const Icon(
-                    Icons.chevron_right,
-                    size: 18,
-                    color: AppColors.mutedText,
-                  ),
                 ],
               ),
             ],

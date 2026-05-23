@@ -86,7 +86,7 @@ const Map<String, String> te = {
   'nav_inventory': 'ఇన్వెంటరీ',
   'nav_requests': 'రిక్వెస్ట్స్',
   'nav_stock': 'స్టాక్',
-  'nav_tires': 'టైర్స్',
+  'nav_tyres': 'టైర్స్',
   'nav_breakdowns': 'బ్రేక్‌డౌన్స్',
   'nav_finance': 'ఫైనాన్స్',
 
@@ -260,7 +260,7 @@ const Map<String, String> te = {
   'lbl_stock': 'స్టాక్',
   'lbl_transactions': 'ట్రాన్సాక్షన్స్',
   'lbl_part_requests': 'పార్ట్ రిక్వెస్ట్స్',
-  'lbl_tires': 'టైర్స్',
+  'lbl_tyres': 'టైర్స్',
   'btn_stock_in': 'స్టాక్ ఇన్',
   'btn_request_part': 'పార్ట్ రిక్వెస్ట్ చేయండి',
   'lbl_low_stock': 'లో స్టాక్',
@@ -296,7 +296,7 @@ const Map<String, String> te = {
   // ── Service Men — Dashboard ────────────────────────────────────────────────
   'lbl_active_service': 'యాక్టివ్ సర్వీస్',
   'lbl_quick_actions': 'క్విక్ యాక్షన్స్',
-  'lbl_tire_work': 'టైర్ వర్క్',
+  'lbl_tyre_work': 'టైర్ వర్క్',
   'lbl_recent_services': 'రీసెంట్ సర్వీసెస్',
   'lbl_no_services_assigned': 'సర్వీసెస్ అసైన్ కాలేదు',
   'lbl_no_services_found': 'సర్వీసెస్ కనుగొనబడలేదు',
@@ -328,35 +328,35 @@ const Map<String, String> te = {
   'lbl_creating': 'క్రియేట్ అవుతోంది…',
   'btn_create_service_record': 'సర్వీస్ రికార్డ్ క్రియేట్ చేయండి',
 
-  // ── Service Men — Tires ───────────────────────────────────────────────────
+  // ── Service Men — Tyres ───────────────────────────────────────────────────
   'lbl_my_requests': 'నా రిక్వెస్ట్స్',
-  'lbl_tire_positions': 'టైర్ పొజిషన్స్',
-  'lbl_no_tire_requests': 'టైర్ రిక్వెస్ట్స్ లేవు',
-  'lbl_submit_from_tire_tab':
+  'lbl_tyre_positions': 'టైర్ పొజిషన్స్',
+  'lbl_no_tyre_requests': 'టైర్ రిక్వెస్ట్స్ లేవు',
+  'lbl_submit_from_tyre_tab':
       'టైర్ వర్క్ ట్యాబ్ నుండి రిక్వెస్ట్ సబ్మిట్ చేయండి',
   'lbl_issued': 'ఇష్యూ చేయబడింది',
   'lbl_empty_position': 'ఖాళీగా ఉంది',
   'btn_remove': 'రిమూవ్',
-  'btn_fit_tire': 'టైర్ ఫిట్ చేయండి',
-  'lbl_no_tires_in_stock': 'స్టాక్‌లో టైర్లు లేవు',
+  'btn_fit_tyre': 'టైర్ ఫిట్ చేయండి',
+  'lbl_no_tyres_in_stock': 'స్టాక్‌లో టైర్లు లేవు',
   'lbl_contact_store_keeper':
       'స్టోర్ కీపర్‌కు ఇన్వెంటరీలో టైర్లు యాడ్ చేయమని చెప్పండి.',
-  'lbl_tire_approval_info':
+  'lbl_tyre_approval_info':
       'టైర్ ఫిట్టింగ్‌కు స్టోర్ కీపర్ అప్రూవల్ అవసరం. రిక్వెస్ట్ సబ్మిట్ చేయండి.',
   'lbl_available_in_stock': 'స్టాక్‌లో అందుబాటులో ఉన్నాయి',
   'btn_submit_request': 'రిక్వెస్ట్ సబ్మిట్ చేయండి',
-  'lbl_available_tire': 'అందుబాటులో ఉన్న టైర్',
-  'lbl_select_tire': 'టైర్ సెలెక్ట్ చేయండి',
+  'lbl_available_tyre': 'అందుబాటులో ఉన్న టైర్',
+  'lbl_select_tyre': 'టైర్ సెలెక్ట్ చేయండి',
   'lbl_search_serial_number': 'సీరియల్ నంబర్ సెర్చ్ చేయండి…',
-  'lbl_no_available_tires': 'స్టాక్‌లో టైర్లు అందుబాటులో లేవు',
+  'lbl_no_available_tyres': 'స్టాక్‌లో టైర్లు అందుబాటులో లేవు',
   'btn_confirm_fit': 'ఫిట్ కన్ఫర్మ్ చేయండి',
   'lbl_current_odometer_km': 'కరెంట్ ఓడోమీటర్ (కి.మీ) *',
   'lbl_fitted_at_km': 'ఫిట్ చేసిన సమయంలో',
   'lbl_removal_reason': 'రిమూవల్ రీజన్',
   'btn_confirm_remove': 'రిమూవ్ కన్ఫర్మ్ చేయండి',
-  'lbl_no_tire_positions': 'ఈ వెహికిల్‌కు టైర్ పొజిషన్స్ కాన్ఫిగర్ కాలేదు',
-  'lbl_remove_tire': 'టైర్ రిమూవ్ చేయి',
-  'lbl_request_tire': 'టైర్ రిక్వెస్ట్',
+  'lbl_no_tyre_positions': 'ఈ వెహికిల్‌కు టైర్ పొజిషన్స్ కాన్ఫిగర్ కాలేదు',
+  'lbl_remove_tyre': 'టైర్ రిమూవ్ చేయి',
+  'lbl_request_tyre': 'టైర్ రిక్వెస్ట్',
 
   // ── Service Men — Service Detail ──────────────────────────────────────────
   'lbl_service_info': 'సర్వీస్ ఇన్ఫో',
@@ -524,6 +524,35 @@ const Map<String, String> te = {
   'lbl_odometer_section': 'ఓడోమీటర్',
   'lbl_start_odm': 'స్టార్ట్ ODM',
   'lbl_end_odm': 'ఎండ్ ODM',
+  'lbl_odm_min_hint': '@value km కంటే ≥ ఉండాలి',
+  'err_odm_below_current': 'Odometer @value km కంటే ≥ అయి ఉండాలి',
+
+  // ── Odometer sheet ───────────────────────────────────────────────────────
+  'lbl_start_trip_odm_title': 'ట్రిప్ స్టార్ట్ — ODM రికార్డ్',
+  'lbl_end_trip_odm_title': 'ట్రిప్ ఎండ్ — ODM రికార్డ్',
+  'lbl_start_odometer': 'స్టార్ట్ Odometer (km)',
+  'lbl_end_odometer_km': 'ఎండ్ Odometer (km)',
+  'lbl_start_trip_instruction': 'బయలుదేరే ముందు odometer ఫోటో తీయండి.',
+  'lbl_end_trip_instruction': 'డెలివరీ స్థలంలో odometer ఫోటో తీయండి.\nEnd ODM > @value km అయి ఉండాలి.',
+  'lbl_reading_odm': 'ODM చదువుతోంది…',
+  'lbl_tap_odm_photo': 'ODM ఫోటో తీయడానికి tap చేయండి',
+  'btn_retake': 'మళ్ళీ తీయి',
+  'btn_next': 'నెక్స్ట్',
+  'err_invalid_odm': 'సరైన odometer రీడింగ్ ఎంటర్ చేయండి',
+
+  // ── Delivery sheet ───────────────────────────────────────────────────────
+  'lbl_delivered_weight_t': 'డెలివర్డ్ వెయిట్ (T)',
+  'lbl_delivery_max_hint': 'లోడెడ్ వెయిట్ కంటే ≤ ఉండాలి: @value T',
+  'err_invalid_delivery_weight': 'సరైన డెలివర్డ్ వెయిట్ ఎంటర్ చేయండి',
+  'err_delivery_exceeds_loaded': 'డెలివర్డ్ వెయిట్ లోడెడ్ వెయిట్ (@value T) కంటే ఎక్కువ ఉండకూడదు',
+
+  // ── Trip feedback ────────────────────────────────────────────────────────
+  'lbl_error': 'Error',
+  'msg_trip_started': 'ట్రిప్ స్టార్ట్ అయింది',
+  'err_failed_start_trip': 'ట్రిప్ స్టార్ట్ కాలేదు',
+  'msg_delivery_confirmed': 'డెలివరీ కన్ఫర్మ్ అయింది',
+  'err_failed_delivery': 'డెలివరీ కన్ఫర్మ్ కాలేదు',
+  'err_failed_pdf': 'PDF లోడ్ కాలేదు',
   'lbl_distance': 'దూరం',
   'lbl_loading_pdf': 'లోడ్ అవుతోంది…',
 
@@ -766,7 +795,7 @@ const Map<String, String> te = {
 
   // ── Store Keeper — Inventory ────────────────────────────────────────────────
   'lbl_requests': 'రిక్వెస్ట్‌లు',
-  'lbl_tire_requests': 'టైర్ రిక్వెస్ట్‌లు',
+  'lbl_tyre_requests': 'టైర్ రిక్వెస్ట్‌లు',
   'lbl_showing_low_stock': 'లో స్టాక్ మాత్రమే చూపిస్తోంది',
   'lbl_clear': 'క్లియర్',
   'lbl_search_stock': 'స్టాక్ వెతకండి…',
@@ -776,7 +805,7 @@ const Map<String, String> te = {
   'lbl_categories': 'కేటగిరీలు',
   'lbl_select_part': 'పార్ట్ సెలెక్ట్ చేయండి',
   'lbl_no_pending_part_requests': 'పెండింగ్ పార్ట్ రిక్వెస్ట్‌లు లేవు',
-  'lbl_no_pending_tire_requests': 'పెండింగ్ టైర్ రిక్వెస్ట్‌లు లేవు',
+  'lbl_no_pending_tyre_requests': 'పెండింగ్ టైర్ రిక్వెస్ట్‌లు లేవు',
   'lbl_position': 'పొజిషన్',
   'btn_process': 'ప్రాసెస్ చేయి',
   'lbl_edit_spare_part': 'స్పేర్ పార్ట్ ఎడిట్ చేయండి',
@@ -787,9 +816,9 @@ const Map<String, String> te = {
   'lbl_reason_for_rejection': 'రిజెక్షన్ కారణం…',
   'btn_approve_deduct_stock': 'అప్రూవ్ & స్టాక్ తగ్గించు',
   'btn_reject_request': 'రిక్వెస్ట్ రిజెక్ట్ చేయి',
-  'lbl_process_tire_request': 'టైర్ రిక్వెస్ట్ ప్రాసెస్ చేయండి',
-  'lbl_select_tire_to_issue': 'ఇష్యూ చేయాల్సిన టైర్ సెలెక్ట్ చేయండి',
-  'lbl_available_tires': 'అందుబాటులో ఉన్న టైర్లు',
+  'lbl_process_tyre_request': 'టైర్ రిక్వెస్ట్ ప్రాసెస్ చేయండి',
+  'lbl_select_tyre_to_issue': 'ఇష్యూ చేయాల్సిన టైర్ సెలెక్ట్ చేయండి',
+  'lbl_available_tyres': 'అందుబాటులో ఉన్న టైర్లు',
   'lbl_search_by_serial': 'సీరియల్ నంబర్ ద్వారా వెతకండి…',
-  'btn_approve_issue_tire': 'అప్రూవ్ & టైర్ ఇష్యూ చేయి',
+  'btn_approve_issue_tyre': 'అప్రూవ్ & టైర్ ఇష్యూ చేయి',
 };

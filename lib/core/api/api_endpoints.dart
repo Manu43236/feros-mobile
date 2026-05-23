@@ -213,19 +213,19 @@ class ApiEndpoints {
   static const reportTopClients          = '/reports/top-clients';
   static const reportStockLevels         = '/reports/stock-levels';
 
-  // Tires
-  static const tires                   = '/tires';
-  static const tiresAvailable          = '/tires/available';
-  static String tireHistory(id)        => '/tires/$id/history';
-  static const tirePositionsCurrent    = '/tire-positions/current';
-  static const tireFittings            = '/tire-fittings';
-  static String tireFittingRemove(id)  => '/tire-fittings/$id/remove';
-  static const tireRotations           = '/tire-rotations';
-  static const tireRequests            = '/tire-requests';
-  static const tireRequestsMy         = '/tire-requests/my';
-  static const tireRequestsPending    = '/tire-requests/pending';
-  static String approveTireRequest(id) => '/tire-requests/$id/approve';
-  static String rejectTireRequest(id)  => '/tire-requests/$id/reject';
+  // Tyres
+  static const tyres                   = '/tyres';
+  static const tyresAvailable          = '/tyres/available';
+  static String tyreHistory(id)        => '/tyres/$id/history';
+  static const tyrePositionsCurrent    = '/tyre-positions/current';
+  static const tyreFittings            = '/tyre-fittings';
+  static String tyreFittingRemove(id)  => '/tyre-fittings/$id/remove';
+  static const tyreRotations           = '/tyre-rotations';
+  static const tyreRequests            = '/tyre-requests';
+  static const tyreRequestsMy         = '/tyre-requests/my';
+  static const tyreRequestsPending    = '/tyre-requests/pending';
+  static String approveTyreRequest(id) => '/tyre-requests/$id/approve';
+  static String rejectTyreRequest(id)  => '/tyre-requests/$id/reject';
 
   // Upload
   static const upload                  = '/upload';

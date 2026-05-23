@@ -4,19 +4,19 @@ import 'package:get/get.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../core/widgets/feros_select_field.dart';
-import '../controllers/service_men_tires_controller.dart';
+import '../controllers/service_men_tyres_controller.dart';
 
-class ServiceMenTiresView extends StatefulWidget {
-  const ServiceMenTiresView({super.key});
+class ServiceMenTyresView extends StatefulWidget {
+  const ServiceMenTyresView({super.key});
 
   @override
-  State<ServiceMenTiresView> createState() => _ServiceMenTiresViewState();
+  State<ServiceMenTyresView> createState() => _ServiceMenTyresViewState();
 }
 
-class _ServiceMenTiresViewState extends State<ServiceMenTiresView>
+class _ServiceMenTyresViewState extends State<ServiceMenTyresView>
     with SingleTickerProviderStateMixin {
   late final TabController _tab;
-  final _ctrl = Get.find<ServiceMenTiresController>();
+  final _ctrl = Get.find<ServiceMenTyresController>();
 
   static const _removalReasons = [
     'ROTATION', 'WORN', 'PUNCTURE', 'DAMAGE', 'RETREAD', 'SCRAP', 'OTHER'
@@ -49,7 +49,7 @@ class _ServiceMenTiresViewState extends State<ServiceMenTiresView>
             labelStyle: const TextStyle(
                 fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600),
             tabs: [
-              Tab(text: 'lbl_tire_work'.tr),
+              Tab(text: 'lbl_tyre_work'.tr),
               Tab(text: 'lbl_my_requests'.tr),
             ],
           ),
@@ -59,7 +59,7 @@ class _ServiceMenTiresViewState extends State<ServiceMenTiresView>
           child: TabBarView(
             controller: _tab,
             children: [
-          // ── Tab 1: Tire Work ───────────────────────────────
+          // ── Tab 1: Tyre Work ───────────────────────────────
           Obx(() => ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -91,7 +91,7 @@ class _ServiceMenTiresViewState extends State<ServiceMenTiresView>
                 else if (_ctrl.positions.isEmpty)
                   _EmptyPositions()
                 else ...[
-                  Text('lbl_tire_positions'.tr,
+                  Text('lbl_tyre_positions'.tr,
                       style: AppTextStyles.bodyMedium.copyWith(
                           color: AppColors.navy, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 10),
@@ -117,7 +117,7 @@ class _ServiceMenTiresViewState extends State<ServiceMenTiresView>
 
 // ── My Requests Tab ───────────────────────────────────────────────────────────
 class _MyRequestsTab extends StatelessWidget {
-  final ServiceMenTiresController controller;
+  final ServiceMenTyresController controller;
   const _MyRequestsTab({required this.controller});
 
   @override
@@ -127,7 +127,7 @@ class _MyRequestsTab extends StatelessWidget {
         return const Center(
             child: CircularProgressIndicator(color: AppColors.navy));
       }
-      if (controller.myTireRequests.isEmpty) {
+      if (controller.myTyreRequests.isEmpty) {
         return RefreshIndicator(
           onRefresh: controller.fetchMyRequests,
           color: AppColors.navy,
@@ -140,11 +140,11 @@ class _MyRequestsTab extends StatelessWidget {
                   const Icon(Icons.circle_outlined,
                       size: 48, color: AppColors.border),
                   const SizedBox(height: 12),
-                  Text('lbl_no_tire_requests'.tr,
+                  Text('lbl_no_tyre_requests'.tr,
                       style: AppTextStyles.heading3
                           .copyWith(color: AppColors.navy)),
                   const SizedBox(height: 6),
-                  Text('lbl_submit_from_tire_tab'.tr,
+                  Text('lbl_submit_from_tyre_tab'.tr,
                       style: AppTextStyles.body
                           .copyWith(color: AppColors.mutedText)),
                 ],
@@ -158,18 +158,18 @@ class _MyRequestsTab extends StatelessWidget {
         color: AppColors.navy,
         child: ListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: controller.myTireRequests.length,
+          itemCount: controller.myTyreRequests.length,
           itemBuilder: (ctx, i) =>
-              _TireRequestCard(req: controller.myTireRequests[i]),
+              _TyreRequestCard(req: controller.myTyreRequests[i]),
         ),
       );
     });
   }
 }
 
-class _TireRequestCard extends StatelessWidget {
+class _TyreRequestCard extends StatelessWidget {
   final Map<String, dynamic> req;
-  const _TireRequestCard({required this.req});
+  const _TyreRequestCard({required this.req});
 
   @override
   Widget build(BuildContext context) {
@@ -177,7 +177,7 @@ class _TireRequestCard extends StatelessWidget {
     final vehicle  = req['vehicleRegistrationNumber'] as String? ?? '—';
     final position = req['positionCode'] as String? ?? '—';
     final notes    = req['notes'] as String?;
-    final tire     = req['issuedTireSerialNumber'] as String?;
+    final tyre     = req['issuedTyreSerialNumber'] as String?;
     final reason   = req['rejectionReason'] as String?;
     final createdAt = req['createdAt'] as String? ?? '';
 
@@ -252,7 +252,7 @@ class _TireRequestCard extends StatelessWidget {
                       style:
                           AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
                 ],
-                if (status == 'APPROVED' && tire != null) ...[
+                if (status == 'APPROVED' && tyre != null) ...[
                   const SizedBox(height: 8),
                   Container(
                     padding:
@@ -264,7 +264,7 @@ class _TireRequestCard extends StatelessWidget {
                       const Icon(Icons.check_circle_outline,
                           size: 14, color: Color(0xFF16A34A)),
                       const SizedBox(width: 6),
-                      Text('${'lbl_issued'.tr}: $tire',
+                      Text('${'lbl_issued'.tr}: $tyre',
                           style: AppTextStyles.caption
                               .copyWith(color: const Color(0xFF16A34A),
                                   fontWeight: FontWeight.w600)),
@@ -319,7 +319,7 @@ class _TireRequestCard extends StatelessWidget {
 // ── Position Card ─────────────────────────────────────────────────────────────
 class _PositionCard extends StatelessWidget {
   final Map<String, dynamic> position;
-  final ServiceMenTiresController controller;
+  final ServiceMenTyresController controller;
   final List<String> removalReasons;
 
   const _PositionCard({
@@ -378,13 +378,13 @@ class _PositionCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 if (_isFitted) ...[
                   Text(
-                    _fitting!['tireSerialNumber'] ?? '—',
+                    _fitting!['tyreSerialNumber'] ?? '—',
                     style: AppTextStyles.caption
                         .copyWith(color: AppColors.mutedText),
                   ),
-                  if (_fitting!['tireBrand'] != null)
+                  if (_fitting!['tyreBrand'] != null)
                     Text(
-                      _fitting!['tireBrand'],
+                      _fitting!['tyreBrand'],
                       style: AppTextStyles.caption
                           .copyWith(color: AppColors.mutedText),
                     ),
@@ -407,7 +407,7 @@ class _PositionCard extends StatelessWidget {
           else
             TextButton(
               onPressed: () => _showFitSheet(context),
-              child: Text('btn_fit_tire'.tr,
+              child: Text('btn_fit_tyre'.tr,
                   style: AppTextStyles.caption
                       .copyWith(color: AppColors.navy, fontWeight: FontWeight.w600)),
             ),
@@ -417,10 +417,10 @@ class _PositionCard extends StatelessWidget {
   }
 
   void _showFitSheet(BuildContext context) {
-    Map<String, dynamic>? selectedTire;
+    Map<String, dynamic>? selectedTyre;
     final currentOdo = controller.selectedVehicle.value?['currentOdometerReading'];
     final notesCtrl = TextEditingController();
-    final tires     = controller.availableTires;
+    final tyres     = controller.availableTyres;
 
     showModalBottomSheet(
       context: context,
@@ -429,7 +429,7 @@ class _PositionCard extends StatelessWidget {
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => StatefulBuilder(
         builder: (ctx, setSheet) {
-          final needApproval = controller.requireTireApproval.value;
+          final needApproval = controller.requireTyreApproval.value;
           return Padding(
           padding: EdgeInsets.only(
             left: 24,
@@ -443,14 +443,14 @@ class _PositionCard extends StatelessWidget {
             children: [
               Text(
                 needApproval
-                    ? '${'lbl_request_tire'.tr} — ${position['positionCode']}'
-                    : '${'btn_fit_tire'.tr} — ${position['positionCode']}',
+                    ? '${'lbl_request_tyre'.tr} — ${position['positionCode']}'
+                    : '${'btn_fit_tyre'.tr} — ${position['positionCode']}',
                 style: AppTextStyles.heading3.copyWith(color: AppColors.navy),
               ),
               const SizedBox(height: 20),
 
-              // ── Scenario 1: No tires in stock ──────────────────────────────
-              if (tires.isEmpty) ...[
+              // ── Scenario 1: No tyres in stock ──────────────────────────────
+              if (tyres.isEmpty) ...[
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),
@@ -460,7 +460,7 @@ class _PositionCard extends StatelessWidget {
                             size: 48, color: AppColors.mutedText),
                         const SizedBox(height: 12),
                         Text(
-                          'lbl_no_tires_in_stock'.tr,
+                          'lbl_no_tyres_in_stock'.tr,
                           style: AppTextStyles.body
                               .copyWith(color: AppColors.mutedText),
                         ),
@@ -484,7 +484,7 @@ class _PositionCard extends StatelessWidget {
                 ),
               ]
 
-              // ── Scenario 2: Tires available + approval required ────────────
+              // ── Scenario 2: Tyres available + approval required ────────────
               else if (needApproval) ...[
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -502,7 +502,7 @@ class _PositionCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'lbl_tire_approval_info'.tr,
+                          'lbl_tyre_approval_info'.tr,
                           style: AppTextStyles.caption
                               .copyWith(color: const Color(0xFF92400E)),
                         ),
@@ -511,8 +511,8 @@ class _PositionCard extends StatelessWidget {
                   ),
                 ),
 
-                // Available tires (informational)
-                Text('${'lbl_available_in_stock'.tr} (${tires.length})',
+                // Available tyres (informational)
+                Text('${'lbl_available_in_stock'.tr} (${tyres.length})',
                     style: AppTextStyles.label.copyWith(color: AppColors.navy)),
                 const SizedBox(height: 8),
                 Container(
@@ -523,11 +523,11 @@ class _PositionCard extends StatelessWidget {
                   ),
                   child: ListView.separated(
                     shrinkWrap: true,
-                    itemCount: tires.length,
+                    itemCount: tyres.length,
                     separatorBuilder: (ctx, i) =>
                         const Divider(height: 1, color: AppColors.border),
                     itemBuilder: (_, i) {
-                      final t = tires[i];
+                      final t = tyres[i];
                       return Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 8),
@@ -561,7 +561,7 @@ class _PositionCard extends StatelessWidget {
                   controller: notesCtrl,
                   maxLines: 2,
                   decoration: InputDecoration(
-                    hintText: 'e.g. preferred tire or urgency…',
+                    hintText: 'e.g. preferred tyre or urgency…',
                     hintStyle:
                         AppTextStyles.caption.copyWith(color: AppColors.mutedText),
                     border: OutlineInputBorder(
@@ -582,7 +582,7 @@ class _PositionCard extends StatelessWidget {
                         ? null
                         : () async {
                             Navigator.pop(context);
-                            await controller.requestTire(
+                            await controller.requestTyre(
                               vehicleId:  controller.selectedVehicle.value!['id'] as int,
                               positionId: position['id'] as int,
                               notes:      notesCtrl.text.trim(),
@@ -609,7 +609,7 @@ class _PositionCard extends StatelessWidget {
                 )),
               ]
 
-              // ── Scenario 3: Tires available + direct fit ───────────────────
+              // ── Scenario 3: Tyres available + direct fit ───────────────────
               else ...[
                 if (currentOdo != null)
                   Container(
@@ -636,34 +636,34 @@ class _PositionCard extends StatelessWidget {
                     ),
                   ),
                 FerosSelectField<Map<String, dynamic>>(
-                  label: 'lbl_available_tire'.tr,
-                  title: 'lbl_select_tire'.tr,
+                  label: 'lbl_available_tyre'.tr,
+                  title: 'lbl_select_tyre'.tr,
                   hint: 'lbl_search_serial_number'.tr,
                   isRequired: true,
-                  selectedDisplay: selectedTire != null
-                      ? '${selectedTire!['serialNumber']} · ${selectedTire!['brand'] ?? ''}'
+                  selectedDisplay: selectedTyre != null
+                      ? '${selectedTyre!['serialNumber']} · ${selectedTyre!['brand'] ?? ''}'
                       : null,
-                  items: controller.availableTires,
+                  items: controller.availableTyres,
                   itemLabel: (t) =>
                       '${t['serialNumber'] ?? ''}'
                       '${t['brand'] != null ? ' · ${t['brand']}' : ''}'
                       '${t['size'] != null ? ' (${t['size']})' : ''}',
-                  onSelected: (t) => setSheet(() => selectedTire = t),
-                  isLoading: controller.isLoadingTires.value,
-                  emptyMessage: 'lbl_no_available_tires'.tr,
+                  onSelected: (t) => setSheet(() => selectedTyre = t),
+                  isLoading: controller.isLoadingTyres.value,
+                  emptyMessage: 'lbl_no_available_tyres'.tr,
                 ),
                 const SizedBox(height: 20),
 
                 Obx(() => SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: controller.isSubmitting.value || selectedTire == null
+                    onPressed: controller.isSubmitting.value || selectedTyre == null
                         ? null
                         : () async {
                             Navigator.pop(context);
-                            await controller.fitTire(
+                            await controller.fitTyre(
                               vehicleId: controller.selectedVehicle.value!['id'] as int,
-                              tireId: selectedTire!['id'] as int,
+                              tyreId: selectedTyre!['id'] as int,
                               positionId: position['id'] as int,
                               fittedDate: DateTime.now().toIso8601String().substring(0, 10),
                               fittedAtKm: currentOdo?.toDouble(),
@@ -721,12 +721,12 @@ class _PositionCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${'lbl_remove_tire'.tr} — ${position['positionCode']}',
+              Text('${'lbl_remove_tyre'.tr} — ${position['positionCode']}',
                   style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
               const SizedBox(height: 4),
               Text(
-                '${_fitting?['tireSerialNumber'] ?? ''}'
-                '${_fitting?['tireBrand'] != null ? ' · ${_fitting!['tireBrand']}' : ''}',
+                '${_fitting?['tyreSerialNumber'] ?? ''}'
+                '${_fitting?['tyreBrand'] != null ? ' · ${_fitting!['tyreBrand']}' : ''}',
                 style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
               ),
               const SizedBox(height: 20),
@@ -801,7 +801,7 @@ class _PositionCard extends StatelessWidget {
                           }
                           final km = double.tryParse(kmText);
                           Navigator.pop(context);
-                          await controller.removeTire(
+                          await controller.removeTyre(
                             fittingId: _fitting!['id'] as int,
                             vehicleId: controller.selectedVehicle.value!['id'] as int,
                             removalReason: selectedReason,
@@ -844,7 +844,7 @@ class _EmptyPositions extends StatelessWidget {
             const Icon(Icons.circle_outlined,
                 size: 48, color: AppColors.mutedText),
             const SizedBox(height: 12),
-            Text('lbl_no_tire_positions'.tr,
+            Text('lbl_no_tyre_positions'.tr,
                 textAlign: TextAlign.center,
                 style:
                     AppTextStyles.body.copyWith(color: AppColors.mutedText)),

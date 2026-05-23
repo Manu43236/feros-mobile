@@ -86,11 +86,11 @@ class DriverTripDetailController extends GetxController {
       });
       lrStatus.value      = 'IN_TRANSIT';
       startOdometer.value = result.odometer;
-      FerosSnackbar.success('Trip started');
+      FerosSnackbar.success('msg_trip_started'.tr);
     } catch (e) {
       FerosSnackbar.error(e.toString().contains('odometer')
           ? e.toString().replaceFirst('Exception: ', '')
-          : 'Failed to start trip');
+          : 'err_failed_start_trip'.tr);
     }
     isUpdating.value = false;
   }
@@ -109,11 +109,11 @@ class DriverTripDetailController extends GetxController {
       lrStatus.value        = 'DELIVERED';
       deliveredWeight.value = deliveryResult.weight;
       endOdometer.value     = odmResult.odometer;
-      FerosSnackbar.success('Delivery confirmed');
+      FerosSnackbar.success('msg_delivery_confirmed'.tr);
     } catch (e) {
       FerosSnackbar.error(e.toString().contains('odometer')
           ? e.toString().replaceFirst('Exception: ', '')
-          : 'Failed to confirm delivery');
+          : 'err_failed_delivery'.tr);
     }
     isUpdating.value = false;
   }
@@ -138,7 +138,7 @@ class DriverTripDetailController extends GetxController {
         transition: Transition.cupertino,
       );
     } catch (_) {
-      FerosSnackbar.error('Failed to load PDF');
+      FerosSnackbar.error('err_failed_pdf'.tr);
     }
     isPdfLoading.value = false;
   }

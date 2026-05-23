@@ -63,9 +63,9 @@ class _StoreKeeperInventoryViewState extends State<StoreKeeperInventoryView>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text('lbl_requests'.tr),
-                    if (_ctrl.pendingPartCount + _ctrl.pendingTireCount > 0) ...[
+                    if (_ctrl.pendingPartCount + _ctrl.pendingTyreCount > 0) ...[
                       const SizedBox(width: 6),
-                      _Badge(_ctrl.pendingPartCount + _ctrl.pendingTireCount),
+                      _Badge(_ctrl.pendingPartCount + _ctrl.pendingTyreCount),
                     ],
                   ],
                 ),
@@ -628,8 +628,8 @@ class _RequestsTabState extends State<_RequestsTab>
     super.initState();
     _tab = TabController(length: 2, vsync: this);
     _tab.addListener(() {
-      if (_tab.index == 1 && widget.ctrl.availableTires.isEmpty) {
-        widget.ctrl.fetchAvailableTires();
+      if (_tab.index == 1 && widget.ctrl.availableTyres.isEmpty) {
+        widget.ctrl.fetchAvailableTyres();
       }
     });
   }
@@ -670,10 +670,10 @@ class _RequestsTabState extends State<_RequestsTab>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('lbl_tire_requests'.tr),
-                    if (widget.ctrl.pendingTireCount > 0) ...[
+                    Text('lbl_tyre_requests'.tr),
+                    if (widget.ctrl.pendingTyreCount > 0) ...[
                       const SizedBox(width: 6),
-                      _Badge(widget.ctrl.pendingTireCount),
+                      _Badge(widget.ctrl.pendingTyreCount),
                     ],
                   ],
                 ),
@@ -686,7 +686,7 @@ class _RequestsTabState extends State<_RequestsTab>
             controller: _tab,
             children: [
               _PartRequestsList(ctrl: widget.ctrl),
-              _TireRequestsList(ctrl: widget.ctrl),
+              _TyreRequestsList(ctrl: widget.ctrl),
             ],
           ),
         ),
@@ -819,15 +819,15 @@ class _PartReqCard extends StatelessWidget {
   }
 }
 
-class _TireRequestsList extends StatelessWidget {
+class _TyreRequestsList extends StatelessWidget {
   final OfficeInventoryController ctrl;
-  const _TireRequestsList({required this.ctrl});
+  const _TyreRequestsList({required this.ctrl});
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final state    = ctrl.tireReqState.value;
-      final requests = ctrl.tireRequests;
+      final state    = ctrl.tyreReqState.value;
+      final requests = ctrl.tyreRequests;
 
       if (state == ViewState.loading) {
         return ListView.builder(
@@ -839,7 +839,7 @@ class _TireRequestsList extends StatelessWidget {
       }
 
       return RefreshIndicator(
-        onRefresh: ctrl.fetchTireRequests,
+        onRefresh: ctrl.fetchTyreRequests,
         color: AppColors.navy,
         child: requests.isEmpty
             ? Center(
@@ -849,7 +849,7 @@ class _TireRequestsList extends StatelessWidget {
                     const Icon(Icons.tire_repair_outlined,
                         size: 48, color: Colors.black26),
                     const SizedBox(height: 8),
-                    Text('lbl_no_pending_tire_requests'.tr,
+                    Text('lbl_no_pending_tyre_requests'.tr,
                         style: const TextStyle(color: Colors.black45)),
                   ],
                 ),
@@ -857,7 +857,7 @@ class _TireRequestsList extends StatelessWidget {
             : ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: requests.length,
-                itemBuilder: (_, i) => _TireReqCard(
+                itemBuilder: (_, i) => _TyreReqCard(
                   request: requests[i],
                   ctrl: ctrl,
                 ),
@@ -867,10 +867,10 @@ class _TireRequestsList extends StatelessWidget {
   }
 }
 
-class _TireReqCard extends StatelessWidget {
+class _TyreReqCard extends StatelessWidget {
   final Map<String, dynamic> request;
   final OfficeInventoryController ctrl;
-  const _TireReqCard({required this.request, required this.ctrl});
+  const _TyreReqCard({required this.request, required this.ctrl});
 
   @override
   Widget build(BuildContext context) {
@@ -913,7 +913,7 @@ class _TireReqCard extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: () =>
-                  _showTireReqSheet(context, ctrl, id, request),
+                  _showTyreReqSheet(context, ctrl, id, request),
               icon: const Icon(Icons.check_circle_outline, size: 16),
               label: Text('btn_process'.tr),
               style: OutlinedButton.styleFrom(
@@ -1560,32 +1560,32 @@ class _PartReqSheetState extends State<_PartReqSheet> {
   }
 }
 
-// ── Tire Request Process Sheet ────────────────────────────────────────────────
-void _showTireReqSheet(BuildContext context, OfficeInventoryController ctrl,
+// ── Tyre Request Process Sheet ────────────────────────────────────────────────
+void _showTyreReqSheet(BuildContext context, OfficeInventoryController ctrl,
     int id, Map<String, dynamic> request) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (_) =>
-        _TireReqSheet(ctrl: ctrl, id: id, request: request),
+        _TyreReqSheet(ctrl: ctrl, id: id, request: request),
   );
 }
 
-class _TireReqSheet extends StatefulWidget {
+class _TyreReqSheet extends StatefulWidget {
   final OfficeInventoryController ctrl;
   final int id;
   final Map<String, dynamic> request;
-  const _TireReqSheet(
+  const _TyreReqSheet(
       {required this.ctrl, required this.id, required this.request});
 
   @override
-  State<_TireReqSheet> createState() => _TireReqSheetState();
+  State<_TyreReqSheet> createState() => _TyreReqSheetState();
 }
 
-class _TireReqSheetState extends State<_TireReqSheet> {
+class _TyreReqSheetState extends State<_TyreReqSheet> {
   bool _approve = true;
-  Map<String, dynamic>? _selectedTire;
+  Map<String, dynamic>? _selectedTyre;
   final _kmCtrl     = TextEditingController();
   final _reasonCtrl = TextEditingController();
   bool _loading = false;
@@ -1601,18 +1601,18 @@ class _TireReqSheetState extends State<_TireReqSheet> {
     setState(() => _loading = true);
     try {
       if (_approve) {
-        if (_selectedTire == null) {
+        if (_selectedTyre == null) {
           setState(() => _loading = false);
           return;
         }
-        await widget.ctrl.approveTireRequest(widget.id, {
-          'tireId': (_selectedTire!['id'] as num).toInt(),
+        await widget.ctrl.approveTyreRequest(widget.id, {
+          'tyreId': (_selectedTyre!['id'] as num).toInt(),
           if (_kmCtrl.text.trim().isNotEmpty)
             'fittedAtKm': int.tryParse(_kmCtrl.text.trim()),
         });
         if (mounted) {
           Get.back();
-          FerosSnackbar.success('Tire issued and fitted');
+          FerosSnackbar.success('Tyre issued and fitted');
         }
       } else {
         final reason = _reasonCtrl.text.trim();
@@ -1620,10 +1620,10 @@ class _TireReqSheetState extends State<_TireReqSheet> {
           setState(() => _loading = false);
           return;
         }
-        await widget.ctrl.rejectTireRequest(widget.id, reason);
+        await widget.ctrl.rejectTyreRequest(widget.id, reason);
         if (mounted) {
           Get.back();
-          FerosSnackbar.success('Tire request rejected');
+          FerosSnackbar.success('Tyre request rejected');
         }
       }
     } catch (e) {
@@ -1661,7 +1661,7 @@ class _TireReqSheetState extends State<_TireReqSheet> {
                       borderRadius: BorderRadius.circular(2))),
             ),
             const SizedBox(height: 16),
-            Text('lbl_process_tire_request'.tr,
+            Text('lbl_process_tyre_request'.tr,
                 style: AppTextStyles.heading3),
             const SizedBox(height: 8),
             Container(
@@ -1741,21 +1741,21 @@ class _TireReqSheetState extends State<_TireReqSheet> {
             const SizedBox(height: 16),
             if (_approve) ...[
               Obx(() => FerosSelectField<Map<String, dynamic>>(
-                label: '${'lbl_select_tire_to_issue'.tr} *',
-                title: 'lbl_available_tires'.tr,
+                label: '${'lbl_select_tyre_to_issue'.tr} *',
+                title: 'lbl_available_tyres'.tr,
                 hint: 'lbl_search_by_serial'.tr,
                 isRequired: true,
-                items: widget.ctrl.availableTires,
+                items: widget.ctrl.availableTyres,
                 itemLabel: (t) {
                   final serial = t['serialNumber'] as String? ?? '';
                   final brand  = t['brand'] as String? ?? '';
                   final size   = t['size'] as String? ?? '';
                   return '$serial${brand.isNotEmpty ? ' · $brand' : ''}${size.isNotEmpty ? ' ($size)' : ''}';
                 },
-                selectedDisplay: _selectedTire != null
-                    ? (_selectedTire!['serialNumber'] as String? ?? '')
+                selectedDisplay: _selectedTyre != null
+                    ? (_selectedTyre!['serialNumber'] as String? ?? '')
                     : null,
-                onSelected: (t) => setState(() => _selectedTire = t),
+                onSelected: (t) => setState(() => _selectedTyre = t),
               )),
               const SizedBox(height: 12),
               _field('lbl_fitted_at_km'.tr, _kmCtrl,
@@ -1787,7 +1787,7 @@ class _TireReqSheetState extends State<_TireReqSheet> {
                             strokeWidth: 2, color: Colors.white))
                     : Text(
                         _approve
-                            ? 'btn_approve_issue_tire'.tr
+                            ? 'btn_approve_issue_tyre'.tr
                             : 'btn_reject_request'.tr,
                         style: const TextStyle(
                             fontWeight: FontWeight.w600)),

@@ -25,18 +25,18 @@ class StoreKeeperRequestsController extends GetxController {
   int get pendingCount =>
       requests.where((r) => r['status'] == 'REQUESTED').length;
 
-  // ── Tire Requests ────────────────────────────────────────────────────────────
-  final isLoadingTireRequests = true.obs;
-  final tireRequests          = <Map<String, dynamic>>[].obs;
+  // ── Tyre Requests ────────────────────────────────────────────────────────────
+  final isLoadingTyreRequests = true.obs;
+  final tyreRequests          = <Map<String, dynamic>>[].obs;
 
-  int get pendingTireCount =>
-      tireRequests.where((r) => r['status'] == 'PENDING').length;
+  int get pendingTyreCount =>
+      tyreRequests.where((r) => r['status'] == 'PENDING').length;
 
   @override
   void onInit() {
     super.onInit();
     fetchRequests();
-    fetchTireRequests();
+    fetchTyreRequests();
   }
 
   Future<void> fetchRequests() async {
@@ -50,15 +50,15 @@ class StoreKeeperRequestsController extends GetxController {
     }
   }
 
-  Future<void> fetchTireRequests() async {
-    isLoadingTireRequests.value = true;
+  Future<void> fetchTyreRequests() async {
+    isLoadingTyreRequests.value = true;
     try {
-      final res = await _api.get(ApiEndpoints.tireRequestsPending);
-      tireRequests.value =
+      final res = await _api.get(ApiEndpoints.tyreRequestsPending);
+      tyreRequests.value =
           List<Map<String, dynamic>>.from(res.data['data'] ?? []);
     } catch (_) {
     } finally {
-      isLoadingTireRequests.value = false;
+      isLoadingTyreRequests.value = false;
     }
   }
 
@@ -92,23 +92,23 @@ class StoreKeeperRequestsController extends GetxController {
     }
   }
 
-  Future<bool> approveTireRequest(int id) async {
+  Future<bool> approveTyreRequest(int id) async {
     try {
-      await _api.patch(ApiEndpoints.approveTireRequest(id));
-      await fetchTireRequests();
+      await _api.patch(ApiEndpoints.approveTyreRequest(id));
+      await fetchTyreRequests();
       return true;
     } catch (_) {
       return false;
     }
   }
 
-  Future<bool> rejectTireRequest(int id, String reason) async {
+  Future<bool> rejectTyreRequest(int id, String reason) async {
     try {
       await _api.patch(
-        ApiEndpoints.rejectTireRequest(id),
+        ApiEndpoints.rejectTyreRequest(id),
         data: {'rejectionReason': reason},
       );
-      await fetchTireRequests();
+      await fetchTyreRequests();
       return true;
     } catch (_) {
       return false;

@@ -4,7 +4,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
 
-/// A reusable searchable select field for the entire FEROS app.
+/// A reusable searchable select field for the entyre FEROS app.
 ///
 /// Renders as a tappable form field. On tap, opens a dialog with:
 /// - Navy header + title + close button

@@ -3,27 +3,27 @@ import '../../../../../../core/api/api_client.dart';
 import '../../../../../../core/api/api_endpoints.dart';
 import '../../../../../../core/popups/feros_snackbar.dart';
 
-class ServiceMenTiresController extends GetxController {
+class ServiceMenTyresController extends GetxController {
   final _api = Get.find<ApiClient>();
 
   final isLoadingVehicles  = false.obs;
   final isLoadingPositions = false.obs;
-  final isLoadingTires     = false.obs;
+  final isLoadingTyres     = false.obs;
   final isSubmitting       = false.obs;
 
   final vehicles             = <Map<String, dynamic>>[].obs;
   final selectedVehicle      = Rxn<Map<String, dynamic>>();
   final positions            = <Map<String, dynamic>>[].obs;
-  final availableTires       = <Map<String, dynamic>>[].obs;
-  final requireTireApproval  = false.obs;
-  final myTireRequests       = <Map<String, dynamic>>[].obs;
+  final availableTyres       = <Map<String, dynamic>>[].obs;
+  final requireTyreApproval  = false.obs;
+  final myTyreRequests       = <Map<String, dynamic>>[].obs;
   final isLoadingMyRequests  = false.obs;
 
   @override
   void onInit() {
     super.onInit();
     _loadVehicles();
-    _loadAvailableTires();
+    _loadAvailableTyres();
     _loadSettings();
     fetchMyRequests();
   }
@@ -31,8 +31,8 @@ class ServiceMenTiresController extends GetxController {
   Future<void> fetchMyRequests() async {
     isLoadingMyRequests.value = true;
     try {
-      final res = await _api.get(ApiEndpoints.tireRequestsMy);
-      myTireRequests.value =
+      final res = await _api.get(ApiEndpoints.tyreRequestsMy);
+      myTyreRequests.value =
           List<Map<String, dynamic>>.from(res.data['data'] ?? []);
     } catch (_) {}
     isLoadingMyRequests.value = false;
@@ -42,9 +42,9 @@ class ServiceMenTiresController extends GetxController {
     try {
       final res = await _api.get(ApiEndpoints.tenantSettings);
       final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>?;
-      requireTireApproval.value = data?['requireTireApproval'] == true;
+      requireTyreApproval.value = data?['requireTyreApproval'] == true;
     } catch (_) {
-      requireTireApproval.value = false;
+      requireTyreApproval.value = false;
     }
   }
 
@@ -61,17 +61,17 @@ class ServiceMenTiresController extends GetxController {
     isLoadingVehicles.value = false;
   }
 
-  Future<void> _loadAvailableTires() async {
-    isLoadingTires.value = true;
+  Future<void> _loadAvailableTyres() async {
+    isLoadingTyres.value = true;
     try {
-      final res  = await _api.get(ApiEndpoints.tiresAvailable);
+      final res  = await _api.get(ApiEndpoints.tyresAvailable);
       final list = ((res.data as Map<String, dynamic>)['data'] as List)
           .cast<Map<String, dynamic>>();
-      availableTires.assignAll(list);
+      availableTyres.assignAll(list);
     } catch (_) {
-      FerosSnackbar.error('Failed to load available tires');
+      FerosSnackbar.error('Failed to load available tyres');
     }
-    isLoadingTires.value = false;
+    isLoadingTyres.value = false;
   }
 
   Future<void> selectVehicle(Map<String, dynamic> vehicle) async {
@@ -83,70 +83,70 @@ class ServiceMenTiresController extends GetxController {
     isLoadingPositions.value = true;
     try {
       final res  = await _api.get(
-        ApiEndpoints.tirePositionsCurrent,
+        ApiEndpoints.tyrePositionsCurrent,
         params: {'vehicleId': vehicleId},
       );
       final list = ((res.data as Map<String, dynamic>)['data'] as List)
           .cast<Map<String, dynamic>>();
       positions.assignAll(list);
     } catch (_) {
-      FerosSnackbar.error('Failed to load tire positions');
+      FerosSnackbar.error('Failed to load tyre positions');
     }
     isLoadingPositions.value = false;
   }
 
-  Future<bool> fitTire({
+  Future<bool> fitTyre({
     required int vehicleId,
-    required int tireId,
+    required int tyreId,
     required int positionId,
     required String fittedDate,
     double? fittedAtKm,
   }) async {
     isSubmitting.value = true;
     try {
-      await _api.post(ApiEndpoints.tireFittings, data: {
+      await _api.post(ApiEndpoints.tyreFittings, data: {
         'vehicleId':  vehicleId,
-        'tireId':     tireId,
+        'tyreId':     tyreId,
         'positionId': positionId,
         'fittedDate': fittedDate,
         if (fittedAtKm != null) 'fittedAtKm': fittedAtKm,
       });
       await _loadPositions(vehicleId);
-      await _loadAvailableTires();
-      FerosSnackbar.success('Tire fitted successfully');
+      await _loadAvailableTyres();
+      FerosSnackbar.success('Tyre fitted successfully');
       return true;
     } catch (_) {
-      FerosSnackbar.error('Failed to fit tire');
+      FerosSnackbar.error('Failed to fit tyre');
       return false;
     } finally {
       isSubmitting.value = false;
     }
   }
 
-  Future<bool> requestTire({
+  Future<bool> requestTyre({
     required int vehicleId,
     required int positionId,
     String? notes,
   }) async {
     isSubmitting.value = true;
     try {
-      await _api.post(ApiEndpoints.tireRequests, data: {
+      await _api.post(ApiEndpoints.tyreRequests, data: {
         'vehicleId':  vehicleId,
         'positionId': positionId,
         if (notes != null && notes.isNotEmpty) 'notes': notes,
       });
       await fetchMyRequests();
-      FerosSnackbar.success('Tire request submitted — awaiting store keeper approval');
+      FerosSnackbar.success('Tyre request submitted — awaiting store keeper approval');
       return true;
     } catch (_) {
-      FerosSnackbar.error('Failed to submit tire request');
+      FerosSnackbar.error('Failed to submit tyre request');
       return false;
     } finally {
       isSubmitting.value = false;
     }
   }
 
-  Future<bool> removeTire({
+  Future<bool> removeTyre({
     required int fittingId,
     required int vehicleId,
     required String removalReason,
@@ -155,17 +155,17 @@ class ServiceMenTiresController extends GetxController {
   }) async {
     isSubmitting.value = true;
     try {
-      await _api.put(ApiEndpoints.tireFittingRemove(fittingId), data: {
+      await _api.put(ApiEndpoints.tyreFittingRemove(fittingId), data: {
         'removedDate':   removedDate,
         'removalReason': removalReason,
         if (removedAtKm != null) 'removedAtKm': removedAtKm,
       });
       await _loadPositions(vehicleId);
-      await _loadAvailableTires();
-      FerosSnackbar.success('Tire removed successfully');
+      await _loadAvailableTyres();
+      FerosSnackbar.success('Tyre removed successfully');
       return true;
     } catch (_) {
-      FerosSnackbar.error('Failed to remove tire');
+      FerosSnackbar.error('Failed to remove tyre');
       return false;
     } finally {
       isSubmitting.value = false;

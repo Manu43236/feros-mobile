@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../popups/feros_snackbar.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -13,7 +14,9 @@ Future<DeliveryResult?> showDeliverySheet(
   required double endOdometer,
   double? loadedWeight,
 }) async {
-  final weightController = TextEditingController();
+  final weightController = TextEditingController(
+    text: loadedWeight != null ? loadedWeight.toStringAsFixed(1) : '',
+  );
 
   return await showModalBottomSheet<DeliveryResult>(
     context: context,
@@ -41,12 +44,12 @@ Future<DeliveryResult?> showDeliverySheet(
             ),
           ),
           const SizedBox(height: 16),
-          Text('Confirm Delivery',
+          Text('btn_confirm_delivery'.tr,
               style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy)),
           const SizedBox(height: 4),
           Text(
             'End ODM: ${endOdometer.toStringAsFixed(0)} km'
-            '${loadedWeight != null ? '   •   Loaded: ${loadedWeight.toStringAsFixed(1)}T' : ''}',
+            '${loadedWeight != null ? '   •   Loaded: ${loadedWeight.toStringAsFixed(1)} T' : ''}',
             style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
           ),
           const SizedBox(height: 16),
@@ -56,7 +59,7 @@ Future<DeliveryResult?> showDeliverySheet(
             autofocus: true,
             style: AppTextStyles.body,
             decoration: InputDecoration(
-              labelText: 'Delivered Weight (T)',
+              labelText: 'lbl_delivered_weight_t'.tr,
               labelStyle:
                   AppTextStyles.caption.copyWith(color: AppColors.mutedText),
               suffixText: 'T',
@@ -67,6 +70,21 @@ Future<DeliveryResult?> showDeliverySheet(
               ),
             ),
           ),
+          if (loadedWeight != null) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.info_outline, size: 13, color: AppColors.warning),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    'lbl_delivery_max_hint'.trParams({'value': loadedWeight.toStringAsFixed(1)}),
+                    style: AppTextStyles.caption.copyWith(color: AppColors.warning),
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
@@ -74,7 +92,13 @@ Future<DeliveryResult?> showDeliverySheet(
               onPressed: () {
                 final weight = double.tryParse(weightController.text.trim());
                 if (weight == null || weight <= 0) {
-                  FerosSnackbar.error('Enter a valid delivered weight');
+                  FerosSnackbar.error('err_invalid_delivery_weight'.tr);
+                  return;
+                }
+                if (loadedWeight != null && weight > loadedWeight) {
+                  FerosSnackbar.error(
+                    'err_delivery_exceeds_loaded'.trParams({'value': loadedWeight.toStringAsFixed(1)}),
+                  );
                   return;
                 }
                 Navigator.of(ctx).pop(DeliveryResult(weight: weight));
@@ -87,7 +111,7 @@ Future<DeliveryResult?> showDeliverySheet(
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
               ),
-              child: Text('Confirm Delivery',
+              child: Text('btn_confirm_delivery'.tr,
                   style: AppTextStyles.caption.copyWith(
                       color: Colors.white, fontWeight: FontWeight.w600)),
             ),

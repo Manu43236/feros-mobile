@@ -822,7 +822,9 @@ class _AllocationCard extends StatelessWidget {
                   Obx(() {
                     final hasLr = controller.lrs.any((lr) {
                       final id = lr['vehicleAllocationId'];
+                      final lrStatus = lr['lrStatus'] as String? ?? '';
                       return id != null &&
+                          lrStatus != 'CANCELLED' &&
                           (id == allocationId ||
                               id.toString() == allocationId.toString());
                     });

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../popups/feros_snackbar.dart';
@@ -19,6 +20,7 @@ Future<OdometerResult?> showOdometerSheet(
   required String buttonLabel,
   required Color buttonColor,
   required String instruction,
+  double? minOdometer,
 }) async {
   File? capturedImage;
   final odometerController = TextEditingController();
@@ -79,13 +81,35 @@ Future<OdometerResult?> showOdometerSheet(
                   final result = await recognizer.processImage(inputImage);
                   recognizer.close();
 
-                  final numbers = RegExp(r'\d{4,7}')
-                      .allMatches(result.text)
-                      .map((m) => int.parse(m.group(0)!))
-                      .toList();
-                  if (numbers.isNotEmpty) {
-                    numbers.sort((a, b) => b.compareTo(a));
-                    odometerController.text = numbers.first.toString();
+                  final candidates = <int>{};
+
+                  // Strategy 1: direct regex on full text
+                  RegExp(r'\d{4,7}').allMatches(result.text).forEach((m) {
+                    final v = int.tryParse(m.group(0)!);
+                    if (v != null) candidates.add(v);
+                  });
+
+                  // Strategy 2: per-line digit extraction.
+                  // Joins all elements in a line and strips non-digits.
+                  // Handles: split digits ("1"+"25075" → 125075)
+                  // and LCD misreads ("Z50"+"75" → 5075).
+                  for (final block in result.blocks) {
+                    for (final line in block.lines) {
+                      final digits = line.elements
+                          .map((e) => e.text)
+                          .join('')
+                          .replaceAll(RegExp(r'[^\d]'), '');
+                      if (digits.length >= 4 && digits.length <= 7) {
+                        final v = int.tryParse(digits);
+                        if (v != null) candidates.add(v);
+                      }
+                    }
+                  }
+
+                  if (candidates.isNotEmpty) {
+                    final sorted = candidates.toList()
+                      ..sort((a, b) => b.compareTo(a));
+                    odometerController.text = sorted.first.toString();
                   }
                 } catch (_) {}
 
@@ -115,14 +139,14 @@ Future<OdometerResult?> showOdometerSheet(
                                 color: Colors.black38,
                                 borderRadius: BorderRadius.circular(9),
                               ),
-                              child: const Center(
+                              child: Center(
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     CircularProgressIndicator(
                                         strokeWidth: 2, color: Colors.white),
                                     SizedBox(height: 8),
-                                    Text('Reading ODM…',
+                                    Text('lbl_reading_odm'.tr,
                                         style: TextStyle(
                                             color: Colors.white, fontSize: 12)),
                                   ],
@@ -138,7 +162,7 @@ Future<OdometerResult?> showOdometerSheet(
                                 color: AppColors.navy,
                                 borderRadius: BorderRadius.circular(20),
                               ),
-                              child: Text('Retake',
+                              child: Text('btn_retake'.tr,
                                   style: AppTextStyles.caption
                                       .copyWith(color: Colors.white)),
                             ),
@@ -151,7 +175,7 @@ Future<OdometerResult?> showOdometerSheet(
                           const Icon(Icons.camera_alt_outlined,
                               size: 28, color: AppColors.mutedText),
                           const SizedBox(height: 6),
-                          Text('Tap to take ODM photo',
+                          Text('lbl_tap_odm_photo'.tr,
                               style: AppTextStyles.caption
                                   .copyWith(color: AppColors.mutedText)),
                         ],
@@ -178,6 +202,21 @@ Future<OdometerResult?> showOdometerSheet(
                 ),
               ),
             ),
+            if (minOdometer != null) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 13, color: AppColors.warning),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'lbl_odm_min_hint'.trParams({'value': minOdometer.toStringAsFixed(0)}),
+                      style: AppTextStyles.caption.copyWith(color: AppColors.warning),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 16),
 
             SizedBox(
@@ -187,7 +226,13 @@ Future<OdometerResult?> showOdometerSheet(
                   final val =
                       double.tryParse(odometerController.text.trim());
                   if (val == null || val <= 0) {
-                    FerosSnackbar.error('Enter a valid odometer reading');
+                    FerosSnackbar.error('err_invalid_odm'.tr);
+                    return;
+                  }
+                  if (minOdometer != null && val < minOdometer) {
+                    FerosSnackbar.error(
+                      'err_odm_below_current'.trParams({'value': minOdometer.toStringAsFixed(0)}),
+                    );
                     return;
                   }
                   Navigator.of(ctx).pop(OdometerResult(odometer: val));

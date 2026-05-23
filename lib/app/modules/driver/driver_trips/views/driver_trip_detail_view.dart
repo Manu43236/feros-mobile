@@ -482,13 +482,12 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
   ) async {
     final result = await showOdometerSheet(
       context,
-      title: 'Start Trip — Record ODM',
-      hint: 'Start Odometer (km)',
-      buttonLabel: 'Start Trip',
+      title: 'lbl_start_trip_odm_title'.tr,
+      hint: 'lbl_start_odometer'.tr,
+      buttonLabel: 'btn_start_trip'.tr,
       buttonColor: AppColors.navy,
-      instruction:
-          'Take a photo of the odometer before departure.\n'
-          'Start ODM must be ≥ last recorded reading.',
+      instruction: 'lbl_start_trip_instruction'.tr,
+      minOdometer: controller.lr.currentVehicleOdometer,
     );
     if (result == null) return;
     controller.startTrip(result);
@@ -500,13 +499,14 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
   ) async {
     final odmResult = await showOdometerSheet(
       context,
-      title: 'End Trip — Record ODM',
-      hint: 'End Odometer (km)',
-      buttonLabel: 'Next',
+      title: 'lbl_end_trip_odm_title'.tr,
+      hint: 'lbl_end_odometer_km'.tr,
+      buttonLabel: 'btn_next'.tr,
       buttonColor: AppColors.navy,
-      instruction:
-          'Take a photo of the odometer on arrival.\n'
-          'End ODM must be > ${controller.startOdometer.value?.toStringAsFixed(0) ?? 'start'} km.',
+      instruction: 'lbl_end_trip_instruction'.trParams({
+        'value': controller.startOdometer.value?.toStringAsFixed(0) ?? '—',
+      }),
+      minOdometer: controller.startOdometer.value,
     );
     if (odmResult == null) return;
 
