@@ -255,6 +255,13 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
       final tank = double.tryParse(_tankCapCtrl.text.trim());
       if (tank != null) body['fuelTankCapacity'] = tank;
 
+      final fuelCheck = double.tryParse(_fuelLevelCtrl.text.trim());
+      if (tank != null && fuelCheck != null && fuelCheck > tank) {
+        FerosSnackbar.error('Current fuel cannot exceed tank capacity ($tank L)');
+        setState(() => _isSubmitting = false);
+        return;
+      }
+
       // Owner / Hired
       if (_isHired) {
         if (_ownerNameCtrl.text.trim().isNotEmpty)
