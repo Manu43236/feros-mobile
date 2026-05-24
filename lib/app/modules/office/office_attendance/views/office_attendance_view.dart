@@ -3,8 +3,12 @@ import 'package:get/get.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
+import '../../../../../core/utils/date_utils.dart';
 import '../../../../../core/popups/feros_snackbar.dart';
+import '../../../../../core/services/auth_service.dart';
 import '../controllers/office_attendance_controller.dart';
+import '../../../supervisor/supervisor_my_attendance/controllers/supervisor_my_attendance_controller.dart';
+import '../../../supervisor/supervisor_my_attendance/bindings/supervisor_my_attendance_binding.dart';
 
 class OfficeAttendanceView extends StatefulWidget {
   const OfficeAttendanceView({super.key});
@@ -17,13 +21,18 @@ class _OfficeAttendanceViewState extends State<OfficeAttendanceView>
     with SingleTickerProviderStateMixin {
   late final TabController _tab;
   late final OfficeAttendanceController _ctrl;
+  late final bool _isAdmin;
 
   @override
   void initState() {
     super.initState();
+    _isAdmin = Get.find<AuthService>().user?.role == 'ADMIN';
     Get.lazyPut<OfficeAttendanceController>(() => OfficeAttendanceController());
     _ctrl = Get.find<OfficeAttendanceController>();
-    _tab = TabController(length: 3, vsync: this);
+    SupervisorMyAttendanceBinding().dependencies();
+    // ADMIN: Daily | My Attendance | Pending | Rejected  (4 tabs)
+    // OFFICE_STAFF: Daily | My Attendance  (2 tabs)
+    _tab = TabController(length: _isAdmin ? 4 : 2, vsync: this);
   }
 
   @override
@@ -54,72 +63,265 @@ class _OfficeAttendanceViewState extends State<OfficeAttendanceView>
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(44),
-          child: Obx(() {
-            final pc = _ctrl.pendingCount.value;
-            final rc = _ctrl.rejectedCount.value;
-            return TabBar(
-              controller: _tab,
-              indicatorColor: Colors.white,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white.withValues(alpha: 0.55),
-              labelStyle: AppTextStyles.caption.copyWith(
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-              ),
-              tabs: [
-                const Tab(text: 'Daily'),
-                Tab(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Pending',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
+          child: _isAdmin
+              ? Obx(() {
+                  final pc = _ctrl.pendingCount.value;
+                  final rc = _ctrl.rejectedCount.value;
+                  return TabBar(
+                    controller: _tab,
+                    indicatorColor: Colors.white,
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.white.withValues(alpha: 0.55),
+                    labelStyle: AppTextStyles.caption
+                        .copyWith(fontWeight: FontWeight.w600, fontSize: 12),
+                    tabs: [
+                      const Tab(text: 'Daily'),
+                      const Tab(text: 'My Attendance'),
+                      Tab(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('Pending',
+                                style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12)),
+                            if (pc > 0) ...[
+                              const SizedBox(width: 4),
+                              _Badge(count: pc, color: AppColors.warning),
+                            ],
+                          ],
                         ),
                       ),
-                      if (pc > 0) ...[
-                        const SizedBox(width: 4),
-                        _Badge(count: pc, color: AppColors.warning),
-                      ],
-                    ],
-                  ),
-                ),
-                Tab(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Rejected',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
+                      Tab(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('Rejected',
+                                style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12)),
+                            if (rc > 0) ...[
+                              const SizedBox(width: 4),
+                              _Badge(count: rc, color: AppColors.error),
+                            ],
+                          ],
                         ),
                       ),
-                      if (rc > 0) ...[
-                        const SizedBox(width: 4),
-                        _Badge(count: rc, color: AppColors.error),
-                      ],
                     ],
-                  ),
+                  );
+                })
+              : TabBar(
+                  controller: _tab,
+                  indicatorColor: Colors.white,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white.withValues(alpha: 0.55),
+                  labelStyle: AppTextStyles.caption
+                      .copyWith(fontWeight: FontWeight.w600, fontSize: 12),
+                  tabs: const [
+                    Tab(text: 'Daily'),
+                    Tab(text: 'My Attendance'),
+                  ],
                 ),
-              ],
-            );
-          }),
         ),
       ),
       body: TabBarView(
         controller: _tab,
         children: [
           _DailyTab(ctrl: _ctrl),
-          _PendingTab(ctrl: _ctrl),
-          _RejectedTab(ctrl: _ctrl),
+          const _MyAttendanceTab(),
+          if (_isAdmin) ...[
+            _PendingTab(ctrl: _ctrl),
+            _RejectedTab(ctrl: _ctrl),
+          ],
         ],
       ),
     );
+  }
+}
+
+// ── My Attendance Tab ──────────────────────────────────────────────────────────
+class _MyAttendanceTab extends StatelessWidget {
+  const _MyAttendanceTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = Get.find<SupervisorMyAttendanceController>();
+    return Obx(() {
+      if (ctrl.state.value == ViewState.loading) {
+        return const Center(child: CircularProgressIndicator(color: AppColors.navy));
+      }
+      if (ctrl.state.value == ViewState.error) {
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+              const SizedBox(height: 12),
+              Text('Failed to load attendance',
+                  style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: ctrl.fetchRecords,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.navy,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        );
+      }
+      if (ctrl.records.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.calendar_today_outlined, size: 52, color: AppColors.mutedText),
+              const SizedBox(height: 12),
+              Text('No attendance records', style: AppTextStyles.heading4.copyWith(color: AppColors.navy)),
+              const SizedBox(height: 6),
+              Text('Your attendance history will appear here.',
+                  style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+            ],
+          ),
+        );
+      }
+      return RefreshIndicator(
+        color: AppColors.navy,
+        onRefresh: ctrl.fetchRecords,
+        child: ListView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          itemCount: ctrl.records.length,
+          itemBuilder: (_, i) => _MyAttendanceCard(record: ctrl.records[i]),
+        ),
+      );
+    });
+  }
+}
+
+class _MyAttendanceCard extends StatelessWidget {
+  final Map<String, dynamic> record;
+  const _MyAttendanceCard({required this.record});
+
+  @override
+  Widget build(BuildContext context) {
+    final date           = record['date']               as String? ?? '';
+    final typeName       = record['attendanceTypeName'] as String? ?? '—';
+    final approvalStatus = record['approvalStatus']     as String? ?? '';
+    final remarks        = record['remarks']            as String?;
+    final markedAt       = record['createdAt']          as String?;
+
+    final typeColor  = _typeColor(typeName);
+    final typeIcon   = _typeIcon(typeName);
+    final approvalColor = _approvalColor(approvalStatus);
+    final approvalLabel = _approvalLabel(approvalStatus);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+        boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2))],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.navy.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              children: [
+                Text(_dayNum(date), style: AppTextStyles.heading3.copyWith(color: AppColors.navy, fontSize: 20)),
+                Text(_monthShort(date), style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(typeIcon, size: 14, color: typeColor),
+                    const SizedBox(width: 4),
+                    Text(typeName, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.bodyText)),
+                    const Spacer(),
+                    if (approvalStatus.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: approvalColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(approvalLabel,
+                            style: AppTextStyles.caption.copyWith(color: approvalColor, fontWeight: FontWeight.w600)),
+                      ),
+                  ],
+                ),
+                if (markedAt != null) ...[
+                  const SizedBox(height: 3),
+                  Text('Marked at ${FerosDateUtils.formatDateTime(markedAt)}',
+                      style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                ],
+                if (remarks != null && remarks.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(remarks, style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _dayNum(String iso) { try { return DateTime.parse(iso).day.toString().padLeft(2, '0'); } catch (_) { return '—'; } }
+  String _monthShort(String iso) {
+    const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    try { return m[DateTime.parse(iso).month - 1]; } catch (_) { return ''; }
+  }
+  Color _typeColor(String n) {
+    final u = n.toUpperCase();
+    if (u.contains('PRESENT') && !u.contains('HALF')) return AppColors.success;
+    if (u.contains('ABSENT')) return AppColors.error;
+    if (u.contains('HALF')) return AppColors.warning;
+    if (u.contains('LEAVE')) return AppColors.info;
+    return AppColors.mutedText;
+  }
+  IconData _typeIcon(String n) {
+    final u = n.toUpperCase();
+    if (u.contains('PRESENT') && !u.contains('HALF')) return Icons.check_circle_outline;
+    if (u.contains('ABSENT')) return Icons.cancel_outlined;
+    if (u.contains('HALF')) return Icons.timelapse_outlined;
+    if (u.contains('LEAVE')) return Icons.beach_access_outlined;
+    return Icons.event_note_outlined;
+  }
+  Color _approvalColor(String s) {
+    switch (s) {
+      case 'PENDING':  return AppColors.warning;
+      case 'APPROVED': return AppColors.success;
+      case 'REJECTED': return AppColors.error;
+      default:         return AppColors.mutedText;
+    }
+  }
+  String _approvalLabel(String s) {
+    switch (s) {
+      case 'PENDING':  return 'Pending';
+      case 'APPROVED': return 'Approved';
+      case 'REJECTED': return 'Rejected';
+      default:         return s;
+    }
   }
 }
 
