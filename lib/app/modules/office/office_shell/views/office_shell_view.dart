@@ -20,6 +20,7 @@ import '../../../supervisor/supervisor_payslip/views/supervisor_payslip_view.dar
 import '../../../supervisor/supervisor_payslip/bindings/supervisor_payslip_binding.dart';
 import '../../../supervisor/supervisor_my_attendance/views/supervisor_my_attendance_view.dart';
 import '../../../supervisor/supervisor_my_attendance/bindings/supervisor_my_attendance_binding.dart';
+import '../../office_attendance/views/office_attendance_view.dart';
 import '../../../supervisor/supervisor_notifications/views/supervisor_notifications_view.dart';
 import '../../../supervisor/supervisor_notifications/bindings/supervisor_notifications_binding.dart';
 import '../../office_subscription/views/office_subscription_view.dart';
@@ -256,26 +257,31 @@ class _OfficeDrawer extends StatelessWidget {
                     );
                   },
                 ),
-                _DrawerTile(
-                  icon: Icons.payments_outlined,
-                  label: 'My Payslip',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Get.to(
-                      () => const SupervisorPayslipView(),
-                      binding: SupervisorPayslipBinding(),
-                    );
-                  },
-                ),
+                if (!isAdmin)
+                  _DrawerTile(
+                    icon: Icons.payments_outlined,
+                    label: 'My Payslip',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Get.to(
+                        () => const SupervisorPayslipView(),
+                        binding: SupervisorPayslipBinding(),
+                      );
+                    },
+                  ),
                 _DrawerTile(
                   icon: Icons.calendar_month_outlined,
-                  label: 'My Attendance',
+                  label: isAdmin ? 'Attendance' : 'My Attendance',
                   onTap: () {
                     Navigator.of(context).pop();
-                    Get.to(
-                      () => const SupervisorMyAttendanceView(),
-                      binding: SupervisorMyAttendanceBinding(),
-                    );
+                    if (isAdmin) {
+                      Get.to(() => const OfficeAttendanceView());
+                    } else {
+                      Get.to(
+                        () => const SupervisorMyAttendanceView(),
+                        binding: SupervisorMyAttendanceBinding(),
+                      );
+                    }
                   },
                 ),
                 if (isAdmin) ...[
