@@ -1,11 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
 import '../../../../../core/utils/date_utils.dart';
 import '../../../../../core/popups/feros_snackbar.dart';
 import '../../../../../core/services/auth_service.dart';
+import '../../../../../core/widgets/shimmer_card.dart';
 import '../controllers/office_attendance_controller.dart';
 import '../../../supervisor/supervisor_my_attendance/controllers/supervisor_my_attendance_controller.dart';
 import '../../../supervisor/supervisor_my_attendance/bindings/supervisor_my_attendance_binding.dart';
@@ -129,7 +132,7 @@ class _OfficeAttendanceViewState extends State<OfficeAttendanceView>
       body: TabBarView(
         controller: _tab,
         children: [
-          _DailyTab(ctrl: _ctrl),
+          _DailyTab(ctrl: _ctrl, isAdmin: _isAdmin),
           const _MyAttendanceTab(),
           if (_isAdmin) ...[
             _PendingTab(ctrl: _ctrl),
@@ -137,7 +140,64 @@ class _OfficeAttendanceViewState extends State<OfficeAttendanceView>
           ],
         ],
       ),
+      floatingActionButton: _MarkAttendanceFab(tab: _tab),
     );
+  }
+}
+
+// ── Mark Attendance FAB ────────────────────────────────────────────────────────
+class _MarkAttendanceFab extends StatefulWidget {
+  final TabController tab;
+  const _MarkAttendanceFab({required this.tab});
+
+  @override
+  State<_MarkAttendanceFab> createState() => _MarkAttendanceFabState();
+}
+
+class _MarkAttendanceFabState extends State<_MarkAttendanceFab> {
+  int _currentTab = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentTab = widget.tab.index;
+    widget.tab.addListener(_onTabChange);
+  }
+
+  void _onTabChange() {
+    if (mounted) setState(() => _currentTab = widget.tab.index);
+  }
+
+  @override
+  void dispose() {
+    widget.tab.removeListener(_onTabChange);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Only show on "My Attendance" tab (index 1)
+    if (_currentTab != 1) return const SizedBox.shrink();
+
+    final ctrl = Get.find<SupervisorMyAttendanceController>();
+    return Obx(() {
+      final marked = ctrl.todayRecord != null;
+      if (marked) return const SizedBox.shrink();
+      return FloatingActionButton.extended(
+        onPressed: ctrl.markLoading.value ? null : () => _showMyMarkSheet(context, ctrl),
+        backgroundColor: AppColors.navy,
+        foregroundColor: Colors.white,
+        icon: ctrl.markLoading.value
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+              )
+            : const Icon(Icons.how_to_reg_outlined),
+        label: const Text('Mark Attendance',
+            style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600)),
+      );
+    });
   }
 }
 
@@ -150,7 +210,16 @@ class _MyAttendanceTab extends StatelessWidget {
     final ctrl = Get.find<SupervisorMyAttendanceController>();
     return Obx(() {
       if (ctrl.state.value == ViewState.loading) {
-        return const Center(child: CircularProgressIndicator(color: AppColors.navy));
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          children: [
+            ShimmerCard(height: 80),
+            ShimmerCard(height: 56),
+            ShimmerCard(height: 72),
+            ShimmerCard(height: 72),
+            ShimmerCard(height: 72),
+          ],
+        );
       }
       if (ctrl.state.value == ViewState.error) {
         return Center(
@@ -163,7 +232,7 @@ class _MyAttendanceTab extends StatelessWidget {
                   style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: ctrl.fetchRecords,
+                onPressed: ctrl.fetchAll,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.navy,
                   foregroundColor: Colors.white,
@@ -175,45 +244,383 @@ class _MyAttendanceTab extends StatelessWidget {
           ),
         );
       }
-      if (ctrl.records.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.calendar_today_outlined, size: 52, color: AppColors.mutedText),
-              const SizedBox(height: 12),
-              Text('No attendance records', style: AppTextStyles.heading4.copyWith(color: AppColors.navy)),
-              const SizedBox(height: 6),
-              Text('Your attendance history will appear here.',
-                  style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
-            ],
-          ),
-        );
-      }
       return RefreshIndicator(
         color: AppColors.navy,
-        onRefresh: ctrl.fetchRecords,
-        child: ListView.builder(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          itemCount: ctrl.records.length,
-          itemBuilder: (_, i) => _MyAttendanceCard(record: ctrl.records[i]),
+        onRefresh: ctrl.fetchAll,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          children: [
+            _MyTodayCard(ctrl: ctrl),
+            const SizedBox(height: 14),
+            _MyStatsRow(ctrl: ctrl),
+            const SizedBox(height: 14),
+            Text("This Month's Records",
+                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 10),
+            if (ctrl.records.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(28),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Center(
+                  child: Text('No records this month',
+                      style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+                ),
+              )
+            else
+              ...ctrl.records.map((r) => _MyAttendanceCard(record: r)),
+          ],
         ),
       );
     });
   }
 }
 
+// ── My Today Card ─────────────────────────────────────────────────────────────
+class _MyTodayCard extends StatelessWidget {
+  final SupervisorMyAttendanceController ctrl;
+  const _MyTodayCard({required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final today  = ctrl.todayRecord;
+    final marked = today != null;
+    final color  = marked ? AppColors.success : AppColors.warning;
+    final bg     = marked
+        ? AppColors.success.withValues(alpha: 0.08)
+        : AppColors.warning.withValues(alpha: 0.08);
+    final border = marked
+        ? AppColors.success.withValues(alpha: 0.3)
+        : AppColors.warning.withValues(alpha: 0.3);
+
+    final now = DateTime.now();
+    final dayStr =
+        '${now.day.toString().padLeft(2, '0')} ${_monthAbbr(now.month)} ${now.year}';
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(Icons.calendar_today_outlined, color: color, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Today — $dayStr',
+                    style: AppTextStyles.bodyMedium
+                        .copyWith(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                if (marked) ...[
+                  _MyTypeBadge(type: today['attendanceTypeName'] as String? ?? ''),
+                ] else
+                  Text('Not marked yet',
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.warning)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MyStatsRow extends StatelessWidget {
+  final SupervisorMyAttendanceController ctrl;
+  const _MyStatsRow({required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final items = [
+      ('Present', ctrl.present, AppColors.success),
+      ('Absent',  ctrl.absent,  AppColors.error),
+      ('Half',    ctrl.half,    AppColors.warning),
+      ('Leave',   ctrl.leave,   AppColors.navy),
+      ('Pending', ctrl.pending, AppColors.mutedText),
+    ];
+    return Row(
+      children: items.map((e) => Expanded(
+        child: Container(
+          margin: const EdgeInsets.only(right: 5),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: e.$3.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: e.$3.withValues(alpha: 0.2)),
+          ),
+          child: Column(
+            children: [
+              Text('${e.$2}',
+                  style: AppTextStyles.heading4
+                      .copyWith(color: e.$3, fontSize: 16)),
+              Text(e.$1,
+                  style: AppTextStyles.caption.copyWith(
+                      color: AppColors.mutedText, fontSize: 9),
+                  textAlign: TextAlign.center),
+            ],
+          ),
+        ),
+      )).toList(),
+    );
+  }
+}
+
+class _MyTypeBadge extends StatelessWidget {
+  final String type;
+  const _MyTypeBadge({required this.type});
+
+  @override
+  Widget build(BuildContext context) {
+    final n = type.toUpperCase();
+    final Color color;
+    if (n.contains('PRESENT') && !n.contains('HALF'))  color = AppColors.success;
+    else if (n.contains('ABSENT'))  color = AppColors.error;
+    else if (n.contains('HALF'))    color = AppColors.warning;
+    else if (n.contains('LEAVE'))   color = AppColors.navy;
+    else color = AppColors.mutedText;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(type,
+          style: AppTextStyles.caption
+              .copyWith(color: color, fontWeight: FontWeight.w600)),
+    );
+  }
+}
+
+void _showMyMarkSheet(
+    BuildContext context, SupervisorMyAttendanceController ctrl) {
+  final remarks    = TextEditingController();
+  final selfieFile = Rxn<File>();
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (_) => Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Obx(() => SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('Mark Today\'s Attendance',
+                style: AppTextStyles.heading4.copyWith(color: AppColors.navy)),
+            const SizedBox(height: 4),
+            Text(_officeFormatToday(),
+                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+            const SizedBox(height: 16),
+
+            _OfficeSelfieBox(selfieFile: selfieFile, disabled: ctrl.markLoading.value),
+            const SizedBox(height: 12),
+
+            Text('Remarks (Optional)',
+                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+            const SizedBox(height: 4),
+            TextField(
+              controller: remarks,
+              decoration: InputDecoration(
+                hintText: 'Optional',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text('Attendance will be reviewed and approved by admin.',
+                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+            const SizedBox(height: 16),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: ctrl.markLoading.value
+                    ? null
+                    : () async {
+                        final ok = await ctrl.markPresent(
+                          selfieFile: selfieFile.value,
+                          remarks: remarks.text,
+                        );
+                        if (ok && context.mounted) {
+                          Navigator.of(context).pop();
+                          Get.snackbar('Success', 'Attendance marked',
+                              backgroundColor: AppColors.success,
+                              colorText: Colors.white,
+                              snackPosition: SnackPosition.BOTTOM);
+                        } else if (!ok && context.mounted) {
+                          Get.snackbar('Error', 'Failed to mark attendance',
+                              backgroundColor: AppColors.error,
+                              colorText: Colors.white,
+                              snackPosition: SnackPosition.BOTTOM);
+                        }
+                      },
+                icon: ctrl.markLoading.value
+                    ? const SizedBox(width: 18, height: 18,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.check_circle_outline, size: 20),
+                label: Text(
+                  ctrl.markLoading.value ? 'Marking…' : 'Mark Present',
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      )),
+    ),
+  );
+}
+
+String _officeFormatToday() {
+  final d = DateTime.now();
+  const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const days = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  return '${days[d.weekday]}, ${d.day.toString().padLeft(2, '0')} ${months[d.month]} ${d.year}';
+}
+
+// ── Office Selfie Box ──────────────────────────────────────────────────────────
+class _OfficeSelfieBox extends StatelessWidget {
+  final Rxn<File> selfieFile;
+  final bool disabled;
+  const _OfficeSelfieBox({required this.selfieFile, required this.disabled});
+
+  Future<void> _pick() async {
+    final xFile = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      preferredCameraDevice: CameraDevice.front,
+      imageQuality: 80,
+      maxWidth: 800,
+    );
+    if (xFile != null) selfieFile.value = File(xFile.path);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: disabled ? null : _pick,
+      child: Container(
+        height: 120,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.border),
+        ),
+        clipBehavior: Clip.hardEdge,
+        child: selfieFile.value == null
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.camera_front_outlined,
+                      size: 32, color: AppColors.mutedText),
+                  const SizedBox(height: 8),
+                  Text('Tap to take selfie (Optional)',
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.mutedText)),
+                ],
+              )
+            : Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.file(selfieFile.value!, fit: BoxFit.cover),
+                  Positioned(
+                    top: 6, right: 6,
+                    child: GestureDetector(
+                      onTap: disabled ? null : () => selfieFile.value = null,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.black54, shape: BoxShape.circle),
+                        child: const Icon(Icons.close, size: 14, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 6, right: 6,
+                    child: GestureDetector(
+                      onTap: disabled ? null : _pick,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text('Retake',
+                            style: AppTextStyles.caption
+                                .copyWith(color: Colors.white, fontSize: 10)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+
+String _monthAbbr(int m) => const [
+      '',
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ][m];
+
+// ── My Attendance Card ────────────────────────────────────────────────────────
 class _MyAttendanceCard extends StatelessWidget {
   final Map<String, dynamic> record;
   const _MyAttendanceCard({required this.record});
 
   @override
   Widget build(BuildContext context) {
-    final date           = record['date']               as String? ?? '';
+    final date           = record['attendanceDate']    as String? ?? '';
     final typeName       = record['attendanceTypeName'] as String? ?? '—';
-    final approvalStatus = record['approvalStatus']     as String? ?? '';
-    final remarks        = record['remarks']            as String?;
-    final markedAt       = record['createdAt']          as String?;
+    final approvalStatus = record['approvalStatus']    as String? ?? '';
+    final leaveTypeName  = record['leaveTypeName']     as String?;
+    final approvedByName = record['approvedByName']    as String?;
+    final remarks        = record['remarks']           as String?;
+    final markedAt       = record['markedAt']          as String?;
 
     final typeColor  = _typeColor(typeName);
     final typeIcon   = _typeIcon(typeName);
@@ -268,6 +675,16 @@ class _MyAttendanceCard extends StatelessWidget {
                       ),
                   ],
                 ),
+                if (leaveTypeName != null && leaveTypeName.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text('Leave: $leaveTypeName',
+                      style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                ],
+                if (approvedByName != null && approvedByName.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text('Approved by $approvedByName',
+                      style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                ],
                 if (markedAt != null) ...[
                   const SizedBox(height: 3),
                   Text('Marked at ${FerosDateUtils.formatDateTime(markedAt)}',
@@ -328,7 +745,8 @@ class _MyAttendanceCard extends StatelessWidget {
 // ── Daily Tab ──────────────────────────────────────────────────────────────────
 class _DailyTab extends StatelessWidget {
   final OfficeAttendanceController ctrl;
-  const _DailyTab({required this.ctrl});
+  final bool isAdmin;
+  const _DailyTab({required this.ctrl, required this.isAdmin});
 
   @override
   Widget build(BuildContext context) {
@@ -451,8 +869,14 @@ class _DailyTab extends StatelessWidget {
           child: Obx(() {
             final state = ctrl.dailyState.value;
             if (state == ViewState.loading) {
-              return const Center(
-                child: CircularProgressIndicator(color: AppColors.navy),
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+                children: const [
+                  ShimmerCard(height: 68),
+                  ShimmerCard(height: 68),
+                  ShimmerCard(height: 68),
+                  ShimmerCard(height: 68),
+                ],
               );
             }
             if (state == ViewState.error) {
@@ -503,14 +927,17 @@ class _DailyTab extends StatelessWidget {
                   return _AttendanceRow(
                     row: row,
                     isMarked: isMarked,
-                    onTap: () => _showMarkSheet(
-                      context,
-                      ctrl,
-                      isMarked ? row : null,
-                      preUserId: isMarked
-                          ? null
-                          : (row['userId'] as num?)?.toInt(),
-                    ),
+                    isAdmin: isAdmin,
+                    onTap: isAdmin
+                        ? () => _showMarkSheet(
+                              context,
+                              ctrl,
+                              isMarked ? row : null,
+                              preUserId: isMarked
+                                  ? null
+                                  : (row['userId'] as num?)?.toInt(),
+                            )
+                        : null,
                   );
                 },
               ),
@@ -576,10 +1003,12 @@ class _DailyTab extends StatelessWidget {
 class _AttendanceRow extends StatelessWidget {
   final Map<String, dynamic> row;
   final bool isMarked;
-  final VoidCallback onTap;
+  final bool isAdmin;
+  final VoidCallback? onTap;
   const _AttendanceRow({
     required this.row,
     required this.isMarked,
+    required this.isAdmin,
     required this.onTap,
   });
 
@@ -671,12 +1100,14 @@ class _AttendanceRow extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(width: 4),
-            const Icon(
-              Icons.edit_outlined,
-              size: 16,
-              color: AppColors.mutedText,
-            ),
+            if (isAdmin) ...[
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.edit_outlined,
+                size: 16,
+                color: AppColors.mutedText,
+              ),
+            ],
           ],
         ),
       ),
@@ -789,9 +1220,7 @@ class _PendingTab extends StatelessWidget {
     return Obx(() {
       final s = ctrl.pendingState.value;
       if (s == ViewState.loading) {
-        return const Center(
-          child: CircularProgressIndicator(color: AppColors.navy),
-        );
+        return const ShimmerList(count: 5, itemHeight: 80);
       }
       if (s == ViewState.error) {
         return _ErrorWidget(
@@ -1030,9 +1459,7 @@ class _RejectedTab extends StatelessWidget {
     return Obx(() {
       final s = ctrl.rejectedState.value;
       if (s == ViewState.loading) {
-        return const Center(
-          child: CircularProgressIndicator(color: AppColors.navy),
-        );
+        return const ShimmerList(count: 5, itemHeight: 80);
       }
       if (s == ViewState.error) {
         return _ErrorWidget(

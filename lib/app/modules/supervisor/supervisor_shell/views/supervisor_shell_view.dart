@@ -25,8 +25,6 @@ import '../../supervisor_attendance/views/supervisor_attendance_tab.dart';
 import '../../supervisor_lrs/views/supervisor_lrs_view.dart';
 import '../../supervisor_lrs/bindings/supervisor_lrs_binding.dart';
 import '../../supervisor_orders/views/supervisor_create_order_view.dart';
-import '../../supervisor_my_attendance/views/supervisor_my_attendance_view.dart';
-import '../../supervisor_my_attendance/bindings/supervisor_my_attendance_binding.dart';
 import '../../supervisor_breakdown/views/supervisor_breakdown_view.dart';
 import '../../supervisor_breakdown/bindings/supervisor_breakdown_binding.dart';
 
@@ -275,17 +273,6 @@ class _SupervisorDrawer extends StatelessWidget {
                     Get.to(
                       () => const SupervisorPayslipView(),
                       binding: SupervisorPayslipBinding(),
-                    );
-                  },
-                ),
-                _DrawerTile(
-                  icon: Icons.calendar_month_outlined,
-                  label: 'lbl_my_attendance'.tr,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Get.to(
-                      () => const SupervisorMyAttendanceView(),
-                      binding: SupervisorMyAttendanceBinding(),
                     );
                   },
                 ),

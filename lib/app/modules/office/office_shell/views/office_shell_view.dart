@@ -271,17 +271,10 @@ class _OfficeDrawer extends StatelessWidget {
                   ),
                 _DrawerTile(
                   icon: Icons.calendar_month_outlined,
-                  label: isAdmin ? 'Attendance' : 'My Attendance',
+                  label: 'Attendance',
                   onTap: () {
                     Navigator.of(context).pop();
-                    if (isAdmin) {
-                      Get.to(() => const OfficeAttendanceView());
-                    } else {
-                      Get.to(
-                        () => const SupervisorMyAttendanceView(),
-                        binding: SupervisorMyAttendanceBinding(),
-                      );
-                    }
+                    Get.to(() => const OfficeAttendanceView());
                   },
                 ),
                 if (isAdmin) ...[
