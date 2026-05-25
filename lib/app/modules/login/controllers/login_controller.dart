@@ -9,6 +9,7 @@ import '../../../../core/models/user_model.dart';
 import '../../../../core/popups/feros_snackbar.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../routes/app_pages.dart';
 
 class LoginController extends GetxController {
   final _api  = Get.find<ApiClient>();
@@ -69,7 +70,11 @@ class LoginController extends GetxController {
       }
 
       await _auth.saveSession(token, user);
-      Get.offAllNamed(_auth.roleHome);
+      if (user.isPinResetRequired) {
+        Get.offAllNamed(Routes.FORCE_PIN_CHANGE);
+      } else {
+        Get.offAllNamed(_auth.roleHome);
+      }
     } on UnauthorizedException {
       FerosSnackbar.error('Invalid phone number or PIN');
     } on PaymentRequiredException {

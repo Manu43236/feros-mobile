@@ -6,6 +6,7 @@ class UserModel {
   final String role;
   final String? companyName;
   final String token;
+  final bool isPinResetRequired;
 
   UserModel({
     required this.userId,
@@ -15,26 +16,29 @@ class UserModel {
     required this.role,
     this.companyName,
     required this.token,
+    this.isPinResetRequired = false,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
-    userId:      json['userId'] as int,
-    tenantId:    json['tenantId'] as int?,
-    phone:       json['phone']   as String,
-    name:        json['name']    as String? ?? '',
-    role:        json['role']    as String,
-    companyName: json['companyName'] as String?,
-    token:       json['token']   as String? ?? '',
+    userId:             json['userId'] as int,
+    tenantId:           json['tenantId'] as int?,
+    phone:              json['phone']   as String,
+    name:               json['name']    as String? ?? '',
+    role:               json['role']    as String,
+    companyName:        json['companyName'] as String?,
+    token:              json['token']   as String? ?? '',
+    isPinResetRequired: json['isPinResetRequired'] as bool? ?? false,
   );
 
   Map<String, dynamic> toJson() => {
-    'userId':      userId,
-    'tenantId':    tenantId,
-    'phone':       phone,
-    'name':        name,
-    'role':        role,
-    'companyName': companyName,
-    'token':       token,
+    'userId':             userId,
+    'tenantId':           tenantId,
+    'phone':              phone,
+    'name':               name,
+    'role':               role,
+    'companyName':        companyName,
+    'token':              token,
+    'isPinResetRequired': isPinResetRequired,
   };
 
   bool get isSuperAdmin   => role == 'SUPER_ADMIN';

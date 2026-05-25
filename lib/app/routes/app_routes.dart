@@ -57,6 +57,7 @@ abstract class Routes {
   static const NOTIFICATIONS = _Paths.NOTIFICATIONS;
   static const PROFILE = _Paths.PROFILE;
   static const SUBSCRIPTION = _Paths.SUBSCRIPTION;
+  static const FORCE_PIN_CHANGE = _Paths.FORCE_PIN_CHANGE;
 }
 
 abstract class _Paths {
@@ -108,4 +109,5 @@ abstract class _Paths {
   static const NOTIFICATIONS = '/notifications';
   static const PROFILE = '/profile';
   static const SUBSCRIPTION = '/subscription';
+  static const FORCE_PIN_CHANGE = '/force-pin-change';
 }

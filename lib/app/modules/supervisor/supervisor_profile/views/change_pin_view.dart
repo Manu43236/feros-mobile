@@ -38,8 +38,8 @@ class _ChangePinViewState extends State<ChangePinView> {
         'currentPin': _currentPin,
         'newPin':     _newPin,
       });
-      FerosSnackbar.success('PIN changed successfully');
       Get.back();
+      FerosSnackbar.success('PIN changed successfully');
     } catch (_) {
       FerosSnackbar.error('Failed to change PIN. Check your current PIN.');
     } finally {
