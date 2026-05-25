@@ -125,7 +125,8 @@ class SupervisorOrderDetailController extends GetxController {
     drivers.clear();
     cleaners.clear();
     try {
-      final res  = await _api.get(ApiEndpoints.users);
+      final res  = await _api.get(ApiEndpoints.users,
+          params: {'hasAttendanceToday': true});
       final data = ((res.data as Map)['data'] as List? ?? [])
           .cast<Map<String, dynamic>>();
       final active = data.where(
