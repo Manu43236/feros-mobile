@@ -32,6 +32,7 @@ class DriverShellBinding extends Bindings {
       ServiceMenDashboardBinding().dependencies();
       ServiceMenServicesBinding().dependencies();
       ServiceMenTyresBinding().dependencies();
+      DriverAttendanceBinding().dependencies();
       ServiceMenProfileBinding().dependencies();
     } else {
       DriverDashboardBinding().dependencies();

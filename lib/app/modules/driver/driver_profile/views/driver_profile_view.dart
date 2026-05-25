@@ -5,6 +5,7 @@ import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/string_utils.dart';
 import '../../../../../core/widgets/language_switcher_tile.dart';
 import '../controllers/driver_profile_controller.dart';
+import '../../../supervisor/supervisor_profile/views/change_pin_view.dart';
 
 class DriverProfileView extends GetView<DriverProfileController> {
   const DriverProfileView({super.key});
@@ -108,7 +109,7 @@ class DriverProfileView extends GetView<DriverProfileController> {
               ),
               const SizedBox(height: 12),
 
-              // ── Language ──────────────────────────────────────
+              // ── Change PIN + Language ─────────────────────────
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -120,7 +121,21 @@ class DriverProfileView extends GetView<DriverProfileController> {
                         offset: Offset(0, 2)),
                   ],
                 ),
-                child: const LanguageSwitcherTile(),
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.lock_outline,
+                          color: AppColors.navy, size: 22),
+                      title: Text('lbl_change_pin'.tr,
+                          style: AppTextStyles.body.copyWith(color: AppColors.navy)),
+                      trailing: const Icon(Icons.chevron_right,
+                          color: AppColors.mutedText),
+                      onTap: () => Get.to(() => const ChangePinView()),
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    const LanguageSwitcherTile(),
+                  ],
+                ),
               ),
               const SizedBox(height: 24),
 
