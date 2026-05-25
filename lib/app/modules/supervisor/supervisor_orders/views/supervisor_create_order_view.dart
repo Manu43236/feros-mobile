@@ -58,7 +58,6 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
   Map<String, dynamic> _selectedRateType = _rateTypes[0];
   Map<String, dynamic> _selectedBillingOn = _billingOptions[0];
   DateTime? _orderDate, _expectedDeliveryDate;
-  DateTime? _ewayBillDate, _ewayBillValidUpto;
   bool _clientAutoFilled = false;
 
   // ── Text controllers ───────────────────────────────────────────────────────
@@ -69,7 +68,6 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
   final _customMaterialCtrl = TextEditingController();
   final _specialInstCtrl = TextEditingController();
   final _remarksCtrl = TextEditingController();
-  final _ewayBillNoCtrl = TextEditingController();
 
   // ── Validation errors ──────────────────────────────────────────────────────
   final Map<String, String> _errors = {};
@@ -90,7 +88,6 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
     _customMaterialCtrl.dispose();
     _specialInstCtrl.dispose();
     _remarksCtrl.dispose();
-    _ewayBillNoCtrl.dispose();
     super.dispose();
   }
 
@@ -274,18 +271,6 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
         body['expectedDeliveryDate'] = _expectedDeliveryDate!
             .toIso8601String()
             .substring(0, 10);
-      if (_ewayBillNoCtrl.text.trim().isNotEmpty)
-        body['ewayBillNumber'] = _ewayBillNoCtrl.text.trim();
-      if (_ewayBillDate != null)
-        body['ewayBillDate'] = _ewayBillDate!.toIso8601String().substring(
-          0,
-          10,
-        );
-      if (_ewayBillValidUpto != null)
-        body['ewayBillValidUpto'] = _ewayBillValidUpto!
-            .toIso8601String()
-            .substring(0, 10);
-
       await _api.post(ApiEndpoints.orders, data: body);
 
       if (Get.isRegistered<SupervisorOrdersController>()) {
@@ -351,11 +336,6 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
                       children: _buildAdditional(),
                     ),
                     const SizedBox(height: 16),
-                    _Section(
-                      title: 'lbl_eway_bill'.tr,
-                      isOptional: true,
-                      children: _buildEwayBill(),
-                    ),
                   ],
                 ),
               ),
@@ -762,64 +742,6 @@ class _SupervisorCreateOrderViewState extends State<SupervisorCreateOrderView> {
                     hintText: 'Internal notes…',
                     hintStyle: AppTextStyles.hint,
                   ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ];
-  }
-
-  List<Widget> _buildEwayBill() {
-    return [
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Label('lbl_eway_bill_no'.tr),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: _ewayBillNoCtrl,
-                  style: AppTextStyles.body,
-                  decoration: _deco().copyWith(
-                    hintText: 'EWB123456789',
-                    hintStyle: AppTextStyles.hint,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Label('lbl_date'.tr),
-                const SizedBox(height: 6),
-                _DateField(
-                  value: _ewayBillDate,
-                  hint: 'Pick',
-                  onPicked: (d) => setState(() => _ewayBillDate = d),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Label('lbl_valid_upto'.tr),
-                const SizedBox(height: 6),
-                _DateField(
-                  value: _ewayBillValidUpto,
-                  hint: 'Pick',
-                  onPicked: (d) => setState(() => _ewayBillValidUpto = d),
                 ),
               ],
             ),

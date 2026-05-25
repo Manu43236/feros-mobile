@@ -64,7 +64,6 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
   Map<String, dynamic> _selectedRateType = _rateTypes[0];
   Map<String, dynamic> _selectedBillingOn = _billingOptions[0];
   DateTime? _orderDate, _expectedDeliveryDate;
-  DateTime? _ewayBillDate, _ewayBillValidUpto;
   bool _clientAutoFilled = false;
 
   // ── Text controllers ─────────────────────────────────────────────────────
@@ -75,7 +74,6 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
   final _customMaterialCtrl = TextEditingController();
   final _specialInstCtrl = TextEditingController();
   final _remarksCtrl = TextEditingController();
-  final _ewayBillNoCtrl = TextEditingController();
 
   final Map<String, String> _errors = {};
 
@@ -95,7 +93,6 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
     _customMaterialCtrl.dispose();
     _specialInstCtrl.dispose();
     _remarksCtrl.dispose();
-    _ewayBillNoCtrl.dispose();
     super.dispose();
   }
 
@@ -188,7 +185,6 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
     _dstAddressCtrl.text = order['destinationAddress'] as String? ?? '';
     _specialInstCtrl.text = order['specialInstructions'] as String? ?? '';
     _remarksCtrl.text = order['remarks'] as String? ?? '';
-    _ewayBillNoCtrl.text = order['ewayBillNumber'] as String? ?? '';
 
     // ── Rate type + billing ───────────────────────────────────────────────
     final rateType = order['freightRateType'] as String?;
@@ -207,14 +203,10 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
     // ── Dates ─────────────────────────────────────────────────────────────
     final od = order['orderDate'] as String?;
     final edd = order['expectedDeliveryDate'] as String?;
-    final ebd = order['ewayBillDate'] as String?;
-    final ebv = order['ewayBillValidUpto'] as String?;
     if (mounted) {
       setState(() {
         if (od != null) _orderDate = DateTime.tryParse(od);
         if (edd != null) _expectedDeliveryDate = DateTime.tryParse(edd);
-        if (ebd != null) _ewayBillDate = DateTime.tryParse(ebd);
-        if (ebv != null) _ewayBillValidUpto = DateTime.tryParse(ebv);
       });
     }
 
@@ -385,18 +377,6 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
         body['expectedDeliveryDate'] = _expectedDeliveryDate!
             .toIso8601String()
             .substring(0, 10);
-      if (_ewayBillNoCtrl.text.trim().isNotEmpty)
-        body['ewayBillNumber'] = _ewayBillNoCtrl.text.trim();
-      if (_ewayBillDate != null)
-        body['ewayBillDate'] = _ewayBillDate!.toIso8601String().substring(
-          0,
-          10,
-        );
-      if (_ewayBillValidUpto != null)
-        body['ewayBillValidUpto'] = _ewayBillValidUpto!
-            .toIso8601String()
-            .substring(0, 10);
-
       if (widget.isEdit) {
         await _api.put(ApiEndpoints.orderById(widget.editOrderId!), data: body);
       } else {
@@ -476,11 +456,6 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
                           _Section(
                             title: 'Additional Info',
                             children: _buildAdditional(),
-                          ),
-                          const SizedBox(height: 16),
-                          _Section(
-                            title: 'E-way Bill',
-                            children: _buildEwayBill(),
                           ),
                         ],
                       ),
@@ -710,31 +685,6 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
         _remarksCtrl,
         'Internal remarks (optional)',
         maxLines: 2,
-      ),
-    ),
-  ];
-
-  List<Widget> _buildEwayBill() => [
-    _LabelledField(
-      label: 'E-way Bill Number',
-      child: _buildTextField(_ewayBillNoCtrl, 'e.g. 231234567890'),
-    ),
-    const SizedBox(height: 12),
-    _LabelledField(
-      label: 'E-way Bill Date',
-      child: _DatePickerField(
-        value: _ewayBillDate,
-        hint: 'Select date',
-        onPicked: (d) => setState(() => _ewayBillDate = d),
-      ),
-    ),
-    const SizedBox(height: 12),
-    _LabelledField(
-      label: 'Valid Upto',
-      child: _DatePickerField(
-        value: _ewayBillValidUpto,
-        hint: 'Select date',
-        onPicked: (d) => setState(() => _ewayBillValidUpto = d),
       ),
     ),
   ];

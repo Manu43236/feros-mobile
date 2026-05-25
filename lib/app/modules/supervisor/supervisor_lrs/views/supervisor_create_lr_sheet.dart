@@ -18,8 +18,10 @@ class _SupervisorCreateLrSheetState extends State<SupervisorCreateLrSheet> {
   Map<String, dynamic>? _selectedAllocation;
   DateTime _lrDate = DateTime.now();
 
-  final _weightCtrl  = TextEditingController();
-  final _remarksCtrl = TextEditingController();
+  final _weightCtrl      = TextEditingController();
+  final _ewayBillNoCtrl  = TextEditingController();
+  final _remarksCtrl     = TextEditingController();
+  DateTime? _ewayBillDate, _ewayBillValidUpto;
 
   List<Map<String, dynamic>> get _allocations {
     if (_selectedOrder == null) return [];
@@ -31,6 +33,7 @@ class _SupervisorCreateLrSheetState extends State<SupervisorCreateLrSheet> {
   @override
   void dispose() {
     _weightCtrl.dispose();
+    _ewayBillNoCtrl.dispose();
     _remarksCtrl.dispose();
     super.dispose();
   }
@@ -66,6 +69,12 @@ class _SupervisorCreateLrSheetState extends State<SupervisorCreateLrSheet> {
     };
     final w = double.tryParse(_weightCtrl.text.trim());
     if (w != null) data['loadedWeight'] = w;
+    if (_ewayBillNoCtrl.text.trim().isNotEmpty)
+      data['ewayBillNumber'] = _ewayBillNoCtrl.text.trim();
+    if (_ewayBillDate != null)
+      data['ewayBillDate'] = _ewayBillDate!.toIso8601String().substring(0, 10);
+    if (_ewayBillValidUpto != null)
+      data['ewayBillValidUpto'] = _ewayBillValidUpto!.toIso8601String().substring(0, 10);
     if (_remarksCtrl.text.trim().isNotEmpty) {
       data['remarks'] = _remarksCtrl.text.trim();
     }
@@ -264,6 +273,101 @@ class _SupervisorCreateLrSheetState extends State<SupervisorCreateLrSheet> {
                       hintStyle: AppTextStyles.body
                           .copyWith(color: AppColors.hintText),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ── E-way Bill ────────────────────────────────────
+                  _Label('lbl_eway_bill'.tr + ' (optional)'),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: _ewayBillNoCtrl,
+                    style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+                    decoration: _inputDecoration().copyWith(
+                      hintText: 'EWB123456789',
+                      hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _Label('lbl_date'.tr),
+                            const SizedBox(height: 6),
+                            GestureDetector(
+                              onTap: () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: _ewayBillDate ?? DateTime.now(),
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2030),
+                                  builder: (ctx, child) => Theme(
+                                    data: Theme.of(ctx).copyWith(colorScheme: const ColorScheme.light(primary: AppColors.navy)),
+                                    child: child!,
+                                  ),
+                                );
+                                if (picked != null) setState(() => _ewayBillDate = picked);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: AppColors.background,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: AppColors.border),
+                                ),
+                                child: Text(
+                                  _ewayBillDate != null ? _dateLabel(_ewayBillDate!) : 'Pick date',
+                                  style: AppTextStyles.body.copyWith(
+                                    color: _ewayBillDate != null ? AppColors.bodyText : AppColors.hintText,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _Label('lbl_valid_upto'.tr),
+                            const SizedBox(height: 6),
+                            GestureDetector(
+                              onTap: () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: _ewayBillValidUpto ?? DateTime.now(),
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2030),
+                                  builder: (ctx, child) => Theme(
+                                    data: Theme.of(ctx).copyWith(colorScheme: const ColorScheme.light(primary: AppColors.navy)),
+                                    child: child!,
+                                  ),
+                                );
+                                if (picked != null) setState(() => _ewayBillValidUpto = picked);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: AppColors.background,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: AppColors.border),
+                                ),
+                                child: Text(
+                                  _ewayBillValidUpto != null ? _dateLabel(_ewayBillValidUpto!) : 'Pick date',
+                                  style: AppTextStyles.body.copyWith(
+                                    color: _ewayBillValidUpto != null ? AppColors.bodyText : AppColors.hintText,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
 

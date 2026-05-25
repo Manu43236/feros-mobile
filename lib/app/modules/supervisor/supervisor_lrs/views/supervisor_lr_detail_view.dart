@@ -264,6 +264,9 @@ class _InfoCard extends StatelessWidget {
     final driver = lr['startedByName'] as String?;
     final lrDate = lr['lrDate'] as String?;
     final remarks = lr['remarks'] as String?;
+    final ewayBillNumber = lr['ewayBillNumber'] as String?;
+    final ewayBillDate = lr['ewayBillDate'] as String?;
+    final ewayBillValidUpto = lr['ewayBillValidUpto'] as String?;
 
     return _Card(
       child: Column(
@@ -409,6 +412,30 @@ class _InfoCard extends StatelessWidget {
             ],
           ),
 
+          if (ewayBillNumber != null && ewayBillNumber.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: AppColors.border),
+            const SizedBox(height: 8),
+            Text(
+              'lbl_eway_bill'.tr,
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.mutedText,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+            _MetaItem(label: 'lbl_eway_bill_no'.tr, value: ewayBillNumber),
+            if (ewayBillDate != null)
+              _MetaItem(
+                label: 'lbl_date'.tr,
+                value: FerosDateUtils.formatDate(ewayBillDate),
+              ),
+            if (ewayBillValidUpto != null)
+              _MetaItem(
+                label: 'lbl_valid_upto'.tr,
+                value: FerosDateUtils.formatDate(ewayBillValidUpto),
+              ),
+          ],
           if (remarks != null && remarks.isNotEmpty) ...[
             const SizedBox(height: 12),
             const Divider(height: 1, color: AppColors.border),
