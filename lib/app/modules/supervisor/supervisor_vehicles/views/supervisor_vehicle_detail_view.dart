@@ -631,6 +631,7 @@ class _BasicInfoTab extends StatelessWidget {
           title: 'Vehicle Details',
           rows: [
             _IR('Brand', v['brandName']),
+            _IR('Model', v['model'] as String?),
             _IR('Vehicle Type', v['vehicleTypeName']),
             _IR('Fuel Type', v['fuelTypeName']),
             _IR('Ownership', ownership.isEmpty ? null : ownership),
@@ -638,6 +639,12 @@ class _BasicInfoTab extends StatelessWidget {
               'Capacity',
               v['capacityInTons'] != null
                   ? '${v['capacityInTons']} Tons'
+                  : null,
+            ),
+            _IR(
+              'GVW',
+              v['grossVehicleWeight'] != null
+                  ? '${v['grossVehicleWeight']} Tons'
                   : null,
             ),
             _IR('Mfg. Year', v['manufactureYear']?.toString()),
@@ -660,6 +667,35 @@ class _BasicInfoTab extends StatelessWidget {
             _IR('Engine No.', v['engineNumber']),
           ],
         ),
+        if (v['isFinanced'] == true) ...[
+          const SizedBox(height: 12),
+          _InfoSection(
+            title: 'Finance Details',
+            rows: [
+              _IR('Financer', v['financerName'] as String?),
+              _IR(
+                'Finance From',
+                v['financeStartDate'] != null
+                    ? FerosDateUtils.formatDate(v['financeStartDate'] as String)
+                    : null,
+              ),
+              _IR(
+                'Finance To',
+                v['financeEndDate'] != null
+                    ? FerosDateUtils.formatDate(v['financeEndDate'] as String)
+                    : null,
+              ),
+              _IR(
+                'Months Remaining',
+                v['financeMonthsRemaining'] != null
+                    ? (v['financeMonthsRemaining'] as int) == 0
+                        ? 'Loan closed / overdue'
+                        : '${v['financeMonthsRemaining']} months'
+                    : null,
+              ),
+            ],
+          ),
+        ],
         if (isHired) ...[
           const SizedBox(height: 12),
           _InfoSection(

@@ -54,7 +54,9 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
 
   // ── Text controllers — Basic Info ────────────────────────────────────────────
   final _regCtrl = TextEditingController();
+  final _modelCtrl = TextEditingController();
   final _capacityCtrl = TextEditingController();
+  final _gvwCtrl = TextEditingController();
   final _yearCtrl = TextEditingController();
   final _colorCtrl = TextEditingController();
   final _chassisCtrl = TextEditingController();
@@ -67,6 +69,12 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
   final _ownerPanCtrl = TextEditingController();
   final _ownerAddrCtrl = TextEditingController();
   final _agreementAmtCtrl = TextEditingController();
+
+  // ── Finance ───────────────────────────────────────────────────────────────────
+  bool _isFinanced = false;
+  final _financerNameCtrl = TextEditingController();
+  DateTime? _financeStart;
+  DateTime? _financeEnd;
 
   // ── Text controllers — GPS ────────────────────────────────────────────────────
   final _gpsDeviceNumCtrl = TextEditingController();
@@ -93,7 +101,9 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
   void dispose() {
     for (final c in [
       _regCtrl,
+      _modelCtrl,
       _capacityCtrl,
+      _gvwCtrl,
       _yearCtrl,
       _colorCtrl,
       _chassisCtrl,
@@ -110,6 +120,7 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
       _odometerCtrl,
       _fuelLevelCtrl,
       _notesCtrl,
+      _financerNameCtrl,
     ]) {
       c.dispose();
     }
@@ -169,7 +180,9 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
 
   void _prefill(Map<String, dynamic> v) {
     _regCtrl.text = v['registrationNumber'] as String? ?? '';
+    _modelCtrl.text = v['model'] as String? ?? '';
     _capacityCtrl.text = v['capacityInTons']?.toString() ?? '';
+    _gvwCtrl.text = v['grossVehicleWeight']?.toString() ?? '';
     _yearCtrl.text = v['manufactureYear']?.toString() ?? '';
     _colorCtrl.text = v['color'] as String? ?? '';
     _chassisCtrl.text = v['chassisNumber'] as String? ?? '';
@@ -208,6 +221,10 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
 
       _agreementStart = _parseDate(v['agreementStartDate']);
       _agreementEnd = _parseDate(v['agreementEndDate']);
+      _isFinanced = (v['isFinanced'] as bool?) ?? false;
+      _financerNameCtrl.text = v['financerName'] as String? ?? '';
+      _financeStart = _parseDate(v['financeStartDate']);
+      _financeEnd = _parseDate(v['financeEndDate']);
     });
   }
 
@@ -242,8 +259,12 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
       if (_selectedStatus != null)
         body['currentStatusId'] = _selectedStatus!['id'];
 
+      if (_modelCtrl.text.trim().isNotEmpty)
+        body['model'] = _modelCtrl.text.trim();
       final cap = double.tryParse(_capacityCtrl.text.trim());
       if (cap != null) body['capacityInTons'] = cap;
+      final gvw = double.tryParse(_gvwCtrl.text.trim());
+      if (gvw != null) body['grossVehicleWeight'] = gvw;
       final yr = int.tryParse(_yearCtrl.text.trim());
       if (yr != null) body['manufactureYear'] = yr;
       if (_colorCtrl.text.trim().isNotEmpty)
@@ -293,6 +314,17 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
       if (odo != null) body['currentOdometerReading'] = odo;
       final fuel = double.tryParse(_fuelLevelCtrl.text.trim());
       if (fuel != null) body['currentFuelLevel'] = fuel;
+
+      // Finance
+      body['isFinanced'] = _isFinanced;
+      if (_isFinanced) {
+        if (_financerNameCtrl.text.trim().isNotEmpty)
+          body['financerName'] = _financerNameCtrl.text.trim();
+        if (_financeStart != null)
+          body['financeStartDate'] = _formatDate(_financeStart!);
+        if (_financeEnd != null)
+          body['financeEndDate'] = _formatDate(_financeEnd!);
+      }
 
       // Notes
       if (_notesCtrl.text.trim().isNotEmpty)
@@ -388,6 +420,12 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
                                       setState(() => _selectedBrand = b),
                                 ),
                           const SizedBox(height: 12),
+                          _field(
+                            'Model',
+                            _modelCtrl,
+                            'e.g. 407, Prima 4940, BS4',
+                          ),
+                          const SizedBox(height: 12),
                           _isLoadingFuels
                               ? const _FieldShimmer()
                               : FerosSelectField<Map<String, dynamic>>(
@@ -446,6 +484,22 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: _field(
+                                  'GVW (Tons)',
+                                  _gvwCtrl,
+                                  'e.g. 49',
+                                  inputType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _field(
                                   'Mfg. Year',
                                   _yearCtrl,
                                   'e.g. 2020',
@@ -455,6 +509,8 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
                                   ],
                                 ),
                               ),
+                              const SizedBox(width: 12),
+                              const Expanded(child: SizedBox()),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -565,7 +621,66 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
                         const SizedBox(height: 16),
                       ],
 
-                      // ── 3. GPS ────────────────────────────────────────────────
+                      // ── 3. Finance ────────────────────────────────────────────
+                      _Section(
+                        'FINANCE',
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Vehicle is financed',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 14,
+                                  color: Color(0xFF374151),
+                                ),
+                              ),
+                              Switch(
+                                value: _isFinanced,
+                                onChanged: (v) =>
+                                    setState(() => _isFinanced = v),
+                                activeColor: AppColors.navy,
+                              ),
+                            ],
+                          ),
+                          if (_isFinanced) ...[
+                            const SizedBox(height: 12),
+                            _field(
+                              'Financer Name (Bank / NBFC)',
+                              _financerNameCtrl,
+                              'e.g. HDFC Bank, Shriram Finance',
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _DatePickerField(
+                                    label: 'Finance From',
+                                    value: _financeStart,
+                                    hint: 'Select date',
+                                    onPicked: (d) =>
+                                        setState(() => _financeStart = d),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _DatePickerField(
+                                    label: 'Finance To',
+                                    value: _financeEnd,
+                                    hint: 'Select date',
+                                    onPicked: (d) =>
+                                        setState(() => _financeEnd = d),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // ── 4. GPS ────────────────────────────────────────────────
                       _Section(
                         'GPS & TRACKING',
                         children: [
