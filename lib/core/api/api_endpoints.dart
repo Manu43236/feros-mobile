@@ -15,6 +15,8 @@ class ApiEndpoints {
   static String vehicleById(id)           => '/vehicles/$id';
   static String vehicleStatus(id)         => '/vehicles/$id/status';
   static String vehicleToggleActive(id)   => '/vehicles/$id/active';
+  static String vehicleAssignDriver(id)   => '/vehicles/$id/staff/driver';
+  static String vehicleAssignCleaner(id)  => '/vehicles/$id/staff/cleaner';
   static const vehicleServices            = '/vehicle-services';
   static String vehicleServiceById(id)    => '/vehicle-services/$id';
   static String vehicleServicesByVehicle(id) => '/vehicle-services/vehicle/$id';

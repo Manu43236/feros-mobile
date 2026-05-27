@@ -289,6 +289,91 @@ class SupervisorVehicleDetailController extends GetxController {
     }
   }
 
+  // ── Staff Assignment ──────────────────────────────────────────────────────────
+  final isStaffSaving = false.obs;
+  final staffUsers    = <Map<String, dynamic>>[].obs;
+  bool _staffLoaded   = false;
+
+  Future<void> loadStaffUsers() async {
+    if (_staffLoaded) return;
+    _staffLoaded = true;
+    try {
+      final res = await _api.get(ApiEndpoints.users);
+      final all = ((res.data as Map<String, dynamic>)['data'] as List)
+          .cast<Map<String, dynamic>>();
+      // Keep only active drivers and cleaners
+      staffUsers.assignAll(all.where((u) {
+        final role = u['role'] as String? ?? '';
+        final active = u['isActive'] as bool? ?? false;
+        return active && (role == 'DRIVER' || role == 'CLEANER');
+      }).toList());
+    } catch (e) {
+      debugPrint('[VehicleDetail] load staff users error: $e');
+    }
+  }
+
+  Future<bool> assignDriver(int userId) async {
+    isStaffSaving.value = true;
+    try {
+      await _api.put(
+        ApiEndpoints.vehicleAssignDriver(vehicleId),
+        data: {'userId': userId},
+      );
+      await _fetchVehicle();
+      isStaffSaving.value = false;
+      return true;
+    } catch (e) {
+      debugPrint('[VehicleDetail] assign driver error: $e');
+      isStaffSaving.value = false;
+      return false;
+    }
+  }
+
+  Future<bool> unassignDriver() async {
+    isStaffSaving.value = true;
+    try {
+      await _api.delete(ApiEndpoints.vehicleAssignDriver(vehicleId));
+      await _fetchVehicle();
+      isStaffSaving.value = false;
+      return true;
+    } catch (e) {
+      debugPrint('[VehicleDetail] unassign driver error: $e');
+      isStaffSaving.value = false;
+      return false;
+    }
+  }
+
+  Future<bool> assignCleaner(int userId) async {
+    isStaffSaving.value = true;
+    try {
+      await _api.put(
+        ApiEndpoints.vehicleAssignCleaner(vehicleId),
+        data: {'userId': userId},
+      );
+      await _fetchVehicle();
+      isStaffSaving.value = false;
+      return true;
+    } catch (e) {
+      debugPrint('[VehicleDetail] assign cleaner error: $e');
+      isStaffSaving.value = false;
+      return false;
+    }
+  }
+
+  Future<bool> unassignCleaner() async {
+    isStaffSaving.value = true;
+    try {
+      await _api.delete(ApiEndpoints.vehicleAssignCleaner(vehicleId));
+      await _fetchVehicle();
+      isStaffSaving.value = false;
+      return true;
+    } catch (e) {
+      debugPrint('[VehicleDetail] unassign cleaner error: $e');
+      isStaffSaving.value = false;
+      return false;
+    }
+  }
+
   // ── Toggle Active (ADMIN) ─────────────────────────────────────────────────────
   final isToggling = false.obs;
 
