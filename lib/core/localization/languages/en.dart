@@ -635,7 +635,7 @@ const Map<String, String> en = {
   'lbl_marked_badge': 'Marked',
   'lbl_total_badge': 'Total',
   'lbl_today': 'Today',
-  'lbl_attendance_today': 'Attendance (Today)',
+  'lbl_attendance_today': 'Drivers & Cleaners (Today)',
   'lbl_tap_mark_att': 'Tap to mark your attendance',
   'lbl_pending_approval': 'Pending Approval',
   'lbl_take_selfie': 'Tap to take selfie',

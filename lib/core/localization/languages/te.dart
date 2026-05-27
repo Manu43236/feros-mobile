@@ -612,7 +612,7 @@ const Map<String, String> te = {
   'lbl_marked_badge': 'మార్క్ అయింది',
   'lbl_total_badge': 'టోటల్',
   'lbl_today': 'ఈరోజు',
-  'lbl_attendance_today': 'అటెండెన్స్ (ఈరోజు)',
+  'lbl_attendance_today': 'డ్రైవర్లు & క్లీనర్లు (ఈరోజు)',
   'lbl_tap_mark_att': 'అటెండెన్స్ మార్క్ చేయడానికి నొక్కండి',
   'lbl_pending_approval': 'అప్రూవల్ పెండింగ్',
   'lbl_take_selfie': 'సెల్ఫీ తీయడానికి నొక్కండి',
