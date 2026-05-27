@@ -70,14 +70,11 @@ class SupervisorOrderDetailView
         }
 
         final o = controller.order.value!;
-        final _assignableStatuses = const [
-          'PENDING',
-          'PARTIALLY_ASSIGNED',
-          'PARTIALLY_DELIVERED',
-        ];
         final _orderStatus = o['orderStatus'] as String? ?? '';
-        final _canAssignOrder = _assignableStatuses.contains(_orderStatus);
-        final _remaining = o['remainingWeight'];
+        final _remaining = (o['remainingWeight'] as num?)?.toDouble() ?? 0.0;
+        final _canAssignOrder = !const ['DELIVERED', 'CANCELLED', 'COMPLETED']
+                .contains(_orderStatus) &&
+            _remaining > 0;
         return DefaultTabController(
           length: 2,
           child: Builder(
@@ -347,7 +344,9 @@ class _OrderBanner extends StatelessWidget {
                           child: ElevatedButton(
                             onPressed: isLoading
                                 ? null
-                                : () => controller.updateStatus(s),
+                                : () => s == 'DELIVERED'
+                                    ? controller.forceDeliver()
+                                    : controller.updateStatus(s),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: isDestructive
                                   ? AppColors.error
@@ -396,10 +395,10 @@ class _OrderBanner extends StatelessWidget {
       case 'ACTIVE':
       case 'PARTIALLY_ASSIGNED':
       case 'FULLY_ASSIGNED':
-        return ['COMPLETED', 'CANCELLED'];
+        return ['CANCELLED'];
       case 'IN_TRANSIT':
       case 'PARTIALLY_DELIVERED':
-        return ['COMPLETED'];
+        return ['DELIVERED'];
       default:
         return [];
     }
@@ -409,8 +408,8 @@ class _OrderBanner extends StatelessWidget {
     switch (s) {
       case 'ACTIVE':
         return 'Activate';
-      case 'COMPLETED':
-        return 'Mark Complete';
+      case 'DELIVERED':
+        return 'Mark Delivered';
       case 'CANCELLED':
         return 'Cancel Order';
       default:
