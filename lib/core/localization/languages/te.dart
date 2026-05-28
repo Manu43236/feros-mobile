@@ -601,6 +601,7 @@ const Map<String, String> te = {
   'lbl_vehicles_billing': 'వెహికల్స్ & బిల్లింగ్',
   'lbl_lrs': 'LRలు',
   'lbl_logout_confirm': 'మీరు ఖచ్చితంగా లాగ్‌అవుట్ చేయాలనుకుంటున్నారా?',
+  'lbl_cancel_lr_confirm': 'మీరు ఖచ్చితంగా ఈ LR ని రద్దు చేయాలనుకుంటున్నారా? ఈ చర్య రద్దు చేయడం సాధ్యం కాదు.',
 
   // ── Supervisor Dashboard ───────────────────────────────────────────────────
   'lbl_assignments': 'అసైన్‌మెంట్స్',

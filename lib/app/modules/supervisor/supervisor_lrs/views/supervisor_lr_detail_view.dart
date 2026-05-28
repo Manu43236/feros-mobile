@@ -7,6 +7,7 @@ import '../../../../../core/utils/view_state.dart';
 import '../../../../../core/utils/date_utils.dart';
 import '../../../../../core/utils/string_utils.dart';
 import '../../../../../core/widgets/pulsing_dot.dart';
+import '../../../../../core/popups/feros_dialog.dart';
 import '../controllers/supervisor_lr_detail_controller.dart';
 import '../../supervisor_vehicles/bindings/supervisor_vehicle_detail_binding.dart';
 import '../../supervisor_vehicles/views/supervisor_vehicle_detail_view.dart';
@@ -714,6 +715,27 @@ class _ActionButtons extends StatelessWidget {
                       builder: (_) =>
                           _MarkDeliveredSheet(controller: controller),
                     ),
+                  ),
+                ),
+              ],
+              if (status != 'CANCELLED' && status != 'DELIVERED') ...[
+                if (status == 'CREATED' || status == 'IN_TRANSIT')
+                  const SizedBox(width: 8),
+                Expanded(
+                  child: _ActionBtn(
+                    label: 'btn_cancel'.tr,
+                    icon: Icons.cancel_outlined,
+                    color: AppColors.error,
+                    loading: busy,
+                    onTap: () async {
+                      final confirmed = await FerosDialog.confirm(
+                        title: 'btn_cancel'.tr,
+                        message: 'lbl_cancel_lr_confirm'.tr,
+                        confirmText: 'btn_cancel'.tr,
+                        isDestructive: true,
+                      );
+                      if (confirmed) controller.cancelLr();
+                    },
                   ),
                 ),
               ],

@@ -624,6 +624,7 @@ const Map<String, String> en = {
   'lbl_vehicles_billing': 'Vehicles & Billing',
   'lbl_lrs': 'LRs',
   'lbl_logout_confirm': 'Are you sure you want to logout?',
+  'lbl_cancel_lr_confirm': 'Are you sure you want to cancel this LR? This action cannot be undone.',
 
   // ── Supervisor Dashboard ───────────────────────────────────────────────────
   'lbl_assignments': 'Assignments',

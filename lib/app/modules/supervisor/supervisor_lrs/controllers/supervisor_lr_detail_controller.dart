@@ -167,6 +167,26 @@ Future<bool> markDelivered(Map<String, dynamic> data) async {
     }
   }
 
+  // ── Cancel ──────────────────────────────────────────────────────────────────
+
+  Future<bool> cancelLr() async {
+    isUpdating.value = true;
+    try {
+      final res = await _api.put(ApiEndpoints.lrById(lrId), data: {
+        'lrStatus': 'CANCELLED',
+      });
+      lr.value = (res.data as Map<String, dynamic>)['data']
+          as Map<String, dynamic>;
+      FerosSnackbar.success('LR cancelled');
+      isUpdating.value = false;
+      return true;
+    } catch (_) {
+      FerosSnackbar.error('Failed to cancel LR');
+      isUpdating.value = false;
+      return false;
+    }
+  }
+
   // ── PDF ─────────────────────────────────────────────────────────────────────
 
   Future<void> viewPdf() async {

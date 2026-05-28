@@ -391,11 +391,11 @@ class _OrderBanner extends StatelessWidget {
   List<String> _nextStatuses(String s) {
     switch (s) {
       case 'PENDING':
-        return ['ACTIVE', 'CANCELLED'];
+        return ['ACTIVE'];
       case 'ACTIVE':
       case 'PARTIALLY_ASSIGNED':
       case 'FULLY_ASSIGNED':
-        return ['CANCELLED'];
+        return [];
       case 'IN_TRANSIT':
       case 'PARTIALLY_DELIVERED':
         return ['DELIVERED'];
