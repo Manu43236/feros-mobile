@@ -607,10 +607,10 @@ class _AllocationCard extends StatelessWidget {
     final status = allocation['allocationStatus'] as String? ?? '';
     final loadDate = allocation['expectedLoadDate'] as String?;
     final delivDate = allocation['expectedDeliveryDate'] as String?;
-    final staffList =
-        (allocation['staffAllocations'] as List?)
-            ?.cast<Map<String, dynamic>>() ??
-        [];
+    final driverId   = allocation['currentDriverId']   as int?;
+    final driverName = allocation['currentDriverName'] as String?;
+    final cleanerId  = allocation['currentCleanerId']  as int?;
+    final cleanerName = allocation['currentCleanerName'] as String?;
     final isLocked = status == 'IN_TRANSIT' || status == 'DELIVERED';
 
     final statusColor = _statusColor(status);
@@ -761,7 +761,7 @@ class _AllocationCard extends StatelessWidget {
                       ),
                   ],
                 ),
-                if (staffList.isNotEmpty || !_isClosed(status)) ...[
+                if (driverId != null || cleanerId != null || !_isClosed(status)) ...[
                   const SizedBox(height: 12),
                   const Divider(height: 1, color: AppColors.border),
                   const SizedBox(height: 12),
@@ -776,48 +776,54 @@ class _AllocationCard extends StatelessWidget {
                       ),
                       const Spacer(),
                       if (!_isClosed(status)) ...[
-                        if (!staffList.any((s) => s['roleName'] == 'DRIVER'))
-                          _StaffButton(
-                            label: '+ Driver',
-                            onTap: () => _openAssignStaffSheet(
-                              context,
-                              allocationId,
-                              'DRIVER',
-                              'Driver',
-                            ),
+                        _StaffButton(
+                          label: driverId != null ? '↺ Driver' : '+ Driver',
+                          onTap: () => _openAssignStaffSheet(
+                            context,
+                            vehicleId ?? 0,
+                            'DRIVER',
+                            'Driver',
+                            isSwap: driverId != null,
                           ),
-                        if (!staffList.any((s) => s['roleName'] == 'DRIVER') &&
-                            !staffList.any((s) => s['roleName'] == 'CLEANER'))
-                          const SizedBox(width: 8),
-                        if (!staffList.any((s) => s['roleName'] == 'CLEANER'))
-                          _StaffButton(
-                            label: '+ Cleaner',
-                            onTap: () => _openAssignStaffSheet(
-                              context,
-                              allocationId,
-                              'CLEANER',
-                              'Cleaner',
-                            ),
+                        ),
+                        const SizedBox(width: 8),
+                        _StaffButton(
+                          label: cleanerId != null ? '↺ Cleaner' : '+ Cleaner',
+                          onTap: () => _openAssignStaffSheet(
+                            context,
+                            vehicleId ?? 0,
+                            'CLEANER',
+                            'Cleaner',
+                            isSwap: cleanerId != null,
                           ),
+                        ),
                       ],
                     ],
                   ),
-                  if (staffList.isNotEmpty) ...[
+                  if (driverId != null || cleanerId != null) ...[
                     const SizedBox(height: 8),
-                    ...staffList.map(
-                      (s) => _StaffRow(
-                        staff: s,
+                    if (driverId != null)
+                      _StaffRow(
+                        name: driverName ?? '—',
+                        role: 'DRIVER',
+                        vehicleId: vehicleId ?? 0,
                         controller: controller,
                         locked: isLocked,
                       ),
-                    ),
+                    if (cleanerId != null)
+                      _StaffRow(
+                        name: cleanerName ?? '—',
+                        role: 'CLEANER',
+                        vehicleId: vehicleId ?? 0,
+                        controller: controller,
+                        locked: isLocked,
+                      ),
                   ],
                 ],
 
                 // ── Create LR button ──────────────────────────────────
                 // Show when: driver assigned + no LR yet + not closed
-                if (staffList.any((s) => s['roleName'] == 'DRIVER') &&
-                    !_isClosed(status))
+                if (driverId != null && !_isClosed(status))
                   Obx(() {
                     final hasLr = controller.lrs.any((lr) {
                       final id = lr['vehicleAllocationId'];
@@ -887,10 +893,11 @@ class _AllocationCard extends StatelessWidget {
 
   void _openAssignStaffSheet(
     BuildContext context,
-    int allocationId,
+    int vehicleId,
     String role,
-    String roleLabel,
-  ) {
+    String roleLabel, {
+    bool isSwap = false,
+  }) {
     controller.fetchStaff();
     showModalBottomSheet(
       context: context,
@@ -898,9 +905,10 @@ class _AllocationCard extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => _AssignStaffSheet(
         controller: controller,
-        allocationId: allocationId,
+        vehicleId: vehicleId,
         role: role,
         roleLabel: roleLabel,
+        isSwap: isSwap,
       ),
     );
   }
@@ -942,21 +950,23 @@ class _AllocationCard extends StatelessWidget {
 
 // ── Staff Row ─────────────────────────────────────────────────────────────────
 class _StaffRow extends StatelessWidget {
-  final Map<String, dynamic> staff;
+  final String name;
+  final String role;
+  final int vehicleId;
   final SupervisorOrderDetailController controller;
   final bool locked;
   const _StaffRow({
-    required this.staff,
+    required this.name,
+    required this.role,
+    required this.vehicleId,
     required this.controller,
     this.locked = false,
   });
 
+  String get _roleLabel => role == 'DRIVER' ? 'Driver' : 'Cleaner';
+
   @override
   Widget build(BuildContext context) {
-    final staffAllocationId = staff['id'] as int? ?? 0;
-    final name = staff['userName'] as String? ?? '—';
-    final role = staff['roleName'] as String? ?? '';
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -981,20 +991,20 @@ class _StaffRow extends StatelessWidget {
                   name,
                   style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
                 ),
-                if (role.isNotEmpty)
-                  Text(
-                    _roleLabel(role),
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.mutedText,
-                    ),
+                Text(
+                  _roleLabel,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.mutedText,
                   ),
+                ),
               ],
             ),
           ),
           if (!locked)
             Obx(() {
-              final isUnassigning =
-                  controller.unassigningStaffId.value == staffAllocationId;
+              final isUnassigning = role == 'DRIVER'
+                  ? controller.isUnassigningDriver.value
+                  : controller.isUnassigningCleaner.value;
               if (isUnassigning) {
                 return const SizedBox(
                   width: 16,
@@ -1008,12 +1018,18 @@ class _StaffRow extends StatelessWidget {
               return GestureDetector(
                 onTap: () async {
                   final confirmed = await FerosDialog.confirm(
-                    title: 'Unassign ${_roleLabel(role)}',
+                    title: 'Unassign $_roleLabel',
                     message: 'Remove $name from this vehicle?',
                     confirmText: 'Unassign',
                     isDestructive: true,
                   );
-                  if (confirmed) controller.unassignStaff(staffAllocationId);
+                  if (confirmed) {
+                    if (role == 'DRIVER') {
+                      controller.unassignDriver(vehicleId);
+                    } else {
+                      controller.unassignCleaner(vehicleId);
+                    }
+                  }
                 },
                 child: const Icon(
                   Icons.delete_outline,
@@ -1025,21 +1041,6 @@ class _StaffRow extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _roleLabel(String r) {
-    switch (r) {
-      case 'DRIVER':
-        return 'Driver';
-      case 'CLEANER':
-        return 'Cleaner';
-      case 'SUPERVISOR':
-        return 'Supervisor';
-      case 'SERVICE_MEN':
-        return 'Service Men';
-      default:
-        return r;
-    }
   }
 }
 
@@ -1362,15 +1363,18 @@ class _AssignVehicleSheetState extends State<_AssignVehicleSheet> {
 // ── Assign Staff Bottom Sheet ─────────────────────────────────────────────────
 class _AssignStaffSheet extends StatefulWidget {
   final SupervisorOrderDetailController controller;
-  final int allocationId;
+  final int vehicleId;
   final String role;
   final String roleLabel;
+  // Whether the vehicle already has this role filled (swap scenario)
+  final bool isSwap;
 
   const _AssignStaffSheet({
     required this.controller,
-    required this.allocationId,
+    required this.vehicleId,
     required this.role,
     required this.roleLabel,
+    this.isSwap = false,
   });
 
   @override
@@ -1379,15 +1383,7 @@ class _AssignStaffSheet extends StatefulWidget {
 
 class _AssignStaffSheetState extends State<_AssignStaffSheet> {
   Map<String, dynamic>? _selectedStaff;
-  final _remarksCtrl = TextEditingController();
-  DateTime? _startDate, _endDate;
   final Map<String, String> _errors = {};
-
-  @override
-  void dispose() {
-    _remarksCtrl.dispose();
-    super.dispose();
-  }
 
   List<Map<String, dynamic>> get _staffList => widget.role == 'DRIVER'
       ? widget.controller.drivers
@@ -1406,15 +1402,16 @@ class _AssignStaffSheetState extends State<_AssignStaffSheet> {
 
   Future<void> _submit() async {
     if (!_validate()) return;
-    final success = await widget.controller.assignStaff(
-      vehicleAllocationId: widget.allocationId,
-      userId: _selectedStaff!['id'] as int,
-      expectedStartDate: _startDate?.toIso8601String().substring(0, 10),
-      expectedEndDate: _endDate?.toIso8601String().substring(0, 10),
-      remarks: _remarksCtrl.text.trim().isEmpty
-          ? null
-          : _remarksCtrl.text.trim(),
-    );
+    final userId = _selectedStaff!['id'] as int;
+    final success = widget.role == 'DRIVER'
+        ? await widget.controller.assignDriver(
+            vehicleId: widget.vehicleId,
+            userId: userId,
+          )
+        : await widget.controller.assignCleaner(
+            vehicleId: widget.vehicleId,
+            userId: userId,
+          );
     if (success && mounted) Navigator.of(context).pop();
   }
 
@@ -1424,6 +1421,9 @@ class _AssignStaffSheetState extends State<_AssignStaffSheet> {
     final icon = widget.role == 'DRIVER'
         ? Icons.person_outlined
         : Icons.cleaning_services_outlined;
+    final isLoading = widget.role == 'DRIVER'
+        ? widget.controller.isAssigningDriver
+        : widget.controller.isAssigningCleaner;
 
     return Container(
       padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + bottomInset),
@@ -1461,7 +1461,40 @@ class _AssignStaffSheetState extends State<_AssignStaffSheet> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+          // ── Swap warning ─────────────────────────────────────────
+          if (widget.isSwap) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.orange.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.orange.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.swap_horiz_rounded,
+                    size: 16,
+                    color: AppColors.orange,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'This will replace the current ${widget.roleLabel.toLowerCase()} on this vehicle.',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.orange,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
 
           // ── Staff selector ───────────────────────────────────────
           Obx(
@@ -1481,73 +1514,6 @@ class _AssignStaffSheetState extends State<_AssignStaffSheet> {
                         'No ${widget.roleLabel.toLowerCase()}s available',
                   ),
           ),
-          const SizedBox(height: 16),
-
-          // ── Start Date + End Date ────────────────────────────────
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _SheetLabel('Start Date'),
-                    const SizedBox(height: 6),
-                    _SheetDateField(
-                      value: _startDate,
-                      hint: 'Pick date',
-                      onPicked: (d) => setState(() => _startDate = d),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _SheetLabel('End Date'),
-                    const SizedBox(height: 6),
-                    _SheetDateField(
-                      value: _endDate,
-                      hint: 'Pick date',
-                      onPicked: (d) => setState(() => _endDate = d),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // ── Remarks ──────────────────────────────────────────────
-          const _SheetLabel('Remarks'),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _remarksCtrl,
-            style: AppTextStyles.body,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: AppColors.background,
-              hintText: 'Optional remarks...',
-              hintStyle: AppTextStyles.hint,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 14,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.border),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
-              ),
-            ),
-          ),
           const SizedBox(height: 24),
 
           // ── Submit ───────────────────────────────────────────────
@@ -1556,9 +1522,7 @@ class _AssignStaffSheetState extends State<_AssignStaffSheet> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: widget.controller.isAssigningStaff.value
-                    ? null
-                    : _submit,
+                onPressed: isLoading.value ? null : _submit,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.navy,
                   foregroundColor: Colors.white,
@@ -1567,7 +1531,7 @@ class _AssignStaffSheetState extends State<_AssignStaffSheet> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: widget.controller.isAssigningStaff.value
+                child: isLoading.value
                     ? const SizedBox(
                         width: 22,
                         height: 22,

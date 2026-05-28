@@ -24,11 +24,13 @@ class SupervisorOrderDetailController extends GetxController {
   final unassigningId     = Rxn<int>();
 
   // ── Staff assignment ───────────────────────────────────────────────────────
-  final drivers           = <Map<String, dynamic>>[].obs;
-  final cleaners          = <Map<String, dynamic>>[].obs;
-  final isLoadingStaff    = false.obs;
-  final isAssigningStaff  = false.obs;
-  final unassigningStaffId = Rxn<int>();
+  final drivers             = <Map<String, dynamic>>[].obs;
+  final cleaners            = <Map<String, dynamic>>[].obs;
+  final isLoadingStaff      = false.obs;
+  final isAssigningDriver   = false.obs;
+  final isAssigningCleaner  = false.obs;
+  final isUnassigningDriver = false.obs;
+  final isUnassigningCleaner = false.obs;
 
   late final int orderId;
 
@@ -139,48 +141,62 @@ class SupervisorOrderDetailController extends GetxController {
     isLoadingStaff.value = false;
   }
 
-  // ── Assign staff ───────────────────────────────────────────────────────────
-  Future<bool> assignStaff({
-    required int    vehicleAllocationId,
-    required int    userId,
-    String? expectedStartDate,
-    String? expectedEndDate,
-    String? remarks,
-  }) async {
-    isAssigningStaff.value = true;
+  // ── Assign driver to vehicle ───────────────────────────────────────────────
+  Future<bool> assignDriver({ required int vehicleId, required int userId }) async {
+    isAssigningDriver.value = true;
     try {
-      final body = <String, dynamic>{
-        'vehicleAllocationId': vehicleAllocationId,
-        'userId':              userId,
-      };
-      if (expectedStartDate != null) body['expectedStartDate'] = expectedStartDate;
-      if (expectedEndDate != null)   body['expectedEndDate']   = expectedEndDate;
-      if (remarks != null)           body['remarks']           = remarks;
-
-      await _api.post(ApiEndpoints.assignStaff(orderId), data: body);
-      FerosSnackbar.success('Staff assigned successfully');
+      await _api.put(ApiEndpoints.vehicleAssignDriver(vehicleId), data: {'userId': userId});
+      FerosSnackbar.success('Driver assigned successfully');
       fetchAll();
       return true;
     } catch (e) {
       FerosSnackbar.error(e.toString());
       return false;
     } finally {
-      isAssigningStaff.value = false;
+      isAssigningDriver.value = false;
     }
   }
 
-  // ── Unassign staff ─────────────────────────────────────────────────────────
-  Future<void> unassignStaff(int staffAllocationId) async {
-    unassigningStaffId.value = staffAllocationId;
+  // ── Assign cleaner to vehicle ──────────────────────────────────────────────
+  Future<bool> assignCleaner({ required int vehicleId, required int userId }) async {
+    isAssigningCleaner.value = true;
     try {
-      await _api.delete(
-          ApiEndpoints.unassignStaff(orderId, staffAllocationId));
-      FerosSnackbar.success('Staff unassigned');
+      await _api.put(ApiEndpoints.vehicleAssignCleaner(vehicleId), data: {'userId': userId});
+      FerosSnackbar.success('Cleaner assigned successfully');
+      fetchAll();
+      return true;
+    } catch (e) {
+      FerosSnackbar.error(e.toString());
+      return false;
+    } finally {
+      isAssigningCleaner.value = false;
+    }
+  }
+
+  // ── Unassign driver from vehicle ───────────────────────────────────────────
+  Future<void> unassignDriver(int vehicleId) async {
+    isUnassigningDriver.value = true;
+    try {
+      await _api.delete(ApiEndpoints.vehicleAssignDriver(vehicleId));
+      FerosSnackbar.success('Driver unassigned');
       fetchAll();
     } catch (e) {
       FerosSnackbar.error(e.toString());
     }
-    unassigningStaffId.value = null;
+    isUnassigningDriver.value = false;
+  }
+
+  // ── Unassign cleaner from vehicle ──────────────────────────────────────────
+  Future<void> unassignCleaner(int vehicleId) async {
+    isUnassigningCleaner.value = true;
+    try {
+      await _api.delete(ApiEndpoints.vehicleAssignCleaner(vehicleId));
+      FerosSnackbar.success('Cleaner unassigned');
+      fetchAll();
+    } catch (e) {
+      FerosSnackbar.error(e.toString());
+    }
+    isUnassigningCleaner.value = false;
   }
 
   // ── Create LR ──────────────────────────────────────────────────────────────
