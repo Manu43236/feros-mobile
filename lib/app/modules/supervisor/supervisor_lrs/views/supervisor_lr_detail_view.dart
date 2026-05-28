@@ -718,9 +718,8 @@ class _ActionButtons extends StatelessWidget {
                   ),
                 ),
               ],
-              if (status != 'CANCELLED' && status != 'DELIVERED') ...[
-                if (status == 'CREATED' || status == 'IN_TRANSIT')
-                  const SizedBox(width: 8),
+              if (status == 'CREATED') ...[
+                const SizedBox(width: 8),
                 Expanded(
                   child: _ActionBtn(
                     label: 'btn_cancel'.tr,
