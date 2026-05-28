@@ -151,6 +151,28 @@ class StoreKeeperProfileView extends GetView<StoreKeeperProfileController> {
             ),
           ),
         ),
+        const SizedBox(height: 12),
+
+        // ── Delete Account ──────────────────────────────────────
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => _showDeleteAccountDialog(context),
+            icon: const Icon(Icons.delete_outline, size: 18),
+            label: const Text('Delete Account',
+                style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.error,
+              side: const BorderSide(color: AppColors.error),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ),
         const SizedBox(height: 24),
 
         // ── App version ─────────────────────────────────────────
@@ -161,6 +183,55 @@ class StoreKeeperProfileView extends GetView<StoreKeeperProfileController> {
         ),
         const SizedBox(height: 8),
       ],
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded,
+                color: AppColors.error, size: 22),
+            const SizedBox(width: 8),
+            const Text('Delete Account',
+                style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16)),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to delete your account?\n\n'
+          'Your admin will be notified and your account will be permanently deleted within 72 hours.',
+          style: TextStyle(fontFamily: 'Inter', fontSize: 14, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel',
+                style: TextStyle(
+                    fontFamily: 'Inter',
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            onPressed: () => Get.back(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Confirm',
+                style: TextStyle(
+                    fontFamily: 'Inter', fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
     );
   }
 }
