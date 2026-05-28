@@ -298,14 +298,18 @@ class SupervisorVehicleDetailController extends GetxController {
     if (_staffLoaded) return;
     _staffLoaded = true;
     try {
-      final res = await _api.get(ApiEndpoints.users);
+      final res = await _api.get(
+        ApiEndpoints.users,
+        params: {'hasAttendanceToday': true},
+      );
       final all = ((res.data as Map<String, dynamic>)['data'] as List)
           .cast<Map<String, dynamic>>();
-      // Keep only active drivers and cleaners
+      // Keep only active, unassigned drivers and cleaners with today's attendance
       staffUsers.assignAll(all.where((u) {
-        final role = u['role'] as String? ?? '';
-        final active = u['isActive'] as bool? ?? false;
-        return active && (role == 'DRIVER' || role == 'CLEANER');
+        final role     = u['role']       as String? ?? '';
+        final active   = u['isActive']   as bool?   ?? false;
+        final assigned = u['isAssigned'] as bool?   ?? false;
+        return active && !assigned && (role == 'DRIVER' || role == 'CLEANER');
       }).toList());
     } catch (e) {
       debugPrint('[VehicleDetail] load staff users error: $e');

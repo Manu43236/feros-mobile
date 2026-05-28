@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
+import '../../../../../core/popups/feros_snackbar.dart';
 import '../controllers/supervisor_vehicles_controller.dart';
 import '../bindings/supervisor_vehicle_detail_binding.dart';
 import 'supervisor_vehicle_detail_view.dart';
@@ -198,7 +199,10 @@ class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
                 child: ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                   itemCount: list.length,
-                  itemBuilder: (_, i) => _VehicleCard(vehicle: list[i]),
+                  itemBuilder: (_, i) => _VehicleCard(
+                    vehicle: list[i],
+                    controller: controller,
+                  ),
                 ),
               );
             }),
@@ -212,7 +216,8 @@ class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
 // ── Vehicle Card ──────────────────────────────────────────────────────────────
 class _VehicleCard extends StatelessWidget {
   final Map<String, dynamic> vehicle;
-  const _VehicleCard({required this.vehicle});
+  final SupervisorVehiclesController controller;
+  const _VehicleCard({required this.vehicle, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -226,6 +231,11 @@ class _VehicleCard extends StatelessWidget {
     final statusType = vehicle['currentStatusType'] as String? ?? '';
     final capacity = vehicle['capacityInTons'];
     final isActive = vehicle['active'] as bool? ?? true;
+
+    final driverId    = vehicle['currentDriverId']   != null ? (vehicle['currentDriverId']   as num).toInt() : null;
+    final driverName  = vehicle['currentDriverName']  as String?;
+    final cleanerId   = vehicle['currentCleanerId']  != null ? (vehicle['currentCleanerId']  as num).toInt() : null;
+    final cleanerName = vehicle['currentCleanerName'] as String?;
 
     final rcExp = vehicle['rcExpiryDate'] as String?;
     final insExp = vehicle['insuranceExpiryDate'] as String?;
@@ -407,6 +417,77 @@ class _VehicleCard extends StatelessWidget {
                       ],
                     ),
                   ],
+                  // ── Driver / Cleaner ──────────────────────────────
+                  const SizedBox(height: 10),
+                  const Divider(height: 1, color: AppColors.border),
+                  const SizedBox(height: 4),
+                  Obx(() {
+                    final saving = controller.savingVehicleId.value == intId;
+                    if (saving) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 10),
+                        child: Center(
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.navy,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    return Column(
+                      children: [
+                        _StaffRowTile(
+                          role: 'Driver',
+                          name: driverName,
+                          color: const Color(0xFF2563EB),
+                          onAssign: () => _AssignStaffSheet.show(
+                            context,
+                            controller: controller,
+                            vehicleId: intId,
+                            role: 'DRIVER',
+                            currentId: driverId,
+                          ),
+                          onUnassign: driverId != null
+                              ? () async {
+                                  final ok = await controller.unassignDriver(intId);
+                                  if (ok) {
+                                    FerosSnackbar.success('Driver removed');
+                                  } else {
+                                    FerosSnackbar.error('Failed to remove driver');
+                                  }
+                                }
+                              : null,
+                        ),
+                        const Divider(height: 1, indent: 10, color: AppColors.border),
+                        _StaffRowTile(
+                          role: 'Cleaner',
+                          name: cleanerName,
+                          color: const Color(0xFF7C3AED),
+                          onAssign: () => _AssignStaffSheet.show(
+                            context,
+                            controller: controller,
+                            vehicleId: intId,
+                            role: 'CLEANER',
+                            currentId: cleanerId,
+                          ),
+                          onUnassign: cleanerId != null
+                              ? () async {
+                                  final ok = await controller.unassignCleaner(intId);
+                                  if (ok) {
+                                    FerosSnackbar.success('Cleaner removed');
+                                  } else {
+                                    FerosSnackbar.error('Failed to remove cleaner');
+                                  }
+                                }
+                              : null,
+                        ),
+                      ],
+                    );
+                  }),
                 ],
               ),
             ),
@@ -460,6 +541,305 @@ class _InfoChip extends StatelessWidget {
           style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
         ),
       ],
+    );
+  }
+}
+
+// ── Staff Row Tile ────────────────────────────────────────────────────────────
+class _StaffRowTile extends StatelessWidget {
+  final String role;
+  final String? name;
+  final Color color;
+  final VoidCallback onAssign;
+  final Future<void> Function()? onUnassign;
+  const _StaffRowTile({
+    required this.role,
+    required this.color,
+    required this.onAssign,
+    this.name,
+    this.onUnassign,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              role == 'Driver' ? Icons.drive_eta_outlined : Icons.cleaning_services_outlined,
+              size: 14,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  role,
+                  style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                ),
+                Text(
+                  name ?? 'Not assigned',
+                  style: AppTextStyles.body.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: name != null ? AppColors.bodyText : AppColors.mutedText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (onUnassign != null)
+            IconButton(
+              onPressed: onUnassign,
+              icon: const Icon(Icons.person_remove_outlined, size: 16),
+              color: AppColors.error,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            ),
+          const SizedBox(width: 4),
+          TextButton(
+            onPressed: onAssign,
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.navy,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+                side: BorderSide(color: AppColors.navy.withValues(alpha: 0.3)),
+              ),
+            ),
+            child: Text(
+              name != null ? 'Change' : 'Assign',
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Assign Staff Sheet (vehicle list) ─────────────────────────────────────────
+class _AssignStaffSheet extends StatefulWidget {
+  final SupervisorVehiclesController controller;
+  final int vehicleId;
+  final String role;
+  final int? currentId;
+  const _AssignStaffSheet({
+    required this.controller,
+    required this.vehicleId,
+    required this.role,
+    this.currentId,
+  });
+
+  static Future<void> show(
+    BuildContext context, {
+    required SupervisorVehiclesController controller,
+    required int vehicleId,
+    required String role,
+    int? currentId,
+  }) async {
+    await controller.loadStaffUsers();
+    if (!context.mounted) return;
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _AssignStaffSheet(
+        controller: controller,
+        vehicleId: vehicleId,
+        role: role,
+        currentId: currentId,
+      ),
+    );
+  }
+
+  @override
+  State<_AssignStaffSheet> createState() => _AssignStaffSheetState();
+}
+
+class _AssignStaffSheetState extends State<_AssignStaffSheet> {
+  final _search = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> get _filtered {
+    final list = widget.controller.staffUsers
+        .where((u) => (u['role'] as String? ?? '') == widget.role)
+        .toList();
+    if (_query.isEmpty) return list;
+    final q = _query.toLowerCase();
+    return list
+        .where((u) =>
+            (u['name'] as String? ?? '').toLowerCase().contains(q) ||
+            (u['phone'] as String? ?? '').contains(q))
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final label = widget.role == 'DRIVER' ? 'Driver' : 'Cleaner';
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      builder: (_, scrollController) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Text(
+                    'Assign $label',
+                    style: AppTextStyles.heading3.copyWith(color: AppColors.navy),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, size: 20),
+                    color: AppColors.mutedText,
+                    padding: EdgeInsets.zero,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _search,
+                onChanged: (v) => setState(() => _query = v),
+                style: AppTextStyles.body,
+                decoration: InputDecoration(
+                  hintText: 'Search by name or phone…',
+                  hintStyle: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+                  prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.mutedText),
+                  isDense: true,
+                  filled: true,
+                  fillColor: AppColors.background,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Divider(height: 1, color: AppColors.border),
+            Expanded(
+              child: Obx(() {
+                if (widget.controller.isLoadingStaff.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.navy),
+                  );
+                }
+                final users = _filtered;
+                if (users.isEmpty) {
+                  return Center(
+                    child: Text(
+                      _query.isEmpty
+                          ? 'No $label available today'
+                          : 'No results for "$_query"',
+                      style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+                    ),
+                  );
+                }
+                return ListView.separated(
+                  controller: scrollController,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: users.length,
+                  separatorBuilder: (_, __) =>
+                      const Divider(height: 1, indent: 56, color: AppColors.border),
+                  itemBuilder: (_, i) {
+                    final u = users[i];
+                    final uid = (u['id'] as num).toInt();
+                    final isSelected = uid == widget.currentId;
+                    return ListTile(
+                      leading: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: AppColors.navy.withValues(alpha: 0.1),
+                        child: Text(
+                          (u['name'] as String? ?? '?')[0].toUpperCase(),
+                          style: AppTextStyles.label.copyWith(color: AppColors.navy),
+                        ),
+                      ),
+                      title: Text(
+                        u['name'] as String? ?? '—',
+                        style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: Text(
+                        u['phone'] as String? ?? '',
+                        style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                      ),
+                      trailing: isSelected
+                          ? const Icon(Icons.check_circle, color: AppColors.success, size: 20)
+                          : null,
+                      onTap: () async {
+                        Navigator.pop(context);
+                        final bool ok;
+                        if (widget.role == 'DRIVER') {
+                          ok = await widget.controller.assignDriver(widget.vehicleId, uid);
+                        } else {
+                          ok = await widget.controller.assignCleaner(widget.vehicleId, uid);
+                        }
+                        if (ok) {
+                          FerosSnackbar.success('${u['name']} assigned as $label');
+                        } else {
+                          FerosSnackbar.error('Failed to assign $label');
+                        }
+                      },
+                    );
+                  },
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

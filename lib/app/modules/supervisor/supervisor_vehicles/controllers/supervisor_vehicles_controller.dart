@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
@@ -11,6 +12,12 @@ class SupervisorVehiclesController extends GetxController {
   final vehicles       = <Map<String, dynamic>>[].obs;
   final searchQuery    = ''.obs;
   final selectedStatus = 'ALL'.obs;
+
+  // ── Staff assignment ──────────────────────────────────────────────────────
+  final staffUsers      = <Map<String, dynamic>>[].obs;
+  final isLoadingStaff  = false.obs;
+  final savingVehicleId = Rxn<int>();
+  bool _staffLoaded     = false;
 
   /// Distinct status names present in the fetched list
   List<String> get statusOptions {
@@ -75,5 +82,89 @@ class SupervisorVehiclesController extends GetxController {
     }
 
     vehicles.assignAll(list);
+  }
+
+  // ── Load available staff (today's attendance, not yet assigned) ───────────
+  Future<void> loadStaffUsers() async {
+    if (_staffLoaded) return;
+    _staffLoaded = true;
+    isLoadingStaff.value = true;
+    try {
+      final res = await _api.get(
+        ApiEndpoints.users,
+        params: {'hasAttendanceToday': true},
+      );
+      final all = ((res.data as Map<String, dynamic>)['data'] as List)
+          .cast<Map<String, dynamic>>();
+      staffUsers.assignAll(all.where((u) {
+        final role     = u['role']       as String? ?? '';
+        final active   = u['isActive']   as bool?   ?? false;
+        final assigned = u['isAssigned'] as bool?   ?? false;
+        return active && !assigned && (role == 'DRIVER' || role == 'CLEANER');
+      }).toList());
+    } catch (e) {
+      debugPrint('[Vehicles] load staff error: $e');
+    }
+    isLoadingStaff.value = false;
+  }
+
+  Future<bool> assignDriver(int vehicleId, int userId) async {
+    savingVehicleId.value = vehicleId;
+    try {
+      await _api.put(ApiEndpoints.vehicleAssignDriver(vehicleId), data: {'userId': userId});
+      _staffLoaded = false; // allow reload so newly assigned person is removed from list
+      await fetchVehicles();
+      return true;
+    } catch (e) {
+      debugPrint('[Vehicles] assign driver error: $e');
+      return false;
+    } finally {
+      savingVehicleId.value = null;
+    }
+  }
+
+  Future<bool> unassignDriver(int vehicleId) async {
+    savingVehicleId.value = vehicleId;
+    try {
+      await _api.delete(ApiEndpoints.vehicleAssignDriver(vehicleId));
+      _staffLoaded = false;
+      await fetchVehicles();
+      return true;
+    } catch (e) {
+      debugPrint('[Vehicles] unassign driver error: $e');
+      return false;
+    } finally {
+      savingVehicleId.value = null;
+    }
+  }
+
+  Future<bool> assignCleaner(int vehicleId, int userId) async {
+    savingVehicleId.value = vehicleId;
+    try {
+      await _api.put(ApiEndpoints.vehicleAssignCleaner(vehicleId), data: {'userId': userId});
+      _staffLoaded = false;
+      await fetchVehicles();
+      return true;
+    } catch (e) {
+      debugPrint('[Vehicles] assign cleaner error: $e');
+      return false;
+    } finally {
+      savingVehicleId.value = null;
+    }
+  }
+
+  Future<bool> unassignCleaner(int vehicleId) async {
+    savingVehicleId.value = vehicleId;
+    try {
+      await _api.delete(ApiEndpoints.vehicleAssignCleaner(vehicleId));
+      _staffLoaded = false;
+      await fetchVehicles();
+      return true;
+    } catch (e) {
+      debugPrint('[Vehicles] unassign cleaner error: $e');
+      return false;
+    } finally {
+      savingVehicleId.value = null;
+    }
   }
 }
