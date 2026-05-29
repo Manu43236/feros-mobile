@@ -116,6 +116,7 @@ class ApiEndpoints {
   static const payroll                    = '/payroll';
   static String payrollById(id)           => '/payroll/$id';
   static String approvePayroll(id)        => '/payroll/$id/approve';
+  static String payslipPdf(id)            => '/payroll/$id/payslip-pdf';
   static const payrollAdvances            = '/payroll/advances';
   static String userPayroll(id)           => '/payroll/user/$id';
   static String userAdvances(id)          => '/payroll/advances/user/$id';
@@ -137,7 +138,6 @@ class ApiEndpoints {
   // Masters — Tenant
   static const routes          = '/masters/tenant/routes';
   static const designations    = '/masters/tenant/designations';
-  static const payRates        = '/masters/tenant/pay-rates';
   static const vehicleStatuses = '/masters/tenant/vehicle-statuses';
   static const chargeTypes     = '/masters/tenant/charge-types';
   static const clientTypes     = '/masters/tenant/client-types';

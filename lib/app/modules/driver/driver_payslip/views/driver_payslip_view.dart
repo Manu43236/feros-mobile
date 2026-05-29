@@ -1,9 +1,16 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
+import '../../../../../core/api/api_client.dart';
+import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/pdf_viewer/pdf_viewer_binding.dart';
+import '../../../../../core/pdf_viewer/pdf_viewer_view.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/widgets/empty_state.dart';
 import '../../../../../core/widgets/shimmer_card.dart';
+import '../../../../../core/popups/feros_snackbar.dart';
 import '../controllers/driver_payslip_controller.dart';
 
 class DriverPayslipView extends GetView<DriverPayslipController> {
@@ -65,6 +72,30 @@ class _PayslipCard extends StatefulWidget {
 
 class _PayslipCardState extends State<_PayslipCard> {
   bool _expanded = false;
+  bool _pdfLoading = false;
+
+  Future<void> _viewPayslipPdf() async {
+    final id = (widget.payslip['id'] as num?)?.toInt();
+    if (id == null || _pdfLoading) return;
+    setState(() => _pdfLoading = true);
+    try {
+      final api   = Get.find<ApiClient>();
+      final bytes = await api.getBytes(ApiEndpoints.payslipPdf(id));
+      final dir   = await getTemporaryDirectory();
+      final file  = File('${dir.path}/payslip_$id.pdf');
+      await file.writeAsBytes(bytes);
+      await Get.to(
+        () => const PdfViewerView(),
+        binding: PdfViewerBinding(),
+        arguments: {'file': file, 'title': 'Payslip', 'subtitle': ''},
+        transition: Transition.cupertino,
+      );
+    } catch (_) {
+      FerosSnackbar.error('Could not load payslip PDF');
+    } finally {
+      if (mounted) setState(() => _pdfLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -146,6 +177,41 @@ class _PayslipCardState extends State<_PayslipCard> {
                     '- ₹${advanceDeductions.toStringAsFixed(2)}'),
               const Divider(height: 16),
               _row('lbl_net_pay'.tr, '₹${netPay.toStringAsFixed(2)}', bold: true),
+            ],
+            if (status == 'PAID') ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _pdfLoading ? null : _viewPayslipPdf,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.navy,
+                    side: const BorderSide(color: AppColors.navy),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  icon: _pdfLoading
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.navy,
+                          ),
+                        )
+                      : const Icon(Icons.picture_as_pdf_outlined, size: 16),
+                  label: Text(
+                    _pdfLoading ? 'Loading…' : 'View Payslip',
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
             ],
             const SizedBox(height: 4),
             Icon(

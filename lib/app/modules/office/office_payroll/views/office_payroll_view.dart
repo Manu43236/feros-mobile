@@ -1,5 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
+import '../../../../../core/api/api_client.dart';
+import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/pdf_viewer/pdf_viewer_binding.dart';
+import '../../../../../core/pdf_viewer/pdf_viewer_view.dart';
 import '../../../../../core/services/auth_service.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
@@ -282,7 +288,7 @@ class _PayrollsTab extends StatelessWidget {
 }
 
 // ── Payroll Card ───────────────────────────────────────────────────────────────
-class _PayrollCard extends StatelessWidget {
+class _PayrollCard extends StatefulWidget {
   final Map<String, dynamic> p;
   final bool isAdmin;
   final VoidCallback onApprove;
@@ -295,17 +301,52 @@ class _PayrollCard extends StatelessWidget {
   });
 
   @override
+  State<_PayrollCard> createState() => _PayrollCardState();
+}
+
+class _PayrollCardState extends State<_PayrollCard> {
+  bool _pdfLoading = false;
+
+  Future<void> _viewPayslipPdf() async {
+    final id = (widget.p['id'] as num?)?.toInt();
+    if (id == null || _pdfLoading) return;
+    setState(() => _pdfLoading = true);
+    try {
+      final api   = Get.find<ApiClient>();
+      final bytes = await api.getBytes(ApiEndpoints.payslipPdf(id));
+      final dir   = await getTemporaryDirectory();
+      final file  = File('${dir.path}/payslip_$id.pdf');
+      await file.writeAsBytes(bytes);
+      await Get.to(
+        () => const PdfViewerView(),
+        binding: PdfViewerBinding(),
+        arguments: {
+          'file': file,
+          'title': 'Payslip',
+          'subtitle': widget.p['userName'] as String? ?? '',
+        },
+        transition: Transition.cupertino,
+      );
+    } catch (_) {
+      FerosSnackbar.error('Could not load payslip PDF');
+    } finally {
+      if (mounted) setState(() => _pdfLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final name = p['userName'] as String? ?? '—';
-    final role = p['roleName'] as String? ?? '';
-    final from = p['payCycleStartDate'] as String? ?? '';
-    final to = p['payCycleEndDate'] as String? ?? '';
-    final net = p['netPay'] as num? ?? 0;
-    final gross = p['grossPay'] as num? ?? 0;
+    final p      = widget.p;
+    final name   = p['userName'] as String? ?? '—';
+    final role   = p['roleName'] as String? ?? '';
+    final from   = p['payCycleStartDate'] as String? ?? '';
+    final to     = p['payCycleEndDate'] as String? ?? '';
+    final net    = p['netPay'] as num? ?? 0;
+    final gross  = p['grossPay'] as num? ?? 0;
     final deduct = p['totalDeductions'] as num? ?? 0;
     final status = p['payrollStatus'] as String? ?? '';
     final present = (p['presentDays'] as num?)?.toInt() ?? 0;
-    final total = (p['totalDays'] as num?)?.toInt() ?? 0;
+    final total   = (p['totalDays'] as num?)?.toInt() ?? 0;
 
     final statusColor = switch (status) {
       'APPROVED' => AppColors.navy,
@@ -398,13 +439,13 @@ class _PayrollCard extends StatelessWidget {
               ),
             ],
           ),
-          if (isAdmin && status == 'DRAFT') ...[
+          if (widget.isAdmin && status == 'DRAFT') ...[
             const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: onCancel,
+                    onPressed: widget.onCancel,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.error,
                       side: const BorderSide(color: AppColors.error),
@@ -426,7 +467,7 @@ class _PayrollCard extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: onApprove,
+                    onPressed: widget.onApprove,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.success,
                       foregroundColor: Colors.white,
@@ -446,6 +487,41 @@ class _PayrollCard extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          ],
+          if (status == 'PAID') ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _pdfLoading ? null : _viewPayslipPdf,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.navy,
+                  side: const BorderSide(color: AppColors.navy),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                icon: _pdfLoading
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.navy,
+                        ),
+                      )
+                    : const Icon(Icons.picture_as_pdf_outlined, size: 16),
+                label: Text(
+                  _pdfLoading ? 'Loading…' : 'View Payslip',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
             ),
           ],
         ],
@@ -742,9 +818,14 @@ class _GeneratePayrollSheetState extends State<_GeneratePayrollSheet> {
 
   Future<void> _submit() async {
     final userId = int.tryParse(_userIdCtr.text.trim());
-    final rate = double.tryParse(_rateCtr.text.trim());
-    if (userId == null || rate == null) {
-      FerosSnackbar.error('Fill in all required fields correctly');
+    if (userId == null) {
+      FerosSnackbar.error('Enter a valid Staff ID');
+      return;
+    }
+    final rateText = _rateCtr.text.trim();
+    final rate = rateText.isNotEmpty ? double.tryParse(rateText) : null;
+    if (rateText.isNotEmpty && rate == null) {
+      FerosSnackbar.error('Enter a valid daily rate');
       return;
     }
     setState(() => _loading = true);
@@ -753,7 +834,7 @@ class _GeneratePayrollSheetState extends State<_GeneratePayrollSheet> {
         'userId': userId,
         'payCycleStartDate': _fmt(_from),
         'payCycleEndDate': _fmt(_to),
-        'dailyRate': rate,
+        if (rate != null) 'dailyRate': rate,
         if (_remarksCtr.text.trim().isNotEmpty)
           'remarks': _remarksCtr.text.trim(),
       });
@@ -828,11 +909,11 @@ class _GeneratePayrollSheetState extends State<_GeneratePayrollSheet> {
             ),
             const SizedBox(height: 12),
 
-            _label('Daily Rate (₹) *'),
+            _label('Daily Rate (₹)'),
             const SizedBox(height: 6),
             _field(
               _rateCtr,
-              'e.g. 500',
+              'Leave blank to use designation rate',
               type: const TextInputType.numberWithOptions(decimal: true),
             ),
             const SizedBox(height: 12),
