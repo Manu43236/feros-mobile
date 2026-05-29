@@ -55,7 +55,9 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
       final upcoming = controller.upcomingTrips;
       final nextReady = upcoming.firstWhereOrNull(
           (t) => t['lrStatus'] == 'WEIGHT_LOADED') ?? upcoming.firstOrNull;
-      final attended = controller.isAttendanceMarked.value;
+      final attended        = controller.isAttendanceMarked.value;
+      final assignedOrder   = controller.assignedOrder.value;
+      final assignedVehicle = controller.assignedVehicle.value;
 
       // ── State 3: ON TRIP ──────────────────────────────────────
       if (active != null) {
@@ -97,6 +99,26 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
               : () => _startTripFromHome(context, nextReady),
           onCardTap: () => _openTrip(context, nextReady),
           bottomRow: _BottomNav(controller: controller, attended: attended),
+          onRefresh: controller.fetchDashboard,
+        );
+      }
+
+      // ── State 0.5: ORDER ASSIGNED, no LR yet ─────────────────
+      if (assignedOrder != null) {
+        return _AssignedOrderState(
+          orderData: assignedOrder,
+          attended: attended,
+          controller: controller,
+          onRefresh: controller.fetchDashboard,
+        );
+      }
+
+      // ── State 0: VEHICLE ASSIGNED, no order ──────────────────
+      if (assignedVehicle != null) {
+        return _AssignedVehicleState(
+          vehicleData: assignedVehicle,
+          attended: attended,
+          controller: controller,
           onRefresh: controller.fetchDashboard,
         );
       }
@@ -209,6 +231,476 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
   }
 }
 
+// ── State 0.5: Order assigned, no LR yet ─────────────────────────────────────
+class _AssignedOrderState extends StatelessWidget {
+  final Map<String, dynamic> orderData;
+  final bool attended;
+  final DriverDashboardController controller;
+  final Future<void> Function() onRefresh;
+  const _AssignedOrderState({
+    required this.orderData,
+    required this.attended,
+    required this.controller,
+    required this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final vehicle  = orderData['vehicleNumber']?.toString() ?? '—';
+    final client   = orderData['clientName']?.toString() ?? '—';
+    final from     = orderData['fromCity']?.toString() ?? '—';
+    final to       = orderData['toCity']?.toString() ?? '—';
+    final loadDate = orderData['expectedLoadDate'] as String?;
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      color: AppColors.navy,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height - 160),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+
+                  // Status banner
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.navy.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: AppColors.navy.withValues(alpha: 0.25)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.inventory_2_outlined,
+                            color: AppColors.navy, size: 22),
+                        const SizedBox(width: 10),
+                        Text('lbl_order_assigned'.tr,
+                            style: const TextStyle(
+                                color: AppColors.navy,
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w800,
+                                fontSize: 15,
+                                letterSpacing: 1.1)),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD97706).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text('lbl_waiting_for_lr'.tr,
+                              style: const TextStyle(
+                                  color: Color(0xFFD97706),
+                                  fontFamily: 'Inter',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Order info card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: const [
+                        BoxShadow(
+                            color: Color(0x0F000000),
+                            blurRadius: 12,
+                            offset: Offset(0, 4))
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(client,
+                            style: AppTextStyles.bodyMedium
+                                .copyWith(color: AppColors.navy)),
+                        const SizedBox(height: 16),
+
+                        // Route
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  const Icon(Icons.radio_button_checked,
+                                      size: 20, color: AppColors.navy),
+                                  const SizedBox(height: 4),
+                                  Text(from,
+                                      textAlign: TextAlign.center,
+                                      style: AppTextStyles.bodySemiBold
+                                          .copyWith(
+                                              color: AppColors.navy,
+                                              fontSize: 15),
+                                      maxLines: 2),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  const Icon(Icons.arrow_forward,
+                                      size: 24,
+                                      color: AppColors.mutedText),
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    height: 2,
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 8),
+                                    color: AppColors.border,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  const Icon(Icons.location_on,
+                                      size: 20,
+                                      color: AppColors.mutedText),
+                                  const SizedBox(height: 4),
+                                  Text(to,
+                                      textAlign: TextAlign.center,
+                                      style: AppTextStyles.bodySemiBold
+                                          .copyWith(
+                                              color: AppColors.mutedText,
+                                              fontSize: 15),
+                                      maxLines: 2),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        const Divider(height: 1),
+                        const SizedBox(height: 12),
+
+                        // Vehicle + date
+                        Row(
+                          children: [
+                            const Icon(Icons.directions_bus_outlined,
+                                size: 18, color: AppColors.mutedText),
+                            const SizedBox(width: 6),
+                            Text(vehicle,
+                                style: AppTextStyles.body
+                                    .copyWith(color: AppColors.mutedText)),
+                            if (loadDate != null) ...[
+                              const Spacer(),
+                              const Icon(Icons.calendar_today_outlined,
+                                  size: 16, color: AppColors.mutedText),
+                              const SizedBox(width: 4),
+                              Text(_fmtDate(loadDate),
+                                  style: AppTextStyles.caption
+                                      .copyWith(color: AppColors.mutedText)),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Info message — no action
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD97706).withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                                color: const Color(0xFFD97706)
+                                    .withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.hourglass_top_outlined,
+                                  size: 18, color: Color(0xFFD97706)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text('lbl_waiting_for_lr_detail'.tr,
+                                    style: AppTextStyles.caption.copyWith(
+                                        color: const Color(0xFFD97706))),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _BottomNav(controller: controller, attended: attended),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _fmtDate(String raw) {
+    try {
+      final d = DateTime.parse(raw);
+      const m = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return '${d.day} ${m[d.month]}';
+    } catch (_) {
+      return raw;
+    }
+  }
+}
+
+// ── State 0: Vehicle assigned, no order ──────────────────────────────────────
+class _AssignedVehicleState extends StatelessWidget {
+  final Map<String, dynamic> vehicleData;
+  final bool attended;
+  final DriverDashboardController controller;
+  final Future<void> Function() onRefresh;
+  const _AssignedVehicleState({
+    required this.vehicleData,
+    required this.attended,
+    required this.controller,
+    required this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final vehicleNumber = vehicleData['vehicleNumber']?.toString() ?? '—';
+    final vehicleType   = vehicleData['vehicleType']?.toString();
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      color: AppColors.navy,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height - 160),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 32),
+
+                  // Vehicle icon
+                  Container(
+                    width: 100, height: 100,
+                    decoration: BoxDecoration(
+                      color: AppColors.navy.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.local_shipping_outlined,
+                        size: 52, color: AppColors.navy),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('lbl_vehicle_assigned'.tr,
+                      style: AppTextStyles.heading3
+                          .copyWith(color: AppColors.navy)),
+                  const SizedBox(height: 4),
+                  Obx(() => Text(
+                    controller.isAttendanceMarked.value
+                        ? 'lbl_attendance_marked'.tr
+                        : 'lbl_mark_attendance_first'.tr,
+                    style: AppTextStyles.body.copyWith(
+                      color: controller.isAttendanceMarked.value
+                          ? const Color(0xFF16A34A)
+                          : const Color(0xFFD97706),
+                    ),
+                  )),
+                  const SizedBox(height: 24),
+
+                  // Vehicle card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                          color: AppColors.navy.withValues(alpha: 0.15)),
+                      boxShadow: const [
+                        BoxShadow(
+                            color: Color(0x0A000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 2))
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.navy.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.directions_bus_outlined,
+                              size: 28, color: AppColors.navy),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(vehicleNumber,
+                                  style: AppTextStyles.bodyMedium
+                                      .copyWith(color: AppColors.navy)),
+                              if (vehicleType != null) ...[
+                                const SizedBox(height: 2),
+                                Text(vehicleType,
+                                    style: AppTextStyles.caption
+                                        .copyWith(color: AppColors.mutedText)),
+                              ],
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.navy.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text('lbl_assigned'.tr,
+                              style: const TextStyle(
+                                  color: AppColors.navy,
+                                  fontFamily: 'Inter',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Attendance / Out button
+                  Obx(() {
+                    final attended = controller.isAttendanceMarked.value;
+                    final isOut    = controller.markedOutAt.value != null;
+                    final canUndo  = controller.canUndoOut.value;
+                    final duty     = controller.dutyLabel.value;
+
+                    if (!attended) {
+                      return SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () => showMarkAttendanceSheet(
+                              context, onMarked: controller.fetchDashboard),
+                          icon: const Icon(Icons.check_circle_outline, size: 26),
+                          label: Text('btn_mark_attendance'.tr,
+                              style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'Inter')),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF16A34A),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                          ),
+                        ),
+                      );
+                    }
+                    if (!isOut) {
+                      return SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () => controller.markOut(context),
+                          icon: const Icon(Icons.logout, size: 24),
+                          label: Text('btn_mark_out'.tr,
+                              style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'Inter')),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFDC2626),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                          ),
+                        ),
+                      );
+                    }
+                    if (canUndo) {
+                      return SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: controller.undoOut,
+                          icon: const Icon(Icons.undo, size: 24),
+                          label: Text('btn_undo_out'.tr,
+                              style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'Inter')),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFD97706),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                          ),
+                        ),
+                      );
+                    }
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF16A34A).withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: const Color(0xFF16A34A).withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.check_circle,
+                              size: 22, color: Color(0xFF16A34A)),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${'lbl_out_locked'.tr}${duty != null ? ' · $duty' : ''}',
+                            style: const TextStyle(
+                                color: Color(0xFF16A34A),
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 16),
+                  _BottomNav(controller: controller, attended: attended),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ── State 1: Idle — no trip ───────────────────────────────────────────────────
 class _IdleState extends StatelessWidget {
   final DriverDashboardController controller;
@@ -259,32 +751,108 @@ class _IdleState extends StatelessWidget {
             )),
             const SizedBox(height: 36),
 
-            // Attendance button — big, primary
-            Obx(() => controller.isAttendanceMarked.value
-                ? const SizedBox.shrink()
-                : SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () => showMarkAttendanceSheet(
-                        context,
-                        onMarked: controller.fetchDashboard,
-                      ),
-                      icon: const Icon(Icons.check_circle_outline, size: 26),
-                      label: Text('btn_mark_attendance'.tr,
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'Inter')),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF16A34A),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                      ),
+            // Attendance / Out button — big, primary
+            Obx(() {
+              final attended = controller.isAttendanceMarked.value;
+              final isOut    = controller.markedOutAt.value != null;
+              final canUndo  = controller.canUndoOut.value;
+              final duty     = controller.dutyLabel.value;
+
+              if (!attended) {
+                return SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => showMarkAttendanceSheet(
+                      context, onMarked: controller.fetchDashboard),
+                    icon: const Icon(Icons.check_circle_outline, size: 26),
+                    label: Text('btn_mark_attendance'.tr,
+                        style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Inter')),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF16A34A),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
                     ),
-                  )),
+                  ),
+                );
+              }
+              if (!isOut) {
+                return SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => controller.markOut(context),
+                    icon: const Icon(Icons.logout, size: 24),
+                    label: Text('btn_mark_out'.tr,
+                        style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Inter')),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFDC2626),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                );
+              }
+              if (canUndo) {
+                return SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: controller.undoOut,
+                    icon: const Icon(Icons.undo, size: 24),
+                    label: Text('btn_undo_out'.tr,
+                        style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Inter')),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD97706),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                );
+              }
+              // Locked — show duty label chip
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF16A34A).withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                      color: const Color(0xFF16A34A).withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.check_circle,
+                        size: 22, color: Color(0xFF16A34A)),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${'lbl_out_locked'.tr}${duty != null ? ' · $duty' : ''}',
+                      style: const TextStyle(
+                          color: Color(0xFF16A34A),
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15),
+                    ),
+                  ],
+                ),
+              );
+            }),
             const SizedBox(height: 16),
 
             // My Trips + Salary — big icon tiles
@@ -654,36 +1222,60 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _SmallTile(
-            icon: attended
-                ? Icons.check_circle
-                : Icons.check_circle_outline,
-            label: attended ? 'lbl_present_check'.tr : 'nav_attendance'.tr,
-            color: attended
-                ? const Color(0xFF16A34A)
-                : const Color(0xFFD97706),
-            onTap: attended
-                ? null
-                : () => showMarkAttendanceSheet(
-                      context,
-                      onMarked: controller.fetchDashboard,
-                    ),
+    return Obx(() {
+      final isOut      = controller.markedOutAt.value != null;
+      final canUndo    = controller.canUndoOut.value;
+      final duty       = controller.dutyLabel.value;
+
+      IconData attIcon;
+      String   attLabel;
+      Color    attColor;
+      VoidCallback? attTap;
+
+      if (!attended) {
+        attIcon  = Icons.check_circle_outline;
+        attLabel = 'nav_attendance'.tr;
+        attColor = const Color(0xFFD97706);
+        attTap   = () => showMarkAttendanceSheet(context, onMarked: controller.fetchDashboard);
+      } else if (!isOut) {
+        attIcon  = Icons.logout;
+        attLabel = 'btn_mark_out'.tr;
+        attColor = const Color(0xFFDC2626);
+        attTap   = () => controller.markOut(context);
+      } else if (canUndo) {
+        attIcon  = Icons.undo;
+        attLabel = 'btn_undo_out'.tr;
+        attColor = const Color(0xFFD97706);
+        attTap   = () => controller.undoOut();
+      } else {
+        attIcon  = Icons.check_circle;
+        attLabel = duty ?? 'lbl_out_locked'.tr;
+        attColor = const Color(0xFF16A34A);
+        attTap   = null;
+      }
+
+      return Row(
+        children: [
+          Expanded(
+            child: _SmallTile(
+              icon: attIcon,
+              label: attLabel,
+              color: attColor,
+              onTap: attTap,
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _SmallTile(
-            icon: Icons.payments_outlined,
-            label: 'lbl_my_salary'.tr,
-            color: const Color(0xFF7C3AED),
-            onTap: () => Get.to(() => const DriverPayslipView(), binding: DriverPayslipBinding()),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _SmallTile(
+              icon: Icons.payments_outlined,
+              label: 'lbl_my_salary'.tr,
+              color: const Color(0xFF7C3AED),
+              onTap: () => Get.to(() => const DriverPayslipView(), binding: DriverPayslipBinding()),
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 }
 

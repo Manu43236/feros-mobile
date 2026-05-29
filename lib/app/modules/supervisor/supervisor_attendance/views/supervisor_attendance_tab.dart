@@ -27,7 +27,7 @@ class _SupervisorAttendanceTabState extends State<SupervisorAttendanceTab>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 3, vsync: this);
+    _tab = TabController(length: 4, vsync: this);
     SupervisorMyAttendanceBinding().dependencies();
   }
 
@@ -61,6 +61,7 @@ class _SupervisorAttendanceTabState extends State<SupervisorAttendanceTab>
             tabs: const [
               Tab(text: "Today's"),
               Tab(text: 'Present'),
+              Tab(text: 'Duty Times'),
               Tab(text: 'My Attendance'),
             ],
           ),
@@ -71,6 +72,7 @@ class _SupervisorAttendanceTabState extends State<SupervisorAttendanceTab>
             children: [
               _TodayTab(),
               _PresentTab(),
+              _DutyTimesTab(),
               _MyAttendanceSelfTab(tab: _tab),
             ],
           ),
@@ -495,7 +497,266 @@ class _PresentRecord extends StatelessWidget {
   }
 }
 
-// ── Tab 3: My Attendance ──────────────────────────────────────────────────────
+// ── Tab 3: Duty Times ─────────────────────────────────────────────────────────
+class _DutyTimesTab extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = Get.find<SupervisorAttendanceController>();
+    return Obx(() {
+      if (ctrl.state.value == ViewState.loading) {
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          children: const [
+            ShimmerCard(height: 48),
+            SizedBox(height: 8),
+            ShimmerCard(height: 64),
+            ShimmerCard(height: 64),
+            ShimmerCard(height: 64),
+            ShimmerCard(height: 64),
+          ],
+        );
+      }
+      if (ctrl.state.value == ViewState.error) {
+        return Center(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+            const SizedBox(height: 12),
+            Text('Failed to load attendance',
+                style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: ctrl.fetchAll,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.navy,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Retry'),
+            ),
+          ]),
+        );
+      }
+
+      final records   = ctrl.crewRecords;
+      final markedOut = records.where((r) => r['markedOutAt'] != null).length;
+      final notYetOut = records.length - markedOut;
+
+      return RefreshIndicator(
+        color: AppColors.navy,
+        onRefresh: ctrl.fetchAll,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          children: [
+            _TodayDateBanner(label: ctrl.dateLabel),
+            const SizedBox(height: 12),
+
+            // ── Summary row ─────────────────────────────────────
+            Row(
+              children: [
+                _DutySummaryChip(
+                  label: 'Marked Out',
+                  count: markedOut,
+                  color: AppColors.success,
+                ),
+                const SizedBox(width: 8),
+                _DutySummaryChip(
+                  label: 'Still On Duty',
+                  count: notYetOut,
+                  color: AppColors.warning,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // ── Section header ──────────────────────────────────
+            Text(
+              'Duty Times · ${records.length} Present',
+              style: AppTextStyles.bodyMedium
+                  .copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+
+            if (records.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(28),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Center(
+                  child: Text(
+                    'No attendance records for today',
+                    style: AppTextStyles.body
+                        .copyWith(color: AppColors.mutedText),
+                  ),
+                ),
+              )
+            else
+              ...records.map((r) => _DutyTimesRecord(record: r)),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+class _DutySummaryChip extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+  const _DutySummaryChip(
+      {required this.label, required this.count, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          children: [
+            Text('$count',
+                style: AppTextStyles.heading4
+                    .copyWith(color: color, fontSize: 18)),
+            const SizedBox(height: 2),
+            Text(label,
+                style: AppTextStyles.caption.copyWith(
+                    color: AppColors.mutedText, fontSize: 9),
+                textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DutyTimesRecord extends StatelessWidget {
+  final Map<String, dynamic> record;
+  const _DutyTimesRecord({required this.record});
+
+  @override
+  Widget build(BuildContext context) {
+    final name       = record['userName']  as String? ?? '—';
+    final roleName   = record['roleName']  as String? ?? '';
+    final markedAt   = record['markedAt']  as String?;
+    final markedOutAt = record['markedOutAt'] as String?;
+    final dutyLabel  = record['dutyLabel'] as String? ?? 'Full Day';
+    final initial    = name.isNotEmpty ? name[0].toUpperCase() : '?';
+
+    final isOut = markedOutAt != null;
+    final dutyColor = isOut ? AppColors.success : AppColors.warning;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x08000000), blurRadius: 4, offset: Offset(0, 2)),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Avatar
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.navy.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              initial,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: AppColors.navy,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+
+          // Name + role + times
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name,
+                    style: AppTextStyles.bodyMedium
+                        .copyWith(fontWeight: FontWeight.w600)),
+                if (roleName.isNotEmpty)
+                  Text(roleName,
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.mutedText)),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.login_outlined,
+                        size: 12, color: AppColors.success),
+                    const SizedBox(width: 3),
+                    Text(
+                      markedAt != null
+                          ? FerosDateUtils.formatDateTime(markedAt)
+                          : '—',
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.mutedText),
+                    ),
+                    const SizedBox(width: 10),
+                    Icon(Icons.logout_outlined,
+                        size: 12,
+                        color: isOut
+                            ? AppColors.error
+                            : AppColors.mutedText),
+                    const SizedBox(width: 3),
+                    Text(
+                      markedOutAt != null
+                          ? FerosDateUtils.formatDateTime(markedOutAt)
+                          : '—',
+                      style: AppTextStyles.caption.copyWith(
+                          color: isOut
+                              ? AppColors.error
+                              : AppColors.mutedText),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Duty label badge
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: dutyColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                  color: dutyColor.withValues(alpha: 0.25)),
+            ),
+            child: Text(
+              dutyLabel,
+              style: AppTextStyles.caption.copyWith(
+                  color: dutyColor, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Tab 4: My Attendance ──────────────────────────────────────────────────────
 class _MyAttendanceSelfTab extends StatefulWidget {
   final TabController tab;
   const _MyAttendanceSelfTab({required this.tab});
@@ -616,7 +877,7 @@ class _MyAttendanceSelfTabState extends State<_MyAttendanceSelfTab> {
           ),
 
           // ── FAB: mark own attendance ─────────────────────
-          if (_currentTab == 2 && !marked)
+          if (_currentTab == 3 && !marked)
             Positioned(
               bottom: 16,
               right: 16,
