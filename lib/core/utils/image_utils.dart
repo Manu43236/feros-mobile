@@ -28,15 +28,27 @@ class ImageUtils {
     return _compress(File(xFile.path));
   }
 
+  static const int _maxBytes = 1 * 1024 * 1024; // 1MB
+
   static Future<File> _compress(File file) async {
     final dir = await getTemporaryDirectory();
-    final target = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.jpg';
-    final result = await FlutterImageCompress.compressAndGetFile(
-      file.path, target,
-      quality: 75,
-      minWidth: 800,
-      minHeight: 600,
-    );
-    return result != null ? File(result.path) : file;
+    int quality = 75;
+    File output = file;
+
+    while (quality >= 20) {
+      final target = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final result = await FlutterImageCompress.compressAndGetFile(
+        file.path, target,
+        quality: quality,
+        minWidth: 800,
+        minHeight: 600,
+      );
+      if (result == null) break;
+      output = File(result.path);
+      if (await output.length() <= _maxBytes) break;
+      quality -= 15;
+    }
+
+    return output;
   }
 }

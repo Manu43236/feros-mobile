@@ -73,6 +73,10 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
   // ── Finance ───────────────────────────────────────────────────────────────────
   bool _isFinanced = false;
   final _financerNameCtrl = TextEditingController();
+
+  // ── Extra Pay ─────────────────────────────────────────────────────────────────
+  bool _extraPayEnabled = false;
+  final _extraPayPerDayCtrl = TextEditingController();
   DateTime? _financeStart;
   DateTime? _financeEnd;
 
@@ -121,6 +125,7 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
       _fuelLevelCtrl,
       _notesCtrl,
       _financerNameCtrl,
+      _extraPayPerDayCtrl,
     ]) {
       c.dispose();
     }
@@ -225,6 +230,8 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
       _financerNameCtrl.text = v['financerName'] as String? ?? '';
       _financeStart = _parseDate(v['financeStartDate']);
       _financeEnd = _parseDate(v['financeEndDate']);
+      _extraPayEnabled = (v['extraPayEnabled'] as bool?) ?? false;
+      _extraPayPerDayCtrl.text = v['extraPayPerDay']?.toString() ?? '';
     });
   }
 
@@ -324,6 +331,13 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
           body['financeStartDate'] = _formatDate(_financeStart!);
         if (_financeEnd != null)
           body['financeEndDate'] = _formatDate(_financeEnd!);
+      }
+
+      // Extra Pay
+      body['extraPayEnabled'] = _extraPayEnabled;
+      if (_extraPayEnabled) {
+        final epd = double.tryParse(_extraPayPerDayCtrl.text.trim());
+        if (epd != null) body['extraPayPerDay'] = epd;
       }
 
       // Notes
@@ -680,7 +694,61 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
                       ),
                       const SizedBox(height: 16),
 
-                      // ── 4. GPS ────────────────────────────────────────────────
+                      // ── 4. Extra Pay ──────────────────────────────────────────
+                      _Section(
+                        'DRIVER EXTRA PAY',
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Enable extra pay',
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 14,
+                                        color: Color(0xFF374151),
+                                      ),
+                                    ),
+                                    SizedBox(height: 2),
+                                    Text(
+                                      'Additional pay for driver assigned to this vehicle',
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 12,
+                                        color: Color(0xFF9CA3AF),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Switch(
+                                value: _extraPayEnabled,
+                                onChanged: (v) =>
+                                    setState(() => _extraPayEnabled = v),
+                                activeColor: AppColors.navy,
+                              ),
+                            ],
+                          ),
+                          if (_extraPayEnabled) ...[
+                            const SizedBox(height: 12),
+                            _field(
+                              'Extra Pay Per Day (₹)',
+                              _extraPayPerDayCtrl,
+                              'e.g. 100',
+                              inputType: const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // ── 5. GPS ────────────────────────────────────────────────
                       _Section(
                         'GPS & TRACKING',
                         children: [

@@ -25,6 +25,11 @@ class SupervisorLrDetailController extends GetxController {
   final proofs            = <Map<String, dynamic>>[].obs;
   final isReviewingId     = Rxn<int>();
 
+  // Trip Expenses
+  final tripExpense        = Rxn<Map<String, dynamic>>();
+  final isTripExpenseBusy  = false.obs;
+  final tripExpenseError   = false.obs;
+
   late final int lrId;
 
   @override
@@ -55,9 +60,139 @@ class SupervisorLrDetailController extends GetxController {
           ((results[3].data as Map<String, dynamic>)['data'] as List)
               .cast<Map<String, dynamic>>());
       state.value = ViewState.success;
+
+      // Fetch trip expense if LR is delivered
+      final lrStatus = lr.value?['lrStatus'] as String? ?? '';
+      if (lrStatus == 'DELIVERED') fetchTripExpense();
     } catch (e) {
       debugPrint('[LR Detail] $e');
       state.value = ViewState.error;
+    }
+  }
+
+  // ── Trip Expenses ────────────────────────────────────────────────────────────
+
+  Future<void> fetchTripExpense() async {
+    tripExpenseError.value = false;
+    try {
+      final res = await _api.get(ApiEndpoints.lrTripExpense(lrId));
+      tripExpense.value =
+          (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>?;
+    } catch (_) {
+      tripExpense.value = null; // 404 = no sheet yet, not an error
+    }
+  }
+
+  Future<bool> createTripExpenseDraft(double advance, int? tripDays) async {
+    isTripExpenseBusy.value = true;
+    try {
+      final data = <String, dynamic>{'advanceAmount': advance};
+      if (tripDays != null) data['tripDays'] = tripDays;
+      final res = await _api.post(ApiEndpoints.lrTripExpense(lrId), data: data);
+      tripExpense.value =
+          (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      FerosSnackbar.success('Expense sheet created');
+      isTripExpenseBusy.value = false;
+      return true;
+    } catch (_) {
+      FerosSnackbar.error('Failed to create expense sheet');
+      isTripExpenseBusy.value = false;
+      return false;
+    }
+  }
+
+  Future<bool> addTripExpenseItem(String description, double amount) async {
+    isTripExpenseBusy.value = true;
+    try {
+      final currentItems = (tripExpense.value?['items'] as List? ?? [])
+          .cast<Map<String, dynamic>>();
+      final updatedItems = [
+        ...currentItems.map((i) => {
+              'description': i['description'],
+              'amount': i['amount'],
+              if (i['receiptUrl'] != null) 'receiptUrl': i['receiptUrl'],
+            }),
+        {'description': description, 'amount': amount},
+      ];
+      final res = await _api.put(
+        ApiEndpoints.lrTripExpense(lrId),
+        data: {'items': updatedItems},
+      );
+      tripExpense.value =
+          (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      FerosSnackbar.success('Expense added');
+      isTripExpenseBusy.value = false;
+      return true;
+    } catch (_) {
+      FerosSnackbar.error('Failed to add expense');
+      isTripExpenseBusy.value = false;
+      return false;
+    }
+  }
+
+  Future<void> removeTripExpenseItem(int itemId) async {
+    isTripExpenseBusy.value = true;
+    try {
+      final currentItems = (tripExpense.value?['items'] as List? ?? [])
+          .cast<Map<String, dynamic>>();
+      final remaining = currentItems
+          .where((i) => (i['id'] as int?) != itemId)
+          .map((i) => {
+                'description': i['description'],
+                'amount': i['amount'],
+                if (i['receiptUrl'] != null) 'receiptUrl': i['receiptUrl'],
+              })
+          .toList();
+      final res = await _api.put(
+        ApiEndpoints.lrTripExpense(lrId),
+        data: {'items': remaining},
+      );
+      tripExpense.value =
+          (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      FerosSnackbar.success('Item removed');
+    } catch (_) {
+      FerosSnackbar.error('Failed to remove item');
+    }
+    isTripExpenseBusy.value = false;
+  }
+
+  Future<bool> submitTripExpense() async {
+    isTripExpenseBusy.value = true;
+    try {
+      final res =
+          await _api.post(ApiEndpoints.lrTripExpenseSubmit(lrId), data: {});
+      tripExpense.value =
+          (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      FerosSnackbar.success('Expenses submitted for approval');
+      isTripExpenseBusy.value = false;
+      return true;
+    } catch (_) {
+      FerosSnackbar.error('Failed to submit expenses');
+      isTripExpenseBusy.value = false;
+      return false;
+    }
+  }
+
+  Future<bool> settleTripExpense(double amount, String? note) async {
+    final expenseId = tripExpense.value?['id'] as int?;
+    if (expenseId == null) return false;
+    isTripExpenseBusy.value = true;
+    try {
+      final data = <String, dynamic>{'settlementAmount': amount};
+      if (note != null && note.isNotEmpty) data['settlementNote'] = note;
+      final res = await _api.post(
+        ApiEndpoints.tripExpenseSettle(expenseId),
+        data: data,
+      );
+      tripExpense.value =
+          (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      FerosSnackbar.success('Settlement recorded');
+      isTripExpenseBusy.value = false;
+      return true;
+    } catch (_) {
+      FerosSnackbar.error('Failed to record settlement');
+      isTripExpenseBusy.value = false;
+      return false;
     }
   }
 

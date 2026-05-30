@@ -1,3 +1,4 @@
+import 'package:feros/core/popups/feros_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -149,6 +150,12 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
                 ...controller.proofs.map(
                   (p) => _ProofCard(proof: p, controller: controller),
                 ),
+
+              // ── Trip Expenses (only for DELIVERED LRs) ──────────────────
+              if (status == 'DELIVERED') ...[
+                const SizedBox(height: 16),
+                _TripExpenseSection(controller: controller),
+              ],
             ],
           ),
         );
@@ -1815,6 +1822,561 @@ class _ProofCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ── Trip Expense Section ───────────────────────────────────────────────────────
+class _TripExpenseSection extends StatelessWidget {
+  final SupervisorLrDetailController controller;
+  const _TripExpenseSection({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final expense = controller.tripExpense.value;
+      final status  = expense?['status'] as String? ?? '';
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section header
+          Row(
+            children: [
+              Text(
+                'Trip Expenses',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.navy,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (status.isNotEmpty) _ExpenseStatusBadge(status: status),
+              const Spacer(),
+              if (expense != null && status == 'DRAFT')
+                GestureDetector(
+                  onTap: () => _showAddItemSheet(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.navy,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.add, size: 14, color: Colors.white),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Add',
+                          style: AppTextStyles.caption.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // No sheet yet
+          if (expense == null) ...[
+            _Card(
+              child: Column(
+                children: [
+                  const Icon(Icons.receipt_long_outlined, size: 32, color: AppColors.mutedText),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No expense sheet yet',
+                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.bodyText, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Create one to record advance and trip expenses',
+                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Obx(() => ElevatedButton(
+                      onPressed: controller.isTripExpenseBusy.value ? null : () => _showCreateSheet(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.navy,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: Text('Create Expense Sheet', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                    )),
+                  ),
+                ],
+              ),
+            ),
+          ]
+
+          // Expense sheet exists
+          else ...[
+            // Advance & Batta card
+            _Card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Fixed Allowances', style: AppTextStyles.caption.copyWith(color: AppColors.mutedText, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 10),
+                  _ExpRow(label: 'Advance Issued', value: expense['advanceAmount']),
+                  _ExpRow(label: 'Driver Batta (${expense['tripDays']} days)', value: expense['driverBatta'], muted: true),
+                  if ((expense['cleanerBatta'] as num? ?? 0) > 0)
+                    _ExpRow(label: 'Cleaner Batta', value: expense['cleanerBatta'], muted: true),
+                  _ExpRow(label: 'Trip Mamulu', value: expense['tripMamulu'], muted: true),
+                  const Divider(height: 20),
+                  _ExpRow(label: 'Fixed Total', value: expense['totalFixedAmount'], bold: true),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Items card
+            _Card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Expense Items', style: AppTextStyles.caption.copyWith(color: AppColors.mutedText, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 10),
+                  if ((expense['items'] as List? ?? []).isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text('No items added yet', style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                    )
+                  else
+                    ...(expense['items'] as List).cast<Map<String, dynamic>>().map((item) {
+                      final amountChanged = item['amountChanged'] as bool? ?? false;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                item['description'] as String? ?? '—',
+                                style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+                              ),
+                            ),
+                            Text(
+                              '₹${(item['amount'] as num?)?.toStringAsFixed(0) ?? '0'}',
+                              style: AppTextStyles.body.copyWith(
+                                color: amountChanged ? AppColors.warning : AppColors.bodyText,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if (status == 'DRAFT') ...[
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () => controller.removeTripExpenseItem(item['id'] as int),
+                                child: const Icon(Icons.close, size: 16, color: AppColors.mutedText),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    }),
+                  const Divider(height: 16),
+                  _ExpRow(label: 'Total Submitted', value: expense['totalSubmittedAmount'], bold: true),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Settlement summary (after approved)
+            if (status == 'APPROVED' || status == 'SETTLED') ...[
+              _Card(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Settlement', style: AppTextStyles.caption.copyWith(color: AppColors.mutedText, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 10),
+                    _ExpRow(label: 'Total Approved', value: expense['totalApprovedAmount']),
+                    _ExpRow(label: 'Advance Given', value: expense['advanceAmount']),
+                    const Divider(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          (expense['balanceAmount'] as num? ?? 0) >= 0 ? 'Driver Returns' : 'Company Pays Driver',
+                          style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: AppColors.bodyText),
+                        ),
+                        Text(
+                          '₹${((expense['balanceAmount'] as num?)?.abs() ?? 0).toStringAsFixed(0)}',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: (expense['balanceAmount'] as num? ?? 0) >= 0 ? AppColors.info : AppColors.warning,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+
+            // Settled note
+            if (status == 'SETTLED' && expense['settlementNote'] != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.successLight,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.check_circle_outline, size: 16, color: AppColors.success),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        expense['settlementNote'] as String,
+                        style: AppTextStyles.caption.copyWith(color: AppColors.success),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+
+            // Submitted info
+            if (status == 'SUBMITTED') ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.warningLight,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.hourglass_top_outlined, size: 16, color: AppColors.warning),
+                    const SizedBox(width: 8),
+                    Text('Submitted — awaiting admin approval', style: AppTextStyles.caption.copyWith(color: AppColors.warning, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+
+            // Action buttons
+            Obx(() {
+              final busy = controller.isTripExpenseBusy.value;
+              final items = (expense['items'] as List? ?? []);
+
+              if (status == 'DRAFT') {
+                return Column(
+                  children: [
+                    if (items.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          'Add at least one expense before submitting',
+                          style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: (busy || items.isEmpty) ? null : () async {
+                          final ok = await controller.submitTripExpense();
+                          if (!ok) return;
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.navy,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: busy
+                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : Text('Submit for Approval', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              if (status == 'APPROVED') {
+                return SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: busy ? null : () => _showSettleSheet(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.success,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: Text('Record Settlement', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                  ),
+                );
+              }
+
+              return const SizedBox.shrink();
+            }),
+          ],
+        ],
+      );
+    });
+  }
+
+  void _showCreateSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CreateExpenseSheet(controller: controller),
+    );
+  }
+
+  void _showAddItemSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _AddExpenseItemSheet(controller: controller),
+    );
+  }
+
+  void _showSettleSheet(BuildContext context) {
+    final expense = controller.tripExpense.value;
+    if (expense == null) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _SettleExpenseSheet(
+        controller: controller,
+        balanceAmount: (expense['balanceAmount'] as num?)?.toDouble() ?? 0,
+      ),
+    );
+  }
+}
+
+// ── Expense Status Badge ───────────────────────────────────────────────────────
+class _ExpenseStatusBadge extends StatelessWidget {
+  final String status;
+  const _ExpenseStatusBadge({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    Color bg, text;
+    String label;
+    switch (status) {
+      case 'DRAFT':
+        bg = AppColors.border; text = AppColors.mutedText; label = 'Draft'; break;
+      case 'SUBMITTED':
+        bg = AppColors.warningLight; text = AppColors.warning; label = 'Submitted'; break;
+      case 'APPROVED':
+        bg = AppColors.successLight; text = AppColors.success; label = 'Approved'; break;
+      case 'SETTLED':
+        bg = AppColors.infoLight; text = AppColors.info; label = 'Settled'; break;
+      default:
+        bg = AppColors.border; text = AppColors.mutedText; label = status;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
+      child: Text(label, style: AppTextStyles.caption.copyWith(color: text, fontWeight: FontWeight.w600)),
+    );
+  }
+}
+
+// ── Expense Row helper ─────────────────────────────────────────────────────────
+class _ExpRow extends StatelessWidget {
+  final String label;
+  final dynamic value;
+  final bool bold;
+  final bool muted;
+  const _ExpRow({required this.label, required this.value, this.bold = false, this.muted = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final formatted = '₹${(value as num?)?.toStringAsFixed(0) ?? '0'}';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: AppTextStyles.caption.copyWith(color: muted ? AppColors.hintText : AppColors.mutedText)),
+          Text(formatted, style: AppTextStyles.caption.copyWith(color: AppColors.bodyText, fontWeight: bold ? FontWeight.w700 : FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Sheet: Create Expense Sheet ────────────────────────────────────────────────
+class _CreateExpenseSheet extends StatefulWidget {
+  final SupervisorLrDetailController controller;
+  const _CreateExpenseSheet({required this.controller});
+  @override
+  State<_CreateExpenseSheet> createState() => _CreateExpenseSheetState();
+}
+
+class _CreateExpenseSheetState extends State<_CreateExpenseSheet> {
+  final _advanceCtrl  = TextEditingController();
+  final _tripDaysCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _advanceCtrl.dispose();
+    _tripDaysCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final advance  = double.tryParse(_advanceCtrl.text.trim()) ?? 0;
+    final tripDays = int.tryParse(_tripDaysCtrl.text.trim());
+    final ok = await widget.controller.createTripExpenseDraft(advance, tripDays);
+    if (ok && mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _SimpleSheet(
+      title: 'Create Expense Sheet',
+      controller: widget.controller.isTripExpenseBusy,
+      onSubmit: _submit,
+      submitLabel: 'Create Sheet',
+      children: [
+        _SheetLabel('Advance Issued to Driver (₹)'),
+        const SizedBox(height: 6),
+        _SheetField(controller: _advanceCtrl, hint: 'e.g. 10000 (enter 0 if none)', keyboard: const TextInputType.numberWithOptions(decimal: true)),
+        const SizedBox(height: 16),
+        _SheetLabel('Trip Days (optional)'),
+        const SizedBox(height: 6),
+        _SheetField(controller: _tripDaysCtrl, hint: 'Auto-calculated from LR dates', keyboard: TextInputType.number),
+      ],
+    );
+  }
+}
+
+// ── Sheet: Add Expense Item ────────────────────────────────────────────────────
+class _AddExpenseItemSheet extends StatefulWidget {
+  final SupervisorLrDetailController controller;
+  const _AddExpenseItemSheet({required this.controller});
+  @override
+  State<_AddExpenseItemSheet> createState() => _AddExpenseItemSheetState();
+}
+
+class _AddExpenseItemSheetState extends State<_AddExpenseItemSheet> {
+  final _descCtrl   = TextEditingController();
+  final _amountCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _descCtrl.dispose();
+    _amountCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final desc   = _descCtrl.text.trim();
+    final amount = double.tryParse(_amountCtrl.text.trim());
+    if (desc.isEmpty || amount == null || amount <= 0) {
+      FerosSnackbar.error('Please enter description and a valid amount');
+      return;
+    }
+    final ok = await widget.controller.addTripExpenseItem(desc, amount);
+    if (ok && mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _SimpleSheet(
+      title: 'Add Expense',
+      controller: widget.controller.isTripExpenseBusy,
+      onSubmit: _submit,
+      submitLabel: 'Add Expense',
+      children: [
+        _SheetLabel('Description *'),
+        const SizedBox(height: 6),
+        _SheetField(controller: _descCtrl, hint: 'e.g. Toll, Hamali, Fuel, Food…'),
+        const SizedBox(height: 16),
+        _SheetLabel('Amount (₹) *'),
+        const SizedBox(height: 6),
+        _SheetField(controller: _amountCtrl, hint: 'e.g. 350', keyboard: const TextInputType.numberWithOptions(decimal: true)),
+      ],
+    );
+  }
+}
+
+// ── Sheet: Record Settlement ───────────────────────────────────────────────────
+class _SettleExpenseSheet extends StatefulWidget {
+  final SupervisorLrDetailController controller;
+  final double balanceAmount;
+  const _SettleExpenseSheet({required this.controller, required this.balanceAmount});
+  @override
+  State<_SettleExpenseSheet> createState() => _SettleExpenseSheetState();
+}
+
+class _SettleExpenseSheetState extends State<_SettleExpenseSheet> {
+  final _noteCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _noteCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final ok = await widget.controller.settleTripExpense(
+      widget.balanceAmount.abs(),
+      _noteCtrl.text.trim().isNotEmpty ? _noteCtrl.text.trim() : null,
+    );
+    if (ok && mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final driverReturns = widget.balanceAmount >= 0;
+    return _SimpleSheet(
+      title: 'Record Settlement',
+      controller: widget.controller.isTripExpenseBusy,
+      onSubmit: _submit,
+      submitLabel: 'Mark Settled',
+      children: [
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: driverReturns ? AppColors.infoLight : AppColors.warningLight,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: driverReturns ? AppColors.info.withValues(alpha: 0.3) : AppColors.warning.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                driverReturns ? 'Driver Returns' : 'Company Pays Driver',
+                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: driverReturns ? AppColors.info : AppColors.warning),
+              ),
+              Text(
+                '₹${widget.balanceAmount.abs().toStringAsFixed(0)}',
+                style: AppTextStyles.heading4.copyWith(color: driverReturns ? AppColors.info : AppColors.warning),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        _SheetLabel('Settlement Note (optional)'),
+        const SizedBox(height: 6),
+        _SheetField(controller: _noteCtrl, hint: 'e.g. Cash received from Suresh on 15 Jan', maxLines: 2),
+      ],
     );
   }
 }

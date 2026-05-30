@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/services/upload_service.dart';
 import '../../../../../core/utils/view_state.dart';
 
 class SupervisorVehicleDetailController extends GetxController {
@@ -260,9 +262,10 @@ class SupervisorVehicleDetailController extends GetxController {
   }
 
   // ── Images (ADMIN / OFFICE_STAFF) ────────────────────────────────────────────
-  final imagesState  = ViewState.loading.obs;
-  final images       = <Map<String, dynamic>>[].obs;
-  bool _imagesLoaded = false;
+  final imagesState   = ViewState.loading.obs;
+  final images        = <Map<String, dynamic>>[].obs;
+  final isImageSaving = false.obs;
+  bool _imagesLoaded  = false;
 
   void ensureImagesLoaded() {
     if (_imagesLoaded) return;
@@ -286,6 +289,36 @@ class SupervisorVehicleDetailController extends GetxController {
     } catch (e) {
       debugPrint('[VehicleDetail] images error: $e');
       imagesState.value = ViewState.error;
+    }
+  }
+
+  Future<bool> uploadAndAddImage(File file) async {
+    isImageSaving.value = true;
+    try {
+      final uploadService = Get.find<UploadService>();
+      final publicUrl = await uploadService.uploadFileGetPublicUrl(
+        file,
+        folder: 'tenants/images/vehicles/$vehicleId/images',
+      );
+      await _api.post(ApiEndpoints.vehicleImages(vehicleId), data: {'imageUrl': publicUrl});
+      await _fetchImages();
+      isImageSaving.value = false;
+      return true;
+    } catch (e) {
+      debugPrint('[VehicleDetail] upload image error: $e');
+      isImageSaving.value = false;
+      return false;
+    }
+  }
+
+  Future<bool> deleteVehicleImage(int imageId) async {
+    try {
+      await _api.delete(ApiEndpoints.vehicleImageById(imageId));
+      await _fetchImages();
+      return true;
+    } catch (e) {
+      debugPrint('[VehicleDetail] delete image error: $e');
+      return false;
     }
   }
 

@@ -65,6 +65,12 @@ class ApiEndpoints {
   static String lrCheckposts(id)         => '/lrs/$id/checkposts';
   static String lrCharges(id)            => '/lrs/$id/charges';
 
+  // Trip Expenses
+  static String lrTripExpense(lrId)          => '/lr/$lrId/trip-expense';
+  static String lrTripExpenseSubmit(lrId)    => '/lr/$lrId/trip-expense/submit';
+  static String tripExpenseApprove(id)       => '/trip-expenses/$id/approve';
+  static String tripExpenseSettle(id)        => '/trip-expenses/$id/settle';
+
   // Invoices
   static const invoices                   = '/invoices';
   static String invoiceById(id)           => '/invoices/$id';

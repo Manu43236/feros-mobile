@@ -286,15 +286,26 @@ class _VehicleCard extends StatelessWidget {
                   Container(
                     width: 38,
                     height: 38,
+                    clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
                       color: AppColors.navy.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(
-                      Icons.local_shipping_outlined,
-                      size: 20,
-                      color: AppColors.navy,
-                    ),
+                    child: vehicle['coverImageUrl'] != null
+                        ? Image.network(
+                            vehicle['coverImageUrl'] as String,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(
+                              Icons.local_shipping_outlined,
+                              size: 20,
+                              color: AppColors.navy,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.local_shipping_outlined,
+                            size: 20,
+                            color: AppColors.navy,
+                          ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

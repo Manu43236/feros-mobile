@@ -9,6 +9,7 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
 import '../../../../../core/utils/date_utils.dart';
+import '../../../../../core/utils/image_utils.dart';
 import '../../../../../core/services/upload_service.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
@@ -668,6 +669,20 @@ class _BasicInfoTab extends StatelessWidget {
             _IR('Engine No.', v['engineNumber']),
           ],
         ),
+        if (v['extraPayEnabled'] == true) ...[
+          const SizedBox(height: 12),
+          _InfoSection(
+            title: 'Driver Extra Pay',
+            rows: [
+              _IR(
+                'Extra Pay / Day',
+                v['extraPayPerDay'] != null
+                    ? '₹${v['extraPayPerDay']}'
+                    : null,
+              ),
+            ],
+          ),
+        ],
         if (v['isFinanced'] == true) ...[
           const SizedBox(height: 12),
           _InfoSection(
@@ -5119,36 +5134,181 @@ class _ImagesTabBodyState extends State<_ImagesTabBody>
     widget.controller.ensureImagesLoaded();
   }
 
+  void _showPickerSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined, color: AppColors.navy),
+              title: const Text('Take Photo', style: TextStyle(fontFamily: 'Inter', fontSize: 14)),
+              onTap: () async {
+                Navigator.pop(context);
+                final file = await ImageUtils.pickFromCamera();
+                if (file == null) return;
+                final ok = await widget.controller.uploadAndAddImage(file);
+                if (ok) FerosSnackbar.success('Image uploaded');
+                else FerosSnackbar.error('Upload failed');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined, color: AppColors.navy),
+              title: const Text('Choose from Gallery', style: TextStyle(fontFamily: 'Inter', fontSize: 14)),
+              onTap: () async {
+                Navigator.pop(context);
+                final file = await ImageUtils.pickFromGallery();
+                if (file == null) return;
+                final ok = await widget.controller.uploadAndAddImage(file);
+                if (ok) FerosSnackbar.success('Image uploaded');
+                else FerosSnackbar.error('Upload failed');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDelete(int imageId) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete Image?',
+            style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 16)),
+        content: const Text('This image will be permanently removed.',
+            style: TextStyle(fontFamily: 'Inter', fontSize: 14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final ok = await widget.controller.deleteVehicleImage(imageId);
+              if (ok) FerosSnackbar.success('Image removed');
+              else FerosSnackbar.error('Failed to remove image');
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     return Obx(() {
       final state = widget.controller.imagesState.value;
       if (state == ViewState.loading) {
-        return const Center(
-          child: CircularProgressIndicator(color: AppColors.navy),
-        );
+        return const Center(child: CircularProgressIndicator(color: AppColors.navy));
       }
       if (state == ViewState.error) {
         return _TabError(onRetry: widget.controller.retryImages);
       }
       final list = widget.controller.images;
-      if (list.isEmpty) {
-        return const _EmptyTabState(
-          icon: Icons.photo_library_outlined,
-          message: 'No images uploaded yet',
-        );
-      }
-      return GridView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 1.2,
-        ),
-        itemCount: list.length,
-        itemBuilder: (_, i) => _ImageCard(image: list[i]),
+      return Column(
+        children: [
+          if (widget.canManage) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+              child: Row(
+                children: [
+                  Text(
+                    '${list.length}/3 photos',
+                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                  ),
+                  const Spacer(),
+                  if (list.length < 3)
+                    Obx(() => widget.controller.isImageSaving.value
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.navy),
+                          )
+                        : GestureDetector(
+                            onTap: _showPickerSheet,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: AppColors.navy,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.add_photo_alternate_outlined, size: 14, color: Colors.white),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Add Photo',
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: AppColors.border),
+          ],
+          if (list.isEmpty)
+            const Expanded(
+              child: _EmptyTabState(
+                icon: Icons.photo_library_outlined,
+                message: 'No images uploaded yet',
+              ),
+            )
+          else
+            Expanded(
+              child: GridView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 1.2,
+                ),
+                itemCount: list.length,
+                itemBuilder: (_, i) => _ImageCard(
+                  image: list[i],
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => _ImagePreviewPage(
+                        images: list,
+                        initialIndex: i,
+                      ),
+                    ),
+                  ),
+                  onDelete: widget.canManage
+                      ? () => _confirmDelete((list[i]['id'] as num).toInt())
+                      : null,
+                ),
+              ),
+            ),
+        ],
       );
     });
   }
@@ -5156,78 +5316,164 @@ class _ImagesTabBodyState extends State<_ImagesTabBody>
 
 class _ImageCard extends StatelessWidget {
   final Map<String, dynamic> image;
-  const _ImageCard({required this.image});
+  final VoidCallback? onTap;
+  final VoidCallback? onDelete;
+  const _ImageCard({required this.image, this.onTap, this.onDelete});
 
   @override
   Widget build(BuildContext context) {
     final url = image['imageUrl'] as String?;
-    final label = image['imageType'] as String? ?? 'Image';
     final date = image['createdAt'] as String?;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(9),
-              ),
-              child: url != null
-                  ? Image.network(
-                      url,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: AppColors.background,
-                        child: const Icon(
-                          Icons.broken_image_outlined,
-                          size: 32,
-                          color: AppColors.border,
+    return GestureDetector(
+      onTap: onTap,
+      onLongPress: onDelete,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(9)),
+                child: url != null
+                    ? Image.network(
+                        url,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: AppColors.background,
+                          child: const Icon(Icons.broken_image_outlined, size: 32, color: AppColors.border),
                         ),
+                      )
+                    : Container(
+                        color: AppColors.background,
+                        child: const Icon(Icons.photo_outlined, size: 32, color: AppColors.border),
                       ),
-                    )
-                  : Container(
-                      color: AppColors.background,
-                      child: const Icon(
-                        Icons.photo_outlined,
-                        size: 32,
-                        color: AppColors.border,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
+              child: Row(
+                children: [
+                  if (date != null)
+                    Expanded(
+                      child: Text(
+                        FerosDateUtils.formatDate(date),
+                        style: AppTextStyles.caption.copyWith(color: AppColors.mutedText, fontSize: 10),
                       ),
                     ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.bodyText,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (date != null)
-                  Text(
-                    FerosDateUtils.formatDate(date),
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.mutedText,
-                      fontSize: 10,
+                  if (onDelete != null)
+                    GestureDetector(
+                      onTap: onDelete,
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(Icons.delete_outline, size: 14, color: AppColors.error),
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+}
+
+// ── Image Preview Page ────────────────────────────────────────────────────────
+class _ImagePreviewPage extends StatefulWidget {
+  final List<Map<String, dynamic>> images;
+  final int initialIndex;
+  const _ImagePreviewPage({required this.images, required this.initialIndex});
+
+  @override
+  State<_ImagePreviewPage> createState() => _ImagePreviewPageState();
+}
+
+class _ImagePreviewPageState extends State<_ImagePreviewPage> {
+  late final PageController _pageController;
+  late int _current;
+
+  @override
+  void initState() {
+    super.initState();
+    _current = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+        ),
+        title: Text(
+          '${_current + 1} / ${widget.images.length}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontFamily: 'Inter',
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+      body: PageView.builder(
+        controller: _pageController,
+        onPageChanged: (i) => setState(() => _current = i),
+        itemCount: widget.images.length,
+        itemBuilder: (_, i) {
+          final url = widget.images[i]['imageUrl'] as String? ?? '';
+          return InteractiveViewer(
+            child: Center(
+              child: Image.network(
+                url,
+                fit: BoxFit.contain,
+                loadingBuilder: (_, child, progress) => progress == null
+                    ? child
+                    : const Center(child: CircularProgressIndicator(color: Colors.white54)),
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.broken_image_outlined,
+                  color: Colors.white54,
+                  size: 48,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+      bottomNavigationBar: widget.images.length > 1
+          ? Container(
+              color: Colors.black,
+              padding: const EdgeInsets.only(bottom: 24, top: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(widget.images.length, (i) => Container(
+                  width: 6,
+                  height: 6,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: i == _current ? Colors.white : Colors.white30,
+                  ),
+                )),
+              ),
+            )
+          : null,
     );
   }
 }
