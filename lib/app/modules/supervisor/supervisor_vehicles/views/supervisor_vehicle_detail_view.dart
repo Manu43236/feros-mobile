@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:feros/core/popups/feros_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -80,6 +81,7 @@ class SupervisorVehicleDetailView
         length: tabCount,
         child: Scaffold(
           backgroundColor: AppColors.background,
+          bottomNavigationBar: _AssignStaffBar(v: v, controller: controller),
           body: Column(
             children: [
               _VehicleBanner(
@@ -747,6 +749,158 @@ class _BasicInfoTab extends StatelessWidget {
         const SizedBox(height: 12),
         _StaffCard(v: v, controller: controller),
       ],
+    );
+  }
+}
+
+// ── Sticky Assign Staff Bottom Bar ────────────────────────────────────────────
+class _AssignStaffBar extends StatelessWidget {
+  final Map<String, dynamic> v;
+  final SupervisorVehicleDetailController controller;
+  const _AssignStaffBar({required this.v, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final driverName  = v['currentDriverName']  as String?;
+    final cleanerName = v['currentCleanerName'] as String?;
+    final driverId    = v['currentDriverId']  != null ? (v['currentDriverId']  as num).toInt() : null;
+    final cleanerId   = v['currentCleanerId'] != null ? (v['currentCleanerId'] as num).toInt() : null;
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + MediaQuery.of(context).padding.bottom),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border)),
+      ),
+      child: Obx(() => controller.isStaffSaving.value
+          ? const SizedBox(
+              height: 54,
+              child: Center(
+                child: SizedBox(
+                  width: 22, height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.navy),
+                ),
+              ),
+            )
+          : Row(
+              children: [
+                _AssignBtn(
+                  icon: Icons.drive_eta_outlined,
+                  role: 'Driver',
+                  name: driverName,
+                  color: const Color(0xFF2563EB),
+                  onTap: () => _AssignStaffSheet.show(
+                    context,
+                    controller: controller,
+                    role: 'DRIVER',
+                    currentId: driverId,
+                  ),
+                  onUnassign: driverId != null
+                      ? () async {
+                          final ok = await controller.unassignDriver();
+                          if (ok) FerosSnackbar.success('Driver removed');
+                          else FerosSnackbar.error('Failed to remove driver');
+                        }
+                      : null,
+                ),
+                const SizedBox(width: 8),
+                _AssignBtn(
+                  icon: Icons.cleaning_services_outlined,
+                  role: 'Cleaner',
+                  name: cleanerName,
+                  color: const Color(0xFF7C3AED),
+                  onTap: () => _AssignStaffSheet.show(
+                    context,
+                    controller: controller,
+                    role: 'CLEANER',
+                    currentId: cleanerId,
+                  ),
+                  onUnassign: cleanerId != null
+                      ? () async {
+                          final ok = await controller.unassignCleaner();
+                          if (ok) FerosSnackbar.success('Cleaner removed');
+                          else FerosSnackbar.error('Failed to remove cleaner');
+                        }
+                      : null,
+                ),
+              ],
+            ),
+      ),
+    );
+  }
+}
+
+class _AssignBtn extends StatelessWidget {
+  final IconData icon;
+  final String role;
+  final String? name;
+  final Color color;
+  final VoidCallback onTap;
+  final Future<void> Function()? onUnassign;
+  const _AssignBtn({
+    required this.icon,
+    required this.role,
+    required this.name,
+    required this.color,
+    required this.onTap,
+    this.onUnassign,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final assigned = name != null;
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: assigned ? color.withValues(alpha: 0.07) : AppColors.background,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: assigned ? color.withValues(alpha: 0.35) : AppColors.border,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: assigned ? color : AppColors.mutedText),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      role,
+                      style: AppTextStyles.caption.copyWith(color: AppColors.mutedText, fontSize: 10),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      assigned ? name! : 'Tap to assign',
+                      style: AppTextStyles.caption.copyWith(
+                        color: assigned ? color : AppColors.mutedText,
+                        fontWeight: assigned ? FontWeight.w600 : FontWeight.w400,
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              if (assigned && onUnassign != null)
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onUnassign!(),
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Icon(Icons.close, size: 14, color: color.withValues(alpha: 0.6)),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -4203,7 +4357,14 @@ class _UploadedDocCard extends StatelessWidget {
           child: Stack(
             children: [
               InteractiveViewer(
-                child: Center(child: Image.network(url, fit: BoxFit.contain)),
+                child: Center(
+                  child: CachedNetworkImage(
+                    imageUrl: url,
+                    fit: BoxFit.contain,
+                    placeholder: (_, __) => const CircularProgressIndicator(color: Colors.white),
+                    errorWidget: (_, __, ___) => const Icon(Icons.broken_image_outlined, color: Colors.white54, size: 64),
+                  ),
+                ),
               ),
               Positioned(
                 top: 40,
@@ -5341,10 +5502,19 @@ class _ImageCard extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(9)),
                 child: url != null
-                    ? Image.network(
-                        url,
+                    ? CachedNetworkImage(
+                        imageUrl: url,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+                        placeholder: (_, __) => Container(
+                          color: AppColors.background,
+                          child: const Center(
+                            child: SizedBox(
+                              width: 20, height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.navy),
+                            ),
+                          ),
+                        ),
+                        errorWidget: (_, __, ___) => Container(
                           color: AppColors.background,
                           child: const Icon(Icons.broken_image_outlined, size: 32, color: AppColors.border),
                         ),
@@ -5440,13 +5610,13 @@ class _ImagePreviewPageState extends State<_ImagePreviewPage> {
           final url = widget.images[i]['imageUrl'] as String? ?? '';
           return InteractiveViewer(
             child: Center(
-              child: Image.network(
-                url,
+              child: CachedNetworkImage(
+                imageUrl: url,
                 fit: BoxFit.contain,
-                loadingBuilder: (_, child, progress) => progress == null
-                    ? child
-                    : const Center(child: CircularProgressIndicator(color: Colors.white54)),
-                errorBuilder: (_, __, ___) => const Icon(
+                placeholder: (_, __) => const Center(
+                  child: CircularProgressIndicator(color: Colors.white54),
+                ),
+                errorWidget: (_, __, ___) => const Icon(
                   Icons.broken_image_outlined,
                   color: Colors.white54,
                   size: 48,

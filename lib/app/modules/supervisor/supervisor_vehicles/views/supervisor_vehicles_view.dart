@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
@@ -292,10 +293,20 @@ class _VehicleCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: vehicle['coverImageUrl'] != null
-                        ? Image.network(
-                            vehicle['coverImageUrl'] as String,
+                        ? CachedNetworkImage(
+                            imageUrl: vehicle['coverImageUrl'] as String,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(
+                            width: 38,
+                            height: 38,
+                            placeholder: (_, __) => const Center(
+                              child: SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 1.5, color: AppColors.navy),
+                              ),
+                            ),
+                            errorWidget: (_, __, ___) => const Icon(
                               Icons.local_shipping_outlined,
                               size: 20,
                               color: AppColors.navy,

@@ -84,28 +84,48 @@ class SupervisorOrderDetailView
                 animation: tabCtrl,
                 builder: (_, __) => Scaffold(
                   backgroundColor: AppColors.background,
-                  floatingActionButton: (_canAssignOrder && tabCtrl.index == 0)
-                      ? FloatingActionButton.extended(
-                          onPressed: () {
-                            controller.fetchVehicles();
-                            showModalBottomSheet(
-                              context: tabContext,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (_) => _AssignVehicleSheet(
-                                controller: controller,
-                                remainingWeight: _remaining,
+                  bottomNavigationBar: (_canAssignOrder && tabCtrl.index == 0)
+                      ? Container(
+                          padding: EdgeInsets.fromLTRB(
+                            16, 12, 16,
+                            12 + MediaQuery.of(tabContext).padding.bottom,
+                          ),
+                          decoration: const BoxDecoration(
+                            color: AppColors.surface,
+                            border: Border(top: BorderSide(color: AppColors.border)),
+                          ),
+                          child: SizedBox(
+                            height: 48,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                controller.fetchVehicles();
+                                showModalBottomSheet(
+                                  context: tabContext,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (_) => _AssignVehicleSheet(
+                                    controller: controller,
+                                    remainingWeight: _remaining,
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.add, size: 18),
+                              label: const Text(
+                                'Assign Vehicle',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 15,
+                                ),
                               ),
-                            );
-                          },
-                          backgroundColor: AppColors.navy,
-                          foregroundColor: Colors.white,
-                          icon: const Icon(Icons.add),
-                          label: const Text(
-                            'Assign Vehicle',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w600,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.navy,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
                             ),
                           ),
                         )
