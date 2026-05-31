@@ -743,13 +743,29 @@ class _MyAttendanceCard extends StatelessWidget {
 }
 
 // ── Daily Tab ──────────────────────────────────────────────────────────────────
-class _DailyTab extends StatelessWidget {
+class _DailyTab extends StatefulWidget {
   final OfficeAttendanceController ctrl;
   final bool isAdmin;
   const _DailyTab({required this.ctrl, required this.isAdmin});
 
   @override
+  State<_DailyTab> createState() => _DailyTabState();
+}
+
+class _DailyTabState extends State<_DailyTab> {
+  final _searchCtrl = TextEditingController();
+  String _search = '';
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final ctrl = widget.ctrl;
+    final isAdmin = widget.isAdmin;
     return Column(
       children: [
         // Date navigator
@@ -864,6 +880,44 @@ class _DailyTab extends StatelessWidget {
           );
         }),
 
+        // Search bar
+        Container(
+          color: AppColors.surface,
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+          child: TextField(
+            controller: _searchCtrl,
+            onChanged: (v) => setState(() => _search = v.trim().toLowerCase()),
+            style: AppTextStyles.body,
+            decoration: InputDecoration(
+              hintText: 'Search by name…',
+              hintStyle: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+              prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.mutedText),
+              suffixIcon: _search.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.close, size: 16),
+                      onPressed: () { _searchCtrl.clear(); setState(() => _search = ''); },
+                    )
+                  : null,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              filled: true,
+              fillColor: AppColors.background,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: AppColors.navy),
+              ),
+            ),
+          ),
+        ),
+
         // List
         Expanded(
           child: Obx(() {
@@ -886,7 +940,12 @@ class _DailyTab extends StatelessWidget {
               );
             }
 
-            final rows = ctrl.mergedRows;
+            final rows = _search.isEmpty
+                ? ctrl.mergedRows
+                : ctrl.mergedRows.where((r) {
+                    final name = (r['userName'] as String? ?? '').toLowerCase();
+                    return name.contains(_search);
+                  }).toList();
 
             if (rows.isEmpty) {
               return Center(
@@ -949,6 +1008,7 @@ class _DailyTab extends StatelessWidget {
   }
 
   Future<void> _pickDate(BuildContext context) async {
+    final ctrl = widget.ctrl;
     final picked = await showDatePicker(
       context: context,
       initialDate: ctrl.selectedDate.value,

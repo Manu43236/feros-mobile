@@ -83,7 +83,21 @@ class _SupervisorAttendanceTabState extends State<SupervisorAttendanceTab>
 }
 
 // ── Tab 1: Today's Attendance ─────────────────────────────────────────────────
-class _TodayTab extends StatelessWidget {
+class _TodayTab extends StatefulWidget {
+  @override
+  State<_TodayTab> createState() => _TodayTabState();
+}
+
+class _TodayTabState extends State<_TodayTab> {
+  final _searchCtrl = TextEditingController();
+  String _search = '';
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final ctrl = Get.find<SupervisorAttendanceController>();
@@ -125,6 +139,14 @@ class _TodayTab extends StatelessWidget {
         );
       }
 
+      final filteredCrew = _search.isEmpty
+          ? ctrl.crew
+          : ctrl.crew
+              .where((u) => (u['name'] as String? ?? '')
+                  .toLowerCase()
+                  .contains(_search))
+              .toList();
+
       return RefreshIndicator(
         color: AppColors.navy,
         onRefresh: ctrl.fetchAll,
@@ -137,7 +159,42 @@ class _TodayTab extends StatelessWidget {
 
             // ── Stats row ───────────────────────────────────────
             _TodayStatsRow(ctrl: ctrl),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+
+            // ── Search bar ──────────────────────────────────────
+            TextField(
+              controller: _searchCtrl,
+              onChanged: (v) => setState(() => _search = v.trim().toLowerCase()),
+              style: AppTextStyles.body,
+              decoration: InputDecoration(
+                hintText: 'Search by name…',
+                hintStyle: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+                prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.mutedText),
+                suffixIcon: _search.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.close, size: 16),
+                        onPressed: () { _searchCtrl.clear(); setState(() => _search = ''); },
+                      )
+                    : null,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.navy),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
 
             // ── Section header + Bulk mark ──────────────────────
             Row(
@@ -175,7 +232,7 @@ class _TodayTab extends StatelessWidget {
             const SizedBox(height: 8),
 
             // ── Crew list ───────────────────────────────────────
-            if (ctrl.crew.isEmpty)
+            if (filteredCrew.isEmpty)
               Container(
                 padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
@@ -184,13 +241,14 @@ class _TodayTab extends StatelessWidget {
                   border: Border.all(color: AppColors.border),
                 ),
                 child: Center(
-                  child: Text('No drivers or cleaners found',
-                      style: AppTextStyles.body
-                          .copyWith(color: AppColors.mutedText)),
+                  child: Text(
+                    _search.isNotEmpty ? 'No results for "$_search"' : 'No drivers or cleaners found',
+                    style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+                  ),
                 ),
               )
             else
-              ...ctrl.crew.map((u) => _CrewRow(user: u, ctrl: ctrl)),
+              ...filteredCrew.map((u) => _CrewRow(user: u, ctrl: ctrl)),
           ],
         ),
       );
