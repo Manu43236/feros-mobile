@@ -90,9 +90,7 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
                             ? selected.isEmpty
                             : selected == s;
                         final color = _lrColor(s);
-                        final count = isAll
-                            ? controller.totalCount
-                            : controller.countByStatus(s);
+                        final count = isAll ? controller.totalCount.value : 0;
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: GestureDetector(
@@ -124,28 +122,30 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  const SizedBox(width: 4),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 5,
-                                      vertical: 1,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: isActive
-                                          ? Colors.white.withValues(alpha: 0.25)
-                                          : color.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      '$count',
-                                      style: TextStyle(
-                                        fontFamily: 'Inter',
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                        color: isActive ? Colors.white : color,
+                                  if (isAll) ...[
+                                    const SizedBox(width: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 5,
+                                        vertical: 1,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isActive
+                                            ? Colors.white.withValues(alpha: 0.25)
+                                            : color.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        '$count',
+                                        style: TextStyle(
+                                          fontFamily: 'Inter',
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                          color: isActive ? Colors.white : color,
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -232,11 +232,28 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
               return RefreshIndicator(
                 color: AppColors.navy,
                 onRefresh: controller.fetchLrs,
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                  itemCount: list.length,
-                  itemBuilder: (context, i) => _LrCard(lr: list[i]),
-                ),
+                child: Obx(() {
+                  final loadingMore = controller.isLoadingMore.value;
+                  return ListView.builder(
+                    controller: controller.scrollController,
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                    itemCount: list.length + (loadingMore ? 1 : 0),
+                    itemBuilder: (context, i) {
+                      if (i == list.length) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.navy,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        );
+                      }
+                      return _LrCard(lr: list[i]);
+                    },
+                  );
+                }),
               );
             }),
           ),

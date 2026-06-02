@@ -7,9 +7,16 @@ import '../../../../../../core/popups/feros_snackbar.dart';
 class DriverFuelLogController extends GetxController {
   final _api = Get.find<ApiClient>();
 
-  final isLoading   = true.obs;
-  final isAdding    = false.obs;
-  final logs        = <Map<String, dynamic>>[].obs;
+  final isLoading     = true.obs;
+  final isAdding      = false.obs;
+  final isLoadingMore = false.obs;
+  final hasMore       = true.obs;
+  final totalCount    = 0.obs;
+  final logs          = <Map<String, dynamic>>[].obs;
+
+  int _page = 0;
+  static const _pageSize = 20;
+  late final ScrollController scrollController;
 
   // Vehicles
   final vehicles          = <Map<String, dynamic>>[].obs;
@@ -33,20 +40,22 @@ class DriverFuelLogController extends GetxController {
   final selectedDateTime = Rx<DateTime>(DateTime.now());
   final isFullTank       = false.obs;
 
-  final litresCtrl      = TextEditingController();
+  final litresCtrl       = TextEditingController();
   final costPerLitreCtrl = TextEditingController();
-  final totalCostCtrl   = TextEditingController();
-  final odmCtrl         = TextEditingController();
-  final stationCtrl     = TextEditingController();
+  final totalCostCtrl    = TextEditingController();
+  final odmCtrl          = TextEditingController();
+  final stationCtrl      = TextEditingController();
 
   @override
   void onReady() {
     super.onReady();
+    scrollController = ScrollController()..addListener(_onScroll);
     fetchAll();
   }
 
   @override
   void onClose() {
+    scrollController.dispose();
     litresCtrl.dispose();
     costPerLitreCtrl.dispose();
     totalCostCtrl.dispose();
@@ -55,16 +64,29 @@ class DriverFuelLogController extends GetxController {
     super.onClose();
   }
 
+  void _onScroll() {
+    if (scrollController.position.pixels >=
+        scrollController.position.maxScrollExtent - 200) {
+      loadMore();
+    }
+  }
+
   Future<void> fetchAll() async {
     isLoading.value = true;
+    _page = 0;
+    hasMore.value = true;
+    logs.clear();
     try {
       final results = await Future.wait([
-        _api.get(ApiEndpoints.fuelLogs),
+        _api.get(ApiEndpoints.fuelLogs, params: {'page': 0, 'size': _pageSize}),
         _api.get(ApiEndpoints.vehicles),
       ]);
-      final raw = (results[0].data as Map<String, dynamic>)['data'] as List? ?? [];
-      logs.value = raw.cast<Map<String, dynamic>>()
-        ..sort((a, b) => (b['id'] as int? ?? 0).compareTo(a['id'] as int? ?? 0));
+      final body = (results[0].data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      final raw = (body['content'] as List? ?? []).cast<Map<String, dynamic>>();
+      totalCount.value = body['totalElements'] as int? ?? 0;
+      hasMore.value = !(body['last'] as bool? ?? true);
+      logs.assignAll(raw);
+      _page = 1;
 
       final vRaw = (results[1].data as Map<String, dynamic>)['data'] as List? ?? [];
       vehicles.value = vRaw.cast<Map<String, dynamic>>();
@@ -75,13 +97,36 @@ class DriverFuelLogController extends GetxController {
   }
 
   Future<void> fetch() async {
+    _page = 0;
+    hasMore.value = true;
+    logs.clear();
     try {
-      final res = await _api.get(ApiEndpoints.fuelLogs);
-      final raw = (res.data as Map<String, dynamic>)['data'] as List? ?? [];
-      logs.value = raw.cast<Map<String, dynamic>>()
-        ..sort((a, b) => (b['id'] as int? ?? 0).compareTo(a['id'] as int? ?? 0));
+      final res = await _api.get(ApiEndpoints.fuelLogs, params: {'page': 0, 'size': _pageSize});
+      final body = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      final raw = (body['content'] as List? ?? []).cast<Map<String, dynamic>>();
+      totalCount.value = body['totalElements'] as int? ?? 0;
+      hasMore.value = !(body['last'] as bool? ?? true);
+      logs.assignAll(raw);
+      _page = 1;
     } catch (_) {
       FerosSnackbar.error('Failed to load fuel logs');
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (isLoadingMore.value || !hasMore.value) return;
+    isLoadingMore.value = true;
+    try {
+      final res = await _api.get(ApiEndpoints.fuelLogs, params: {'page': _page, 'size': _pageSize});
+      final body = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      final raw = (body['content'] as List? ?? []).cast<Map<String, dynamic>>();
+      hasMore.value = !(body['last'] as bool? ?? true);
+      logs.addAll(raw);
+      _page++;
+    } catch (_) {
+      FerosSnackbar.error('Failed to load more');
+    } finally {
+      isLoadingMore.value = false;
     }
   }
 

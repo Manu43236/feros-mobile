@@ -74,6 +74,9 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
   bool _isFinanced = false;
   final _financerNameCtrl = TextEditingController();
 
+  // ── Trip Scope ────────────────────────────────────────────────────────────────
+  String? _selectedTripScope;
+
   // ── Extra Pay ─────────────────────────────────────────────────────────────────
   bool _extraPayEnabled = false;
   final _extraPayPerDayCtrl = TextEditingController();
@@ -232,6 +235,7 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
       _financeEnd = _parseDate(v['financeEndDate']);
       _extraPayEnabled = (v['extraPayEnabled'] as bool?) ?? false;
       _extraPayPerDayCtrl.text = v['extraPayPerDay']?.toString() ?? '';
+      _selectedTripScope = v['tripScope'] as String?;
     });
   }
 
@@ -339,6 +343,9 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
         final epd = double.tryParse(_extraPayPerDayCtrl.text.trim());
         if (epd != null) body['extraPayPerDay'] = epd;
       }
+
+      // Trip Scope
+      if (_selectedTripScope != null) body['tripScope'] = _selectedTripScope;
 
       // Notes
       if (_notesCtrl.text.trim().isNotEmpty)
@@ -481,6 +488,37 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
                                   onSelected: (s) =>
                                       setState(() => _selectedStatus = s),
                                 ),
+                          const SizedBox(height: 12),
+                          // ── Trip Scope ──────────────────────────────────
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Trip Scope',
+                                style: AppTextStyles.label,
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  _TripScopeChip(
+                                    label: 'Intra-State',
+                                    value: 'INTRA_STATE',
+                                    selected: _selectedTripScope == 'INTRA_STATE',
+                                    onTap: () => setState(() =>
+                                        _selectedTripScope = _selectedTripScope == 'INTRA_STATE' ? null : 'INTRA_STATE'),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _TripScopeChip(
+                                    label: 'Inter-State',
+                                    value: 'INTER_STATE',
+                                    selected: _selectedTripScope == 'INTER_STATE',
+                                    onTap: () => setState(() =>
+                                        _selectedTripScope = _selectedTripScope == 'INTER_STATE' ? null : 'INTER_STATE'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 12),
                           Row(
                             children: [
@@ -954,6 +992,47 @@ class _Section extends StatelessWidget {
           const SizedBox(height: 14),
           ...children,
         ],
+      ),
+    );
+  }
+}
+
+// ── Trip Scope chip ───────────────────────────────────────────────────────────
+class _TripScopeChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _TripScopeChip({
+    required this.label,
+    required this.value,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.navy : Colors.white,
+          border: Border.all(
+            color: selected ? AppColors.navy : const Color(0xFFE2E8F0),
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: selected ? Colors.white : const Color(0xFF64748B),
+          ),
+        ),
       ),
     );
   }

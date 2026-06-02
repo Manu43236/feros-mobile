@@ -33,11 +33,28 @@ class OfficeInvoicesTab extends GetView<OfficeInvoicesController> {
                 return RefreshIndicator(
                   color: AppColors.navy,
                   onRefresh: controller.fetchInvoices,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                    itemCount: list.length,
-                    itemBuilder: (_, i) => _InvoiceCard(invoice: list[i]),
-                  ),
+                  child: Obx(() {
+                    final loadingMore = controller.isLoadingMore.value;
+                    return ListView.builder(
+                      controller: controller.scrollController,
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                      itemCount: list.length + (loadingMore ? 1 : 0),
+                      itemBuilder: (_, i) {
+                        if (i == list.length) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.navy,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          );
+                        }
+                        return _InvoiceCard(invoice: list[i]);
+                      },
+                    );
+                  }),
                 );
               }),
             ),

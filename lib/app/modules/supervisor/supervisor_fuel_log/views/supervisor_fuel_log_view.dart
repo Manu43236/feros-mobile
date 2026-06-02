@@ -33,7 +33,7 @@ class SupervisorFuelLogView extends GetView<SupervisorFuelLogController> {
       body: controller.isLoading.value
           ? const ShimmerList(count: 4)
           : RefreshIndicator(
-              onRefresh: controller.fetch,
+              onRefresh: controller.fetchAll,
               color: AppColors.navy,
               child: controller.logs.isEmpty
                   ? EmptyState(
@@ -41,12 +41,29 @@ class SupervisorFuelLogView extends GetView<SupervisorFuelLogController> {
                       title: 'lbl_no_fuel_logs'.tr,
                       subtitle: 'lbl_tap_add_fuel'.tr,
                     )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: controller.logs.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (_, i) => _FuelLogCard(log: controller.logs[i]),
-                    ),
+                  : Obx(() {
+                      final loadingMore = controller.isLoadingMore.value;
+                      return ListView.builder(
+                        controller: controller.scrollController,
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                        itemCount: controller.logs.length + (loadingMore ? 1 : 0),
+                        itemBuilder: (_, i) {
+                          if (i == controller.logs.length) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                    color: AppColors.navy, strokeWidth: 2),
+                              ),
+                            );
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _FuelLogCard(log: controller.logs[i]),
+                          );
+                        },
+                      );
+                    }),
             ),
     ));
   }
