@@ -573,6 +573,7 @@ const Map<String, String> en = {
   // ── Delivery sheet ───────────────────────────────────────────────────────
   'lbl_delivered_weight_t': 'Delivered Weight (T)',
   'lbl_delivery_max_hint': 'Must be ≤ loaded weight: @value T',
+  'lbl_delivery_loaded_ref': 'Loaded weight was @value T (delivered weight can differ)',
   'err_invalid_delivery_weight': 'Enter a valid delivered weight',
   'err_delivery_exceeds_loaded': 'Delivered weight cannot exceed loaded weight (@value T)',
 

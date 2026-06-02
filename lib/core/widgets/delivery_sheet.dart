@@ -74,12 +74,12 @@ Future<DeliveryResult?> showDeliverySheet(
             const SizedBox(height: 6),
             Row(
               children: [
-                const Icon(Icons.info_outline, size: 13, color: AppColors.warning),
+                const Icon(Icons.info_outline, size: 13, color: AppColors.mutedText),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    'lbl_delivery_max_hint'.trParams({'value': loadedWeight.toStringAsFixed(1)}),
-                    style: AppTextStyles.caption.copyWith(color: AppColors.warning),
+                    'lbl_delivery_loaded_ref'.trParams({'value': loadedWeight.toStringAsFixed(1)}),
+                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
                   ),
                 ),
               ],
@@ -93,12 +93,6 @@ Future<DeliveryResult?> showDeliverySheet(
                 final weight = double.tryParse(weightController.text.trim());
                 if (weight == null || weight <= 0) {
                   FerosSnackbar.error('err_invalid_delivery_weight'.tr);
-                  return;
-                }
-                if (loadedWeight != null && weight > loadedWeight) {
-                  FerosSnackbar.error(
-                    'err_delivery_exceeds_loaded'.trParams({'value': loadedWeight.toStringAsFixed(1)}),
-                  );
                   return;
                 }
                 Navigator.of(ctx).pop(DeliveryResult(weight: weight));

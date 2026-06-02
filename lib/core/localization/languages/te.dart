@@ -550,6 +550,7 @@ const Map<String, String> te = {
   // ── Delivery sheet ───────────────────────────────────────────────────────
   'lbl_delivered_weight_t': 'డెలివర్డ్ వెయిట్ (T)',
   'lbl_delivery_max_hint': 'లోడెడ్ వెయిట్ కంటే ≤ ఉండాలి: @value T',
+  'lbl_delivery_loaded_ref': 'లోడ్ చేసిన బరువు @value T (డెలివరీ బరువు భిన్నంగా ఉండవచ్చు)',
   'err_invalid_delivery_weight': 'సరైన డెలివర్డ్ వెయిట్ ఎంటర్ చేయండి',
   'err_delivery_exceeds_loaded': 'డెలివర్డ్ వెయిట్ లోడెడ్ వెయిట్ (@value T) కంటే ఎక్కువ ఉండకూడదు',
 
