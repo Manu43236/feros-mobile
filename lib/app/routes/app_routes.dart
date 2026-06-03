@@ -48,10 +48,9 @@ abstract class Routes {
   static const PARTS_REQUESTS = _Paths.PARTS_REQUESTS;
   static const PARTS_REQUEST_DETAIL = _Paths.PARTS_REQUEST_DETAIL;
 
-  // Payroll & Reports
+  // Payroll
   static const PAYROLL = _Paths.PAYROLL;
   static const PAYROLL_DETAIL = _Paths.PAYROLL_DETAIL;
-  static const REPORTS = _Paths.REPORTS;
 
   // Misc
   static const NOTIFICATIONS = _Paths.NOTIFICATIONS;
@@ -104,7 +103,6 @@ abstract class _Paths {
 
   static const PAYROLL = '/payroll';
   static const PAYROLL_DETAIL = '/payroll/detail';
-  static const REPORTS = '/reports';
 
   static const NOTIFICATIONS = '/notifications';
   static const PROFILE = '/profile';
