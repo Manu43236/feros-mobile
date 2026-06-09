@@ -254,7 +254,7 @@ class SupervisorProfileView extends GetView<SupervisorProfileController> {
       case 'CLEANER':      return 'role_cleaner'.tr;
       case 'SUPERVISOR':   return 'role_supervisor'.tr;
       case 'OFFICE_STAFF': return 'role_office_staff'.tr;
-      case 'SERVICE_MEN':  return 'role_service_men'.tr;
+      case 'SERVICE_MANAGER':  return 'role_service_manager'.tr;
       case 'STORE_KEEPER': return 'role_store_keeper'.tr;
       case 'ADMIN':        return 'role_admin'.tr;
       default:             return role;

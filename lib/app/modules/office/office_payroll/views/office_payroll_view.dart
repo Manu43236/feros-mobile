@@ -800,6 +800,7 @@ class _GeneratePayrollSheet extends StatefulWidget {
 class _GeneratePayrollSheetState extends State<_GeneratePayrollSheet> {
   final _userIdCtr = TextEditingController();
   final _rateCtr = TextEditingController();
+  final _monthlyCtr = TextEditingController();
   final _remarksCtr = TextEditingController();
   DateTime _from = DateTime.now().subtract(const Duration(days: 30));
   DateTime _to = DateTime.now();
@@ -809,6 +810,7 @@ class _GeneratePayrollSheetState extends State<_GeneratePayrollSheet> {
   void dispose() {
     _userIdCtr.dispose();
     _rateCtr.dispose();
+    _monthlyCtr.dispose();
     _remarksCtr.dispose();
     super.dispose();
   }
@@ -828,6 +830,12 @@ class _GeneratePayrollSheetState extends State<_GeneratePayrollSheet> {
       FerosSnackbar.error('Enter a valid daily rate');
       return;
     }
+    final monthlyText = _monthlyCtr.text.trim();
+    final monthly = monthlyText.isNotEmpty ? double.tryParse(monthlyText) : null;
+    if (monthlyText.isNotEmpty && monthly == null) {
+      FerosSnackbar.error('Enter a valid monthly salary');
+      return;
+    }
     setState(() => _loading = true);
     try {
       await widget.controller.generatePayroll({
@@ -835,6 +843,7 @@ class _GeneratePayrollSheetState extends State<_GeneratePayrollSheet> {
         'payCycleStartDate': _fmt(_from),
         'payCycleEndDate': _fmt(_to),
         if (rate != null) 'dailyRate': rate,
+        if (monthly != null) 'monthlySalary': monthly,
         if (_remarksCtr.text.trim().isNotEmpty)
           'remarks': _remarksCtr.text.trim(),
       });
@@ -915,6 +924,24 @@ class _GeneratePayrollSheetState extends State<_GeneratePayrollSheet> {
               _rateCtr,
               'Leave blank to use designation rate',
               type: const TextInputType.numberWithOptions(decimal: true),
+            ),
+            const SizedBox(height: 12),
+
+            _label('Monthly Salary (₹)'),
+            const SizedBox(height: 6),
+            _field(
+              _monthlyCtr,
+              'Leave blank to use profile salary',
+              type: const TextInputType.numberWithOptions(decimal: true),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Only for monthly-salary employees. Leave blank for daily-rate staff.',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 11,
+                color: Colors.grey[500],
+              ),
             ),
             const SizedBox(height: 12),
 

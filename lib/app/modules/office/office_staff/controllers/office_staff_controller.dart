@@ -16,7 +16,7 @@ class OfficeStaffController extends GetxController {
 
   static const roles = [
     'ALL', 'DRIVER', 'CLEANER', 'SUPERVISOR',
-    'SERVICE_MEN', 'STORE_KEEPER', 'OFFICE_STAFF',
+    'SERVICE_MANAGER', 'STORE_KEEPER', 'OFFICE_STAFF',
   ];
 
   Worker? _searchWorker;

@@ -27,7 +27,8 @@ class FerosStringUtils {
       case 'SUPERVISOR':   return 'Supervisor';
       case 'DRIVER':       return 'Driver';
       case 'CLEANER':      return 'Cleaner';
-      case 'SERVICE_MEN':  return 'Service Men';
+      case 'SERVICE_MANAGER': return 'Service Manager';
+      case 'TECHNICIAN':      return 'Technician';
       case 'STORE_KEEPER': return 'Store Keeper';
       case 'SUPER_ADMIN':  return 'Super Admin';
       default:             return role ?? '';

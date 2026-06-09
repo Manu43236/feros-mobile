@@ -82,8 +82,8 @@ class OfficeStaffView extends StatelessWidget {
                           final active = r == sel;
                           final label = r == 'ALL'
                               ? 'All'
-                              : r == 'SERVICE_MEN'
-                              ? 'Service Men'
+                              : r == 'SERVICE_MANAGER'
+                              ? 'Service Manager'
                               : r == 'STORE_KEEPER'
                               ? 'Store Keeper'
                               : r == 'OFFICE_STAFF'
@@ -500,7 +500,7 @@ class _StaffCard extends StatelessWidget {
         return AppColors.orange;
       case 'SUPERVISOR':
         return const Color(0xFF7C3AED);
-      case 'SERVICE_MEN':
+      case 'SERVICE_MANAGER':
         return AppColors.success;
       case 'STORE_KEEPER':
         return const Color(0xFF0891B2);
@@ -520,7 +520,7 @@ class _RoleBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = switch (role) {
-      'SERVICE_MEN' => 'Service Men',
+      'SERVICE_MANAGER' => 'Service Manager',
       'STORE_KEEPER' => 'Store Keeper',
       'OFFICE_STAFF' => 'Office Staff',
       _ => role[0] + role.substring(1).toLowerCase(),
@@ -529,7 +529,7 @@ class _RoleBadge extends StatelessWidget {
       'DRIVER' => AppColors.navy,
       'CLEANER' => AppColors.orange,
       'SUPERVISOR' => const Color(0xFF7C3AED),
-      'SERVICE_MEN' => AppColors.success,
+      'SERVICE_MANAGER' => AppColors.success,
       'STORE_KEEPER' => const Color(0xFF0891B2),
       'OFFICE_STAFF' => const Color(0xFF0284C7),
       _ => AppColors.navy,
@@ -572,7 +572,7 @@ class _CreateStaffSheetState extends State<_CreateStaffSheet> {
     'DRIVER',
     'CLEANER',
     'SUPERVISOR',
-    'SERVICE_MEN',
+    'SERVICE_MANAGER',
     'STORE_KEEPER',
     'OFFICE_STAFF',
   ];
@@ -670,7 +670,7 @@ class _CreateStaffSheetState extends State<_CreateStaffSheet> {
               decoration: _inputDec(''),
               items: _roles.map((r) {
                 final label = switch (r) {
-                  'SERVICE_MEN' => 'Service Men',
+                  'SERVICE_MANAGER' => 'Service Manager',
                   'STORE_KEEPER' => 'Store Keeper',
                   'OFFICE_STAFF' => 'Office Staff',
                   _ => r[0] + r.substring(1).toLowerCase(),

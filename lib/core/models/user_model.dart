@@ -47,7 +47,7 @@ class UserModel {
   bool get isSupervisor   => role == 'SUPERVISOR';
   bool get isDriver       => role == 'DRIVER';
   bool get isCleaner      => role == 'CLEANER';
-  bool get isServiceMen   => role == 'SERVICE_MEN';
+  bool get isServiceManager   => role == 'SERVICE_MANAGER';
   bool get isStoreKeeper  => role == 'STORE_KEEPER';
   bool get isFieldWorker  => isDriver || isCleaner || isSupervisor;
 }

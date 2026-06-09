@@ -19,11 +19,17 @@ class DriverShellController extends GetxController {
           NavItem(label: 'nav_attendance'.tr, icon: Icons.check_circle_outline,     activeIcon: Icons.check_circle,      route: '/shell'),
           NavItem(label: 'lbl_profile'.tr,    icon: Icons.person_outline,           activeIcon: Icons.person,            route: '/shell'),
         ];
-      case 'SERVICE_MEN':
+      case 'SERVICE_MANAGER':
         return [
           NavItem(label: 'nav_home'.tr,       icon: Icons.home_outlined,            activeIcon: Icons.home,              route: '/shell'),
           NavItem(label: 'nav_services'.tr,   icon: Icons.build_outlined,           activeIcon: Icons.build,             route: '/shell'),
           NavItem(label: 'nav_tyres'.tr,      icon: Icons.tire_repair_outlined,     activeIcon: Icons.tire_repair,       route: '/shell'),
+          NavItem(label: 'nav_attendance'.tr, icon: Icons.check_circle_outline,     activeIcon: Icons.check_circle,      route: '/shell'),
+          NavItem(label: 'lbl_profile'.tr,    icon: Icons.person_outline,           activeIcon: Icons.person,            route: '/shell'),
+        ];
+      case 'TECHNICIAN':
+        return [
+          NavItem(label: 'nav_tasks'.tr,      icon: Icons.handyman_outlined,        activeIcon: Icons.handyman,          route: '/shell'),
           NavItem(label: 'nav_attendance'.tr, icon: Icons.check_circle_outline,     activeIcon: Icons.check_circle,      route: '/shell'),
           NavItem(label: 'lbl_profile'.tr,    icon: Icons.person_outline,           activeIcon: Icons.person,            route: '/shell'),
         ];

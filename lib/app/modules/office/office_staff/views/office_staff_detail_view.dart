@@ -162,7 +162,7 @@ class _OfficeStaffDetailViewState extends State<OfficeStaffDetailView>
   }
 
   String _roleLabel(String role) => switch (role) {
-    'SERVICE_MEN' => 'Service Men',
+    'SERVICE_MANAGER' => 'Service Manager',
     'STORE_KEEPER' => 'Store Keeper',
     'OFFICE_STAFF' => 'Office Staff',
     _ => role.isEmpty ? '' : role[0] + role.substring(1).toLowerCase(),
@@ -194,6 +194,14 @@ class _ProfileTab extends StatelessWidget {
             _row('Employment Type', user['employmentType']),
             _row('Joining Date', user['joiningDate']),
             _row('Date of Birth', user['dateOfBirth']),
+          ]),
+        ],
+        if (user['salaryType'] != null) ...[
+          const SizedBox(height: 12),
+          _section('Payroll', [
+            _row('Salary Type', user['salaryType'] == 'MONTHLY' ? 'Monthly Salary' : 'Daily Rate'),
+            if (user['salaryType'] == 'MONTHLY' && user['monthlySalary'] != null)
+              _row('Monthly Salary', '₹${user['monthlySalary']}'),
           ]),
         ],
         if (user['licenseNumber'] != null) ...[

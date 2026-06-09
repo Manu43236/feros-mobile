@@ -13,6 +13,7 @@ import '../../../service_men/service_men_dashboard/bindings/service_men_dashboar
 import '../../../service_men/service_men_services/bindings/service_men_services_binding.dart';
 import '../../../service_men/service_men_profile/bindings/service_men_profile_binding.dart';
 import '../../../service_men/service_men_tyres/bindings/service_men_tyres_binding.dart';
+import '../../../technician/technician_dashboard/bindings/technician_dashboard_binding.dart';
 
 class DriverShellBinding extends Bindings {
   @override
@@ -21,14 +22,18 @@ class DriverShellBinding extends Bindings {
 
     final role = Get.find<AuthService>().user?.role ?? '';
 
-    if (role == 'STORE_KEEPER') {
+    if (role == 'TECHNICIAN') {
+      TechnicianDashboardBinding().dependencies();
+      DriverAttendanceBinding().dependencies();
+      DriverProfileBinding().dependencies();
+    } else if (role == 'STORE_KEEPER') {
       Get.lazyPut<StoreKeeperInventoryController>(
           () => StoreKeeperInventoryController());
       StoreKeeperDashboardBinding().dependencies();
       StoreKeeperRequestsBinding().dependencies();
       DriverAttendanceBinding().dependencies();
       StoreKeeperProfileBinding().dependencies();
-    } else if (role == 'SERVICE_MEN') {
+    } else if (role == 'SERVICE_MANAGER') {
       ServiceMenDashboardBinding().dependencies();
       ServiceMenServicesBinding().dependencies();
       ServiceMenTyresBinding().dependencies();

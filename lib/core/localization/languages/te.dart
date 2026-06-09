@@ -71,7 +71,9 @@ const Map<String, String> te = {
   'role_cleaner': 'క్లీనర్',
   'role_supervisor': 'సూపర్‌వైజర్',
   'role_office_staff': 'ఆఫీస్ స్టాఫ్',
-  'role_service_men': 'సర్వీస్ మెన్',
+  'role_service_men': 'సర్వీస్ మేనేజర్',
+  'role_service_manager': 'సర్వీస్ మేనేజర్',
+  'role_technician': 'టెక్నీషియన్',
   'role_store_keeper': 'స్టోర్ కీపర్',
   'role_admin': 'అడ్మిన్',
 
@@ -88,6 +90,7 @@ const Map<String, String> te = {
   'nav_stock': 'స్టాక్',
   'nav_tyres': 'టైర్స్',
   'nav_breakdowns': 'బ్రేక్‌డౌన్స్',
+  'nav_tasks': 'టాస్క్‌లు',
   'nav_finance': 'ఫైనాన్స్',
 
   // ── Drawer / Profile ─────────────────────────────────────────────────────

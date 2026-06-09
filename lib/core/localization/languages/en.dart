@@ -70,7 +70,9 @@ const Map<String, String> en = {
   'role_cleaner': 'Cleaner',
   'role_supervisor': 'Supervisor',
   'role_office_staff': 'Office Staff',
-  'role_service_men': 'Service Men',
+  'role_service_men': 'Service Manager',
+  'role_service_manager': 'Service Manager',
+  'role_technician': 'Technician',
   'role_store_keeper': 'Store Keeper',
   'role_admin': 'Admin',
 
@@ -87,6 +89,7 @@ const Map<String, String> en = {
   'nav_stock': 'Stock',
   'nav_tyres': 'Tyres',
   'nav_breakdowns': 'Breakdowns',
+  'nav_tasks': 'Tasks',
   'nav_finance': 'Finance',
 
   // ── Drawer / Profile ─────────────────────────────────────────────────────

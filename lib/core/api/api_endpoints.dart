@@ -26,6 +26,18 @@ class ApiEndpoints {
   static String completeTask(serviceId, taskId) => '/vehicle-services/$serviceId/tasks/$taskId/complete';
   static String addServiceTask(serviceId)       => '/vehicle-services/$serviceId/tasks';
 
+  // Service Manager
+  static const serviceManagerDashboard                     = '/service-manager/dashboard';
+  static const serviceManagerTechnicians                   = '/service-manager/technicians';
+  static String assignTechnicianToTask(serviceId, taskId) => '/vehicle-services/$serviceId/tasks/$taskId/assign';
+
+  // Technician
+  static const technicianTasks                     = '/technician/tasks';
+  static String technicianStartTask(taskId)        => '/technician/tasks/$taskId/start';
+  static String technicianCloseTask(taskId)        => '/technician/tasks/$taskId/close';
+  static String technicianTaskPartRequest(taskId)  => '/technician/tasks/$taskId/spare-part-request';
+  static String technicianTaskPartRequests(taskId) => '/technician/tasks/$taskId/spare-part-requests';
+
   // Service Invoices
   static const serviceInvoices                  = '/service-invoices';
   static String serviceInvoiceById(id)          => '/service-invoices/$id';

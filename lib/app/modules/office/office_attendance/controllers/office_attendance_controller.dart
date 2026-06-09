@@ -30,7 +30,7 @@ class OfficeAttendanceController extends GetxController {
 
   static const staffRoles = [
     'DRIVER', 'CLEANER', 'SUPERVISOR',
-    'OFFICE_STAFF', 'SERVICE_MEN', 'STORE_KEEPER'
+    'OFFICE_STAFF', 'SERVICE_MANAGER', 'STORE_KEEPER'
   ];
 
   @override

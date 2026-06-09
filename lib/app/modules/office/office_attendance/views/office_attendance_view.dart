@@ -1175,7 +1175,7 @@ class _AttendanceRow extends StatelessWidget {
   }
 
   String _roleLabel(String role) => switch (role) {
-    'SERVICE_MEN' => 'Service Men',
+    'SERVICE_MANAGER' => 'Service Manager',
     'STORE_KEEPER' => 'Store Keeper',
     'OFFICE_STAFF' => 'Office Staff',
     _ => role.isEmpty ? '' : role[0] + role.substring(1).toLowerCase(),

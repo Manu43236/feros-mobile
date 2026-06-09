@@ -1,3 +1,4 @@
+import 'package:feros/app/modules/technician/technician_dashboard/views/technician_dashboard_view.dart';
 import 'package:feros/app/modules/driver/driver_dashboard/views/driver_dashboard_view.dart';
 import 'package:feros/app/modules/driver/driver_shell/controllers/driver_shell_controller.dart';
 import 'package:feros/app/modules/store_keeper/store_keeper_dashboard/views/store_keeper_dashboard_view.dart';
@@ -164,7 +165,7 @@ class DriverShellView extends GetView<DriverShellController> {
           _ComingSoonTab(title: 'LRs',    icon: Icons.receipt_long_outlined,       sprint: 5),
           const DriverProfileView(),
         ];
-      case 'SERVICE_MEN':
+      case 'SERVICE_MANAGER':
         // Eagerly register breakdowns controller so services tab can use it
         if (!Get.isRegistered<ServiceMenBreakdownsController>()) {
           ServiceMenBreakdownsBinding().dependencies();
@@ -175,6 +176,12 @@ class DriverShellView extends GetView<DriverShellController> {
           const ServiceMenTyresView(),
           DriverAttendanceView(),
           const ServiceMenProfileView(),
+        ];
+      case 'TECHNICIAN':
+        return [
+          const TechnicianDashboardView(),
+          DriverAttendanceView(),
+          const DriverProfileView(),
         ];
       case 'STORE_KEEPER':
         return [

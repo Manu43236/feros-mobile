@@ -41,7 +41,7 @@ class SplashController extends GetxController {
       case 'ADMIN':
         return Routes.OFFICE_SHELL;
       default:
-        return Routes.SHELL; // DRIVER, CLEANER, SERVICE_MEN, STORE_KEEPER
+        return Routes.SHELL; // DRIVER, CLEANER, SERVICE_MANAGER, TECHNICIAN, STORE_KEEPER
     }
   }
 }
