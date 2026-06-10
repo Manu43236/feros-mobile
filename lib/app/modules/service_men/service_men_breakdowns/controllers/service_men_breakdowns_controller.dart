@@ -65,17 +65,24 @@ class ServiceMenBreakdownsController extends GetxController {
     required int breakdownId,
     required String serviceType,
     required String serviceDate,
+    String? payerType,
+    int? odometer,
+    String? vendorName,
     String? notes,
+    List<Map<String, dynamic>>? tasks,
   }) async {
     try {
       final res = await _api.post(ApiEndpoints.vehicleServices, data: {
-        'vehicleId':    vehicleId,
-        'triggeredBy':  'BREAKDOWN',
-        'breakdownId':  breakdownId,
-        'serviceType':  serviceType,
-        'serviceDate':  serviceDate,
-        if (notes != null && notes.isNotEmpty) 'notes': notes,
-        'tasks': <Map<String, dynamic>>[],
+        'vehicleId':   vehicleId,
+        'triggeredBy': 'BREAKDOWN',
+        'breakdownId': breakdownId,
+        'serviceType': serviceType,
+        'serviceDate': serviceDate,
+        'payerType':   payerType ?? 'OWN_EXPENSE',
+        if (odometer != null)                    'odometer':   odometer,
+        if (vendorName != null && vendorName.isNotEmpty) 'vendorName': vendorName,
+        if (notes != null && notes.isNotEmpty)   'notes':      notes,
+        'tasks': tasks ?? <Map<String, dynamic>>[],
       });
       // Refresh breakdowns list so the card flips to IN_REPAIR
       await fetchBreakdowns();

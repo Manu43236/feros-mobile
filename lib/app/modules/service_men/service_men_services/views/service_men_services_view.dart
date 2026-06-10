@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../../../../core/api/api_client.dart';
 import '../../../../../../core/api/api_endpoints.dart';
+import '../../../../../../core/popups/feros_snackbar.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../core/widgets/shimmer_card.dart';
@@ -1093,10 +1094,44 @@ class _ReportBreakdownSheetState extends State<_ReportBreakdownSheet> {
 }
 
 // ── Log Service Sheet ──────────────────────────────────────────────────────────
+// ── Task draft model ─────────────────────────────────────────────────────────
+class _TaskDraft {
+  int?    taskTypeId;
+  String? customName;
+  bool    isRecurring;
+  int?    frequencyKm;
+  double? cost;
+  final TextEditingController costCtrl;
+  final TextEditingController freqCtrl;
+
+  _TaskDraft({
+    this.taskTypeId,
+    this.customName,
+    this.isRecurring = false,
+    this.frequencyKm,
+    this.cost,
+  })  : costCtrl = TextEditingController(),
+        freqCtrl = TextEditingController();
+
+  void dispose() {
+    costCtrl.dispose();
+    freqCtrl.dispose();
+  }
+
+  Map<String, dynamic> toMap() => {
+        'taskTypeId':  taskTypeId,
+        'customName':  customName,
+        'isRecurring': isRecurring,
+        if (isRecurring && frequencyKm != null) 'frequencyKm': frequencyKm,
+        if (cost != null) 'cost': cost,
+      };
+}
+
+// ── Log Service Sheet ─────────────────────────────────────────────────────────
 class _LogServiceSheet extends StatefulWidget {
   final String vehicleReg;
-  final int vehicleId;
-  final int breakdownId;
+  final int    vehicleId;
+  final int    breakdownId;
   final ServiceMenBreakdownsController controller;
 
   const _LogServiceSheet({
@@ -1112,30 +1147,126 @@ class _LogServiceSheet extends StatefulWidget {
 
 class _LogServiceSheetState extends State<_LogServiceSheet> {
   String _serviceType = 'INTERNAL';
+  String _payerType   = 'OWN_EXPENSE';
+  late String _serviceDate;
+
   final _notesCtrl    = TextEditingController();
-  bool _submitting    = false;
+  final _odometerCtrl = TextEditingController();
+  final _vendorCtrl   = TextEditingController();
+  final _customCtrl   = TextEditingController();
+
+  bool _submitting     = false;
+  bool _loadingTasks   = false;
+  bool _showCustom     = false;
+
+  List<Map<String, dynamic>> _taskTypes = [];
+  final List<_TaskDraft>     _tasks     = [];
 
   static const _serviceTypes = [
-    ('INTERNAL',    'Internal (Self)'),
-    ('OEM_CENTER',  'OEM Center'),
-    ('THIRD_PARTY', '3rd Party'),
+    ('INTERNAL',    'lbl_service_internal_short'),
+    ('OEM_CENTER',  'lbl_service_oem_center'),
+    ('THIRD_PARTY', 'lbl_service_third_party'),
   ];
+  static const _payerTypes = [
+    ('OWN_EXPENSE',  'lbl_payer_own_expense'),
+    ('WARRANTY_OEM', 'lbl_payer_oem_warranty'),
+    ('WARRANTY_ANC', 'lbl_payer_anc_warranty'),
+    ('INSURANCE',    'lbl_payer_insurance'),
+    ('AMC',          'lbl_payer_amc'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _serviceDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    _fetchTaskTypes();
+  }
+
+  Future<void> _fetchTaskTypes() async {
+    setState(() => _loadingTasks = true);
+    try {
+      final api = Get.find<ApiClient>();
+      final res = await api.get(ApiEndpoints.serviceTaskTypes);
+      final list = ((res.data as Map<String, dynamic>)['data'] as List)
+          .cast<Map<String, dynamic>>();
+      setState(() => _taskTypes = list);
+    } catch (_) {}
+    setState(() => _loadingTasks = false);
+  }
 
   @override
   void dispose() {
     _notesCtrl.dispose();
+    _odometerCtrl.dispose();
+    _vendorCtrl.dispose();
+    _customCtrl.dispose();
+    for (final t in _tasks) t.dispose();
     super.dispose();
   }
 
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateFormat('yyyy-MM-dd').parse(_serviceDate),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now(),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: const ColorScheme.light(primary: AppColors.navy),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      setState(() => _serviceDate = DateFormat('yyyy-MM-dd').format(picked));
+    }
+  }
+
+  void _addTask(int taskTypeId, String taskName) {
+    if (_tasks.any((t) => t.taskTypeId == taskTypeId)) return;
+    setState(() => _tasks.add(_TaskDraft(taskTypeId: taskTypeId, customName: taskName)));
+  }
+
+  void _addCustomTask() {
+    final name = _customCtrl.text.trim();
+    if (name.isEmpty) return;
+    setState(() {
+      _tasks.add(_TaskDraft(customName: name));
+      _customCtrl.clear();
+      _showCustom = false;
+    });
+  }
+
+  void _removeTask(int index) {
+    setState(() {
+      _tasks[index].dispose();
+      _tasks.removeAt(index);
+    });
+  }
+
   Future<void> _submit() async {
+    if (_tasks.isEmpty) {
+      FerosSnackbar.error('lbl_add_at_least_one_task'.tr);
+      return;
+    }
     setState(() => _submitting = true);
-    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final newService = await widget.controller.createServiceFromBreakdown(
       vehicleId:   widget.vehicleId,
       breakdownId: widget.breakdownId,
       serviceType: _serviceType,
-      serviceDate: today,
-      notes:       _notesCtrl.text.trim(),
+      serviceDate: _serviceDate,
+      payerType:   _payerType,
+      odometer:    int.tryParse(_odometerCtrl.text.trim()),
+      vendorName:  _serviceType != 'INTERNAL' && _vendorCtrl.text.trim().isNotEmpty
+          ? _vendorCtrl.text.trim()
+          : null,
+      notes: _notesCtrl.text.trim().isNotEmpty ? _notesCtrl.text.trim() : null,
+      tasks: _tasks.map((t) {
+        // sync text field values before sending
+        t.cost        = double.tryParse(t.costCtrl.text.trim());
+        t.frequencyKm = int.tryParse(t.freqCtrl.text.trim());
+        return t.toMap();
+      }).toList(),
     );
     if (!mounted) return;
     setState(() => _submitting = false);
@@ -1148,116 +1279,463 @@ class _LogServiceSheetState extends State<_LogServiceSheet> {
     }
   }
 
+  Widget _sectionLabel(String key) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(key.tr,
+            style: AppTextStyles.label.copyWith(color: AppColors.navy)),
+      );
+
+  Widget _chipRow(
+    List<(String, String)> options,
+    String selected,
+    void Function(String) onSelect,
+  ) =>
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: options.map((o) {
+          final isSelected = selected == o.$1;
+          return GestureDetector(
+            onTap: () => setState(() => onSelect(o.$1)),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.navy : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                    color: isSelected ? AppColors.navy : AppColors.border),
+              ),
+              child: Text(o.$2.tr,
+                  style: AppTextStyles.caption.copyWith(
+                    color: isSelected ? Colors.white : AppColors.bodyText,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.w400,
+                  )),
+            ),
+          );
+        }).toList(),
+      );
+
   @override
   Widget build(BuildContext context) {
+    final alreadySelectedIds =
+        _tasks.where((t) => t.taskTypeId != null).map((t) => t.taskTypeId!).toSet();
+    final availableTaskTypes =
+        _taskTypes.where((t) => !alreadySelectedIds.contains(t['id'])).toList();
+    final displayDate =
+        DateFormat('dd MMM yyyy').format(DateFormat('yyyy-MM-dd').parse(_serviceDate));
+
     return Padding(
       padding: EdgeInsets.only(
         left: 24, right: 24, top: 24,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.build_outlined,
-                  color: AppColors.navy, size: 20),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header ──────────────────────────────────────────────────────
+            Row(children: [
+              const Icon(Icons.build_outlined, color: AppColors.navy, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text('btn_log_service'.tr,
-                    style: AppTextStyles.heading3
-                        .copyWith(color: AppColors.navy)),
+                    style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
               ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
+            ]),
+            const SizedBox(height: 4),
+            Text(
               '${'lbl_vehicle'.tr}: ${widget.vehicleReg} · ${'lbl_triggered_by_breakdown'.tr}',
-              style:
-                  AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-          const SizedBox(height: 20),
-          Text('lbl_service_type'.tr,
-              style:
-                  AppTextStyles.label.copyWith(color: AppColors.navy)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: _serviceTypes.map((t) {
-              final selected = _serviceType == t.$1;
-              return GestureDetector(
-                onTap: () => setState(() => _serviceType = t.$1),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 9),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? AppColors.navy
-                        : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                        color: selected
-                            ? AppColors.navy
-                            : AppColors.border),
-                  ),
-                  child: Text(t.$2,
-                      style: AppTextStyles.caption.copyWith(
-                        color: selected ? Colors.white : AppColors.bodyText,
-                        fontWeight: selected
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                      )),
+              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+            ),
+            const SizedBox(height: 20),
+
+            // ── Service Date ─────────────────────────────────────────────────
+            _sectionLabel('lbl_service_date'),
+            GestureDetector(
+              onTap: _pickDate,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(8),
+                  color: const Color(0xFFF8FAFC),
                 ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 16),
-          Text('lbl_notes_optional'.tr,
-              style:
-                  AppTextStyles.label.copyWith(color: AppColors.navy)),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _notesCtrl,
-            maxLines: 3,
-            decoration: InputDecoration(
-              hintText: 'lbl_describe_repair'.tr,
-              hintStyle:
-                  AppTextStyles.caption.copyWith(color: AppColors.mutedText),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AppColors.navy),
+                child: Row(children: [
+                  const Icon(Icons.calendar_today_outlined,
+                      size: 16, color: AppColors.navy),
+                  const SizedBox(width: 8),
+                  Text(displayDate,
+                      style: AppTextStyles.body.copyWith(color: AppColors.bodyText)),
+                  const Spacer(),
+                  Icon(Icons.edit_outlined, size: 14, color: AppColors.mutedText),
+                ]),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _submitting ? null : _submit,
-              icon: _submitting
-                  ? const SizedBox(
-                      width: 18, height: 18,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.build_circle_outlined, size: 20),
-              label: Text(
-                _submitting ? 'lbl_creating'.tr : 'btn_create_service_record'.tr,
-                style:
-                    AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+            const SizedBox(height: 16),
+
+            // ── Service Type ─────────────────────────────────────────────────
+            _sectionLabel('lbl_service_type'),
+            _chipRow(_serviceTypes, _serviceType, (v) => _serviceType = v),
+            const SizedBox(height: 16),
+
+            // ── Payer Type ───────────────────────────────────────────────────
+            _sectionLabel('lbl_who_pays'),
+            _chipRow(_payerTypes, _payerType, (v) => _payerType = v),
+            const SizedBox(height: 16),
+
+            // ── Vendor Name (non-internal only) ──────────────────────────────
+            if (_serviceType != 'INTERNAL') ...[
+              _sectionLabel('lbl_vendor_name'),
+              TextField(
+                controller: _vendorCtrl,
+                decoration: InputDecoration(
+                  hintText: _serviceType == 'OEM_CENTER'
+                      ? 'e.g. TATA Motors Service'
+                      : 'e.g. Raju Tyre Works',
+                  hintStyle:
+                      AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                  border:
+                      OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppColors.navy),
+                  ),
+                ),
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.navy,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+              const SizedBox(height: 16),
+            ],
+
+            // ── Odometer ─────────────────────────────────────────────────────
+            _sectionLabel('lbl_odometer_optional'),
+            TextField(
+              controller: _odometerCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                hintText: 'e.g. 42300',
+                hintStyle:
+                    AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.navy),
+                ),
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+
+            // ── Tasks ─────────────────────────────────────────────────────────
+            Row(children: [
+              Expanded(
+                child: Text('lbl_tasks'.tr,
+                    style: AppTextStyles.label.copyWith(color: AppColors.navy)),
+              ),
+              if (_tasks.isNotEmpty)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.navy,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text('${_tasks.length}',
+                      style: AppTextStyles.caption
+                          .copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                ),
+            ]),
+            const SizedBox(height: 8),
+
+            // Task type dropdown
+            if (_loadingTasks)
+              const Center(
+                  child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child:
+                    SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+              ))
+            else
+              Row(children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<int>(
+                        isExpanded: true,
+                        hint: Text('lbl_select_task_type'.tr,
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.mutedText)),
+                        value: null,
+                        items: availableTaskTypes
+                            .map((t) => DropdownMenuItem<int>(
+                                  value: t['id'] as int,
+                                  child: Text(t['name'] as String,
+                                      style: AppTextStyles.body),
+                                ))
+                            .toList(),
+                        onChanged: (id) {
+                          if (id == null) return;
+                          final tt = _taskTypes.firstWhere((t) => t['id'] == id);
+                          _addTask(id, tt['name'] as String);
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => setState(() => _showCustom = !_showCustom),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                    decoration: BoxDecoration(
+                      color: _showCustom ? AppColors.navy : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                          color: _showCustom ? AppColors.navy : AppColors.border),
+                    ),
+                    child: Text('lbl_add_custom_task'.tr,
+                        style: AppTextStyles.caption.copyWith(
+                          color: _showCustom ? Colors.white : AppColors.bodyText,
+                          fontWeight: FontWeight.w500,
+                        )),
+                  ),
+                ),
+              ]),
+
+            // Custom task input
+            if (_showCustom) ...[
+              const SizedBox(height: 8),
+              Row(children: [
+                Expanded(
+                  child: TextField(
+                    controller: _customCtrl,
+                    decoration: InputDecoration(
+                      hintText: 'lbl_custom_name'.tr,
+                      hintStyle:
+                          AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppColors.navy),
+                      ),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                    ),
+                    onSubmitted: (_) => _addCustomTask(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: _addCustomTask,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.navy,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text('btn_add'.tr,
+                      style: AppTextStyles.caption
+                          .copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                ),
+              ]),
+            ],
+
+            // Task list
+            if (_tasks.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              ..._tasks.asMap().entries.map((e) {
+                final idx  = e.key;
+                final task = e.value;
+                final name = task.customName ?? task.taskTypeId?.toString() ?? '';
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5FA),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Expanded(
+                          child: Text(name,
+                              style: AppTextStyles.body
+                                  .copyWith(color: AppColors.navy, fontWeight: FontWeight.w600)),
+                        ),
+                        GestureDetector(
+                          onTap: () => _removeTask(idx),
+                          child: const Icon(Icons.close,
+                              size: 16, color: AppColors.mutedText),
+                        ),
+                      ]),
+                      const SizedBox(height: 8),
+                      Row(children: [
+                        // Cost
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('lbl_cost_optional'.tr,
+                                  style: AppTextStyles.caption
+                                      .copyWith(color: AppColors.mutedText)),
+                              const SizedBox(height: 4),
+                              TextField(
+                                controller: task.costCtrl,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  hintText: '0',
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 8),
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(6)),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                    borderSide:
+                                        const BorderSide(color: AppColors.navy),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Recurring toggle
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('lbl_recurring'.tr,
+                                style: AppTextStyles.caption
+                                    .copyWith(color: AppColors.mutedText)),
+                            const SizedBox(height: 4),
+                            GestureDetector(
+                              onTap: () =>
+                                  setState(() => task.isRecurring = !task.isRecurring),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: task.isRecurring
+                                      ? const Color(0xFFEFF6FF)
+                                      : const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: task.isRecurring
+                                        ? const Color(0xFF93C5FD)
+                                        : AppColors.border,
+                                  ),
+                                ),
+                                child: Text(
+                                  task.isRecurring
+                                      ? 'lbl_recurring'.tr
+                                      : 'lbl_one_time'.tr,
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: task.isRecurring
+                                        ? const Color(0xFF1D4ED8)
+                                        : AppColors.bodyText,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ]),
+                      // Frequency km (when recurring)
+                      if (task.isRecurring) ...[
+                        const SizedBox(height: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('lbl_frequency_km'.tr,
+                                style: AppTextStyles.caption
+                                    .copyWith(color: AppColors.mutedText)),
+                            const SizedBox(height: 4),
+                            TextField(
+                              controller: task.freqCtrl,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                hintText: '10000',
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 8),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6)),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide:
+                                      const BorderSide(color: AppColors.navy),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }),
+            ],
+            const SizedBox(height: 16),
+
+            // ── Notes ─────────────────────────────────────────────────────────
+            _sectionLabel('lbl_notes_optional'),
+            TextField(
+              controller: _notesCtrl,
+              maxLines: 2,
+              decoration: InputDecoration(
+                hintText: 'lbl_describe_repair'.tr,
+                hintStyle:
+                    AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.navy),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // ── Submit ────────────────────────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _submitting ? null : _submit,
+                icon: _submitting
+                    ? const SizedBox(
+                        width: 18, height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.build_circle_outlined, size: 20),
+                label: Text(
+                  _submitting ? 'lbl_creating'.tr : 'btn_create_service_record'.tr,
+                  style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.navy,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
