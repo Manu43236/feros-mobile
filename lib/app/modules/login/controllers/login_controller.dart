@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:io';
+import 'package:feros/core/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -21,18 +23,80 @@ class LoginController extends GetxController {
   final List<FocusNode> pinFocusNodes =
       List.generate(4, (_) => FocusNode());
 
-  final isLoading  = false.obs;
-  final phoneError = RxnString();
-  final pinError   = RxnString();
+  final isLoading    = false.obs;
+  final phoneError   = RxnString();
+  final pinError     = RxnString();
+  final lockedUntil   = Rxn<DateTime>();
+  final secondsLeft   = 0.obs;
+  final isAskingAdmin = false.obs;
+  final attemptsUsed  = 0.obs;
+
+  Timer? _lockTimer;
+  late final StorageService _storage;
+
+  bool get isLocked => lockedUntil.value != null && secondsLeft.value > 0;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _storage = Get.find<StorageService>();
+    _restoreStoredLockout();
+  }
+
+  Future<void> _restoreStoredLockout() async {
+    final until = await _storage.getLockout();
+    if (until == null) return;
+    if (until.isAfter(DateTime.now())) {
+      _startLockTimer(until);
+    } else {
+      await _storage.clearLockout();
+    }
+  }
 
   String get _pin => pinControllers.map((c) => c.text).join();
 
   @override
   void onClose() {
+    _lockTimer?.cancel();
     phoneController.dispose();
     for (final c in pinControllers) c.dispose();
     for (final f in pinFocusNodes)  f.dispose();
     super.onClose();
+  }
+
+  void _startLockTimer(DateTime until) {
+    lockedUntil.value = until;
+    _updateSecondsLeft();
+    _lockTimer?.cancel();
+    _lockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      _updateSecondsLeft();
+    });
+  }
+
+  void _updateSecondsLeft() {
+    final diff = lockedUntil.value!.difference(DateTime.now()).inSeconds;
+    if (diff <= 0) {
+      secondsLeft.value = 0;
+      lockedUntil.value = null;
+      _lockTimer?.cancel();
+      _storage.clearLockout();
+    } else {
+      secondsLeft.value = diff;
+    }
+  }
+
+  Future<void> askPinReset() async {
+    final phone = phoneController.text.trim();
+    if (phone.isEmpty) return;
+    isAskingAdmin.value = true;
+    try {
+      await _api.post(ApiEndpoints.askPinReset(phone));
+      FerosSnackbar.success('Request sent! Your admin has been notified.');
+    } catch (_) {
+      FerosSnackbar.error('Could not send request. Please try again.');
+    } finally {
+      if (!isClosed) isAskingAdmin.value = false;
+    }
   }
 
   void onPinDigitEntered(int index, String value) {
@@ -75,6 +139,13 @@ class LoginController extends GetxController {
       } else {
         Get.offAllNamed(_auth.roleHome);
       }
+    } on AccountLockedException catch (e) {
+      _startLockTimer(e.lockedUntil);
+      _storage.saveLockout(e.lockedUntil);
+      attemptsUsed.value = 0;
+    } on WrongPinException catch (e) {
+      attemptsUsed.value = e.failedAttempts;
+      FerosSnackbar.error('Invalid phone number or PIN');
     } on UnauthorizedException {
       FerosSnackbar.error('Invalid phone number or PIN');
     } on PaymentRequiredException {

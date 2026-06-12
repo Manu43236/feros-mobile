@@ -5,9 +5,10 @@ import 'package:get/get.dart';
 import '../models/user_model.dart';
 
 class StorageService extends GetxService {
-  static const _keyToken  = 'feros_token';
-  static const _keyUser   = 'feros_user';
-  static const _keyLocale = 'feros_locale';
+  static const _keyToken   = 'feros_token';
+  static const _keyUser    = 'feros_user';
+  static const _keyLocale  = 'feros_locale';
+  static const _keyLockout = 'feros_lockout_until';
 
   final _storage = const FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
@@ -47,6 +48,17 @@ class StorageService extends GetxService {
     if (parts.length < 2) return null;
     return Locale(parts[0], parts[1]);
   }
+
+  Future<void> saveLockout(DateTime until) =>
+      _storage.write(key: _keyLockout, value: until.toIso8601String());
+
+  Future<DateTime?> getLockout() async {
+    final raw = await _storage.read(key: _keyLockout);
+    if (raw == null) return null;
+    return DateTime.tryParse(raw);
+  }
+
+  Future<void> clearLockout() => _storage.delete(key: _keyLockout);
 
   Future<void> clearAll() => _storage.deleteAll();
 }

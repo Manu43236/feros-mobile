@@ -5,6 +5,7 @@ class ApiEndpoints {
   static const login      = '/auth/login';
   static const logout     = '/auth/logout';
   static const changePin  = '/auth/change-pin';
+  static String askPinReset(String phone) => '/auth/ask-pin-reset?phone=${Uri.encodeComponent(phone)}';
 
   // Dashboard
   static const dashboard    = '/dashboard';

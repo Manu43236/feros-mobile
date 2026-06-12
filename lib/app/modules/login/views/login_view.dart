@@ -62,6 +62,63 @@ class LoginView extends GetView<LoginController> {
                     ),
                     const SizedBox(height: 28),
 
+                    // ── Lockout Banner ───────────────────────────
+                    Obx(() {
+                      if (!controller.isLocked) return const SizedBox.shrink();
+                      return _LockoutBanner(
+                        secondsLeft: controller.secondsLeft.value,
+                        isAskingAdmin: controller.isAskingAdmin.value,
+                        onAskAdmin: controller.askPinReset,
+                      );
+                    }),
+
+                    // ── Attempts Warning ─────────────────────────
+                    Obx(() {
+                      final n = controller.attemptsUsed.value;
+                      if (n < 3 || controller.isLocked) return const SizedBox.shrink();
+                      final remaining = 5 - n;
+                      return Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFFBEB),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFFDE68A)),
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              '$n/5',
+                              style: AppTextStyles.heading3.copyWith(
+                                color: const Color(0xFFD97706),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Incorrect PIN',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: const Color(0xFF92400E),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  '$remaining attempt${remaining != 1 ? 's' : ''} left before lockout',
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: const Color(0xFFD97706),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+
                     // ── Phone Number ─────────────────────────────
                     Text(
                       'Phone Number',
@@ -75,6 +132,7 @@ class LoginView extends GetView<LoginController> {
                       () => _PhoneField(
                         controller: controller.phoneController,
                         error: controller.phoneError.value,
+                        enabled: !controller.isLocked,
                         onChanged: controller.onPhoneChanged,
                       ),
                     ),
@@ -94,6 +152,7 @@ class LoginView extends GetView<LoginController> {
                         controllers: controller.pinControllers,
                         focusNodes: controller.pinFocusNodes,
                         error: controller.pinError.value,
+                        enabled: !controller.isLocked,
                         onChanged: controller.onPinDigitEntered,
                       ),
                     ),
@@ -126,10 +185,7 @@ class LoginView extends GetView<LoginController> {
                         height: 52,
                         child: ElevatedButton(
                           onPressed:
-                              // () {
-                              //   print("Login button pressed");
-                              // },
-                              controller.isLoading.value
+                              (controller.isLoading.value || controller.isLocked)
                               ? null
                               : controller.login,
                           style: ElevatedButton.styleFrom(
@@ -243,11 +299,13 @@ class LoginView extends GetView<LoginController> {
 class _PhoneField extends StatelessWidget {
   final TextEditingController controller;
   final String? error;
+  final bool enabled;
   final void Function(String) onChanged;
 
   const _PhoneField({
     required this.controller,
     required this.error,
+    required this.enabled,
     required this.onChanged,
   });
 
@@ -283,6 +341,7 @@ class _PhoneField extends StatelessWidget {
                 child: TextField(
                   controller: controller,
                   onChanged: onChanged,
+                  enabled: enabled,
                   keyboardType: TextInputType.phone,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
@@ -320,12 +379,14 @@ class _PinRow extends StatelessWidget {
   final List<TextEditingController> controllers;
   final List<FocusNode> focusNodes;
   final String? error;
+  final bool enabled;
   final void Function(int index, String value) onChanged;
 
   const _PinRow({
     required this.controllers,
     required this.focusNodes,
     required this.error,
+    required this.enabled,
     required this.onChanged,
   });
 
@@ -343,6 +404,7 @@ class _PinRow extends StatelessWidget {
                   controller: controllers[i],
                   focusNode: focusNodes[i],
                   hasError: error != null,
+                  enabled: enabled,
                   onChanged: (v) => onChanged(i, v),
                 ),
               ),
@@ -362,16 +424,105 @@ class _PinRow extends StatelessWidget {
   }
 }
 
+// ── Lockout Banner ────────────────────────────────────────────────────────────
+class _LockoutBanner extends StatelessWidget {
+  final int secondsLeft;
+  final bool isAskingAdmin;
+  final VoidCallback onAskAdmin;
+
+  const _LockoutBanner({
+    required this.secondsLeft,
+    required this.isAskingAdmin,
+    required this.onAskAdmin,
+  });
+
+  String _formatCountdown(int seconds) {
+    final m = (seconds ~/ 60).toString().padLeft(2, '0');
+    final s = (seconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFECACA)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            'Account temporarily locked',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: const Color(0xFFB91C1C),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Too many incorrect PIN attempts. Try again in',
+            style: AppTextStyles.caption.copyWith(color: const Color(0xFFEF4444)),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _formatCountdown(secondsLeft),
+            style: AppTextStyles.heading2.copyWith(
+              color: const Color(0xFFDC2626),
+              letterSpacing: 4,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'or ask your admin to reset your PIN',
+            style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: OutlinedButton(
+              onPressed: isAskingAdmin ? null : onAskAdmin,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFDC2626),
+                side: const BorderSide(color: Color(0xFFFCA5A5)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                isAskingAdmin ? 'Sending request…' : 'Ask admin to reset PIN',
+                style: AppTextStyles.body.copyWith(
+                  color: const Color(0xFFDC2626),
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PinBox extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final bool hasError;
+  final bool enabled;
   final void Function(String) onChanged;
 
   const _PinBox({
     required this.controller,
     required this.focusNode,
     required this.hasError,
+    required this.enabled,
     required this.onChanged,
   });
 
@@ -391,6 +542,7 @@ class _PinBox extends StatelessWidget {
         controller: controller,
         focusNode: focusNode,
         onChanged: onChanged,
+        enabled: enabled,
         keyboardType: TextInputType.number,
         textAlign: TextAlign.center,
         obscureText: true,

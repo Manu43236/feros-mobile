@@ -43,3 +43,13 @@ class ValidationException extends AppException {
 class UnknownException extends AppException {
   UnknownException() : super('Something went wrong. Please try again.');
 }
+
+class AccountLockedException extends AppException {
+  final DateTime lockedUntil;
+  AccountLockedException(this.lockedUntil) : super('ACCOUNT_LOCKED');
+}
+
+class WrongPinException extends AppException {
+  final int failedAttempts;
+  WrongPinException(this.failedAttempts) : super('Invalid mobile number or PIN');
+}

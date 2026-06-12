@@ -22,10 +22,33 @@ class ExceptionHandler {
           final msg = _extractMessage(error.response?.data);
 
           if (status == 400) return ValidationException(msg ?? 'Invalid request.');
-          if (status == 401) return UnauthorizedException();
+          if (status == 401) {
+            final body = error.response?.data;
+            if (body is Map<String, dynamic>) {
+              final data = body['data'];
+              if (data is Map<String, dynamic> && data.containsKey('failedAttempts')) {
+                return WrongPinException(data['failedAttempts'] as int);
+              }
+            }
+            return UnauthorizedException();
+          }
           if (status == 402) return PaymentRequiredException();
           if (status == 403) return ForbiddenException(msg);
           if (status == 404) return NotFoundException(msg);
+          if (status == 423) {
+            final body = error.response?.data;
+            String? lockedUntilStr;
+            if (body is Map<String, dynamic>) {
+              final data = body['data'];
+              if (data is Map<String, dynamic>) {
+                lockedUntilStr = data['lockedUntil'] as String?;
+              }
+            }
+            final lockedUntil = lockedUntilStr != null
+                ? DateTime.parse(lockedUntilStr)
+                : DateTime.now().add(const Duration(minutes: 5));
+            return AccountLockedException(lockedUntil);
+          }
           if (status != null && status >= 500) return ServerException(msg);
           return ValidationException(msg ?? 'Request failed.');
 
