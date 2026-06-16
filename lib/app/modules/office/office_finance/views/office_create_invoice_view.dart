@@ -78,7 +78,7 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
         _api.get('${ApiEndpoints.invoices}/invoiced-lr-ids'),
       ]);
 
-      final allLrs = ((results[0].data as Map)['data'] as List? ?? [])
+      final allLrs = (((results[0].data as Map)['data'] as Map)['content'] as List? ?? [])
           .cast<Map<String, dynamic>>();
       final invoicedIds = ((results[1].data as Map)['data'] as List? ?? [])
           .map((e) => e is int ? e : int.tryParse(e.toString()) ?? -1)

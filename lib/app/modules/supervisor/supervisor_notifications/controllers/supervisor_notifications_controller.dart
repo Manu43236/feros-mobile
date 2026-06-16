@@ -33,11 +33,9 @@ class SupervisorNotificationsController extends GetxController {
   Future<void> markAllRead({bool silent = false}) async {
     try {
       await _api.patch(ApiEndpoints.notifMarkAllRead);
-      if (!silent) {
-        notifications.value = notifications
-            .map((n) => {...n, 'isRead': true})
-            .toList();
-      }
+      notifications.value = notifications
+          .map((n) => {...n, 'isRead': true})
+          .toList();
     } catch (_) {}
   }
 }

@@ -3,7 +3,7 @@ import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
 import '../../../../../core/utils/view_state.dart';
 
-class DriverNotificationsController extends GetxController {
+class OfficeNotificationsController extends GetxController {
   final _api = Get.find<ApiClient>();
 
   final state         = ViewState.loading.obs;

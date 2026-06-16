@@ -522,7 +522,10 @@ class _ReportBreakdownSheetState extends State<_ReportBreakdownSheet> {
       final res  = await _api.get(ApiEndpoints.vehicles);
       final list = ((res.data as Map<String, dynamic>)['data'] as List)
           .cast<Map<String, dynamic>>();
-      if (mounted) setState(() { _vehicles = list; _loadingVehicles = false; });
+      final filtered = list.where((v) =>
+          v['isActive'] == true &&
+          v['currentStatusType'] != 'BREAKDOWN').toList();
+      if (mounted) setState(() { _vehicles = filtered; _loadingVehicles = false; });
     } catch (_) {
       if (mounted) setState(() => _loadingVehicles = false);
     }

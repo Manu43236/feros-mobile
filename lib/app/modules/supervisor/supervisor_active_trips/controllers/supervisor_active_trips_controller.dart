@@ -20,8 +20,8 @@ class SupervisorActiveTripsController extends GetxController {
     state.value = ViewState.loading;
     try {
       final res  = await _api.get(ApiEndpoints.lrs);
-      final list = ((res.data as Map<String, dynamic>)['data'] as List)
-          .cast<Map<String, dynamic>>();
+      final body = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      final list = (body['content'] as List).cast<Map<String, dynamic>>();
       lrs.assignAll(
         list.where((lr) => lr['lrStatus'] == 'IN_TRANSIT').toList(),
       );

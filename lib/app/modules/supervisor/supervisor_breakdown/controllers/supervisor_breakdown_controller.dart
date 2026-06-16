@@ -43,7 +43,9 @@ class SupervisorBreakdownController extends GetxController {
       final res  = await _api.get(ApiEndpoints.vehicles);
       final list = ((res.data as Map<String, dynamic>)['data'] as List)
           .cast<Map<String, dynamic>>();
-      vehicles.assignAll(list.where((v) => v['isActive'] == true).toList());
+      vehicles.assignAll(list.where((v) =>
+          v['isActive'] == true &&
+          v['currentStatusType'] != 'BREAKDOWN').toList());
     } catch (_) {
       FerosSnackbar.error('Failed to load vehicles');
     }
@@ -100,6 +102,8 @@ class SupervisorBreakdownController extends GetxController {
       notesCtrl.clear();
       position.value        = null;
       selectedVehicle.value = null;
+      breakdownType.value     = 'MECHANICAL';
+      breakdownDuration.value = 'SHORT';
     } catch (_) {
       FerosSnackbar.error('Failed to report breakdown');
     }

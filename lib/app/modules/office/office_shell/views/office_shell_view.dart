@@ -18,11 +18,9 @@ import '../../../supervisor/supervisor_profile/views/supervisor_profile_view.dar
 import '../../../supervisor/supervisor_profile/bindings/supervisor_profile_binding.dart';
 import '../../../supervisor/supervisor_payslip/views/supervisor_payslip_view.dart';
 import '../../../supervisor/supervisor_payslip/bindings/supervisor_payslip_binding.dart';
-import '../../../supervisor/supervisor_my_attendance/views/supervisor_my_attendance_view.dart';
-import '../../../supervisor/supervisor_my_attendance/bindings/supervisor_my_attendance_binding.dart';
 import '../../office_attendance/views/office_attendance_view.dart';
-import '../../../supervisor/supervisor_notifications/views/supervisor_notifications_view.dart';
-import '../../../supervisor/supervisor_notifications/bindings/supervisor_notifications_binding.dart';
+import '../../office_notifications/views/office_notifications_view.dart';
+import '../../office_notifications/bindings/office_notifications_binding.dart';
 import '../../office_subscription/views/office_subscription_view.dart';
 
 class OfficeShellView extends GetView<OfficeShellController> {
@@ -134,19 +132,16 @@ class OfficeShellView extends GetView<OfficeShellController> {
         );
       }),
       actions: [
-        Obx(() {
-          if (controller.currentIndex.value != 0) {
-            return const SizedBox.shrink();
-          }
-          return IconButton(
-            icon: const Icon(Icons.notifications_outlined,
-                color: Colors.white),
-            onPressed: () => Get.to(
-              () => const SupervisorNotificationsView(),
-              binding: SupervisorNotificationsBinding(),
-            ),
-          );
-        }),
+        Obx(() => _NotifBell(
+          count: controller.unreadCount.value,
+          onTap: () async {
+            await Get.to(
+              () => const OfficeNotificationsView(),
+              binding: OfficeNotificationsBinding(),
+            );
+            controller.clearUnreadCount();
+          },
+        )),
       ],
     );
   }
@@ -432,6 +427,49 @@ class _OfficeNavBar extends StatelessWidget {
           }),
         ),
       ),
+    );
+  }
+}
+
+// ── Notification Bell with Badge ──────────────────────────────────────────────
+class _NotifBell extends StatelessWidget {
+  final int count;
+  final VoidCallback onTap;
+  const _NotifBell({required this.count, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+          onPressed: onTap,
+        ),
+        if (count > 0)
+          Positioned(
+            right: 6,
+            top: 6,
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: const BoxDecoration(
+                color: Color(0xFFEF4444),
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Text(
+                count > 99 ? '99+' : '$count',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'Inter',
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

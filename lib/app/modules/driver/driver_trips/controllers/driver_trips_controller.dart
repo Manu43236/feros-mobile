@@ -26,7 +26,8 @@ class DriverTripsController extends GetxController {
     try {
       final res = await _api.get(ApiEndpoints.lrs);
       final data = res.data as Map<String, dynamic>;
-      final list = (data['data'] as List?) ?? [];
+      final page = data['data'] as Map<String, dynamic>;
+      final list = (page['content'] as List?) ?? [];
       allLrs.value = list
           .map((e) => LrModel.fromJson(e as Map<String, dynamic>))
           .toList();
