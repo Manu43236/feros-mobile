@@ -481,6 +481,7 @@ class _AttendanceCard extends StatelessWidget {
     final approvedByName = record['approvedByName']    as String?;
     final remarks        = record['remarks']           as String?;
     final markedAt       = record['markedAt']          as String?;
+    final locationName   = record['locationName']      as String?;
 
     final (typeColor, typeIcon) = _typeStyle(typeName);
     final (approvalColor, approvalLabel) = _approvalStyle(approvalStatus);
@@ -576,6 +577,23 @@ class _AttendanceCard extends StatelessWidget {
                     'Marked at ${FerosDateUtils.formatDateTime(markedAt)}',
                     style: AppTextStyles.caption
                         .copyWith(color: AppColors.mutedText),
+                  ),
+                ],
+                if (locationName != null && locationName.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined, size: 12, color: AppColors.mutedText),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(
+                          locationName,
+                          style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
                 if (remarks != null && remarks.isNotEmpty) ...[

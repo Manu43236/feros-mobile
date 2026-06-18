@@ -463,6 +463,23 @@ class _DayDetail extends StatelessWidget {
               style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
             ),
           ],
+          if (record!['locationName'] != null) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.location_on_outlined, size: 12, color: AppColors.mutedText),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    record!['locationName'] as String,
+                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (record!['selfieUrl'] != null) ...[
             const SizedBox(height: 10),
             GestureDetector(
@@ -659,10 +676,11 @@ class _AttendanceListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateStr = record['attendanceDate'] as String? ?? '';
-    final type = record['attendanceTypeName'] as String? ?? '—';
-    final status = record['approvalStatus'] as String? ?? 'PENDING';
-    final markedAt = record['markedAt'] as String?;
+    final dateStr     = record['attendanceDate']    as String? ?? '';
+    final type        = record['attendanceTypeName'] as String? ?? '—';
+    final status      = record['approvalStatus']    as String? ?? 'PENDING';
+    final markedAt    = record['markedAt']           as String?;
+    final locationName = record['locationName']      as String?;
 
     Color statusColor;
     String statusLabel;
@@ -724,6 +742,26 @@ class _AttendanceListItem extends StatelessWidget {
                     color: AppColors.mutedText,
                   ),
                 ),
+                if (locationName != null) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined, size: 11, color: AppColors.mutedText),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(
+                          locationName,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.mutedText,
+                            fontSize: 11,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
