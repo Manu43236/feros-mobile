@@ -1,18 +1,21 @@
 class EnvConfig {
   EnvConfig._();
 
-  static const _env = _Env.prod;
+  static const _flavor = String.fromEnvironment('FLAVOR', defaultValue: 'prod');
+
+  static bool get isStg => _flavor == 'stg';
+  static bool get isProd => _flavor == 'prod';
 
   static String get baseUrl {
-    switch (_env) {
-      case _Env.dev:
+    switch (_flavor) {
+      case 'stg':
+        return 'https://stg.console.feros.in/api/v1';
+      case 'dev':
         return 'http://192.168.1.100:8080/api/v1';
-      case _Env.prod:
+      default:
         return 'https://console.feros.in/api/v1';
     }
   }
 
-  static bool get isDebug => _env == _Env.dev;
+  static bool get isDebug => _flavor == 'dev';
 }
-
-enum _Env { dev, prod }

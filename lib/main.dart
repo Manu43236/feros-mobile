@@ -6,6 +6,7 @@ import 'app/bindings/initial_binding.dart';
 import 'app/routes/app_pages.dart';
 import 'core/localization/app_translations.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/stg_banner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +33,8 @@ class FerosApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
+    return StgBanner(
+      child: GetMaterialApp(
       title: 'FEROS',
       theme: AppTheme.light,
       translations: AppTranslations(),
@@ -43,6 +45,7 @@ class FerosApp extends StatelessWidget {
       getPages: AppPages.routes,
       defaultTransition: Transition.cupertino,
       debugShowCheckedModeBanner: false,
+    ),
     );
   }
 }
