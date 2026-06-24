@@ -10,7 +10,9 @@ class StgBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!EnvConfig.isStg) return child;
 
-    return Stack(
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Stack(
       children: [
         child,
         Positioned(
@@ -24,6 +26,7 @@ class StgBanner extends StatelessWidget {
           ),
         ),
       ],
+      ),
     );
   }
 }
