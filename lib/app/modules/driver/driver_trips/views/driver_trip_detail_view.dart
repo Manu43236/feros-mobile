@@ -8,12 +8,14 @@ import '../../../../../core/widgets/odometer_sheet.dart';
 import '../controllers/driver_trip_detail_controller.dart';
 import '../../driver_breakdown/views/driver_breakdown_view.dart';
 import '../../driver_breakdown/bindings/driver_breakdown_binding.dart';
+import '../../../../../core/services/auth_service.dart';
 
 class DriverTripDetailView extends GetView<DriverTripDetailController> {
   const DriverTripDetailView({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final isDriver = Get.find<AuthService>().user?.isDriver == true;
     return Obx(
       () => Scaffold(
         backgroundColor: AppColors.background,
@@ -86,39 +88,48 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
 
                   if (controller.lrStatus.value == 'WEIGHT_LOADED') ...[
                     const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: controller.isUpdating.value
-                            ? null
-                            : () => _onStartTrip(context, controller),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.navy,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                    if (isDriver)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: controller.isUpdating.value
+                              ? null
+                              : () => _onStartTrip(context, controller),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.navy,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
+                          child: controller.isUpdating.value
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Text(
+                                  'btn_start_trip'.tr,
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                         ),
-                        child: controller.isUpdating.value
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : Text(
-                                'btn_start_trip'.tr,
-                                style: AppTextStyles.caption.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                      )
+                    else
+                      _InfoBanner(
+                        icon: Icons.hourglass_top_rounded,
+                        color: const Color(0xFFD97706),
+                        bg: const Color(0xFFFFFBEB),
+                        border: const Color(0xFFFDE68A),
+                        message: 'lbl_waiting_driver'.tr,
                       ),
-                    ),
                   ],
 
                   if (controller.lrStatus.value == 'IN_TRANSIT') ...[
@@ -181,7 +192,7 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                           ),
                         ),
                       ),
-                    ] else ...[
+                    ] else if (isDriver) ...[
                       // ── Mark Delivered ───────────────────────────
                       SizedBox(
                         width: double.infinity,

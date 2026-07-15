@@ -322,6 +322,7 @@ class _LrCard extends StatelessWidget {
     final weightLabel = loadedWeight != null ? 'lbl_loaded_chip'.tr : 'lbl_alloc_chip'.tr;
     final lrDate = lr['lrDate'] as String?;
     final orderNum = lr['orderNumber'] as String?;
+    final materialTypeName = lr['materialTypeName'] as String?;
 
     return GestureDetector(
       onTap: _openDetail,
@@ -380,6 +381,25 @@ class _LrCard extends StatelessWidget {
                 style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
                 overflow: TextOverflow.ellipsis,
               ),
+              if (materialTypeName != null) ...[
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.inventory_2_outlined,
+                      size: 12,
+                      color: AppColors.mutedText,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      materialTypeName,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.mutedText,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 8),
 
               // Vehicle

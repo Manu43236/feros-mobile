@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
@@ -70,14 +71,32 @@ class _MarkAttendanceSheetState extends State<_MarkAttendanceSheet> {
   }
 
   Future<void> _takeSelfie() async {
-    final xFile = await ImagePicker().pickImage(
-      source: ImageSource.camera,
-      preferredCameraDevice: CameraDevice.front,
-      imageQuality: 80,
-      maxWidth: 800,
-    );
+    XFile? xFile;
+    try {
+      xFile = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.front,
+        imageQuality: 80,
+        maxWidth: 800,
+      );
+    } on PlatformException {
+      // Some Samsung devices reject the front-camera intent — retry without preference
+      try {
+        xFile = await ImagePicker().pickImage(
+          source: ImageSource.camera,
+          imageQuality: 80,
+          maxWidth: 800,
+        );
+      } catch (_) {
+        if (mounted) FerosSnackbar.error('Camera unavailable');
+        return;
+      }
+    } catch (_) {
+      if (mounted) FerosSnackbar.error('Camera unavailable');
+      return;
+    }
     if (xFile != null && mounted) {
-      setState(() => _selfie = File(xFile.path));
+      setState(() => _selfie = File(xFile!.path));
     }
   }
 

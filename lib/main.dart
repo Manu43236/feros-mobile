@@ -33,8 +33,7 @@ class FerosApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StgBanner(
-      child: GetMaterialApp(
+    return GetMaterialApp(
       title: 'FEROS',
       theme: AppTheme.light,
       translations: AppTranslations(),
@@ -45,7 +44,7 @@ class FerosApp extends StatelessWidget {
       getPages: AppPages.routes,
       defaultTransition: Transition.cupertino,
       debugShowCheckedModeBanner: false,
-    ),
+      builder: (context, child) => StgBanner(child: child!),
     );
   }
 }

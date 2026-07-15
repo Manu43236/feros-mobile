@@ -10,13 +10,12 @@ class StgBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!EnvConfig.isStg) return child;
 
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: Stack(
+    final topPadding = MediaQuery.of(context).padding.top;
+    return Stack(
       children: [
         child,
         Positioned(
-          top: 0,
+          top: topPadding,
           right: 0,
           child: IgnorePointer(
             child: CustomPaint(
@@ -26,7 +25,6 @@ class StgBanner extends StatelessWidget {
           ),
         ),
       ],
-      ),
     );
   }
 }

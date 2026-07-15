@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/services/auth_service.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/widgets/delivery_sheet.dart';
@@ -58,6 +59,7 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
       final attended        = controller.isAttendanceMarked.value;
       final assignedOrder   = controller.assignedOrder.value;
       final assignedVehicle = controller.assignedVehicle.value;
+      final isDriver        = Get.find<AuthService>().user?.role == 'DRIVER';
 
       // ── State 3: ON TRIP ──────────────────────────────────────
       if (active != null) {
@@ -68,14 +70,20 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
           statusLabel: breakdownActive ? 'lbl_breakdown_reported_waiting'.tr : 'lbl_on_trip'.tr,
           tripData: active,
           attended: attended,
-          actionLabel: breakdownActive ? 'lbl_tap_to_refresh'.tr : 'btn_mark_done'.tr,
-          actionIcon: breakdownActive ? Icons.refresh : Icons.check_circle_outline,
+          actionLabel: breakdownActive
+              ? 'lbl_tap_to_refresh'.tr
+              : (isDriver ? 'btn_mark_done'.tr : 'btn_view_trip_details'.tr),
+          actionIcon: breakdownActive
+              ? Icons.refresh
+              : (isDriver ? Icons.check_circle_outline : Icons.info_outline),
           actionColor: breakdownActive ? const Color(0xFFDC2626) : AppColors.navy,
           onAction: breakdownActive
               ? () => controller.fetchDashboard()
-              : () => _markDoneFromHome(context, active),
-          secondaryActionLabel: 'btn_view_trip_details'.tr,
-          onSecondaryAction: () => _openTrip(context, active),
+              : (isDriver
+                  ? () => _markDoneFromHome(context, active)
+                  : () => _openTrip(context, active)),
+          secondaryActionLabel: isDriver && !breakdownActive ? 'btn_view_trip_details'.tr : null,
+          onSecondaryAction: isDriver && !breakdownActive ? () => _openTrip(context, active) : null,
           onCardTap: () => _openTrip(context, active),
           bottomRow: _BottomNav(controller: controller, attended: attended),
           onRefresh: controller.fetchDashboard,
@@ -84,19 +92,25 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
 
       // ── State 2: TRIP READY ───────────────────────────────────
       if (nextReady != null) {
-        final gateBlocked = controller.isAttendanceEnforced.value && !attended;
+        final gateBlocked = isDriver && controller.isAttendanceEnforced.value && !attended;
         return _HomeState(
           statusColor: const Color(0xFFD97706),
           statusIcon: Icons.inventory_2_outlined,
           statusLabel: 'lbl_trip_ready'.tr,
           tripData: nextReady,
           attended: attended,
-          actionLabel: gateBlocked ? 'lbl_mark_attendance_first'.tr : 'btn_start_trip'.tr,
-          actionIcon: gateBlocked ? Icons.lock_outline : Icons.play_circle_outline,
+          actionLabel: !isDriver
+              ? 'btn_view_trip_details'.tr
+              : (gateBlocked ? 'lbl_mark_attendance_first'.tr : 'btn_start_trip'.tr),
+          actionIcon: !isDriver
+              ? Icons.info_outline
+              : (gateBlocked ? Icons.lock_outline : Icons.play_circle_outline),
           actionColor: gateBlocked ? const Color(0xFFD97706) : AppColors.navy,
-          onAction: gateBlocked
-              ? () => showMarkAttendanceSheet(context, onMarked: controller.fetchDashboard)
-              : () => _startTripFromHome(context, nextReady),
+          onAction: !isDriver
+              ? () => _openTrip(context, nextReady)
+              : (gateBlocked
+                  ? () => showMarkAttendanceSheet(context, onMarked: controller.fetchDashboard)
+                  : () => _startTripFromHome(context, nextReady)),
           onCardTap: () => _openTrip(context, nextReady),
           bottomRow: _BottomNav(controller: controller, attended: attended),
           onRefresh: controller.fetchDashboard,

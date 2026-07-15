@@ -155,10 +155,11 @@ class _TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status   = task['status'] as String? ?? '';
-    final taskId   = task['taskId'] as int;
-    final taskName = task['displayName'] as String? ?? 'Task';
-    final vehicle  = task['vehicleRegNumber'] as String? ?? '—';
+    final status    = task['status'] as String? ?? '';
+    final taskId    = task['taskId'] as int;
+    final taskName  = task['displayName'] as String? ?? 'Task';
+    final vehicle   = task['assetName'] as String? ?? task['vehicleRegNumber'] as String? ?? '—';
+    final isMachine = (task['assetType'] as String? ?? 'VEHICLE') == 'MACHINE';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -185,8 +186,10 @@ class _TaskCard extends StatelessWidget {
                               .copyWith(color: AppColors.navy)),
                       const SizedBox(height: 4),
                       Row(children: [
-                        const Icon(Icons.directions_bus_outlined,
-                            size: 13, color: AppColors.mutedText),
+                        Icon(
+                          isMachine ? Icons.construction : Icons.directions_bus_outlined,
+                          size: 13, color: AppColors.mutedText,
+                        ),
                         const SizedBox(width: 4),
                         Text(vehicle,
                             style: AppTextStyles.caption

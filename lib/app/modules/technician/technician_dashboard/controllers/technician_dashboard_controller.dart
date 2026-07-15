@@ -41,17 +41,21 @@ class TechnicianDashboardController extends GetxController {
       final serviceGroups = ((res.data as Map<String, dynamic>)['data'] as List)
           .cast<Map<String, dynamic>>();
 
-      // Flatten: each service group has a nested tasks list; merge vehicle info into each task
+      // Flatten: each service group has a nested tasks list; merge asset info into each task
       final flattened = <Map<String, dynamic>>[];
       for (final svc in serviceGroups) {
-        final vehicleReg = svc['vehicleRegistrationNumber'] as String? ?? '';
+        final assetType  = svc['assetType'] as String? ?? 'VEHICLE';  // E5 KAN-29
+        final assetName  = svc['assetName'] as String?
+            ?? svc['vehicleRegistrationNumber'] as String? ?? '';
         final serviceId  = svc['serviceId'];
         final tasksList  = (svc['tasks'] as List?)?.cast<Map<String, dynamic>>() ?? [];
         for (final task in tasksList) {
           flattened.add({
             ...task,
-            'vehicleRegNumber': vehicleReg,
-            'serviceId': serviceId,
+            'assetType':      assetType,
+            'assetName':      assetName,
+            'vehicleRegNumber': assetName,  // backward-compat alias
+            'serviceId':      serviceId,
           });
         }
       }
