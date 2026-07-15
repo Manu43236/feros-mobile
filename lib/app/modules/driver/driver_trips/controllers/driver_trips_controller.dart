@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
@@ -32,7 +33,8 @@ class DriverTripsController extends GetxController {
           .toList();
       _applyFilter();
       state.value = allLrs.isEmpty ? ViewState.empty : ViewState.success;
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('DriverTrips error: $e\n$st');
       state.value = ViewState.error;
     }
   }
