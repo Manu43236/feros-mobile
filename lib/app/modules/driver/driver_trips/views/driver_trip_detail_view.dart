@@ -15,7 +15,7 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
 
   @override
   Widget build(BuildContext context) {
-    final isDriver = Get.find<AuthService>().user?.isDriver == true;
+    final isDriver = Get.find<AuthService>().user?.role == 'DRIVER';
     return Obx(
       () => Scaffold(
         backgroundColor: AppColors.background,

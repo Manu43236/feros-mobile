@@ -23,6 +23,7 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
 
   @override
   Widget build(BuildContext context) {
+    final isDriver = Get.find<AuthService>().user?.role == 'DRIVER';
     return Obx(() {
       if (controller.state.value == ViewState.loading) {
         return const ShimmerList(count: 4);
@@ -59,7 +60,6 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
       final attended        = controller.isAttendanceMarked.value;
       final assignedOrder   = controller.assignedOrder.value;
       final assignedVehicle = controller.assignedVehicle.value;
-      final isDriver        = Get.find<AuthService>().user?.role == 'DRIVER';
 
       // ── State 3: ON TRIP ──────────────────────────────────────
       if (active != null) {
