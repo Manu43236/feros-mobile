@@ -1,7 +1,7 @@
 name: feros
 description: FEROS - Fleet Equipment Rental Operating System
-publish_to: 'none'
-version: 1.0.0+1
+publish_to: "none"
+version: 1.0.5+105
 
 environment:
   sdk: ^3.11.4
@@ -39,6 +39,9 @@ dependencies:
 
   # Fonts
   google_fonts: ^6.2.1
+
+  # In-app updates (Google Play flexible/immediate update flow)
+  in_app_update: ^4.2.3
 
   # Utils
   intl: ^0.20.2
