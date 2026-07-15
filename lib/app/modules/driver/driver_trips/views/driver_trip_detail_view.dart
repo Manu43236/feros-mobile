@@ -15,9 +15,9 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
 
   @override
   Widget build(BuildContext context) {
-    final isDriver = Get.find<AuthService>().user?.role == 'DRIVER';
-    return Obx(
-      () => Scaffold(
+    return Obx(() {
+      final isDriver = Get.find<AuthService>().currentUser.value?.role == 'DRIVER';
+      return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: AppColors.navy,
@@ -391,8 +391,8 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
           ],
           ),  // close ListView
         ),    // close RefreshIndicator
-      ),
-    );
+      );
+    });
   }
 
   Future<void> _onReportBreakdown(
