@@ -183,6 +183,11 @@ const Map<String, String> te = {
   'lbl_delivery_address': 'డెలివరీ అడ్రెస్',
   'btn_add_checkpost': 'చెక్‌పోస్ట్ యాడ్ చేయండి',
   'btn_add_charge': 'చార్జ్ యాడ్ చేయండి',
+  'btn_edit_lr': 'LR సవరించు',
+  'lbl_eway_date': 'ఇ-వే బిల్లు తేదీ',
+  'lbl_tap_to_select': 'తేదీ ఎంచుకోండి',
+  'lbl_invoiced': 'ఇన్వాయిస్ చేయబడింది',
+  'lbl_not_invoiced': 'ఇన్వాయిస్ చేయబడలేదు',
   'lbl_view_pdf': 'PDF వ్యూ చేయండి',
   'btn_review_proof': 'ప్రూఫ్ రివ్యూ చేయండి',
 

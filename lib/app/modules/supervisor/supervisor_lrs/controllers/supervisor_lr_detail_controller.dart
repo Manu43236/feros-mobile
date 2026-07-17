@@ -24,6 +24,7 @@ class SupervisorLrDetailController extends GetxController {
   final pdfLoading        = false.obs;
   final proofs            = <Map<String, dynamic>>[].obs;
   final isReviewingId     = Rxn<int>();
+  final activeBreakdown   = Rxn<Map<String, dynamic>>();
 
   // Trip Expenses
   final tripExpense        = Rxn<Map<String, dynamic>>();
@@ -61,8 +62,8 @@ class SupervisorLrDetailController extends GetxController {
               .cast<Map<String, dynamic>>());
       state.value = ViewState.success;
 
-      // Fetch trip expense if LR is delivered
       final lrStatus = lr.value?['lrStatus'] as String? ?? '';
+      if (lrStatus == 'IN_TRANSIT') _fetchBreakdown();
       if (lrStatus == 'DELIVERED') fetchTripExpense();
     } catch (e) {
       debugPrint('[LR Detail] $e');
@@ -226,6 +227,21 @@ class SupervisorLrDetailController extends GetxController {
 
   // ── Status Updates ──────────────────────────────────────────────────────────
 
+  Future<bool> updateLr(Map<String, dynamic> data) async {
+    isUpdating.value = true;
+    try {
+      final res = await _api.put(ApiEndpoints.lrById(lrId), data: data);
+      lr.value = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      FerosSnackbar.success('LR updated');
+      isUpdating.value = false;
+      return true;
+    } catch (_) {
+      FerosSnackbar.error('Failed to update LR');
+      isUpdating.value = false;
+      return false;
+    }
+  }
+
   Future<bool> recordLoading(Map<String, dynamic> data) async {
     isUpdating.value = true;
     try {
@@ -283,6 +299,33 @@ Future<bool> markDelivered(Map<String, dynamic> data) async {
     }
   }
 
+  // ── Breakdown check ─────────────────────────────────────────────────────────
+
+  Future<void> _fetchBreakdown() async {
+    final orderId = lr.value?['orderId'];
+    final allocationId = lr.value?['vehicleAllocationId'];
+    if (orderId == null || allocationId == null) return;
+    try {
+      final res = await _api.get(ApiEndpoints.orderBreakdown(orderId, allocationId));
+      activeBreakdown.value =
+          (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>?;
+    } catch (_) {
+      activeBreakdown.value = null;
+    }
+  }
+
+  // ── Checkpost delete ────────────────────────────────────────────────────────
+
+  Future<void> deleteCheckpost(int cpId) async {
+    try {
+      await _api.delete(ApiEndpoints.lrCheckpostById(lrId, cpId));
+      checkposts.removeWhere((c) => (c['id'] as int?) == cpId);
+      FerosSnackbar.success('Checkpost removed');
+    } catch (_) {
+      FerosSnackbar.error('Failed to remove checkpost');
+    }
+  }
+
   // ── Charges ─────────────────────────────────────────────────────────────────
 
   Future<bool> addCharge(Map<String, dynamic> data) async {
@@ -299,6 +342,16 @@ Future<bool> markDelivered(Map<String, dynamic> data) async {
       FerosSnackbar.error('Failed to add charge');
       isAddingCharge.value = false;
       return false;
+    }
+  }
+
+  Future<void> deleteCharge(int chargeId) async {
+    try {
+      await _api.delete(ApiEndpoints.lrChargeById(lrId, chargeId));
+      charges.removeWhere((c) => (c['id'] as int?) == chargeId);
+      FerosSnackbar.success('Charge removed');
+    } catch (_) {
+      FerosSnackbar.error('Failed to remove charge');
     }
   }
 

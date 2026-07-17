@@ -8,7 +8,8 @@ class FerosStringUtils {
 
   static String initials(String? name) {
     if (name == null || name.isEmpty) return '?';
-    final parts = name.trim().split(' ');
+    final parts = name.trim().split(' ').where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return '';
     if (parts.length == 1) return parts[0][0].toUpperCase();
     return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }
@@ -22,16 +23,26 @@ class FerosStringUtils {
 
   static String roleLabel(String? role) {
     switch (role) {
-      case 'ADMIN':        return 'Admin';
-      case 'OFFICE_STAFF': return 'Office Staff';
-      case 'SUPERVISOR':   return 'Supervisor';
-      case 'DRIVER':       return 'Driver';
-      case 'CLEANER':      return 'Cleaner';
-      case 'SERVICE_MANAGER': return 'Service Manager';
-      case 'TECHNICIAN':      return 'Technician';
-      case 'STORE_KEEPER': return 'Store Keeper';
-      case 'SUPER_ADMIN':  return 'Super Admin';
-      default:             return role ?? '';
+      case 'ADMIN':
+        return 'Admin';
+      case 'OFFICE_STAFF':
+        return 'Office Staff';
+      case 'SUPERVISOR':
+        return 'Supervisor';
+      case 'DRIVER':
+        return 'Driver';
+      case 'CLEANER':
+        return 'Cleaner';
+      case 'SERVICE_MANAGER':
+        return 'Service Manager';
+      case 'TECHNICIAN':
+        return 'Technician';
+      case 'STORE_KEEPER':
+        return 'Store Keeper';
+      case 'SUPER_ADMIN':
+        return 'Super Admin';
+      default:
+        return role ?? '';
     }
   }
 }

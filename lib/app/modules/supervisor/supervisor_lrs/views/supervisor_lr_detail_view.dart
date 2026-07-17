@@ -40,6 +40,21 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
             ),
           );
         }),
+        actions: [
+          Obx(() {
+            final st = controller.lr.value?['lrStatus'] as String? ?? '';
+            if (st == 'CANCELLED' || st.isEmpty) return const SizedBox.shrink();
+            return IconButton(
+              icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 20),
+              onPressed: () => showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => _EditLrSheet(controller: controller),
+              ),
+            );
+          }),
+        ],
       ),
       body: Obx(() {
         if (controller.state.value == ViewState.loading) {
@@ -102,6 +117,15 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
               _DriverCard(lr: lr),
               const SizedBox(height: 12),
 
+              // ── Cleaner Card ───────────────────────────────────────────
+              _DriverCard(
+                lr: lr,
+                nameKey: 'cleanerName',
+                phoneKey: 'cleanerPhone',
+                roleLabelKey: 'role_cleaner',
+              ),
+              if (lr['cleanerName'] != null) const SizedBox(height: 12),
+
               // ── Weight Stats Card ──────────────────────────────────────
               _WeightCard(lr: lr),
               const SizedBox(height: 12),
@@ -121,7 +145,7 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
                 _EmptySection(label: 'lbl_no_checkposts'.tr)
               else
                 ...controller.checkposts.map(
-                  (c) => _CheckpostCard(checkpost: c),
+                  (c) => _CheckpostCard(checkpost: c, controller: controller),
                 ),
               const SizedBox(height: 16),
 
@@ -135,7 +159,7 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
               if (controller.charges.isEmpty)
                 _EmptySection(label: 'lbl_no_charges'.tr)
               else
-                ...controller.charges.map((c) => _ChargeCard(charge: c)),
+                ...controller.charges.map((c) => _ChargeCard(charge: c, controller: controller)),
               const SizedBox(height: 16),
 
               // ── Trip Proofs ─────────────────────────────────────────────
@@ -202,6 +226,7 @@ class _StatusBanner extends StatelessWidget {
     final color = _lrColor(status);
     final label = _lrLabel(status);
     final isOverloaded = lr['isOverloaded'] as bool? ?? false;
+    final isInvoiced = lr['isInvoiced'] as bool? ?? false;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -248,6 +273,28 @@ class _StatusBanner extends StatelessWidget {
               ),
             ),
           ],
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: isInvoiced
+                  ? AppColors.success.withValues(alpha: 0.1)
+                  : AppColors.border,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isInvoiced
+                    ? AppColors.success.withValues(alpha: 0.3)
+                    : AppColors.border,
+              ),
+            ),
+            child: Text(
+              isInvoiced ? 'lbl_invoiced'.tr : 'lbl_not_invoiced'.tr,
+              style: AppTextStyles.caption.copyWith(
+                color: isInvoiced ? AppColors.success : AppColors.mutedText,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -470,12 +517,20 @@ class _InfoCard extends StatelessWidget {
 // ── Driver Card ───────────────────────────────────────────────────────────────
 class _DriverCard extends StatelessWidget {
   final Map<String, dynamic> lr;
-  const _DriverCard({required this.lr});
+  final String nameKey;
+  final String phoneKey;
+  final String roleLabelKey;
+  const _DriverCard({
+    required this.lr,
+    this.nameKey = 'driverName',
+    this.phoneKey = 'driverPhone',
+    this.roleLabelKey = 'role_driver',
+  });
 
   @override
   Widget build(BuildContext context) {
-    final name = lr['driverName'] as String?;
-    final phone = lr['driverPhone'] as String?;
+    final name = lr[nameKey] as String?;
+    final phone = lr[phoneKey] as String?;
 
     if (name == null && phone == null) return const SizedBox.shrink();
 
@@ -517,7 +572,7 @@ class _DriverCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'role_driver'.tr,
+                      roleLabelKey.tr,
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.mutedText,
                       ),
@@ -710,19 +765,42 @@ class _ActionButtons extends StatelessWidget {
                 ),
               if (status == 'IN_TRANSIT') ...[
                 Expanded(
-                  child: _ActionBtn(
-                    label: 'btn_mark_delivered'.tr,
-                    icon: Icons.check_circle_outline,
-                    color: AppColors.lrDelivered,
-                    loading: busy,
-                    onTap: () => showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) =>
-                          _MarkDeliveredSheet(controller: controller),
-                    ),
-                  ),
+                  child: controller.activeBreakdown.value?['status'] == 'REPORTED'
+                      ? Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.errorLight,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.warning_amber_rounded, size: 18, color: AppColors.error),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Breakdown reported — resolve before marking delivered',
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.error,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _ActionBtn(
+                          label: 'btn_mark_delivered'.tr,
+                          icon: Icons.check_circle_outline,
+                          color: AppColors.lrDelivered,
+                          loading: busy,
+                          onTap: () => showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => _MarkDeliveredSheet(controller: controller),
+                          ),
+                        ),
                 ),
               ],
               if (status == 'CREATED') ...[
@@ -877,10 +955,12 @@ class _SectionHeader extends StatelessWidget {
 // ── Checkpost Card ────────────────────────────────────────────────────────────
 class _CheckpostCard extends StatelessWidget {
   final Map<String, dynamic> checkpost;
-  const _CheckpostCard({required this.checkpost});
+  final SupervisorLrDetailController controller;
+  const _CheckpostCard({required this.checkpost, required this.controller});
 
   @override
   Widget build(BuildContext context) {
+    final cpId = checkpost['id'] as int?;
     final name = checkpost['checkpostName'] as String? ?? '—';
     final location = checkpost['location'] as String?;
     final fine = checkpost['fineAmount'];
@@ -928,6 +1008,13 @@ class _CheckpostCard extends StatelessWidget {
                     ),
                   ),
                 ),
+              if (cpId != null) ...[
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: () => controller.deleteCheckpost(cpId),
+                  child: const Icon(Icons.delete_outline, size: 18, color: AppColors.mutedText),
+                ),
+              ],
             ],
           ),
           if (location != null) ...[
@@ -960,10 +1047,12 @@ class _CheckpostCard extends StatelessWidget {
 // ── Charge Card ───────────────────────────────────────────────────────────────
 class _ChargeCard extends StatelessWidget {
   final Map<String, dynamic> charge;
-  const _ChargeCard({required this.charge});
+  final SupervisorLrDetailController controller;
+  const _ChargeCard({required this.charge, required this.controller});
 
   @override
   Widget build(BuildContext context) {
+    final chargeId = charge['id'] as int?;
     final type = charge['chargeTypeName'] as String? ?? '—';
     final amount = charge['amount'];
     final remarks = charge['remarks'] as String?;
@@ -1007,6 +1096,13 @@ class _ChargeCard extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
+          if (chargeId != null) ...[
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => controller.deleteCharge(chargeId),
+              child: const Icon(Icons.delete_outline, size: 18, color: AppColors.mutedText),
+            ),
+          ],
         ],
       ),
     );
@@ -1332,6 +1428,178 @@ class _AddChargeSheetState extends State<_AddChargeSheet> {
         const SizedBox(height: 6),
         _SheetField(controller: _remarksCtrl, hint: 'lbl_optional_hint'.tr, maxLines: 2),
       ],
+    );
+  }
+}
+
+// ── Sheet: Edit LR ───────────────────────────────────────────────────────────
+class _EditLrSheet extends StatefulWidget {
+  final SupervisorLrDetailController controller;
+  const _EditLrSheet({required this.controller});
+  @override
+  State<_EditLrSheet> createState() => _EditLrSheetState();
+}
+
+class _EditLrSheetState extends State<_EditLrSheet> {
+  final _weightCtrl   = TextEditingController();
+  final _ewayNumCtrl  = TextEditingController();
+  final _remarksCtrl  = TextEditingController();
+  DateTime? _ewayDate;
+  DateTime? _ewayValidUpto;
+  late String _status;
+
+  @override
+  void initState() {
+    super.initState();
+    final lr = widget.controller.lr.value ?? {};
+    _status = lr['lrStatus'] as String? ?? '';
+    final weightKey = _status == 'DELIVERED' ? 'deliveredWeight' : 'loadedWeight';
+    final w = lr[weightKey];
+    if (w != null) _weightCtrl.text = w.toString();
+    _ewayNumCtrl.text = lr['ewayBillNumber'] as String? ?? '';
+    _remarksCtrl.text = lr['remarks'] as String? ?? '';
+    final ed = lr['ewayBillDate'] as String?;
+    final ev = lr['ewayBillValidUpto'] as String?;
+    if (ed != null) _ewayDate = DateTime.tryParse(ed);
+    if (ev != null) _ewayValidUpto = DateTime.tryParse(ev);
+  }
+
+  @override
+  void dispose() {
+    _weightCtrl.dispose();
+    _ewayNumCtrl.dispose();
+    _remarksCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate(bool isValidUpto) async {
+    final initial = (isValidUpto ? _ewayValidUpto : _ewayDate) ?? DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (ctx, child) => Theme(
+        data: ThemeData.light().copyWith(
+          colorScheme: const ColorScheme.light(primary: AppColors.navy),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked == null) return;
+    setState(() {
+      if (isValidUpto) {
+        _ewayValidUpto = picked;
+      } else {
+        _ewayDate = picked;
+      }
+    });
+  }
+
+  Future<void> _submit() async {
+    final data = <String, dynamic>{};
+    final w = double.tryParse(_weightCtrl.text.trim());
+    if (w != null) {
+      data[_status == 'DELIVERED' ? 'deliveredWeight' : 'loadedWeight'] = w;
+    }
+    final ewayNum = _ewayNumCtrl.text.trim();
+    if (ewayNum.isNotEmpty) data['ewayBillNumber'] = ewayNum;
+    if (_ewayDate != null) {
+      data['ewayBillDate'] = _ewayDate!.toIso8601String().substring(0, 10);
+    }
+    if (_ewayValidUpto != null) {
+      data['ewayBillValidUpto'] = _ewayValidUpto!.toIso8601String().substring(0, 10);
+    }
+    final remarks = _remarksCtrl.text.trim();
+    if (remarks.isNotEmpty) data['remarks'] = remarks;
+    if (data.isEmpty) {
+      Navigator.of(context).pop();
+      return;
+    }
+    final ok = await widget.controller.updateLr(data);
+    if (ok && mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final weightLabel = _status == 'DELIVERED'
+        ? 'lbl_delivered_weight_tonnes'.tr
+        : 'lbl_loaded_weight_tonnes'.tr;
+    return _SimpleSheet(
+      title: 'btn_edit_lr'.tr,
+      controller: widget.controller.isUpdating,
+      onSubmit: _submit,
+      submitLabel: 'btn_save'.tr,
+      children: [
+        _SheetLabel(weightLabel),
+        const SizedBox(height: 6),
+        _SheetField(
+          controller: _weightCtrl,
+          hint: 'e.g. 12.5',
+          keyboard: const TextInputType.numberWithOptions(decimal: true),
+        ),
+        const SizedBox(height: 16),
+        _SheetLabel('lbl_eway_bill_no'.tr),
+        const SizedBox(height: 6),
+        _SheetField(controller: _ewayNumCtrl, hint: 'lbl_optional_hint'.tr),
+        const SizedBox(height: 16),
+        _SheetLabel('lbl_eway_date'.tr),
+        const SizedBox(height: 6),
+        _DatePickerTile(
+          date: _ewayDate,
+          hint: 'lbl_tap_to_select'.tr,
+          onTap: () => _pickDate(false),
+        ),
+        const SizedBox(height: 16),
+        _SheetLabel('lbl_valid_upto'.tr),
+        const SizedBox(height: 6),
+        _DatePickerTile(
+          date: _ewayValidUpto,
+          hint: 'lbl_tap_to_select'.tr,
+          onTap: () => _pickDate(true),
+        ),
+        const SizedBox(height: 16),
+        _SheetLabel('lbl_remarks'.tr),
+        const SizedBox(height: 6),
+        _SheetField(controller: _remarksCtrl, hint: 'lbl_optional_hint'.tr, maxLines: 2),
+      ],
+    );
+  }
+}
+
+class _DatePickerTile extends StatelessWidget {
+  final DateTime? date;
+  final String hint;
+  final VoidCallback onTap;
+  const _DatePickerTile({required this.date, required this.hint, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                date != null
+                    ? '${date!.day.toString().padLeft(2, '0')}/${date!.month.toString().padLeft(2, '0')}/${date!.year}'
+                    : hint,
+                style: AppTextStyles.body.copyWith(
+                  color: date != null ? AppColors.bodyText : AppColors.hintText,
+                ),
+              ),
+            ),
+            const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.mutedText),
+          ],
+        ),
+      ),
     );
   }
 }

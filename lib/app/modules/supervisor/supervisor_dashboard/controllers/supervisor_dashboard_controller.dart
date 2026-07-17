@@ -4,6 +4,36 @@ import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
 import '../../../../../core/utils/view_state.dart';
 
+class VehicleAlert {
+  final int vehicleId;
+  final String registrationNumber;
+  final String alertType;
+  final String? documentName;
+  final String expiryDate;
+  final int daysLeft;
+  final bool expired;
+
+  const VehicleAlert({
+    required this.vehicleId,
+    required this.registrationNumber,
+    required this.alertType,
+    this.documentName,
+    required this.expiryDate,
+    required this.daysLeft,
+    required this.expired,
+  });
+
+  factory VehicleAlert.fromJson(Map<String, dynamic> j) => VehicleAlert(
+        vehicleId: j['vehicleId'] as int,
+        registrationNumber: j['registrationNumber'] as String,
+        alertType: j['alertType'] as String,
+        documentName: j['documentName'] as String?,
+        expiryDate: j['expiryDate'] as String,
+        daysLeft: j['daysLeft'] as int,
+        expired: j['expired'] as bool,
+      );
+}
+
 class SupervisorDashboardController extends GetxController {
   final _api = Get.find<ApiClient>();
 
@@ -53,10 +83,27 @@ class SupervisorDashboardController extends GetxController {
 
   final unreadNotifications = 0.obs;
 
+  // Vehicle document alerts
+  final alerts = <VehicleAlert>[].obs;
+
   @override
   void onInit() {
     super.onInit();
     fetchDashboard();
+    fetchAlerts();
+  }
+
+  Future<void> fetchAlerts() async {
+    try {
+      final res  = await _api.get('${ApiEndpoints.expiryAlerts}?days=30');
+      final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      final list = (data['vehicleAlerts'] as List<dynamic>? ?? []);
+      alerts.value = list
+          .map((e) => VehicleAlert.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      debugPrint('[Dashboard:alerts] $e');
+    }
   }
 
   Future<void> fetchDashboard() async {

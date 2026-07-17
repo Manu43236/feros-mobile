@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
 import '../../../../../core/utils/view_state.dart';
@@ -22,6 +23,13 @@ class SupervisorOrderDetailController extends GetxController {
   final isLoadingVehicles = false.obs;
   final isAssigning       = false.obs;
   final unassigningId     = Rxn<int>();
+
+  // ── Breakdowns ────────────────────────────────────────────────────────────
+  final breakdowns            = <int, Map<String, dynamic>>{}.obs;
+  final isReportingBreakdown  = false.obs;
+  final isResolvingBreakdown  = false.obs;
+  final isCancellingBreakdown = false.obs;
+  final isReplacingVehicle    = false.obs;
 
   // ── Staff assignment ───────────────────────────────────────────────────────
   final drivers             = <Map<String, dynamic>>[].obs;
@@ -56,8 +64,83 @@ class SupervisorOrderDetailController extends GetxController {
           .cast<Map<String, dynamic>>();
 
       state.value = ViewState.success;
+
+      // Fetch active breakdowns for IN_TRANSIT/BREAKDOWN allocations
+      final allocs = (order.value?['vehicleAllocations'] as List?)
+              ?.cast<Map<String, dynamic>>() ??
+          [];
+      await Future.wait(allocs
+          .where((a) {
+            final s = a['allocationStatus'] as String? ?? '';
+            return s == 'IN_TRANSIT' || s == 'BREAKDOWN';
+          })
+          .map((a) => fetchBreakdown(a['id'] as int)));
     } catch (_) {
       state.value = ViewState.error;
+    }
+  }
+
+  Future<void> fetchBreakdown(int allocationId) async {
+    try {
+      final res = await _api.get(ApiEndpoints.orderBreakdown(orderId, allocationId));
+      final data = (res.data as Map<String, dynamic>)['data'];
+      if (data != null) breakdowns[allocationId] = data as Map<String, dynamic>;
+    } catch (_) {
+      // 404 = no active breakdown — ignore
+    }
+  }
+
+  Future<bool> reportBreakdown(int allocationId, Map<String, dynamic> data) async {
+    isReportingBreakdown.value = true;
+    try {
+      await _api.post(ApiEndpoints.orderBreakdown(orderId, allocationId), data: data);
+      FerosSnackbar.success('Breakdown reported');
+      await fetchBreakdown(allocationId);
+      return true;
+    } catch (e) {
+      FerosSnackbar.error(e.toString());
+      return false;
+    } finally {
+      isReportingBreakdown.value = false;
+    }
+  }
+
+  Future<void> resolveBreakdown(int allocationId, int breakdownId) async {
+    isResolvingBreakdown.value = true;
+    try {
+      await _api.post(ApiEndpoints.resolveBreakdown(orderId, breakdownId));
+      FerosSnackbar.success('Breakdown resolved — trip continues');
+      breakdowns.remove(allocationId);
+    } catch (e) {
+      FerosSnackbar.error(e.toString());
+    }
+    isResolvingBreakdown.value = false;
+  }
+
+  Future<void> cancelBreakdown(int allocationId, int breakdownId) async {
+    isCancellingBreakdown.value = true;
+    try {
+      await _api.delete(ApiEndpoints.cancelBreakdown(orderId, breakdownId));
+      FerosSnackbar.success('Breakdown report cancelled');
+      breakdowns.remove(allocationId);
+    } catch (e) {
+      FerosSnackbar.error(e.toString());
+    }
+    isCancellingBreakdown.value = false;
+  }
+
+  Future<bool> replaceVehicle(int breakdownId, Map<String, dynamic> data) async {
+    isReplacingVehicle.value = true;
+    try {
+      await _api.post(ApiEndpoints.replaceVehicle(orderId, breakdownId), data: data);
+      FerosSnackbar.success('Replacement vehicle assigned');
+      await fetchAll();
+      return true;
+    } catch (e) {
+      FerosSnackbar.error(e.toString());
+      return false;
+    } finally {
+      isReplacingVehicle.value = false;
     }
   }
 
@@ -251,6 +334,30 @@ class SupervisorOrderDetailController extends GetxController {
     } finally {
       isUpdatingStatus.value = false;
     }
+  }
+
+  // ── Order PDF (share) ──────────────────────────────────────────────────────
+  final isShareingPdf = false.obs;
+
+  Future<void> shareOrderPdf() async {
+    if (isShareingPdf.value) return;
+    final o = order.value;
+    if (o == null) return;
+    final orderNumber = o['orderNumber'] as String? ?? 'ORDER';
+    isShareingPdf.value = true;
+    try {
+      final bytes = await _api.getBytes(ApiEndpoints.orderPdf(orderId));
+      final dir  = await getTemporaryDirectory();
+      final file = File('${dir.path}/$orderNumber.pdf');
+      await file.writeAsBytes(bytes);
+      final xFile = XFile(file.path, mimeType: 'application/pdf');
+      await SharePlus.instance.share(
+        ShareParams(files: [xFile], text: 'Order $orderNumber'),
+      );
+    } catch (_) {
+      FerosSnackbar.error('Failed to generate PDF');
+    }
+    isShareingPdf.value = false;
   }
 
   // ── LR PDF ─────────────────────────────────────────────────────────────────

@@ -54,8 +54,9 @@ class ApiEndpoints {
   static const vehicleBreakdowns          = '/vehicle-breakdowns';
   static const myBreakdown                = '/my/breakdown';
   static String orderBreakdown(oId, aId)  => '/orders/$oId/vehicle-allocations/$aId/breakdown';
-  static String resolveBreakdown(oId, bId)=> '/orders/$oId/breakdowns/$bId/resolve';
-  static String replaceVehicle(oId, bId)  => '/orders/$oId/breakdowns/$bId/replace';
+  static String resolveBreakdown(oId, bId) => '/orders/$oId/breakdowns/$bId/resolve';
+  static String cancelBreakdown(oId, bId)  => '/orders/$oId/breakdowns/$bId';
+  static String replaceVehicle(oId, bId)   => '/orders/$oId/breakdowns/$bId/replace';
   static String vehicleBreakdownById(vId) => '/vehicles/$vId/breakdown';
   static String resolveVehicleBreakdown(vId, bId) => '/vehicles/$vId/breakdown/$bId/resolve';
 
@@ -67,6 +68,7 @@ class ApiEndpoints {
   static String assignStaff(id)           => '/orders/$id/assign-staff';
   static String unassignStaff(oId, sId)   => '/orders/$oId/staff-allocations/$sId';
   static String orderStatus(id)           => '/orders/$id/status';
+  static String orderPdf(id)             => '/orders/$id/pdf';
   static String orderForceDeliver(id)     => '/orders/$id/force-deliver';
   static String orderPaymentStatus(id)    => '/orders/$id/payment-status';
 
@@ -76,8 +78,10 @@ class ApiEndpoints {
   static String lrById(id)               => '/lrs/$id';
   static String lrPdf(id)                => '/lrs/$id/pdf';
   static String lrsByOrder(orderId)      => '/lrs/order/$orderId';
-  static String lrCheckposts(id)         => '/lrs/$id/checkposts';
-  static String lrCharges(id)            => '/lrs/$id/charges';
+  static String lrCheckposts(id)            => '/lrs/$id/checkposts';
+  static String lrCheckpostById(id, cpId)   => '/lrs/$id/checkposts/$cpId';
+  static String lrCharges(id)               => '/lrs/$id/charges';
+  static String lrChargeById(id, chargeId)  => '/lrs/$id/charges/$chargeId';
 
   // Trip Expenses
   static String lrTripExpense(lrId)          => '/lr/$lrId/trip-expense';

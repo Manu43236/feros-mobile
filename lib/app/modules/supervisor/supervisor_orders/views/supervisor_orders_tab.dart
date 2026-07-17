@@ -170,14 +170,15 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status      = order['orderStatus']          as String? ?? '';
-    final orderNumber = order['orderNumber']          as String? ?? '—';
-    final clientName  = order['clientName']           as String? ?? '—';
-    final fromCity    = order['sourceCityName']       as String? ?? '—';
-    final toCity      = order['destinationCityName']  as String? ?? '—';
-    final material    = order['materialTypeName']     as String? ?? '—';
-    final weight      = order['totalWeight'];
-    final deliveryDate= order['expectedDeliveryDate'] as String?;
+    final status        = order['orderStatus']          as String? ?? '';
+    final payStatus     = order['orderPaymentStatus']   as String?;
+    final orderNumber   = order['orderNumber']          as String? ?? '—';
+    final clientName    = order['clientName']           as String? ?? '—';
+    final fromCity      = order['sourceCityName']       as String? ?? '—';
+    final toCity        = order['destinationCityName']  as String? ?? '—';
+    final material      = order['materialTypeName']     as String? ?? '—';
+    final weight        = order['totalWeight'];
+    final deliveryDate  = order['expectedDeliveryDate'] as String?;
 
     return GestureDetector(
       onTap: _openDetail,
@@ -209,6 +210,10 @@ class _OrderCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
+                if (payStatus != null) ...[
+                  _PaymentBadge(status: payStatus),
+                  const SizedBox(width: 6),
+                ],
                 _StatusBadge(status: status),
               ],
             ),
@@ -337,6 +342,44 @@ class _StatusBadge extends StatelessWidget {
       case 'CANCELLED':           return 'status_cancelled'.tr;
       default:                    return s;
     }
+  }
+}
+
+// ── Payment Badge ─────────────────────────────────────────────────────────────
+class _PaymentBadge extends StatelessWidget {
+  final String status;
+  const _PaymentBadge({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (status) {
+      'PAID'          => AppColors.success,
+      'PARTIALLY_PAID'=> AppColors.info,
+      'OVERDUE'       => AppColors.error,
+      _               => AppColors.mutedText,
+    };
+    final label = switch (status) {
+      'PAID'          => 'Paid',
+      'PARTIALLY_PAID'=> 'Part. Paid',
+      'OVERDUE'       => 'Overdue',
+      _               => 'Unpaid',
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.caption.copyWith(
+          color: color,
+          fontWeight: FontWeight.w500,
+          fontSize: 10,
+        ),
+      ),
+    );
   }
 }
 

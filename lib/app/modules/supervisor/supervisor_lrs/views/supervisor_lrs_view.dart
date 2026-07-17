@@ -323,6 +323,7 @@ class _LrCard extends StatelessWidget {
     final lrDate = lr['lrDate'] as String?;
     final orderNum = lr['orderNumber'] as String?;
     final materialTypeName = lr['materialTypeName'] as String?;
+    final isInvoiced = lr['isInvoiced'] as bool? ?? false;
 
     return GestureDetector(
       onTap: _openDetail,
@@ -370,6 +371,24 @@ class _LrCard extends StatelessWidget {
                       ],
                     ),
                   ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: isInvoiced
+                          ? AppColors.success.withValues(alpha: 0.1)
+                          : AppColors.border,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      isInvoiced ? 'lbl_invoiced'.tr : 'lbl_not_invoiced'.tr,
+                      style: AppTextStyles.caption.copyWith(
+                        color: isInvoiced ? AppColors.success : AppColors.mutedText,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
                   _LrStatusBadge(status: status),
                 ],
               ),

@@ -100,8 +100,8 @@ class SupervisorLrsController extends GetxController {
     if (orders.isNotEmpty) return;
     try {
       final res  = await _api.get(ApiEndpoints.orders);
-      final list = ((res.data as Map<String, dynamic>)['data'] as List)
-          .cast<Map<String, dynamic>>();
+      final page = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      final list = (page['content'] as List).cast<Map<String, dynamic>>();
       orders.assignAll(list.where((o) {
         final st = o['orderStatus'] as String? ?? '';
         return !['CANCELLED', 'DELIVERED'].contains(st);

@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/theme/app_spacing.dart';
-import '../controllers/supervisor_dashboard_controller.dart';
+import '../controllers/supervisor_dashboard_controller.dart' show SupervisorDashboardController, VehicleAlert;
 import '../../supervisor_shell/controllers/supervisor_shell_controller.dart';
 import '../../supervisor_vehicles/views/supervisor_vehicles_view.dart';
 import '../../supervisor_vehicles/bindings/supervisor_vehicles_binding.dart';
@@ -11,6 +11,7 @@ import '../../supervisor_crew/views/supervisor_crew_view.dart';
 import '../../supervisor_crew/bindings/supervisor_crew_binding.dart';
 import '../../supervisor_lrs/views/supervisor_lrs_view.dart';
 import '../../supervisor_lrs/bindings/supervisor_lrs_binding.dart';
+import '../../supervisor_orders/controllers/supervisor_orders_controller.dart';
 
 class SupervisorDashboard extends StatelessWidget {
   final SupervisorDashboardController controller;
@@ -38,11 +39,15 @@ class SupervisorDashboard extends StatelessWidget {
               _TotalBadge(value: controller.orderTotal.value, color: AppColors.navy),
               const SizedBox(height: 12),
               _StatRow(stats: [
-                _StatItem('status_active'.tr,    controller.orderActive.value,    AppColors.orderActive),
-                _StatItem('status_pending'.tr,   controller.orderPending.value,   AppColors.orderPending),
+                _StatItem('status_active'.tr,    controller.orderActive.value,    AppColors.orderActive,
+                    onTap: () { _goToTab(1); Get.find<SupervisorOrdersController>().toggleFilter('IN_TRANSIT'); }),
+                _StatItem('status_pending'.tr,   controller.orderPending.value,   AppColors.orderPending,
+                    onTap: () { _goToTab(1); Get.find<SupervisorOrdersController>().toggleFilter('PENDING'); }),
                 _StatItem('status_completed'.tr, controller.orderCompleted.value, AppColors.orderCompleted),
-                _StatItem('status_delivered'.tr, controller.orderDelivered.value, AppColors.lrDelivered),
-                _StatItem('status_cancelled'.tr, controller.orderCancelled.value, AppColors.orderCancelled),
+                _StatItem('status_delivered'.tr, controller.orderDelivered.value, AppColors.lrDelivered,
+                    onTap: () { _goToTab(1); Get.find<SupervisorOrdersController>().toggleFilter('DELIVERED'); }),
+                _StatItem('status_cancelled'.tr, controller.orderCancelled.value, AppColors.orderCancelled,
+                    onTap: () { _goToTab(1); Get.find<SupervisorOrdersController>().toggleFilter('CANCELLED'); }),
               ]),
             ],
           ),
@@ -164,6 +169,10 @@ class SupervisorDashboard extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(height: 14),
+
+        // ── Vehicle Alerts ─────────────────────────────────────────
+        _AlertsCard(alerts: controller.alerts),
       ],
     ));
   }
@@ -391,7 +400,7 @@ class _StatCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    final cell = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('${item.value}',
@@ -406,6 +415,8 @@ class _StatCell extends StatelessWidget {
                 color: AppColors.mutedText, fontSize: 10)),
       ],
     );
+    if (item.onTap == null) return cell;
+    return GestureDetector(onTap: item.onTap, child: cell);
   }
 }
 
@@ -438,7 +449,169 @@ class _StatItem {
   final String label;
   final int value;
   final Color color;
-  const _StatItem(this.label, this.value, this.color);
+  final VoidCallback? onTap;
+  const _StatItem(this.label, this.value, this.color, {this.onTap});
+}
+
+// ── Vehicle Alerts Card ───────────────────────────────────────────────────────
+class _AlertsCard extends StatelessWidget {
+  final RxList<VehicleAlert> alerts;
+  const _AlertsCard({required this.alerts});
+
+  Color _accentColor(VehicleAlert a) {
+    if (a.expired)       return const Color(0xFFDC2626); // red
+    if (a.daysLeft <= 7) return const Color(0xFFF97316); // orange
+    return const Color(0xFFF59E0B);                       // amber
+  }
+
+  String _badge(VehicleAlert a) {
+    if (a.expired)       return 'Expired';
+    if (a.daysLeft == 0) return 'Today';
+    return '${a.daysLeft}d left';
+  }
+
+  String _subtitle(VehicleAlert a) =>
+      a.alertType == 'DOCUMENT' && a.documentName != null
+          ? a.documentName!
+          : a.alertType.replaceAll('_', ' ');
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final list = alerts;
+      return Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.border),
+          boxShadow: const [
+            BoxShadow(color: Color(0x08000000), blurRadius: 8, offset: Offset(0, 2)),
+          ],
+        ),
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF97316).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.warning_amber_rounded, size: 16, color: Color(0xFFF97316)),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text('Vehicle Document Alerts',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.bodyText, fontWeight: FontWeight.w600)),
+                  ),
+                  if (list.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text('${list.length}',
+                          style: const TextStyle(
+                              fontSize: 11, fontWeight: FontWeight.w700,
+                              color: Color(0xFFB45309))),
+                    ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: AppColors.border),
+
+            // Body
+            if (list.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  children: [
+                    const Icon(Icons.check_circle_outline, size: 32, color: Color(0xFF22C55E)),
+                    const SizedBox(height: 8),
+                    Text('All vehicle documents up to date',
+                        style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                  ],
+                ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: list.length > 8 ? 8 : list.length,
+                separatorBuilder: (_, _) => const Divider(height: 1, color: AppColors.border),
+                itemBuilder: (_, i) {
+                  final a = list[i];
+                  final color = _accentColor(a);
+                  return Container(
+                    decoration: BoxDecoration(
+                      border: Border(left: BorderSide(color: color, width: 3)),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(a.registrationNumber,
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                        fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 2),
+                                Text(_subtitle(a),
+                                    style: AppTextStyles.caption.copyWith(
+                                        color: AppColors.mutedText)),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(a.expiryDate,
+                                  style: AppTextStyles.caption.copyWith(
+                                      color: AppColors.mutedText)),
+                              const SizedBox(height: 3),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: color.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(_badge(a),
+                                    style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color: color)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+            // "X more" footer
+            if (list.length > 8) ...[
+              const Divider(height: 1, color: AppColors.border),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Text('+${list.length - 8} more alerts',
+                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+              ),
+            ],
+          ],
+        ),
+      );
+    });
+  }
 }
 
 
