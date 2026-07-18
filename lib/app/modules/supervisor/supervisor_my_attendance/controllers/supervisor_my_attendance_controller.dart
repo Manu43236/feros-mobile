@@ -15,7 +15,6 @@ class SupervisorMyAttendanceController extends GetxController {
   final leaveTypes      = <Map<String, dynamic>>[].obs;
   final markLoading     = false.obs;
 
-  // Stats derived from records
   int get present => records.where((r) {
     final t = (r['attendanceTypeName'] as String? ?? '').toLowerCase();
     return t.contains('present') && !t.contains('half');
@@ -54,13 +53,10 @@ class SupervisorMyAttendanceController extends GetxController {
   Future<void> fetchRecords() async {
     final now  = DateTime.now();
     final from = DateTime(now.year, now.month, 1);
-    final to   = DateTime(now.year, now.month + 1, 0); // last day of month
+    final to   = DateTime(now.year, now.month + 1, 0);
     final res  = await _api.get(
       ApiEndpoints.myAttendance,
-      params: {
-        'from': _dateStr(from),
-        'to':   _dateStr(to),
-      },
+      params: {'from': _dateStr(from), 'to': _dateStr(to)},
     );
     final list = ((res.data as Map<String, dynamic>)['data'] as List)
         .cast<Map<String, dynamic>>();
@@ -80,25 +76,13 @@ class SupervisorMyAttendanceController extends GetxController {
     );
   }
 
-  /// Returns the "Present" attendance type ID from the fetched master list.
-  int? get _presentTypeId {
-    try {
-      final t = attendanceTypes.firstWhere((t) {
-        final n = (t['name'] as String? ?? '').toLowerCase();
-        return n.contains('present') && !n.contains('half');
-      });
-      return t['id'] as int?;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<bool> markPresent({File? selfieFile, String? remarks}) async {
-    final typeId = _presentTypeId;
-    if (typeId == null) {
-      debugPrint('[MyAttendance] No present type found');
-      return false;
-    }
+  Future<bool> markAttendance({
+    required int typeId,
+    int? leaveTypeId,
+    String? leaveReason,
+    File? selfieFile,
+    String? remarks,
+  }) async {
     markLoading.value = true;
     try {
       String? selfieUrl;
@@ -108,13 +92,15 @@ class SupervisorMyAttendanceController extends GetxController {
       }
       await _api.post(ApiEndpoints.myAttendance, data: {
         'attendanceTypeId': typeId,
+        if (leaveTypeId != null) 'leaveTypeId': leaveTypeId,
+        if (leaveReason != null && leaveReason.isNotEmpty) 'leaveReason': leaveReason,
         if (remarks != null && remarks.isNotEmpty) 'remarks': remarks,
         if (selfieUrl != null) 'selfieUrl': selfieUrl,
       });
       await fetchRecords();
       return true;
     } catch (e) {
-      debugPrint('[MyAttendance] markPresent: $e');
+      debugPrint('[MyAttendance] markAttendance: $e');
       return false;
     } finally {
       markLoading.value = false;

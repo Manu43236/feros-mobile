@@ -71,6 +71,8 @@ class ApiEndpoints {
   static String orderPdf(id)             => '/orders/$id/pdf';
   static String orderForceDeliver(id)     => '/orders/$id/force-deliver';
   static String orderPaymentStatus(id)    => '/orders/$id/payment-status';
+  static const vehicleAllocationHistory  = '/orders/vehicle-allocation-history';
+  static const staffAssignmentHistory    = '/vehicles/staff-assignment-history';
 
   // LRs
   static const lrs                        = '/lrs';
@@ -84,6 +86,7 @@ class ApiEndpoints {
   static String lrChargeById(id, chargeId)  => '/lrs/$id/charges/$chargeId';
 
   // Trip Expenses
+  static const tripExpenses                   = '/trip-expenses';
   static String lrTripExpense(lrId)          => '/lr/$lrId/trip-expense';
   static String lrTripExpenseSubmit(lrId)    => '/lr/$lrId/trip-expense/submit';
   static String tripExpenseApprove(id)       => '/trip-expenses/$id/approve';

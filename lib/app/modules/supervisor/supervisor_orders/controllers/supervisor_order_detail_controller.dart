@@ -162,7 +162,7 @@ class SupervisorOrderDetailController extends GetxController {
   }
 
   // ── Assign vehicle ─────────────────────────────────────────────────────────
-  Future<bool> assignVehicle({
+  Future<int?> assignVehicle({
     required int    vehicleId,
     required double allocatedWeight,
     String? expectedLoadDate,
@@ -179,13 +179,13 @@ class SupervisorOrderDetailController extends GetxController {
       if (expectedDeliveryDate != null) body['expectedDeliveryDate'] = expectedDeliveryDate;
       if (remarks != null)              body['remarks']              = remarks;
 
-      await _api.post(ApiEndpoints.assignVehicle(orderId), data: body);
+      final res = await _api.post(ApiEndpoints.assignVehicle(orderId), data: body);
       FerosSnackbar.success('Vehicle assigned successfully');
       fetchAll();
-      return true;
+      return ((res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>)['id'] as int?;
     } catch (e) {
       FerosSnackbar.error(e.toString());
-      return false;
+      return null;
     } finally {
       isAssigning.value = false;
     }
@@ -224,11 +224,15 @@ class SupervisorOrderDetailController extends GetxController {
     isLoadingStaff.value = false;
   }
 
-  // ── Assign driver to vehicle ───────────────────────────────────────────────
-  Future<bool> assignDriver({ required int vehicleId, required int userId }) async {
+  // ── Assign driver to order allocation ─────────────────────────────────────
+  Future<bool> assignDriver({ required int allocationId, required int userId }) async {
     isAssigningDriver.value = true;
     try {
-      await _api.put(ApiEndpoints.vehicleAssignDriver(vehicleId), data: {'userId': userId});
+      await _api.post(ApiEndpoints.assignStaff(orderId), data: {
+        'vehicleAllocationId': allocationId,
+        'userId': userId,
+        'slotRole': 'DRIVER',
+      });
       FerosSnackbar.success('Driver assigned successfully');
       fetchAll();
       return true;
@@ -240,11 +244,15 @@ class SupervisorOrderDetailController extends GetxController {
     }
   }
 
-  // ── Assign cleaner to vehicle ──────────────────────────────────────────────
-  Future<bool> assignCleaner({ required int vehicleId, required int userId }) async {
+  // ── Assign cleaner to order allocation ────────────────────────────────────
+  Future<bool> assignCleaner({ required int allocationId, required int userId }) async {
     isAssigningCleaner.value = true;
     try {
-      await _api.put(ApiEndpoints.vehicleAssignCleaner(vehicleId), data: {'userId': userId});
+      await _api.post(ApiEndpoints.assignStaff(orderId), data: {
+        'vehicleAllocationId': allocationId,
+        'userId': userId,
+        'slotRole': 'CLEANER',
+      });
       FerosSnackbar.success('Cleaner assigned successfully');
       fetchAll();
       return true;
@@ -256,11 +264,11 @@ class SupervisorOrderDetailController extends GetxController {
     }
   }
 
-  // ── Unassign driver from vehicle ───────────────────────────────────────────
-  Future<void> unassignDriver(int vehicleId) async {
+  // ── Unassign driver (order-level staffAllocation) ─────────────────────────
+  Future<void> unassignDriver(int staffAllocationId) async {
     isUnassigningDriver.value = true;
     try {
-      await _api.delete(ApiEndpoints.vehicleAssignDriver(vehicleId));
+      await _api.delete(ApiEndpoints.unassignStaff(orderId, staffAllocationId));
       FerosSnackbar.success('Driver unassigned');
       fetchAll();
     } catch (e) {
@@ -269,11 +277,11 @@ class SupervisorOrderDetailController extends GetxController {
     isUnassigningDriver.value = false;
   }
 
-  // ── Unassign cleaner from vehicle ──────────────────────────────────────────
-  Future<void> unassignCleaner(int vehicleId) async {
+  // ── Unassign cleaner (order-level staffAllocation) ────────────────────────
+  Future<void> unassignCleaner(int staffAllocationId) async {
     isUnassigningCleaner.value = true;
     try {
-      await _api.delete(ApiEndpoints.vehicleAssignCleaner(vehicleId));
+      await _api.delete(ApiEndpoints.unassignStaff(orderId, staffAllocationId));
       FerosSnackbar.success('Cleaner unassigned');
       fetchAll();
     } catch (e) {

@@ -1288,35 +1288,97 @@ void _showMarkCrewBottomSheet(
 // ── Bulk Mark Confirmation Dialog ─────────────────────────────────────────────
 void _showBulkMarkConfirm(
     BuildContext context, SupervisorAttendanceController ctrl) {
+  final selectedTypeId = Rxn<int>();
+  // Pre-select "Present" so the default behaviour is unchanged
+  for (final t in ctrl.attendanceTypes) {
+    final n = (t['name'] as String? ?? '').toLowerCase();
+    if (n.contains('present') && !n.contains('half')) {
+      selectedTypeId.value = t['id'] as int?;
+      break;
+    }
+  }
+
   showDialog(
     context: context,
     builder: (dialogCtx) => AlertDialog(
       shape:
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       title: const Text(
-        'Bulk Mark Present',
+        'Bulk Mark Crew',
         style: TextStyle(
             fontFamily: 'Inter', fontWeight: FontWeight.w700, fontSize: 16),
       ),
-      content: Obx(() => Text(
-            'Mark all ${ctrl.unmarkedCrew.length} unmarked driver(s) & cleaner(s) as Present for today?',
-            style: const TextStyle(fontFamily: 'Inter', fontSize: 14),
-          )),
+      content: Obx(() {
+        final count = ctrl.unmarkedCrew.length;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Mark $count unmarked crew member${count == 1 ? '' : 's'} as:',
+              style: const TextStyle(fontFamily: 'Inter', fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: ctrl.attendanceTypes.map((t) {
+                final id       = t['id'] as int;
+                final typeName = t['name'] as String? ?? '';
+                final selected = selectedTypeId.value == id;
+                final color    = _typeColor(typeName);
+                return GestureDetector(
+                  onTap: () => selectedTypeId.value = id,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? color.withValues(alpha: 0.12)
+                          : const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: selected ? color : AppColors.border,
+                        width: selected ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Text(
+                      typeName,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: selected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                        fontSize: 13,
+                        color: selected ? color : AppColors.bodyText,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        );
+      }),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(dialogCtx),
           child: const Text('Cancel'),
         ),
         Obx(() => ElevatedButton(
-              onPressed: ctrl.bulkLoading.value
+              onPressed: (ctrl.bulkLoading.value || selectedTypeId.value == null)
                   ? null
                   : () async {
-                      final ok = await ctrl.markBulkPresent();
+                      final typeName = (ctrl.attendanceTypes.firstWhere(
+                        (t) => t['id'] == selectedTypeId.value,
+                        orElse: () => {'name': 'Marked'},
+                      )['name'] as String? ?? 'Marked');
+                      final ok = await ctrl.markBulkPresent(selectedTypeId.value!);
                       if (dialogCtx.mounted) Navigator.pop(dialogCtx);
                       if (ok) {
                         Get.snackbar(
                           'Done',
-                          'All marked as Present',
+                          'All marked as $typeName',
                           backgroundColor: AppColors.success,
                           colorText: Colors.white,
                           snackPosition: SnackPosition.BOTTOM,
@@ -1433,7 +1495,15 @@ void _showMarkBottomSheet(
                     onPressed: ctrl.markLoading.value
                         ? null
                         : () async {
-                            final ok = await ctrl.markPresent(
+                            final presentType = ctrl.attendanceTypes.firstWhereOrNull(
+                              (t) {
+                                final n = (t['name'] as String? ?? '').toLowerCase();
+                                return n.contains('present') && !n.contains('half');
+                              },
+                            );
+                            if (presentType == null) return;
+                            final ok = await ctrl.markAttendance(
+                              typeId: presentType['id'] as int,
                               selfieFile: selfieFile.value,
                               remarks: remarks.text,
                             );

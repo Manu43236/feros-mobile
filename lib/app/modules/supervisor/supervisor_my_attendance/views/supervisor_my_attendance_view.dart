@@ -24,9 +24,9 @@ class SupervisorMyAttendanceView
           onTap: Get.back,
           child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
         ),
-        title: Text(
+        title: const Text(
           'My Attendance',
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
             fontFamily: 'Inter',
             fontWeight: FontWeight.w600,
@@ -70,7 +70,7 @@ class SupervisorMyAttendanceView
             ),
           );
         }
-        // Read all reactive values here — children are plain widgets
+
         final records     = controller.records.toList();
         final todayRecord = controller.todayRecord;
         final markLoading = controller.markLoading.value;
@@ -137,8 +137,7 @@ class _TodayCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 44, height: 44,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(22),
@@ -190,11 +189,8 @@ class _TodayCard extends StatelessWidget {
 class _StatsRow extends StatelessWidget {
   final int present, absent, half, leave, pending;
   const _StatsRow({
-    required this.present,
-    required this.absent,
-    required this.half,
-    required this.leave,
-    required this.pending,
+    required this.present, required this.absent, required this.half,
+    required this.leave, required this.pending,
   });
 
   @override
@@ -276,10 +272,14 @@ class _RecordsList extends StatelessWidget {
   }
 }
 
-// ── Mark Sheet ────────────────────────────────────────────────────────────────
+// ── Mark Bottom Sheet ─────────────────────────────────────────────────────────
 void _showMarkSheet(BuildContext context, SupervisorMyAttendanceController ctrl) {
-  final remarks    = TextEditingController();
-  final selfieFile = Rxn<File>();
+  final remarks        = TextEditingController();
+  final leaveReason    = TextEditingController();
+  final selfieFile     = Rxn<File>();
+  final selectedTypeId = RxnInt();
+  final selectedTypeName = ''.obs;
+  final selectedLeaveTypeId = RxnInt();
 
   showModalBottomSheet(
     context: context,
@@ -292,89 +292,195 @@ void _showMarkSheet(BuildContext context, SupervisorMyAttendanceController ctrl)
         left: 20, right: 20, top: 20,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      child: Obx(() => SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+      child: Obx(() {
+        final types     = ctrl.attendanceTypes.toList();
+        final lTypes    = ctrl.leaveTypes.toList();
+        final typeId    = selectedTypeId.value;
+        final typeName  = selectedTypeName.value.toLowerCase();
+        final isLeave   = typeName.contains('leave');
+        final loading   = ctrl.markLoading.value;
+
+        return SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text('Mark Today\'s Attendance',
-                style: AppTextStyles.heading4.copyWith(color: AppColors.navy)),
-            const SizedBox(height: 4),
-            Text(_formatToday(),
-                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
+              Text('Mark Today\'s Attendance',
+                  style: AppTextStyles.heading4.copyWith(color: AppColors.navy)),
+              const SizedBox(height: 4),
+              Text(_formatToday(),
+                  style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+              const SizedBox(height: 16),
 
-            _SelfieBox(selfieFile: selfieFile, disabled: ctrl.markLoading.value),
-            const SizedBox(height: 12),
-
-            Text('Remarks (Optional)',
-                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-            const SizedBox(height: 4),
-            TextField(
-              controller: remarks,
-              decoration: InputDecoration(
-                hintText: 'Optional',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              // ── Attendance Type ──
+              Text('Attendance Type *',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: types.map((t) {
+                  final id     = t['id'] as int;
+                  final name   = t['name'] as String? ?? '';
+                  final active = typeId == id;
+                  return GestureDetector(
+                    onTap: loading ? null : () {
+                      selectedTypeId.value   = id;
+                      selectedTypeName.value = name;
+                      selectedLeaveTypeId.value = null;
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: active ? AppColors.navy : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: active ? AppColors.navy : AppColors.border),
+                      ),
+                      child: Text(
+                        name,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: active ? Colors.white : AppColors.bodyText,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text('Attendance will be reviewed and approved by admin.',
-                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: ctrl.markLoading.value
-                    ? null
-                    : () async {
-                        final ok = await ctrl.markPresent(
-                          selfieFile: selfieFile.value,
-                          remarks: remarks.text,
-                        );
-                        if (ok && context.mounted) {
-                          Navigator.of(context).pop();
-                          Get.snackbar('Success', 'Attendance marked',
-                              backgroundColor: AppColors.success,
-                              colorText: Colors.white,
-                              snackPosition: SnackPosition.BOTTOM);
-                        } else if (!ok && context.mounted) {
-                          Get.snackbar('Error', 'Failed to mark attendance',
-                              backgroundColor: AppColors.error,
-                              colorText: Colors.white,
-                              snackPosition: SnackPosition.BOTTOM);
-                        }
+              // ── Leave fields (only when leave type selected) ──
+              if (isLeave) ...[
+                Text('Leave Type',
+                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: lTypes.map((lt) {
+                    final id     = lt['id'] as int;
+                    final name   = lt['name'] as String? ?? '';
+                    final active = selectedLeaveTypeId.value == id;
+                    return GestureDetector(
+                      onTap: loading ? null : () {
+                        selectedLeaveTypeId.value = active ? null : id;
                       },
-                icon: ctrl.markLoading.value
-                    ? const SizedBox(width: 18, height: 18,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Icon(Icons.check_circle_outline, size: 20),
-                label: Text(
-                  ctrl.markLoading.value ? 'Marking…' : 'Mark Present',
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: active ? AppColors.navy.withValues(alpha: 0.1) : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: active ? AppColors.navy : AppColors.border),
+                        ),
+                        child: Text(
+                          name,
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: active ? AppColors.navy : AppColors.bodyText,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.success,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                const SizedBox(height: 12),
+                Text('Leave Reason (Optional)',
+                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                const SizedBox(height: 4),
+                TextField(
+                  controller: leaveReason,
+                  enabled: !loading,
+                  decoration: InputDecoration(
+                    hintText: 'e.g. Sick, family function…',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              // ── Selfie ──
+              _SelfieBox(selfieFile: selfieFile, disabled: loading),
+              const SizedBox(height: 12),
+
+              // ── Remarks ──
+              Text('Remarks (Optional)',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+              const SizedBox(height: 4),
+              TextField(
+                controller: remarks,
+                enabled: !loading,
+                decoration: InputDecoration(
+                  hintText: 'Optional',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 ),
               ),
-            ),
-          ],
-        ),
-      )),
+              const SizedBox(height: 8),
+              Text('Attendance will be reviewed and approved by admin.',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+              const SizedBox(height: 16),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: (loading || typeId == null) ? null : () async {
+                    final ok = await ctrl.markAttendance(
+                      typeId:       typeId,
+                      leaveTypeId:  selectedLeaveTypeId.value,
+                      leaveReason:  leaveReason.text,
+                      selfieFile:   selfieFile.value,
+                      remarks:      remarks.text,
+                    );
+                    if (ok && context.mounted) {
+                      Navigator.of(context).pop();
+                      Get.snackbar('Success', 'Attendance marked',
+                          backgroundColor: AppColors.success,
+                          colorText: Colors.white,
+                          snackPosition: SnackPosition.BOTTOM);
+                    } else if (!ok && context.mounted) {
+                      Get.snackbar('Error', 'Failed to mark attendance',
+                          backgroundColor: AppColors.error,
+                          colorText: Colors.white,
+                          snackPosition: SnackPosition.BOTTOM);
+                    }
+                  },
+                  icon: loading
+                      ? const SizedBox(width: 18, height: 18,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Icon(Icons.check_circle_outline, size: 20),
+                  label: Text(
+                    loading ? 'Marking…' : 'Mark Attendance',
+                    style: AppTextStyles.bodyMedium
+                        .copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: typeId != null ? AppColors.navy : AppColors.mutedText,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
     ),
   );
 }
@@ -415,8 +521,7 @@ class _SelfieBox extends StatelessWidget {
                       size: 32, color: AppColors.mutedText),
                   const SizedBox(height: 8),
                   Text('Tap to take selfie (Optional)',
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.mutedText)),
+                      style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
                 ],
               )
             : Stack(
@@ -430,7 +535,7 @@ class _SelfieBox extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: const BoxDecoration(
-                          color: Colors.black54, shape: BoxShape.circle),
+                            color: Colors.black54, shape: BoxShape.circle),
                         child: const Icon(Icons.close, size: 14, color: Colors.white),
                       ),
                     ),
@@ -458,16 +563,7 @@ class _SelfieBox extends StatelessWidget {
   }
 }
 
-String _formatToday() {
-  final d = DateTime.now();
-  return '${d.day.toString().padLeft(2, '0')} ${_month(d.month)} ${d.year}';
-}
-
-String _weekday(int w) => const ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][w];
-String _month(int m) => const ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m];
-
-// ── Attendance Card ───────────────────────────────────────────────────────────
+// ── Attendance Card (with selfie viewer) ──────────────────────────────────────
 class _AttendanceCard extends StatelessWidget {
   final Map<String, dynamic> record;
   const _AttendanceCard({required this.record});
@@ -482,6 +578,7 @@ class _AttendanceCard extends StatelessWidget {
     final remarks        = record['remarks']           as String?;
     final markedAt       = record['markedAt']          as String?;
     final locationName   = record['locationName']      as String?;
+    final selfieUrl      = record['selfieUrl']         as String?;
 
     final (typeColor, typeIcon) = _typeStyle(typeName);
     final (approvalColor, approvalLabel) = _approvalStyle(approvalStatus);
@@ -494,8 +591,7 @@ class _AttendanceCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.border),
         boxShadow: const [
-          BoxShadow(
-              color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
+          BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
         ],
       ),
       child: Row(
@@ -510,22 +606,16 @@ class _AttendanceCard extends StatelessWidget {
             ),
             child: Column(
               children: [
-                Text(
-                  _dayNum(date),
-                  style: AppTextStyles.heading3
-                      .copyWith(color: AppColors.navy, fontSize: 20),
-                ),
-                Text(
-                  _monthShort(date),
-                  style: AppTextStyles.caption
-                      .copyWith(color: AppColors.mutedText),
-                ),
+                Text(_dayNum(date),
+                    style: AppTextStyles.heading3
+                        .copyWith(color: AppColors.navy, fontSize: 20)),
+                Text(_monthShort(date),
+                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
               ],
             ),
           ),
           const SizedBox(width: 14),
 
-          // Details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -534,76 +624,81 @@ class _AttendanceCard extends StatelessWidget {
                   children: [
                     Icon(typeIcon, size: 14, color: typeColor),
                     const SizedBox(width: 4),
-                    Text(typeName,
-                        style: AppTextStyles.bodyMedium
-                            .copyWith(color: AppColors.bodyText)),
-                    const Spacer(),
+                    Expanded(
+                      child: Text(typeName,
+                          style: AppTextStyles.bodyMedium
+                              .copyWith(color: AppColors.bodyText)),
+                    ),
                     if (approvalStatus.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
                           color: approvalColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Text(
-                          approvalLabel,
-                          style: AppTextStyles.caption.copyWith(
-                              color: approvalColor,
-                              fontWeight: FontWeight.w600),
-                        ),
+                        child: Text(approvalLabel,
+                            style: AppTextStyles.caption.copyWith(
+                                color: approvalColor, fontWeight: FontWeight.w600)),
                       ),
                   ],
                 ),
                 if (leaveTypeName != null && leaveTypeName.isNotEmpty) ...[
                   const SizedBox(height: 3),
-                  Text(
-                    'Leave: $leaveTypeName',
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.mutedText),
-                  ),
+                  Text('Leave: $leaveTypeName',
+                      style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
                 ],
                 if (approvedByName != null && approvedByName.isNotEmpty) ...[
                   const SizedBox(height: 3),
-                  Text(
-                    'Approved by $approvedByName',
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.mutedText),
-                  ),
+                  Text('Approved by $approvedByName',
+                      style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
                 ],
                 if (markedAt != null) ...[
                   const SizedBox(height: 3),
-                  Text(
-                    'Marked at ${FerosDateUtils.formatDateTime(markedAt)}',
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.mutedText),
-                  ),
+                  Text('Marked at ${FerosDateUtils.formatDateTime(markedAt)}',
+                      style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
                 ],
                 if (locationName != null && locationName.isNotEmpty) ...[
                   const SizedBox(height: 3),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_outlined, size: 12, color: AppColors.mutedText),
+                      const Icon(Icons.location_on_outlined,
+                          size: 12, color: AppColors.mutedText),
                       const SizedBox(width: 3),
                       Expanded(
-                        child: Text(
-                          locationName,
-                          style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        child: Text(locationName,
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.mutedText),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
                       ),
                     ],
                   ),
                 ],
                 if (remarks != null && remarks.isNotEmpty) ...[
                   const SizedBox(height: 3),
-                  Text(
-                    remarks,
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.mutedText),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  Text(remarks,
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.mutedText),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                ],
+                // GAP-3: selfie viewer
+                if (selfieUrl != null && selfieUrl.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  GestureDetector(
+                    onTap: () => _openSelfie(context, selfieUrl),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.camera_alt_outlined,
+                            size: 13, color: AppColors.navy),
+                        const SizedBox(width: 4),
+                        Text('View selfie',
+                            style: AppTextStyles.caption.copyWith(
+                                color: AppColors.navy,
+                                fontWeight: FontWeight.w500)),
+                      ],
+                    ),
                   ),
                 ],
               ],
@@ -614,44 +709,57 @@ class _AttendanceCard extends StatelessWidget {
     );
   }
 
+  void _openSelfie(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: Image.network(url, fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Icon(Icons.broken_image_outlined,
+                        size: 48, color: AppColors.mutedText),
+                  )),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   String _dayNum(String iso) {
-    try {
-      return DateTime.parse(iso).day.toString().padLeft(2, '0');
-    } catch (_) {
-      return '—';
-    }
+    try { return DateTime.parse(iso).day.toString().padLeft(2, '0'); }
+    catch (_) { return '—'; }
   }
 
   String _monthShort(String iso) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    try {
-      final d = DateTime.parse(iso);
-      return months[d.month - 1];
-    } catch (_) {
-      return '';
-    }
+    const months = ['Jan','Feb','Mar','Apr','May','Jun',
+                    'Jul','Aug','Sep','Oct','Nov','Dec'];
+    try { return months[DateTime.parse(iso).month - 1]; }
+    catch (_) { return ''; }
   }
 
   (Color, IconData) _typeStyle(String name) {
     final n = name.toUpperCase();
-    if (n.contains('PRESENT') && !n.contains('HALF')) {
+    if (n.contains('PRESENT') && !n.contains('HALF'))
       return (AppColors.success, Icons.check_circle_outline);
-    }
-    if (n.contains('ABSENT')) {
+    if (n.contains('ABSENT'))
       return (AppColors.error, Icons.cancel_outlined);
-    }
-    if (n.contains('HALF')) {
+    if (n.contains('HALF'))
       return (AppColors.warning, Icons.timelapse_outlined);
-    }
-    if (n.contains('LEAVE')) {
+    if (n.contains('LEAVE'))
       return (AppColors.navy, Icons.beach_access_outlined);
-    }
-    if (n.contains('WEEKLY') || n.contains('OFF')) {
+    if (n.contains('WEEKLY') || n.contains('OFF'))
       return (AppColors.mutedText, Icons.weekend_outlined);
-    }
     return (AppColors.mutedText, Icons.event_note_outlined);
   }
 
@@ -687,7 +795,8 @@ class _TypeBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(type,
-          style: AppTextStyles.caption.copyWith(color: color, fontWeight: FontWeight.w600)),
+          style: AppTextStyles.caption
+              .copyWith(color: color, fontWeight: FontWeight.w600)),
     );
   }
 }
@@ -713,7 +822,17 @@ class _ApprovalBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(label,
-          style: AppTextStyles.caption.copyWith(color: color, fontWeight: FontWeight.w600)),
+          style: AppTextStyles.caption
+              .copyWith(color: color, fontWeight: FontWeight.w600)),
     );
   }
 }
+
+String _formatToday() {
+  final d = DateTime.now();
+  return '${d.day.toString().padLeft(2, '0')} ${_month(d.month)} ${d.year}';
+}
+
+String _weekday(int w) => const ['','Mon','Tue','Wed','Thu','Fri','Sat','Sun'][w];
+String _month(int m) => const ['','Jan','Feb','Mar','Apr','May','Jun',
+    'Jul','Aug','Sep','Oct','Nov','Dec'][m];

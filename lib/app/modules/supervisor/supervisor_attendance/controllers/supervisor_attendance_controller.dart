@@ -60,14 +60,6 @@ class SupervisorAttendanceController extends GetxController {
     return null;
   }
 
-  int? get _presentTypeId {
-    for (final t in attendanceTypes) {
-      final n = (t['name'] as String? ?? '').toLowerCase();
-      if (n.contains('present') && !n.contains('half')) return t['id'] as int?;
-    }
-    return null;
-  }
-
   // ── Lifecycle ─────────────────────────────────────────────────────────────────
   @override
   void onInit() {
@@ -143,10 +135,8 @@ class SupervisorAttendanceController extends GetxController {
     }
   }
 
-  // ── Bulk mark all unmarked crew as Present ────────────────────────────────────
-  Future<bool> markBulkPresent() async {
-    final typeId = _presentTypeId;
-    if (typeId == null) return false;
+  // ── Bulk mark all unmarked crew ───────────────────────────────────────────────
+  Future<bool> markBulkPresent(int attendanceTypeId) async {
     final unmkd = unmarkedCrew;
     if (unmkd.isEmpty) return true;
 
@@ -155,7 +145,7 @@ class SupervisorAttendanceController extends GetxController {
       await _api.post(ApiEndpoints.attendanceBulk, data: {
         'attendanceDate': dateStr,
         'entries': unmkd
-            .map((u) => {'userId': u['id'], 'attendanceTypeId': typeId})
+            .map((u) => {'userId': u['id'], 'attendanceTypeId': attendanceTypeId})
             .toList(),
       });
       await _fetchAttendance();

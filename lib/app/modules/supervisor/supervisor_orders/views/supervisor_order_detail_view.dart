@@ -651,6 +651,23 @@ class _AllocationCard extends StatelessWidget {
     final cleanerName = allocation['currentCleanerName'] as String?;
     final isLocked = status == 'IN_TRANSIT' || status == 'DELIVERED';
 
+    // Order-level staff allocations (source of truth for assign/unassign)
+    final staffAllocs = (allocation['staffAllocations'] as List?)
+        ?.cast<Map<String, dynamic>>() ?? <Map<String, dynamic>>[];
+    final driverSas = staffAllocs.where((sa) => (sa['roleName'] as String?) == 'DRIVER').toList();
+    final cleanerSas = staffAllocs.where((sa) => (sa['roleName'] as String?) == 'CLEANER').toList();
+    final driverSa  = driverSas.isNotEmpty  ? driverSas.first  : null;
+    final cleanerSa = cleanerSas.isNotEmpty ? cleanerSas.first : null;
+    final driverSaId  = driverSa?['id']  as int?;
+    final cleanerSaId = cleanerSa?['id'] as int?;
+    final driverSaName  = driverSa?['userName']  as String?;
+    final cleanerSaName = cleanerSa?['userName'] as String?;
+    // Prefer order-level data; fall back to vehicle-level for legacy records
+    final hasDriver  = driverSaId  != null || driverId  != null;
+    final hasCleaner = cleanerSaId != null || cleanerId != null;
+    final effectiveDriverName  = driverSaName  ?? driverName;
+    final effectiveCleanerName = cleanerSaName ?? cleanerName;
+
     final statusColor = _statusColor(status);
 
     return Container(
@@ -811,7 +828,7 @@ class _AllocationCard extends StatelessWidget {
                       ),
                   ],
                 ),
-                if (driverId != null || cleanerId != null || !_isClosed(status)) ...[
+                if (hasDriver || hasCleaner || !_isClosed(status)) ...[
                   const SizedBox(height: 12),
                   const Divider(height: 1, color: AppColors.border),
                   const SizedBox(height: 12),
@@ -827,44 +844,44 @@ class _AllocationCard extends StatelessWidget {
                       const Spacer(),
                       if (!_isClosed(status)) ...[
                         _StaffButton(
-                          label: driverId != null ? '↺ Driver' : '+ Driver',
+                          label: hasDriver ? '↺ Driver' : '+ Driver',
                           onTap: () => _openAssignStaffSheet(
                             context,
-                            vehicleId ?? 0,
+                            allocationId,
                             'DRIVER',
                             'Driver',
-                            isSwap: driverId != null,
+                            isSwap: hasDriver,
                           ),
                         ),
                         const SizedBox(width: 8),
                         _StaffButton(
-                          label: cleanerId != null ? '↺ Cleaner' : '+ Cleaner',
+                          label: hasCleaner ? '↺ Cleaner' : '+ Cleaner',
                           onTap: () => _openAssignStaffSheet(
                             context,
-                            vehicleId ?? 0,
+                            allocationId,
                             'CLEANER',
                             'Cleaner',
-                            isSwap: cleanerId != null,
+                            isSwap: hasCleaner,
                           ),
                         ),
                       ],
                     ],
                   ),
-                  if (driverId != null || cleanerId != null) ...[
+                  if (hasDriver || hasCleaner) ...[
                     const SizedBox(height: 8),
-                    if (driverId != null)
+                    if (hasDriver)
                       _StaffRow(
-                        name: driverName ?? '—',
+                        name: effectiveDriverName ?? '—',
                         role: 'DRIVER',
-                        vehicleId: vehicleId ?? 0,
+                        staffAllocationId: driverSaId,
                         controller: controller,
                         locked: isLocked,
                       ),
-                    if (cleanerId != null)
+                    if (hasCleaner)
                       _StaffRow(
-                        name: cleanerName ?? '—',
+                        name: effectiveCleanerName ?? '—',
                         role: 'CLEANER',
-                        vehicleId: vehicleId ?? 0,
+                        staffAllocationId: cleanerSaId,
                         controller: controller,
                         locked: isLocked,
                       ),
@@ -873,7 +890,7 @@ class _AllocationCard extends StatelessWidget {
 
                 // ── Create LR button ──────────────────────────────────
                 // Show when: driver assigned + no LR yet + not closed
-                if (driverId != null && !_isClosed(status))
+                if (hasDriver && !_isClosed(status))
                   Obx(() {
                     final hasLr = controller.lrs.any((lr) {
                       final id = lr['vehicleAllocationId'];
@@ -1013,7 +1030,7 @@ class _AllocationCard extends StatelessWidget {
 
   void _openAssignStaffSheet(
     BuildContext context,
-    int vehicleId,
+    int allocationId,
     String role,
     String roleLabel, {
     bool isSwap = false,
@@ -1025,7 +1042,7 @@ class _AllocationCard extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => _AssignStaffSheet(
         controller: controller,
-        vehicleId: vehicleId,
+        allocationId: allocationId,
         role: role,
         roleLabel: roleLabel,
         isSwap: isSwap,
@@ -1072,14 +1089,14 @@ class _AllocationCard extends StatelessWidget {
 class _StaffRow extends StatelessWidget {
   final String name;
   final String role;
-  final int vehicleId;
+  final int? staffAllocationId;
   final SupervisorOrderDetailController controller;
   final bool locked;
   const _StaffRow({
     required this.name,
     required this.role,
-    required this.vehicleId,
     required this.controller,
+    this.staffAllocationId,
     this.locked = false,
   });
 
@@ -1120,7 +1137,7 @@ class _StaffRow extends StatelessWidget {
               ],
             ),
           ),
-          if (!locked)
+          if (!locked && staffAllocationId != null)
             Obx(() {
               final isUnassigning = role == 'DRIVER'
                   ? controller.isUnassigningDriver.value
@@ -1145,9 +1162,9 @@ class _StaffRow extends StatelessWidget {
                   );
                   if (confirmed) {
                     if (role == 'DRIVER') {
-                      controller.unassignDriver(vehicleId);
+                      controller.unassignDriver(staffAllocationId!);
                     } else {
-                      controller.unassignCleaner(vehicleId);
+                      controller.unassignCleaner(staffAllocationId!);
                     }
                   }
                 },
@@ -1209,6 +1226,8 @@ class _AssignVehicleSheetState extends State<_AssignVehicleSheet> {
   final _remarksCtrl = TextEditingController();
   DateTime? _loadDate, _delivDate;
   final Map<String, String> _errors = {};
+  bool _carryOverDriver  = true;
+  bool _carryOverCleaner = true;
 
   @override
   void initState() {
@@ -1244,16 +1263,29 @@ class _AssignVehicleSheetState extends State<_AssignVehicleSheet> {
 
   Future<void> _submit() async {
     if (!_validate()) return;
-    final success = await widget.controller.assignVehicle(
-      vehicleId: _selectedVehicle!['id'] as int,
+    final v = _selectedVehicle!;
+    final allocationId = await widget.controller.assignVehicle(
+      vehicleId: v['id'] as int,
       allocatedWeight: double.parse(_weightCtrl.text.trim()),
       expectedLoadDate: _loadDate?.toIso8601String().substring(0, 10),
       expectedDeliveryDate: _delivDate?.toIso8601String().substring(0, 10),
-      remarks: _remarksCtrl.text.trim().isEmpty
-          ? null
-          : _remarksCtrl.text.trim(),
+      remarks: _remarksCtrl.text.trim().isEmpty ? null : _remarksCtrl.text.trim(),
     );
-    if (success && mounted) Navigator.of(context).pop();
+    if (allocationId == null) return;
+    // Carry-over pre-assigned staff to this order
+    if (_carryOverDriver) {
+      final dId = v['currentDriverId'] as int?;
+      if (dId != null) {
+        await widget.controller.assignDriver(allocationId: allocationId, userId: dId);
+      }
+    }
+    if (_carryOverCleaner) {
+      final cId = v['currentCleanerId'] as int?;
+      if (cId != null) {
+        await widget.controller.assignCleaner(allocationId: allocationId, userId: cId);
+      }
+    }
+    if (mounted) Navigator.of(context).pop();
   }
 
   String _vehicleLabel(Map<String, dynamic> v) {
@@ -1325,12 +1357,96 @@ class _AssignVehicleSheetState extends State<_AssignVehicleSheet> {
                         : null,
                     items: widget.controller.vehicles,
                     itemLabel: _vehicleLabel,
-                    onSelected: (v) => setState(() => _selectedVehicle = v),
+                    onSelected: (v) => setState(() {
+                      _selectedVehicle = v;
+                      _carryOverDriver  = true;
+                      _carryOverCleaner = true;
+                    }),
                     errorText: _errors['vehicle'],
                     emptyMessage: 'No available vehicles',
                   ),
           ),
           const SizedBox(height: 16),
+
+          // ── Carry-over pre-assigned staff ────────────────────────
+          if (_selectedVehicle != null) ...[
+            () {
+              final hasD = _selectedVehicle!['currentDriverId'] != null;
+              final hasC = _selectedVehicle!['currentCleanerId'] != null;
+              if (!hasD && !hasC) return const SizedBox.shrink();
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Pre-assigned staff — carry over to this order?',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1D4ED8),
+                      ),
+                    ),
+                    if (hasD) ...[
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: () => setState(() => _carryOverDriver = !_carryOverDriver),
+                        child: Row(
+                          children: [
+                            Checkbox(
+                              value: _carryOverDriver,
+                              onChanged: (v) => setState(() => _carryOverDriver = v!),
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: VisualDensity.compact,
+                              activeColor: AppColors.navy,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'Driver: ${_selectedVehicle!['currentDriverName'] ?? '—'}',
+                                style: AppTextStyles.caption.copyWith(color: AppColors.bodyText),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    if (hasC) ...[
+                      const SizedBox(height: 4),
+                      GestureDetector(
+                        onTap: () => setState(() => _carryOverCleaner = !_carryOverCleaner),
+                        child: Row(
+                          children: [
+                            Checkbox(
+                              value: _carryOverCleaner,
+                              onChanged: (v) => setState(() => _carryOverCleaner = v!),
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: VisualDensity.compact,
+                              activeColor: AppColors.navy,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'Cleaner: ${_selectedVehicle!['currentCleanerName'] ?? '—'}',
+                                style: AppTextStyles.caption.copyWith(color: AppColors.bodyText),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }(),
+          ],
 
           // ── Allocated Weight ─────────────────────────────────────
           _SheetLabel('Allocated Weight (tons)', isRequired: true),
@@ -1483,15 +1599,14 @@ class _AssignVehicleSheetState extends State<_AssignVehicleSheet> {
 // ── Assign Staff Bottom Sheet ─────────────────────────────────────────────────
 class _AssignStaffSheet extends StatefulWidget {
   final SupervisorOrderDetailController controller;
-  final int vehicleId;
+  final int allocationId;
   final String role;
   final String roleLabel;
-  // Whether the vehicle already has this role filled (swap scenario)
   final bool isSwap;
 
   const _AssignStaffSheet({
     required this.controller,
-    required this.vehicleId,
+    required this.allocationId,
     required this.role,
     required this.roleLabel,
     this.isSwap = false,
@@ -1525,11 +1640,11 @@ class _AssignStaffSheetState extends State<_AssignStaffSheet> {
     final userId = _selectedStaff!['id'] as int;
     final success = widget.role == 'DRIVER'
         ? await widget.controller.assignDriver(
-            vehicleId: widget.vehicleId,
+            allocationId: widget.allocationId,
             userId: userId,
           )
         : await widget.controller.assignCleaner(
-            vehicleId: widget.vehicleId,
+            allocationId: widget.allocationId,
             userId: userId,
           );
     if (success && mounted) Navigator.of(context).pop();

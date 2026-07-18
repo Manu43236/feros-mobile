@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:feros/core/popups/feros_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../../core/services/upload_service.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
@@ -175,8 +178,8 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
                   (p) => _ProofCard(proof: p, controller: controller),
                 ),
 
-              // ── Trip Expenses (only for DELIVERED LRs) ──────────────────
-              if (status == 'DELIVERED') ...[
+              // ── Trip Expenses ────────────────────────────────────────────
+              if (status != 'CANCELLED' && status.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 _TripExpenseSection(controller: controller),
               ],
@@ -2102,8 +2105,11 @@ class _TripExpenseSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final expense = controller.tripExpense.value;
-      final status  = expense?['status'] as String? ?? '';
+      final expense    = controller.tripExpense.value;
+      final status     = expense?['status'] as String? ?? '';
+      final lrStatus   = controller.lr.value?['lrStatus'] as String? ?? '';
+      final isDelivered = lrStatus == 'DELIVERED';
+      final isEditable  = status == 'DRAFT' || status == 'REJECTED';
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2121,7 +2127,31 @@ class _TripExpenseSection extends StatelessWidget {
               const SizedBox(width: 8),
               if (status.isNotEmpty) _ExpenseStatusBadge(status: status),
               const Spacer(),
-              if (expense != null && status == 'DRAFT')
+              // GAP-3: Delete sheet
+              if (expense != null && isEditable)
+                GestureDetector(
+                  onTap: () async {
+                    final confirmed = await FerosDialog.confirm(
+                      title: 'Delete Sheet',
+                      message: 'Delete this expense sheet and all items?',
+                      confirmText: 'Delete',
+                      isDestructive: true,
+                    );
+                    if (confirmed) controller.deleteTripExpenseSheet();
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.errorLight,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                    ),
+                    child: const Icon(Icons.delete_outline, size: 15, color: AppColors.error),
+                  ),
+                ),
+              // GAP-1: Add only after delivery
+              if (expense != null && isEditable && isDelivered)
                 GestureDetector(
                   onTap: () => _showAddItemSheet(context),
                   child: Container(
@@ -2149,6 +2179,31 @@ class _TripExpenseSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
+
+          // GAP-1: Pre-delivery notice
+          if (expense != null && isEditable && !isDelivered) ...[
+            Container(
+              padding: const EdgeInsets.all(10),
+              margin: const EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(
+                color: AppColors.warningLight,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.access_time, size: 14, color: AppColors.warning),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Advance recorded. Add expense items and submit once the LR is delivered.',
+                      style: AppTextStyles.caption.copyWith(color: AppColors.warning),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
 
           // No sheet yet
           if (expense == null) ...[
@@ -2223,14 +2278,29 @@ class _TripExpenseSection extends StatelessWidget {
                   else
                     ...(expense['items'] as List).cast<Map<String, dynamic>>().map((item) {
                       final amountChanged = item['amountChanged'] as bool? ?? false;
+                      final receiptUrl    = item['receiptUrl'] as String?;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Row(
                           children: [
                             Expanded(
-                              child: Text(
-                                item['description'] as String? ?? '—',
-                                style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item['description'] as String? ?? '—',
+                                    style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+                                  ),
+                                  // GAP-5: receipt link
+                                  if (receiptUrl != null)
+                                    GestureDetector(
+                                      onTap: () => launchUrl(Uri.parse(receiptUrl), mode: LaunchMode.externalApplication),
+                                      child: Text(
+                                        'View receipt',
+                                        style: AppTextStyles.caption.copyWith(color: AppColors.info, decoration: TextDecoration.underline),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
                             Text(
@@ -2240,7 +2310,7 @@ class _TripExpenseSection extends StatelessWidget {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            if (status == 'DRAFT') ...[
+                            if (isEditable) ...[
                               const SizedBox(width: 8),
                               GestureDetector(
                                 onTap: () => controller.removeTripExpenseItem(item['id'] as int),
@@ -2317,6 +2387,44 @@ class _TripExpenseSection extends StatelessWidget {
               const SizedBox(height: 10),
             ],
 
+            // Rejection banner
+            if (status == 'REJECTED') ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.errorLight,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.cancel_outlined, size: 16, color: AppColors.error),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Rejected by Admin', style: AppTextStyles.caption.copyWith(color: AppColors.error, fontWeight: FontWeight.w700)),
+                          if ((expense['rejectionReason'] as String?)?.isNotEmpty == true) ...[
+                            const SizedBox(height: 2),
+                            Text(expense['rejectionReason'] as String, style: AppTextStyles.caption.copyWith(color: AppColors.error)),
+                          ],
+                          if ((expense['rejectedByName'] as String?)?.isNotEmpty == true) ...[
+                            const SizedBox(height: 4),
+                            Text('By ${expense['rejectedByName']}', style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                          ],
+                          const SizedBox(height: 4),
+                          Text('Please correct and resubmit.', style: AppTextStyles.caption.copyWith(color: AppColors.error, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+
             // Submitted info
             if (status == 'SUBMITTED') ...[
               Container(
@@ -2342,7 +2450,10 @@ class _TripExpenseSection extends StatelessWidget {
               final busy = controller.isTripExpenseBusy.value;
               final items = (expense['items'] as List? ?? []);
 
-              if (status == 'DRAFT') {
+              if (status == 'DRAFT' || status == 'REJECTED') {
+                // GAP-1: only submit after delivery
+                final lrSt = controller.lr.value?['lrStatus'] as String? ?? '';
+                if (lrSt != 'DELIVERED') return const SizedBox.shrink();
                 return Column(
                   children: [
                     if (items.isEmpty)
@@ -2370,7 +2481,7 @@ class _TripExpenseSection extends StatelessWidget {
                         ),
                         child: busy
                             ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : Text('Submit for Approval', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                            : Text(status == 'REJECTED' ? 'Resubmit for Approval' : 'Submit for Approval', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
                       ),
                     ),
                   ],
@@ -2429,7 +2540,10 @@ class _TripExpenseSection extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => _SettleExpenseSheet(
         controller: controller,
-        balanceAmount: (expense['balanceAmount'] as num?)?.toDouble() ?? 0,
+        balanceAmount:       (expense['balanceAmount'] as num?)?.toDouble() ?? 0,
+        driverBankName:      expense['driverBankName'] as String?,
+        driverAccountNumber: expense['driverAccountNumber'] as String?,
+        driverIfscCode:      expense['driverIfscCode'] as String?,
       ),
     );
   }
@@ -2545,12 +2659,33 @@ class _AddExpenseItemSheet extends StatefulWidget {
 class _AddExpenseItemSheetState extends State<_AddExpenseItemSheet> {
   final _descCtrl   = TextEditingController();
   final _amountCtrl = TextEditingController();
+  String? _receiptUrl;
+  bool    _uploading = false;
 
   @override
   void dispose() {
     _descCtrl.dispose();
     _amountCtrl.dispose();
     super.dispose();
+  }
+
+  // GAP-4: pick image and upload
+  Future<void> _pickReceipt() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (picked == null) return;
+    setState(() => _uploading = true);
+    try {
+      final url = await Get.find<UploadService>().uploadFileGetPublicUrl(
+        File(picked.path),
+        folder: 'tenants/images/trip-expense-receipts',
+      );
+      setState(() { _receiptUrl = url; _uploading = false; });
+      FerosSnackbar.success('Receipt uploaded');
+    } catch (_) {
+      setState(() => _uploading = false);
+      FerosSnackbar.error('Failed to upload receipt');
+    }
   }
 
   Future<void> _submit() async {
@@ -2560,7 +2695,7 @@ class _AddExpenseItemSheetState extends State<_AddExpenseItemSheet> {
       FerosSnackbar.error('Please enter description and a valid amount');
       return;
     }
-    final ok = await widget.controller.addTripExpenseItem(desc, amount);
+    final ok = await widget.controller.addTripExpenseItem(desc, amount, receiptUrl: _receiptUrl);
     if (ok && mounted) Navigator.of(context).pop();
   }
 
@@ -2579,6 +2714,53 @@ class _AddExpenseItemSheetState extends State<_AddExpenseItemSheet> {
         _SheetLabel('Amount (₹) *'),
         const SizedBox(height: 6),
         _SheetField(controller: _amountCtrl, hint: 'e.g. 350', keyboard: const TextInputType.numberWithOptions(decimal: true)),
+        const SizedBox(height: 16),
+        // GAP-4: receipt upload
+        _SheetLabel('Receipt (optional)'),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            GestureDetector(
+              onTap: _uploading ? null : _pickReceipt,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _receiptUrl != null ? AppColors.successLight : AppColors.background,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: _receiptUrl != null ? AppColors.success.withValues(alpha: 0.4) : AppColors.border),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_uploading)
+                      const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.navy))
+                    else
+                      Icon(
+                        _receiptUrl != null ? Icons.check_circle_outline : Icons.attach_file,
+                        size: 15,
+                        color: _receiptUrl != null ? AppColors.success : AppColors.mutedText,
+                      ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _uploading ? 'Uploading…' : _receiptUrl != null ? 'Receipt attached ✓' : 'Attach from gallery',
+                      style: AppTextStyles.caption.copyWith(
+                        color: _receiptUrl != null ? AppColors.success : AppColors.mutedText,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (_receiptUrl != null) ...[
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => setState(() => _receiptUrl = null),
+                child: const Icon(Icons.close, size: 16, color: AppColors.mutedText),
+              ),
+            ],
+          ],
+        ),
       ],
     );
   }
@@ -2588,13 +2770,23 @@ class _AddExpenseItemSheetState extends State<_AddExpenseItemSheet> {
 class _SettleExpenseSheet extends StatefulWidget {
   final SupervisorLrDetailController controller;
   final double balanceAmount;
-  const _SettleExpenseSheet({required this.controller, required this.balanceAmount});
+  final String? driverBankName;
+  final String? driverAccountNumber;
+  final String? driverIfscCode;
+  const _SettleExpenseSheet({
+    required this.controller,
+    required this.balanceAmount,
+    this.driverBankName,
+    this.driverAccountNumber,
+    this.driverIfscCode,
+  });
   @override
   State<_SettleExpenseSheet> createState() => _SettleExpenseSheetState();
 }
 
 class _SettleExpenseSheetState extends State<_SettleExpenseSheet> {
-  final _noteCtrl = TextEditingController();
+  final _noteCtrl  = TextEditingController();
+  String _payMode  = 'CASH';
 
   @override
   void dispose() {
@@ -2606,6 +2798,7 @@ class _SettleExpenseSheetState extends State<_SettleExpenseSheet> {
     final ok = await widget.controller.settleTripExpense(
       widget.balanceAmount.abs(),
       _noteCtrl.text.trim().isNotEmpty ? _noteCtrl.text.trim() : null,
+      _payMode,
     );
     if (ok && mounted) Navigator.of(context).pop();
   }
@@ -2613,12 +2806,16 @@ class _SettleExpenseSheetState extends State<_SettleExpenseSheet> {
   @override
   Widget build(BuildContext context) {
     final driverReturns = widget.balanceAmount >= 0;
+    final showBank = !driverReturns && (_payMode == 'NEFT' || _payMode == 'UPI');
+    final hasBankDetails = widget.driverAccountNumber != null || widget.driverIfscCode != null;
+
     return _SimpleSheet(
       title: 'Record Settlement',
       controller: widget.controller.isTripExpenseBusy,
       onSubmit: _submit,
       submitLabel: 'Mark Settled',
       children: [
+        // Amount banner
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -2640,11 +2837,96 @@ class _SettleExpenseSheetState extends State<_SettleExpenseSheet> {
             ],
           ),
         ),
+        // GAP-2: Payment mode — only when company pays driver
+        if (!driverReturns) ...[
+          const SizedBox(height: 16),
+          _SheetLabel('Payment Mode'),
+          const SizedBox(height: 8),
+          Row(
+            children: ['CASH', 'NEFT', 'UPI'].map((mode) {
+              final active = _payMode == mode;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _payMode = mode),
+                  child: Container(
+                    margin: EdgeInsets.only(right: mode != 'UPI' ? 8 : 0),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: active ? AppColors.navy : Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: active ? AppColors.navy : AppColors.border),
+                    ),
+                    child: Center(
+                      child: Text(
+                        mode,
+                        style: AppTextStyles.caption.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: active ? Colors.white : AppColors.mutedText,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          // Driver bank details for NEFT/UPI
+          if (showBank) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: hasBankDetails ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Driver Bank Details', style: AppTextStyles.caption.copyWith(color: AppColors.mutedText, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 8),
+                  if (widget.driverAccountNumber != null)
+                    _BankRow('Account No.', widget.driverAccountNumber!),
+                  if (widget.driverIfscCode != null)
+                    _BankRow('IFSC', widget.driverIfscCode!),
+                  if (widget.driverBankName != null)
+                    _BankRow('Bank', widget.driverBankName!),
+                ],
+              ) : Text(
+                'No bank details on file for this driver.',
+                style: AppTextStyles.caption.copyWith(color: AppColors.warning),
+              ),
+            ),
+          ],
+        ],
         const SizedBox(height: 16),
-        _SheetLabel('Settlement Note (optional)'),
+        _SheetLabel('Note (optional)'),
         const SizedBox(height: 6),
-        _SheetField(controller: _noteCtrl, hint: 'e.g. Cash received from Suresh on 15 Jan', maxLines: 2),
+        _SheetField(
+          controller: _noteCtrl,
+          hint: _payMode == 'CASH' ? 'e.g. Cash paid to driver on 15 Jan' : 'e.g. NEFT ref no. 12345',
+          maxLines: 2,
+        ),
       ],
+    );
+  }
+}
+
+class _BankRow extends StatelessWidget {
+  final String label;
+  final String value;
+  const _BankRow(this.label, this.value);
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+          Text(value, style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w700, color: AppColors.bodyText)),
+        ],
+      ),
     );
   }
 }

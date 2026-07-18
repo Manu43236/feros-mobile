@@ -27,6 +27,8 @@ import '../../supervisor_lrs/bindings/supervisor_lrs_binding.dart';
 
 import '../../supervisor_breakdown/views/supervisor_breakdown_view.dart';
 import '../../supervisor_breakdown/bindings/supervisor_breakdown_binding.dart';
+import '../../supervisor_assignments/views/supervisor_assignments_view.dart';
+import '../../supervisor_assignments/bindings/supervisor_assignments_binding.dart';
 
 class SupervisorShellView extends GetView<SupervisorShellController> {
   const SupervisorShellView({super.key});
@@ -307,6 +309,18 @@ class _SupervisorDrawer extends StatelessWidget {
                     Get.to(
                       () => const SupervisorLrsView(),
                       binding: SupervisorLrsBinding(),
+                      transition: Transition.cupertino,
+                    );
+                  },
+                ),
+                _DrawerTile(
+                  icon: Icons.link_outlined,
+                  label: 'Assignments',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Get.to(
+                      () => const SupervisorAssignmentsView(),
+                      binding: SupervisorAssignmentsBinding(),
                       transition: Transition.cupertino,
                     );
                   },

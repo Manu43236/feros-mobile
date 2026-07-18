@@ -471,7 +471,15 @@ void _showMyMarkSheet(
                 onPressed: ctrl.markLoading.value
                     ? null
                     : () async {
-                        final ok = await ctrl.markPresent(
+                        final presentType = ctrl.attendanceTypes.firstWhereOrNull(
+                          (t) {
+                            final n = (t['name'] as String? ?? '').toLowerCase();
+                            return n.contains('present') && !n.contains('half');
+                          },
+                        );
+                        if (presentType == null) return;
+                        final ok = await ctrl.markAttendance(
+                          typeId: presentType['id'] as int,
                           selfieFile: selfieFile.value,
                           remarks: remarks.text,
                         );

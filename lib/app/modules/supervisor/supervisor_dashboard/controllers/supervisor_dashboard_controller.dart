@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/services/upload_service.dart';
 import '../../../../../core/utils/view_state.dart';
 
 class VehicleAlert {
@@ -86,12 +88,88 @@ class SupervisorDashboardController extends GetxController {
   // Vehicle document alerts
   final alerts = <VehicleAlert>[].obs;
 
+  // My attendance — today's record + masters for mark sheet
+  final todayAttendance  = Rxn<Map<String, dynamic>>();
+  final attendanceTypes  = <Map<String, dynamic>>[].obs;
+  final leaveTypes       = <Map<String, dynamic>>[].obs;
+  final markLoading      = false.obs;
+
   @override
   void onInit() {
     super.onInit();
     fetchDashboard();
     fetchAlerts();
+    fetchMyAttendance();
+    _fetchAttendanceMasters();
   }
+
+  Future<void> fetchMyAttendance() async {
+    try {
+      final today = _dateStr(DateTime.now());
+      final res = await _api.get(
+        ApiEndpoints.myAttendance,
+        params: {'from': today, 'to': today},
+      );
+      final list = ((res.data as Map<String, dynamic>)['data'] as List)
+          .cast<Map<String, dynamic>>();
+      todayAttendance.value = list.isNotEmpty ? list.first : null;
+    } catch (e) {
+      debugPrint('[Dashboard:attendance] $e');
+    }
+  }
+
+  Future<void> _fetchAttendanceMasters() async {
+    try {
+      final results = await Future.wait([
+        _api.get(ApiEndpoints.attendanceTypes),
+        _api.get(ApiEndpoints.leaveTypes),
+      ]);
+      attendanceTypes.assignAll(
+        ((results[0].data as Map<String, dynamic>)['data'] as List)
+            .cast<Map<String, dynamic>>(),
+      );
+      leaveTypes.assignAll(
+        ((results[1].data as Map<String, dynamic>)['data'] as List)
+            .cast<Map<String, dynamic>>(),
+      );
+    } catch (e) {
+      debugPrint('[Dashboard:masters] $e');
+    }
+  }
+
+  Future<bool> markAttendance({
+    required int typeId,
+    int? leaveTypeId,
+    String? leaveReason,
+    File? selfieFile,
+    String? remarks,
+  }) async {
+    markLoading.value = true;
+    try {
+      String? selfieUrl;
+      if (selfieFile != null) {
+        selfieUrl = await Get.find<UploadService>()
+            .uploadFile(selfieFile, folder: 'attendance');
+      }
+      await _api.post(ApiEndpoints.myAttendance, data: {
+        'attendanceTypeId': typeId,
+        if (leaveTypeId != null) 'leaveTypeId': leaveTypeId,
+        if (leaveReason != null && leaveReason.isNotEmpty) 'leaveReason': leaveReason,
+        if (remarks != null && remarks.isNotEmpty) 'remarks': remarks,
+        if (selfieUrl != null) 'selfieUrl': selfieUrl,
+      });
+      await fetchMyAttendance();
+      return true;
+    } catch (e) {
+      debugPrint('[Dashboard:mark] $e');
+      return false;
+    } finally {
+      markLoading.value = false;
+    }
+  }
+
+  String _dateStr(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   Future<void> fetchAlerts() async {
     try {

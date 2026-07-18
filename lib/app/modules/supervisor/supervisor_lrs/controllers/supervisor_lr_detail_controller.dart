@@ -64,7 +64,7 @@ class SupervisorLrDetailController extends GetxController {
 
       final lrStatus = lr.value?['lrStatus'] as String? ?? '';
       if (lrStatus == 'IN_TRANSIT') _fetchBreakdown();
-      if (lrStatus == 'DELIVERED') fetchTripExpense();
+      fetchTripExpense();
     } catch (e) {
       debugPrint('[LR Detail] $e');
       state.value = ViewState.error;
@@ -102,7 +102,7 @@ class SupervisorLrDetailController extends GetxController {
     }
   }
 
-  Future<bool> addTripExpenseItem(String description, double amount) async {
+  Future<bool> addTripExpenseItem(String description, double amount, {String? receiptUrl}) async {
     isTripExpenseBusy.value = true;
     try {
       final currentItems = (tripExpense.value?['items'] as List? ?? [])
@@ -113,7 +113,11 @@ class SupervisorLrDetailController extends GetxController {
               'amount': i['amount'],
               if (i['receiptUrl'] != null) 'receiptUrl': i['receiptUrl'],
             }),
-        {'description': description, 'amount': amount},
+        {
+          'description': description,
+          'amount': amount,
+          if (receiptUrl != null) 'receiptUrl': receiptUrl,
+        },
       ];
       final res = await _api.put(
         ApiEndpoints.lrTripExpense(lrId),
@@ -174,12 +178,30 @@ class SupervisorLrDetailController extends GetxController {
     }
   }
 
-  Future<bool> settleTripExpense(double amount, String? note) async {
+  Future<bool> deleteTripExpenseSheet() async {
+    isTripExpenseBusy.value = true;
+    try {
+      await _api.delete(ApiEndpoints.lrTripExpense(lrId));
+      tripExpense.value = null;
+      FerosSnackbar.success('Expense sheet deleted');
+      isTripExpenseBusy.value = false;
+      return true;
+    } catch (_) {
+      FerosSnackbar.error('Failed to delete expense sheet');
+      isTripExpenseBusy.value = false;
+      return false;
+    }
+  }
+
+  Future<bool> settleTripExpense(double amount, String? note, String paymentMode) async {
     final expenseId = tripExpense.value?['id'] as int?;
     if (expenseId == null) return false;
     isTripExpenseBusy.value = true;
     try {
-      final data = <String, dynamic>{'settlementAmount': amount};
+      final data = <String, dynamic>{
+        'settlementAmount': amount,
+        'paymentMode': paymentMode,
+      };
       if (note != null && note.isNotEmpty) data['settlementNote'] = note;
       final res = await _api.post(
         ApiEndpoints.tripExpenseSettle(expenseId),
