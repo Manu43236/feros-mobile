@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/popups/feros_snackbar.dart';
 import '../../../../../core/utils/view_state.dart';
 
 class SupervisorCrewController extends GetxController {
@@ -13,12 +14,42 @@ class SupervisorCrewController extends GetxController {
   final searchQuery       = ''.obs;
   final roleFilter        = 'ALL'.obs;
   final statusFilter      = 'ALL'.obs;
+  final activeTab         = 'all'.obs;           // 'all' | 'watchlist'
+  final watchlistedIds    = <int>{}.obs;
 
   @override
   void onInit() {
     super.onInit();
     fetchCrew();
+    _fetchWatchlistIds();
   }
+
+  Future<void> _fetchWatchlistIds() async {
+    try {
+      final res = await _api.get(ApiEndpoints.watchlistStaffIds);
+      final ids = ((res.data as Map<String, dynamic>)['data'] as List).cast<int>();
+      watchlistedIds.assignAll(ids.toSet());
+    } catch (e) {
+      debugPrint('[Crew] watchlist fetch error: $e');
+    }
+  }
+
+  Future<void> toggleWatchlist(int userId) async {
+    final inWl = watchlistedIds.contains(userId);
+    try {
+      if (inWl) {
+        await _api.delete(ApiEndpoints.watchlistStaffById(userId));
+        watchlistedIds.remove(userId);
+      } else {
+        await _api.post(ApiEndpoints.watchlistStaff, data: {'userId': userId});
+        watchlistedIds.add(userId);
+      }
+    } catch (e) {
+      FerosSnackbar.error('Failed to update watchlist');
+    }
+  }
+
+  void setTab(String tab) => activeTab.value = tab;
 
   Future<void> fetchCrew() async {
     state.value = ViewState.loading;
@@ -57,13 +88,16 @@ class SupervisorCrewController extends GetxController {
     final q      = searchQuery.value.toLowerCase();
     final role   = roleFilter.value;
     final status = statusFilter.value;
+    final wl     = activeTab.value == 'watchlist';
     return _allCrew.where((u) {
+      final uid       = u['id'] is int ? u['id'] as int : int.tryParse(u['id'].toString()) ?? 0;
       final name      = (u['name']  as String? ?? '').toLowerCase();
       final phone     = (u['phone'] as String? ?? '');
       final r         = (u['role']  as String? ?? '');
       final isActive  = u['isActive']  as bool? ?? false;
       final isAssigned = u['isAssigned'] as bool? ?? false;
 
+      final matchWl     = !wl || watchlistedIds.contains(uid);
       final matchSearch = q.isEmpty || name.contains(q) || phone.contains(q);
       final matchRole   = role == 'ALL' || r == role;
       final matchStatus = switch (status) {
@@ -72,7 +106,7 @@ class SupervisorCrewController extends GetxController {
         'INACTIVE'  => !isActive,
         _           => true,
       };
-      return matchSearch && matchRole && matchStatus;
+      return matchWl && matchSearch && matchRole && matchStatus;
     }).toList();
   }
 

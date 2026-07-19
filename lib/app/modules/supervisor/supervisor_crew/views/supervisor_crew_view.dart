@@ -72,6 +72,29 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
             ),
           ),
 
+          // ── Watchlist tabs ──────────────────────────────────────
+          Obx(() {
+            final isWl = controller.activeTab.value == 'watchlist';
+            return Container(
+              color: AppColors.surface,
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Row(children: [
+                _TabChip(
+                  label: 'All',
+                  selected: !isWl,
+                  onTap: () => controller.setTab('all'),
+                ),
+                const SizedBox(width: 8),
+                _TabChip(
+                  label: 'My Watchlist',
+                  selected: isWl,
+                  icon: Icons.star_rounded,
+                  onTap: () => controller.setTab('watchlist'),
+                ),
+              ]),
+            );
+          }),
+
           // ── Role + Status filter chips ────────────────────────────
           Obx(() {
             if (controller.state.value != ViewState.success) {
@@ -211,6 +234,7 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
                     final uid = list[i]['id'] as int?;
                     return _CrewCard(
                       member: list[i],
+                      controller: controller,
                       attendanceStatus: uid != null
                           ? controller.attendanceStatus[uid]
                           : null,
@@ -221,6 +245,51 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
             }),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Tab Chip ──────────────────────────────────────────────────────────────────
+class _TabChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final IconData? icon;
+  final VoidCallback onTap;
+  const _TabChip({required this.label, required this.selected, required this.onTap, this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.navy : AppColors.background,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? AppColors.navy : AppColors.border,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 14, color: selected ? Colors.white : AppColors.mutedText),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: selected ? Colors.white : AppColors.mutedText,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -319,8 +388,9 @@ Color _attendanceDotColor(String? s) => switch (s) {
 // ── Crew Card ─────────────────────────────────────────────────────────────────
 class _CrewCard extends StatelessWidget {
   final Map<String, dynamic> member;
+  final SupervisorCrewController controller;
   final String? attendanceStatus;
-  const _CrewCard({required this.member, this.attendanceStatus});
+  const _CrewCard({required this.member, required this.controller, this.attendanceStatus});
 
   @override
   Widget build(BuildContext context) {
@@ -589,6 +659,22 @@ class _CrewCard extends StatelessWidget {
                   ),
                 ),
               ],
+              // Star button
+              const SizedBox(width: 8),
+              Obx(() {
+                final intId = member['id'] is int
+                    ? member['id'] as int
+                    : int.tryParse(member['id'].toString()) ?? 0;
+                final inWl = controller.watchlistedIds.contains(intId);
+                return GestureDetector(
+                  onTap: () => controller.toggleWatchlist(intId),
+                  child: Icon(
+                    inWl ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: inWl ? const Color(0xFFFBBF24) : AppColors.mutedText,
+                    size: 22,
+                  ),
+                );
+              }),
             ],
           ),
         ),

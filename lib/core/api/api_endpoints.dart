@@ -193,6 +193,14 @@ class ApiEndpoints {
   static const taxes           = '/masters/global/taxes';
   static const serviceTaskTypes= '/masters/global/service-task-types';
 
+  // Supervisor Watchlists
+  static const watchlistVehicles       = '/supervisor/watchlist/vehicles';
+  static const watchlistVehicleIds     = '/supervisor/watchlist/vehicles/ids';
+  static String watchlistVehicleById(id) => '/supervisor/watchlist/vehicles/$id';
+  static const watchlistStaff          = '/supervisor/watchlist/staff';
+  static const watchlistStaffIds       = '/supervisor/watchlist/staff/ids';
+  static String watchlistStaffById(id)   => '/supervisor/watchlist/staff/$id';
+
   // Notifications
   static const notifications       = '/notifications';
   static const notifUnreadCount    = '/notifications/unread-count';

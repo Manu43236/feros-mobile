@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/popups/feros_snackbar.dart';
 import '../../../../../core/utils/view_state.dart';
 
 class SupervisorVehiclesController extends GetxController {
@@ -12,6 +13,8 @@ class SupervisorVehiclesController extends GetxController {
   final vehicles       = <Map<String, dynamic>>[].obs;
   final searchQuery    = ''.obs;
   final selectedStatus = 'ALL'.obs;
+  final activeTab      = 'all'.obs;          // 'all' | 'watchlist'
+  final watchlistedIds = <int>{}.obs;
 
   // ── Staff assignment ──────────────────────────────────────────────────────
   final staffUsers      = <Map<String, dynamic>>[].obs;
@@ -33,6 +36,38 @@ class SupervisorVehiclesController extends GetxController {
   void onInit() {
     super.onInit();
     fetchVehicles();
+    _fetchWatchlistIds();
+  }
+
+  Future<void> _fetchWatchlistIds() async {
+    try {
+      final res = await _api.get(ApiEndpoints.watchlistVehicleIds);
+      final ids = ((res.data as Map<String, dynamic>)['data'] as List)
+          .cast<int>();
+      watchlistedIds.assignAll(ids.toSet());
+    } catch (e) {
+      debugPrint('[Vehicles] watchlist fetch error: $e');
+    }
+  }
+
+  Future<void> toggleWatchlist(int vehicleId) async {
+    final inWl = watchlistedIds.contains(vehicleId);
+    try {
+      if (inWl) {
+        await _api.delete(ApiEndpoints.watchlistVehicleById(vehicleId));
+        watchlistedIds.remove(vehicleId);
+      } else {
+        await _api.post(ApiEndpoints.watchlistVehicles, data: {'vehicleId': vehicleId});
+        watchlistedIds.add(vehicleId);
+      }
+    } catch (e) {
+      FerosSnackbar.error('Failed to update watchlist');
+    }
+  }
+
+  void setTab(String tab) {
+    activeTab.value = tab;
+    _apply();
   }
 
   Future<void> fetchVehicles() async {
@@ -68,6 +103,11 @@ class SupervisorVehiclesController extends GetxController {
       list = list
           .where((v) => v['currentStatusName'] == selectedStatus.value)
           .toList();
+    }
+
+    // Watchlist tab filter
+    if (activeTab.value == 'watchlist') {
+      list = list.where((v) => watchlistedIds.contains(v['id'] as int?)).toList();
     }
 
     // Search
