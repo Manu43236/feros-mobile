@@ -186,8 +186,9 @@ class ApiEndpoints {
   static const vehicleBrands   = '/masters/global/vehicle-brands';
   static const fuelTypes       = '/masters/global/fuel-types';
   static const materialTypes   = '/masters/global/material-types';
-  static const documentTypes   = '/masters/global/document-types';
-  static const attendanceTypes = '/masters/global/attendance-types';
+  static const documentTypes      = '/masters/global/document-types';
+  static const employmentTypes    = '/masters/global/employment-types';
+  static const attendanceTypes    = '/masters/global/attendance-types';
   static const leaveTypes      = '/masters/global/leave-types';
   static const taxes           = '/masters/global/taxes';
   static const serviceTaskTypes= '/masters/global/service-task-types';

@@ -21,7 +21,7 @@ class SupervisorBreakdownController extends GetxController {
   final selectedVehicle   = Rxn<Map<String, dynamic>>();
   final isLoadingVehicles = false.obs;
 
-  static const types     = ['MECHANICAL', 'ELECTRICAL', 'TYRE', 'ACCIDENT', 'OTHER'];
+  static const types     = ['MECHANICAL', 'ELECTRICAL', 'ENGINE', 'TYRE', 'ACCIDENT', 'OTHER'];
   static const durations = ['SHORT', 'LONG'];
 
   @override

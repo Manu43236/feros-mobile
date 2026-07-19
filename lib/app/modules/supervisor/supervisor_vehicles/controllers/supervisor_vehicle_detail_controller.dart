@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/exceptions/exception_handler.dart';
 import '../../../../../core/services/upload_service.dart';
 import '../../../../../core/utils/view_state.dart';
 
@@ -349,7 +350,7 @@ class SupervisorVehicleDetailController extends GetxController {
     }
   }
 
-  Future<bool> assignDriver(int userId) async {
+  Future<String?> assignDriver(int userId) async {
     isStaffSaving.value = true;
     try {
       await _api.put(
@@ -357,12 +358,14 @@ class SupervisorVehicleDetailController extends GetxController {
         data: {'userId': userId},
       );
       await _fetchVehicle();
+      _staffLoaded = false;
+      staffUsers.clear();
       isStaffSaving.value = false;
-      return true;
+      return null;
     } catch (e) {
       debugPrint('[VehicleDetail] assign driver error: $e');
       isStaffSaving.value = false;
-      return false;
+      return ExceptionHandler.handle(e).message;
     }
   }
 
@@ -380,7 +383,7 @@ class SupervisorVehicleDetailController extends GetxController {
     }
   }
 
-  Future<bool> assignCleaner(int userId) async {
+  Future<String?> assignCleaner(int userId) async {
     isStaffSaving.value = true;
     try {
       await _api.put(
@@ -388,12 +391,14 @@ class SupervisorVehicleDetailController extends GetxController {
         data: {'userId': userId},
       );
       await _fetchVehicle();
+      _staffLoaded = false;
+      staffUsers.clear();
       isStaffSaving.value = false;
-      return true;
+      return null;
     } catch (e) {
       debugPrint('[VehicleDetail] assign cleaner error: $e');
       isStaffSaving.value = false;
-      return false;
+      return ExceptionHandler.handle(e).message;
     }
   }
 

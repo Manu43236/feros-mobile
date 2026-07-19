@@ -7,11 +7,12 @@ import '../../../../../core/utils/view_state.dart';
 class SupervisorCrewController extends GetxController {
   final _api = Get.find<ApiClient>();
 
-  final state         = ViewState.loading.obs;
-  final _allCrew      = <Map<String, dynamic>>[].obs;
-  final searchQuery   = ''.obs;
-  final roleFilter    = 'ALL'.obs;
-  final statusFilter  = 'ALL'.obs;
+  final state             = ViewState.loading.obs;
+  final _allCrew          = <Map<String, dynamic>>[].obs;
+  final attendanceStatus  = <int, String>{}.obs; // userId → 'PRESENT'|'PENDING'|'REJECTED'
+  final searchQuery       = ''.obs;
+  final roleFilter        = 'ALL'.obs;
+  final statusFilter      = 'ALL'.obs;
 
   @override
   void onInit() {
@@ -22,16 +23,29 @@ class SupervisorCrewController extends GetxController {
   Future<void> fetchCrew() async {
     state.value = ViewState.loading;
     try {
-      final res = await _api.get(ApiEndpoints.users);
-      final all = ((res.data as Map<String, dynamic>)['data'] as List)
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+      final results = await Future.wait([
+        _api.get(ApiEndpoints.users),
+        _api.get(ApiEndpoints.attendance, params: {'date': today}),
+      ]);
+
+      final all = ((results[0].data as Map<String, dynamic>)['data'] as List)
           .cast<Map<String, dynamic>>();
-      // Only DRIVER and CLEANER
       _allCrew.assignAll(all.where((u) {
         final role = u['role'] as String? ?? '';
         return role == 'DRIVER' || role == 'CLEANER';
       }).toList()
         ..sort((a, b) => ((a['name'] as String?) ?? '')
             .compareTo((b['name'] as String?) ?? '')));
+
+      final records = ((results[1].data as Map<String, dynamic>)['data'] as List)
+          .cast<Map<String, dynamic>>();
+      attendanceStatus.value = {
+        for (final r in records)
+          if (r['userId'] != null)
+            r['userId'] as int: r['approvalStatus'] as String? ?? 'PENDING',
+      };
+
       state.value = ViewState.success;
     } catch (e) {
       debugPrint('[Crew] fetch error: $e');

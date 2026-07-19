@@ -1282,18 +1282,18 @@ class _AssignStaffSheetState extends State<_AssignStaffSheet> {
                           : null,
                       onTap: () async {
                         Navigator.pop(context);
-                        final bool ok;
+                        final String? err;
                         if (widget.role == 'DRIVER') {
-                          ok = await widget.controller.assignDriver(uid);
+                          err = await widget.controller.assignDriver(uid);
                         } else {
-                          ok = await widget.controller.assignCleaner(uid);
+                          err = await widget.controller.assignCleaner(uid);
                         }
-                        if (ok) {
+                        if (err == null) {
                           FerosSnackbar.success(
                             '${u['name']} assigned as $label',
                           );
                         } else {
-                          FerosSnackbar.error('Failed to assign $label');
+                          FerosSnackbar.error(err);
                         }
                       },
                     );

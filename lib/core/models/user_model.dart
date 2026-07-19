@@ -7,6 +7,7 @@ class UserModel {
   final String? companyName;
   final String token;
   final bool isPinResetRequired;
+  final String? profilePhotoUrl;
 
   UserModel({
     required this.userId,
@@ -17,6 +18,7 @@ class UserModel {
     this.companyName,
     required this.token,
     this.isPinResetRequired = false,
+    this.profilePhotoUrl,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
@@ -28,6 +30,7 @@ class UserModel {
     companyName:        json['companyName'] as String?,
     token:              json['token']   as String? ?? '',
     isPinResetRequired: json['isPinResetRequired'] as bool? ?? false,
+    profilePhotoUrl:    json['profilePhotoUrl'] as String?,
   );
 
   Map<String, dynamic> toJson() => {
@@ -39,7 +42,15 @@ class UserModel {
     'companyName':        companyName,
     'token':              token,
     'isPinResetRequired': isPinResetRequired,
+    'profilePhotoUrl':    profilePhotoUrl,
   };
+
+  UserModel copyWith({String? profilePhotoUrl}) => UserModel(
+    userId: userId, tenantId: tenantId, phone: phone, name: name,
+    role: role, companyName: companyName, token: token,
+    isPinResetRequired: isPinResetRequired,
+    profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
+  );
 
   bool get isSuperAdmin   => role == 'SUPER_ADMIN';
   bool get isAdmin        => role == 'ADMIN';

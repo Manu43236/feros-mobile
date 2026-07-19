@@ -29,6 +29,10 @@ import '../../supervisor_breakdown/views/supervisor_breakdown_view.dart';
 import '../../supervisor_breakdown/bindings/supervisor_breakdown_binding.dart';
 import '../../supervisor_assignments/views/supervisor_assignments_view.dart';
 import '../../supervisor_assignments/bindings/supervisor_assignments_binding.dart';
+import '../../supervisor_fuel_log/views/supervisor_fuel_log_view.dart';
+import '../../supervisor_fuel_log/bindings/supervisor_fuel_log_binding.dart';
+import '../../supervisor_meter_reading/views/supervisor_meter_reading_view.dart';
+import '../../supervisor_meter_reading/bindings/supervisor_meter_reading_binding.dart';
 
 class SupervisorShellView extends GetView<SupervisorShellController> {
   const SupervisorShellView({super.key});
@@ -286,6 +290,30 @@ class _SupervisorDrawer extends StatelessWidget {
                     Get.to(
                       () => const SupervisorVehiclesView(),
                       binding: SupervisorVehiclesBinding(),
+                    );
+                  },
+                ),
+                _DrawerTile(
+                  icon: Icons.local_gas_station_outlined,
+                  label: 'Fuel Logs',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Get.to(
+                      () => const SupervisorFuelLogView(),
+                      binding: SupervisorFuelLogBinding(),
+                      transition: Transition.cupertino,
+                    );
+                  },
+                ),
+                _DrawerTile(
+                  icon: Icons.speed_outlined,
+                  label: 'Meter Readings',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Get.to(
+                      () => const SupervisorMeterReadingView(),
+                      binding: SupervisorMeterReadingBinding(),
+                      transition: Transition.cupertino,
                     );
                   },
                 ),

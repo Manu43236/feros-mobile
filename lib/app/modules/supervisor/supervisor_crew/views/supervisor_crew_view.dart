@@ -5,6 +5,7 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
 import '../controllers/supervisor_crew_controller.dart';
+import 'supervisor_crew_detail_view.dart';
 
 class SupervisorCrewView extends GetView<SupervisorCrewController> {
   const SupervisorCrewView({super.key});
@@ -203,11 +204,19 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
               return RefreshIndicator(
                 color: AppColors.navy,
                 onRefresh: controller.fetchCrew,
-                child: ListView.builder(
+                child: Obx(() => ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                   itemCount: list.length,
-                  itemBuilder: (_, i) => _CrewCard(member: list[i]),
-                ),
+                  itemBuilder: (_, i) {
+                    final uid = list[i]['id'] as int?;
+                    return _CrewCard(
+                      member: list[i],
+                      attendanceStatus: uid != null
+                          ? controller.attendanceStatus[uid]
+                          : null,
+                    );
+                  },
+                )),
               );
             }),
           ),
@@ -300,10 +309,18 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+Color _attendanceDotColor(String? s) => switch (s) {
+  'APPROVED' => const Color(0xFF16A34A),
+  'PENDING'  => const Color(0xFFF59E0B),
+  'REJECTED' => const Color(0xFFEF4444),
+  _          => const Color(0xFFD1D5DB),
+};
+
 // ── Crew Card ─────────────────────────────────────────────────────────────────
 class _CrewCard extends StatelessWidget {
   final Map<String, dynamic> member;
-  const _CrewCard({required this.member});
+  final String? attendanceStatus;
+  const _CrewCard({required this.member, this.attendanceStatus});
 
   @override
   Widget build(BuildContext context) {
@@ -338,7 +355,12 @@ class _CrewCard extends StatelessWidget {
         ? (const Color(0xFFFFF7ED), const Color(0xFFEA580C), 'lbl_on_trip_chip'.tr)
         : (const Color(0xFFF0FDF4), const Color(0xFF16A34A), 'lbl_available'.tr);
 
-    return Container(
+    return GestureDetector(
+      onTap: () => Get.to(
+        () => SupervisorCrewDetailView(member: member),
+        transition: Transition.cupertino,
+      ),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -362,24 +384,41 @@ class _CrewCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              // Avatar
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: avatarBg,
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  initial,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                    color: Colors.white,
+              // Avatar + attendance dot
+              Stack(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: avatarBg,
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      initial,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
-                ),
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: _attendanceDotColor(attendanceStatus),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(width: 12),
 
@@ -554,6 +593,6 @@ class _CrewCard extends StatelessWidget {
           ),
         ),
       ),
-    );
+    )); // GestureDetector + Container
   }
 }
