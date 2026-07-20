@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/widgets/avatar_widget.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
 import '../../../../../core/utils/date_utils.dart';
@@ -1261,13 +1262,11 @@ class _AssignStaffSheetState extends State<_AssignStaffSheet> {
                     final uid = (u['id'] as num).toInt();
                     final isSelected = uid == widget.currentId;
                     return ListTile(
-                      leading: CircleAvatar(
-                        radius: 18,
-                        backgroundColor: AppColors.navy.withValues(alpha: 0.1),
-                        child: Text(
-                          (u['name'] as String? ?? '?')[0].toUpperCase(),
-                          style: AppTextStyles.label.copyWith(color: AppColors.navy),
-                        ),
+                      leading: AvatarWidget(
+                        name: u['name'] as String? ?? '?',
+                        imageUrl: u['profilePhotoUrl'] as String?,
+                        size: 36,
+                        bgColor: AppColors.navy,
                       ),
                       title: Text(
                         u['name'] as String? ?? '—',

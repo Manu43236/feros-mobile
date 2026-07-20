@@ -9,8 +9,8 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
 import '../../../../../core/utils/date_utils.dart';
-import '../../../../../core/utils/string_utils.dart';
 import '../../../../../core/widgets/pulsing_dot.dart';
+import '../../../../../core/widgets/avatar_widget.dart';
 import '../../../../../core/popups/feros_dialog.dart';
 import '../controllers/supervisor_lr_detail_controller.dart';
 import '../../supervisor_vehicles/bindings/supervisor_vehicle_detail_binding.dart';
@@ -117,7 +117,7 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
               const SizedBox(height: 12),
 
               // ── Driver Card ────────────────────────────────────────────
-              _DriverCard(lr: lr),
+              _DriverCard(lr: lr, attendanceStatus: controller.attendanceStatus),
               const SizedBox(height: 12),
 
               // ── Cleaner Card ───────────────────────────────────────────
@@ -125,7 +125,9 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
                 lr: lr,
                 nameKey: 'cleanerName',
                 phoneKey: 'cleanerPhone',
+                userIdKey: 'cleanerId',
                 roleLabelKey: 'role_cleaner',
+                attendanceStatus: controller.attendanceStatus,
               ),
               if (lr['cleanerName'] != null) const SizedBox(height: 12),
 
@@ -518,39 +520,46 @@ class _InfoCard extends StatelessWidget {
 }
 
 // ── Driver Card ───────────────────────────────────────────────────────────────
+Color _attendanceBorderColor(String? s) => switch (s) {
+  'APPROVED' => const Color(0xFF16A34A),
+  'PENDING'  => const Color(0xFFF59E0B),
+  'REJECTED' => const Color(0xFFEF4444),
+  _          => const Color(0xFFD1D5DB),
+};
+
 class _DriverCard extends StatelessWidget {
   final Map<String, dynamic> lr;
   final String nameKey;
   final String phoneKey;
+  final String userIdKey;
   final String roleLabelKey;
+  final Map<int, String> attendanceStatus;
   const _DriverCard({
     required this.lr,
     this.nameKey = 'driverName',
     this.phoneKey = 'driverPhone',
+    this.userIdKey = 'driverId',
     this.roleLabelKey = 'role_driver',
+    this.attendanceStatus = const {},
   });
 
   @override
   Widget build(BuildContext context) {
     final name = lr[nameKey] as String?;
     final phone = lr[phoneKey] as String?;
+    final userId = lr[userIdKey] is int ? lr[userIdKey] as int
+        : int.tryParse(lr[userIdKey]?.toString() ?? '');
 
     if (name == null && phone == null) return const SizedBox.shrink();
 
     return _Card(
       child: Row(
         children: [
-          // Avatar
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: AppColors.navy.withValues(alpha: 0.1),
-            child: Text(
-              FerosStringUtils.initials(name ?? '?'),
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.navy,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+          AvatarWidget(
+            name: name ?? '?',
+            size: 48,
+            bgColor: AppColors.navy,
+            borderColor: _attendanceBorderColor(userId != null ? attendanceStatus[userId] : null),
           ),
           const SizedBox(width: 14),
 

@@ -4,14 +4,18 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
+import '../../../../../core/widgets/avatar_widget.dart';
 import '../controllers/supervisor_crew_controller.dart';
 import 'supervisor_crew_detail_view.dart';
 
 class SupervisorCrewView extends GetView<SupervisorCrewController> {
-  const SupervisorCrewView({super.key});
+  final bool embedded;
+  const SupervisorCrewView({super.key, this.embedded = false});
 
   @override
   Widget build(BuildContext context) {
+    final body = _buildBody();
+    if (embedded) return body;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -31,131 +35,116 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
           child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
         ),
       ),
-      body: Column(
-        children: [
-          // ── Search bar ──────────────────────────────────────────────
-          Container(
-            color: AppColors.surface,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: TextField(
-              onChanged: controller.onSearch,
-              style: AppTextStyles.body,
-              decoration: InputDecoration(
-                hintText: 'lbl_search_crew'.tr,
-                hintStyle: AppTextStyles.body.copyWith(
-                  color: AppColors.mutedText,
-                ),
-                prefixIcon: const Icon(
-                  Icons.search,
-                  color: AppColors.mutedText,
-                  size: 20,
-                ),
-                filled: true,
-                fillColor: AppColors.background,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                    color: AppColors.navy,
-                    width: 1.5,
-                  ),
-                ),
-              ),
-            ),
-          ),
+      body: _buildBody(),
+    );
+  }
 
-          // ── Watchlist tabs ──────────────────────────────────────
+  Widget _buildBody() {
+    return Column(
+        children: [
+          // ── Watchlist tab bar ───────────────────────────────────
           Obx(() {
             final isWl = controller.activeTab.value == 'watchlist';
-            return Container(
-              color: AppColors.surface,
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-              child: Row(children: [
-                _TabChip(
-                  label: 'All',
-                  selected: !isWl,
-                  onTap: () => controller.setTab('all'),
-                ),
-                const SizedBox(width: 8),
-                _TabChip(
-                  label: 'My Watchlist',
-                  selected: isWl,
-                  icon: Icons.star_rounded,
-                  onTap: () => controller.setTab('watchlist'),
-                ),
-              ]),
+            return _WatchlistTabBar(
+              isWatchlist: isWl,
+              allLabel: 'All Staff',
+              watchlistLabel: 'My Watchlist',
+              onAll: () => controller.setTab('all'),
+              onWatchlist: () => controller.setTab('watchlist'),
             );
           }),
 
-          // ── Role + Status filter chips ────────────────────────────
-          Obx(() {
-            if (controller.state.value != ViewState.success) {
-              return const SizedBox.shrink();
-            }
-            final roleOptions = [
-              _RF('ALL', 'lbl_all'.tr, null),
-              _RF('DRIVER', 'lbl_drivers_chip'.tr, controller.driverCount),
-              _RF('CLEANER', 'lbl_cleaners_chip'.tr, controller.cleanerCount),
-            ];
-            final statusOptions = [
-              _RF('ALL', 'lbl_all'.tr, null),
-              _RF('AVAILABLE', 'lbl_available'.tr, controller.availableCount),
-              _RF('ON_TRIP', 'lbl_on_trip_chip'.tr, controller.onTripCount),
-              _RF('INACTIVE', 'lbl_inactive'.tr, null),
-            ];
-            return Container(
-              color: AppColors.surface,
-              padding: const EdgeInsets.fromLTRB(0, 10, 0, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Role row
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: roleOptions
-                          .map(
-                            (opt) => _FilterChip(
-                              opt: opt,
-                              selected: controller.roleFilter.value == opt.key,
-                              onTap: () => controller.onRoleFilter(opt.key),
-                            ),
-                          )
-                          .toList(),
+          // ── Search + Filter button ──────────────────────────────
+          Container(
+            color: AppColors.surface,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: controller.searchController,
+                    onChanged: controller.onSearch,
+                    style: AppTextStyles.body,
+                    decoration: InputDecoration(
+                      hintText: 'lbl_search_crew'.tr,
+                      hintStyle: AppTextStyles.body.copyWith(
+                        color: AppColors.mutedText,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: AppColors.mutedText,
+                        size: 20,
+                      ),
+                      filled: true,
+                      fillColor: AppColors.background,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: AppColors.border),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: AppColors.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: AppColors.navy,
+                          width: 1.5,
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  // Status row
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: statusOptions
-                          .map(
-                            (opt) => _FilterChip(
-                              opt: opt,
-                              selected:
-                                  controller.statusFilter.value == opt.key,
-                              onTap: () => controller.onStatusFilter(opt.key),
-                              activeColor: _statusChipColor(opt.key),
+                ),
+                const SizedBox(width: 10),
+                Obx(() {
+                  final active = controller.roleFilter.value != 'ALL' ||
+                      controller.statusFilter.value != 'ALL';
+                  return GestureDetector(
+                    onTap: () => _showFilterSheet(controller),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: active
+                                ? AppColors.navy
+                                : AppColors.background,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: active
+                                  ? AppColors.navy
+                                  : AppColors.border,
                             ),
-                          )
-                          .toList(),
+                          ),
+                          child: Icon(
+                            Icons.tune_rounded,
+                            size: 20,
+                            color: active ? Colors.white : AppColors.mutedText,
+                          ),
+                        ),
+                        if (active)
+                          Positioned(
+                            top: -4,
+                            right: -4,
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFF97316),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            );
-          }),
+                  );
+                }),
+              ],
+            ),
+          ),
 
           const Divider(height: 1, color: AppColors.border),
 
@@ -227,7 +216,7 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
               return RefreshIndicator(
                 color: AppColors.navy,
                 onRefresh: controller.fetchCrew,
-                child: Obx(() => ListView.builder(
+                child: ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                   itemCount: list.length,
                   itemBuilder: (_, i) {
@@ -240,53 +229,220 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
                           : null,
                     );
                   },
-                )),
+                ),
               );
             }),
           ),
+        ],
+    );
+  }
+}
+
+void _showFilterSheet(SupervisorCrewController c) {
+  Get.bottomSheet(
+    Obx(() {
+      final roleOpts = [
+        _RF('ALL', 'All', null),
+        _RF('DRIVER', 'Drivers', c.driverCount),
+        _RF('CLEANER', 'Cleaners', c.cleanerCount),
+      ];
+      final statusOpts = [
+        _RF('ALL', 'All', null),
+        _RF('AVAILABLE', 'Available', c.availableCount),
+        _RF('ON_TRIP', 'On Trip', c.onTripCount),
+        _RF('INACTIVE', 'Inactive', null),
+      ];
+      final hasFilter = c.roleFilter.value != 'ALL' || c.statusFilter.value != 'ALL';
+
+      return Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Filters',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
+                ),
+                if (hasFilter)
+                  GestureDetector(
+                    onTap: () {
+                      c.onRoleFilter('ALL');
+                      c.onStatusFilter('ALL');
+                    },
+                    child: Text(
+                      'Clear all',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Role
+            Text(
+              'Role',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.mutedText,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: roleOpts
+                  .map((opt) => _FilterChip(
+                        opt: opt,
+                        selected: c.roleFilter.value == opt.key,
+                        onTap: () => c.onRoleFilter(opt.key),
+                      ))
+                  .toList(),
+            ),
+            const SizedBox(height: 20),
+
+            // Status
+            Text(
+              'Status',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.mutedText,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: statusOpts
+                  .map((opt) => _FilterChip(
+                        opt: opt,
+                        selected: c.statusFilter.value == opt.key,
+                        onTap: () => c.onStatusFilter(opt.key),
+                        activeColor: _statusChipColor(opt.key),
+                      ))
+                  .toList(),
+            ),
+          ],
+        ),
+      );
+    }),
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+  );
+}
+
+// ── Watchlist Tab Bar ─────────────────────────────────────────────────────────
+class _WatchlistTabBar extends StatelessWidget {
+  final bool isWatchlist;
+  final String allLabel;
+  final String watchlistLabel;
+  final VoidCallback onAll;
+  final VoidCallback onWatchlist;
+  const _WatchlistTabBar({
+    required this.isWatchlist,
+    required this.allLabel,
+    required this.watchlistLabel,
+    required this.onAll,
+    required this.onWatchlist,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.surface,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _Tab(label: allLabel, selected: !isWatchlist, onTap: onAll),
+              _Tab(
+                label: watchlistLabel,
+                selected: isWatchlist,
+                icon: Icons.star_rounded,
+                onTap: onWatchlist,
+              ),
+            ],
+          ),
+          const Divider(height: 1, thickness: 1, color: AppColors.border),
         ],
       ),
     );
   }
 }
 
-// ── Tab Chip ──────────────────────────────────────────────────────────────────
-class _TabChip extends StatelessWidget {
+class _Tab extends StatelessWidget {
   final String label;
   final bool selected;
   final IconData? icon;
   final VoidCallback onTap;
-  const _TabChip({required this.label, required this.selected, required this.onTap, this.icon});
+  const _Tab({required this.label, required this.selected, required this.onTap, this.icon});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.navy : AppColors.background,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selected ? AppColors.navy : AppColors.border,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
           children: [
-            if (icon != null) ...[
-              Icon(icon, size: 14, color: selected ? Colors.white : AppColors.mutedText),
-              const SizedBox(width: 4),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: selected ? Colors.white : AppColors.mutedText,
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    Icon(
+                      icon,
+                      size: 14,
+                      color: selected ? AppColors.navy : AppColors.mutedText,
+                    ),
+                    const SizedBox(width: 5),
+                  ],
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      color: selected ? AppColors.navy : AppColors.mutedText,
+                    ),
+                  ),
+                ],
               ),
+            ),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              height: 2,
+              color: selected ? AppColors.navy : Colors.transparent,
             ),
           ],
         ),
@@ -378,7 +534,7 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-Color _attendanceDotColor(String? s) => switch (s) {
+Color _attendanceBorderColor(String? s) => switch (s) {
   'APPROVED' => const Color(0xFF16A34A),
   'PENDING'  => const Color(0xFFF59E0B),
   'REJECTED' => const Color(0xFFEF4444),
@@ -403,7 +559,7 @@ class _CrewCard extends StatelessWidget {
     final orderNum = member['activeOrderNumber'] as String?;
     final trips = member['completedTripsCount'] ?? 0;
 
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final photoUrl = member['profilePhotoUrl'] as String?;
 
     final (avatarBg, roleBg, roleText, roleColor) = role == 'DRIVER'
         ? (
@@ -454,41 +610,12 @@ class _CrewCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              // Avatar + attendance dot
-              Stack(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: avatarBg,
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      initial,
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 18,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: _attendanceDotColor(attendanceStatus),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1.5),
-                      ),
-                    ),
-                  ),
-                ],
+              AvatarWidget(
+                name: name,
+                imageUrl: photoUrl,
+                size: 44,
+                bgColor: avatarBg,
+                borderColor: _attendanceBorderColor(attendanceStatus),
               ),
               const SizedBox(width: 12),
 

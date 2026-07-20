@@ -6,6 +6,7 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
 import '../../../../../core/utils/date_utils.dart';
+import '../../../../../core/widgets/avatar_widget.dart';
 import '../../../../../core/widgets/shimmer_card.dart';
 import '../controllers/supervisor_attendance_controller.dart';
 import '../../supervisor_my_attendance/controllers/supervisor_my_attendance_controller.dart';
@@ -90,7 +91,8 @@ class _TodayTab extends StatefulWidget {
 
 class _TodayTabState extends State<_TodayTab> {
   final _searchCtrl = TextEditingController();
-  String _search = '';
+  String _search      = '';
+  bool _showWatchlist = false;
 
   @override
   void dispose() {
@@ -139,21 +141,31 @@ class _TodayTabState extends State<_TodayTab> {
         );
       }
 
+      final baseCrew = _showWatchlist ? ctrl.watchlistCrew : ctrl.crew.toList();
       final filteredCrew = _search.isEmpty
-          ? ctrl.crew
-          : ctrl.crew
+          ? baseCrew
+          : baseCrew
               .where((u) => (u['name'] as String? ?? '')
                   .toLowerCase()
                   .contains(_search))
               .toList();
 
-      return RefreshIndicator(
-        color: AppColors.navy,
-        onRefresh: ctrl.fetchAll,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-          children: [
-            // ── Today banner (no navigation) ────────────────────
+      return Column(
+        children: [
+          // ── All / My Watchlist tab bar ──────────────────────
+          _WatchlistTabBar(
+            isWatchlist: _showWatchlist,
+            onAll: () => setState(() { _showWatchlist = false; _searchCtrl.clear(); _search = ''; }),
+            onWatchlist: () => setState(() { _showWatchlist = true; _searchCtrl.clear(); _search = ''; }),
+          ),
+
+          Expanded(child: RefreshIndicator(
+            color: AppColors.navy,
+            onRefresh: ctrl.fetchAll,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+              children: [
+            // ── Today banner ────────────────────────────────────
             _TodayDateBanner(label: ctrl.dateLabel),
             const SizedBox(height: 12),
 
@@ -201,12 +213,14 @@ class _TodayTabState extends State<_TodayTab> {
               children: [
                 Expanded(
                   child: Text(
-                    'Drivers & Cleaners · ${ctrl.crew.length}',
+                    _showWatchlist
+                        ? 'Watchlist · ${baseCrew.length}'
+                        : 'Drivers & Cleaners · ${ctrl.crew.length}',
                     style: AppTextStyles.bodyMedium
                         .copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
-                if (ctrl.unmarkedCrew.isNotEmpty)
+                if (!_showWatchlist && ctrl.unmarkedCrew.isNotEmpty)
                   Obx(() => TextButton.icon(
                         onPressed: ctrl.bulkLoading.value
                             ? null
@@ -242,8 +256,13 @@ class _TodayTabState extends State<_TodayTab> {
                 ),
                 child: Center(
                   child: Text(
-                    _search.isNotEmpty ? 'No results for "$_search"' : 'No drivers or cleaners found',
+                    _search.isNotEmpty
+                        ? 'No results for "$_search"'
+                        : _showWatchlist
+                            ? 'No watchlist staff found.\nAdd staff from the Crew tab.'
+                            : 'No drivers or cleaners found',
                     style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               )
@@ -251,8 +270,94 @@ class _TodayTabState extends State<_TodayTab> {
               ...filteredCrew.map((u) => _CrewRow(user: u, ctrl: ctrl)),
           ],
         ),
+      )),
+        ],
       );
     });
+  }
+}
+
+// ── All / Watchlist Tab Bar (same pattern as Crew module) ─────────────────────
+class _WatchlistTabBar extends StatelessWidget {
+  final bool isWatchlist;
+  final VoidCallback onAll;
+  final VoidCallback onWatchlist;
+  const _WatchlistTabBar({
+    required this.isWatchlist,
+    required this.onAll,
+    required this.onWatchlist,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.surface,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _AttTab(label: 'All', selected: !isWatchlist, onTap: onAll),
+              _AttTab(
+                label: 'My Watchlist',
+                selected: isWatchlist,
+                icon: Icons.star_rounded,
+                onTap: onWatchlist,
+              ),
+            ],
+          ),
+          const Divider(height: 1, thickness: 1, color: AppColors.border),
+        ],
+      ),
+    );
+  }
+}
+
+class _AttTab extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final IconData? icon;
+  final VoidCallback onTap;
+  const _AttTab({required this.label, required this.selected, required this.onTap, this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: 14,
+                        color: selected ? AppColors.navy : AppColors.mutedText),
+                    const SizedBox(width: 5),
+                  ],
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      color: selected ? AppColors.navy : AppColors.mutedText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              height: 2,
+              color: selected ? AppColors.navy : Colors.transparent,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -345,7 +450,7 @@ class _CrewRow extends StatelessWidget {
     final name     = user['name'] as String? ?? '—';
     final role     = (user['role'] as String? ?? '').toLowerCase();
     final isDriver = role == 'driver';
-    final initial  = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final photoUrl    = user['profilePhotoUrl'] as String?;
     final avatarColor = isDriver ? AppColors.navy : AppColors.warning;
 
     return Container(
@@ -362,25 +467,7 @@ class _CrewRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Avatar
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: avatarColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              initial,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-                color: avatarColor,
-              ),
-            ),
-          ),
+          AvatarWidget(name: name, imageUrl: photoUrl, size: 36, bgColor: avatarColor),
           const SizedBox(width: 10),
 
           // Name + role
@@ -495,8 +582,6 @@ class _PresentRecord extends StatelessWidget {
     final name      = record['userName'] as String? ?? '—';
     final roleName  = record['roleName'] as String? ?? '';
     final markedBy  = record['markedByName'] as String?;
-    final initial   = name.isNotEmpty ? name[0].toUpperCase() : '?';
-
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -511,24 +596,7 @@ class _PresentRecord extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.success.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              initial,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-                color: AppColors.success,
-              ),
-            ),
-          ),
+          AvatarWidget(name: name, size: 36, bgColor: AppColors.success),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -705,8 +773,6 @@ class _DutyTimesRecord extends StatelessWidget {
     final markedAt   = record['markedAt']  as String?;
     final markedOutAt = record['markedOutAt'] as String?;
     final dutyLabel  = record['dutyLabel'] as String? ?? 'Full Day';
-    final initial    = name.isNotEmpty ? name[0].toUpperCase() : '?';
-
     final isOut = markedOutAt != null;
     final dutyColor = isOut ? AppColors.success : AppColors.warning;
 
@@ -724,25 +790,7 @@ class _DutyTimesRecord extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Avatar
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.navy.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              initial,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-                color: AppColors.navy,
-              ),
-            ),
-          ),
+          AvatarWidget(name: name, size: 36, bgColor: AppColors.navy),
           const SizedBox(width: 10),
 
           // Name + role + times

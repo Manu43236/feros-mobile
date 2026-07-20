@@ -22,6 +22,7 @@ import '../../supervisor_crew/views/supervisor_crew_view.dart';
 import '../../supervisor_crew/bindings/supervisor_crew_binding.dart';
 import '../../supervisor_active_trips/views/supervisor_active_trips_tab.dart';
 import '../../supervisor_attendance/views/supervisor_attendance_tab.dart';
+import 'supervisor_wishlist_tab.dart';
 import '../../supervisor_lrs/views/supervisor_lrs_view.dart';
 import '../../supervisor_lrs/bindings/supervisor_lrs_binding.dart';
 
@@ -40,7 +41,12 @@ class SupervisorShellView extends GetView<SupervisorShellController> {
   @override
   Widget build(BuildContext context) {
     return Obx(
-      () => Scaffold(
+      () => PopScope(
+        canPop: controller.currentIndex.value == 0,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) controller.currentIndex.value = 0;
+        },
+        child: Scaffold(
           key: controller.scaffoldKey,
           backgroundColor: AppColors.background,
           drawer: _SupervisorDrawer(
@@ -52,8 +58,8 @@ class SupervisorShellView extends GetView<SupervisorShellController> {
             index: controller.currentIndex.value,
             children: const [
               SupervisorHomeTab(),
+              SupervisorWishlistTab(),
               SupervisorOrdersTab(),
-              SupervisorActiveTripsTab(),
               SupervisorAttendanceTab(),
             ],
           ),
@@ -63,12 +69,13 @@ class SupervisorShellView extends GetView<SupervisorShellController> {
           ),
           floatingActionButton: null,
       ),
+      ),
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
     final auth   = Get.find<AuthService>();
-    final titles = ['nav_home'.tr, 'nav_orders'.tr, 'nav_trips'.tr, 'nav_attendance'.tr];
+    final titles = ['nav_home'.tr, 'Wishlist', 'nav_orders'.tr, 'nav_attendance'.tr];
     return AppBar(
       backgroundColor: AppColors.navy,
       elevation: 0,
@@ -283,6 +290,38 @@ class _SupervisorDrawer extends StatelessWidget {
                 const SizedBox(height: 4),
                 _DrawerSectionLabel(label: 'lbl_vehicles_billing'.tr),
                 _DrawerTile(
+                  icon: Icons.local_shipping_outlined,
+                  label: 'nav_trips'.tr,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Get.to(
+                      () => Scaffold(
+                        backgroundColor: AppColors.background,
+                        appBar: AppBar(
+                          backgroundColor: AppColors.navy,
+                          elevation: 0,
+                          title: Text(
+                            'nav_trips'.tr,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                          leading: GestureDetector(
+                            onTap: Get.back,
+                            child: const Icon(Icons.arrow_back_ios,
+                                color: Colors.white, size: 18),
+                          ),
+                        ),
+                        body: const SupervisorActiveTripsTab(),
+                      ),
+                      transition: Transition.cupertino,
+                    );
+                  },
+                ),
+                _DrawerTile(
                   icon: Icons.garage_outlined,
                   label: 'lbl_vehicles'.tr,
                   onTap: () {
@@ -451,8 +490,8 @@ class _SupervisorNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = [
       (Icons.home_outlined, Icons.home, 'nav_home'.tr),
+      (Icons.star_border_rounded, Icons.star_rounded, 'Wishlist'),
       (Icons.assignment_outlined, Icons.assignment, 'nav_orders'.tr),
-      (Icons.local_shipping_outlined, Icons.local_shipping, 'nav_trips'.tr),
       (Icons.fact_check_outlined, Icons.fact_check, 'nav_attendance'.tr),
     ];
 

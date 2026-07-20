@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
@@ -16,6 +16,7 @@ class SupervisorCrewController extends GetxController {
   final statusFilter      = 'ALL'.obs;
   final activeTab         = 'all'.obs;           // 'all' | 'watchlist'
   final watchlistedIds    = <int>{}.obs;
+  final searchController  = TextEditingController();
 
   @override
   void onInit() {
@@ -36,31 +37,54 @@ class SupervisorCrewController extends GetxController {
 
   Future<void> toggleWatchlist(int userId) async {
     final inWl = watchlistedIds.contains(userId);
+    final name = _allCrew
+        .firstWhere((u) => u['id'] == userId, orElse: () => {})['name'] as String? ?? '';
+    if (inWl) {
+      watchlistedIds.remove(userId);
+    } else {
+      watchlistedIds.add(userId);
+    }
+    _allCrew.refresh();
     try {
       if (inWl) {
         await _api.delete(ApiEndpoints.watchlistStaffById(userId));
-        watchlistedIds.remove(userId);
+        FerosSnackbar.success(name.isNotEmpty ? '$name removed from watchlist' : 'Removed from watchlist');
       } else {
         await _api.post(ApiEndpoints.watchlistStaff, data: {'userId': userId});
-        watchlistedIds.add(userId);
+        FerosSnackbar.success(name.isNotEmpty ? '$name added to watchlist' : 'Added to watchlist');
       }
     } catch (e) {
+      if (inWl) {
+        watchlistedIds.add(userId);
+      } else {
+        watchlistedIds.remove(userId);
+      }
+      _allCrew.refresh();
       FerosSnackbar.error('Failed to update watchlist');
     }
   }
 
-  void setTab(String tab) => activeTab.value = tab;
+  void setTab(String tab) {
+    activeTab.value = tab;
+    searchQuery.value = '';
+    searchController.clear();
+    roleFilter.value = 'ALL';
+    statusFilter.value = 'ALL';
+  }
+
+  @override
+  void onClose() {
+    searchController.dispose();
+    super.onClose();
+  }
 
   Future<void> fetchCrew() async {
     state.value = ViewState.loading;
     try {
       final today = DateTime.now().toIso8601String().substring(0, 10);
-      final results = await Future.wait([
-        _api.get(ApiEndpoints.users),
-        _api.get(ApiEndpoints.attendance, params: {'date': today}),
-      ]);
+      final usersRes = await _api.get(ApiEndpoints.users);
 
-      final all = ((results[0].data as Map<String, dynamic>)['data'] as List)
+      final all = ((usersRes.data as Map<String, dynamic>)['data'] as List)
           .cast<Map<String, dynamic>>();
       _allCrew.assignAll(all.where((u) {
         final role = u['role'] as String? ?? '';
@@ -69,13 +93,19 @@ class SupervisorCrewController extends GetxController {
         ..sort((a, b) => ((a['name'] as String?) ?? '')
             .compareTo((b['name'] as String?) ?? '')));
 
-      final records = ((results[1].data as Map<String, dynamic>)['data'] as List)
-          .cast<Map<String, dynamic>>();
-      attendanceStatus.value = {
-        for (final r in records)
-          if (r['userId'] != null)
-            r['userId'] as int: r['approvalStatus'] as String? ?? 'PENDING',
-      };
+      try {
+        final attRes = await _api.get(ApiEndpoints.attendance, params: {'date': today});
+        final records = ((attRes.data as Map<String, dynamic>)['data'] as List)
+            .cast<Map<String, dynamic>>();
+        attendanceStatus.value = {
+          for (final r in records)
+            if (r['userId'] != null)
+              r['userId'] as int: r['approvalStatus'] as String? ?? 'PENDING',
+        };
+      } catch (e) {
+        debugPrint('[Crew] attendance fetch error (non-fatal): $e');
+        attendanceStatus.value = {};
+      }
 
       state.value = ViewState.success;
     } catch (e) {

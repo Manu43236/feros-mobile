@@ -1,45 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
 import '../../../../../core/popups/feros_snackbar.dart';
+import '../../../../../core/widgets/avatar_widget.dart';
 import '../controllers/supervisor_vehicles_controller.dart';
 import '../bindings/supervisor_vehicle_detail_binding.dart';
 import 'supervisor_vehicle_detail_view.dart';
 
 class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
-  const SupervisorVehiclesView({super.key});
+  final bool embedded;
+  const SupervisorVehiclesView({super.key, this.embedded = false});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.navy,
-        elevation: 0,
-        title: Text(
-          'lbl_vehicles'.tr,
-          style: const TextStyle(
-            color: Colors.white,
-            fontFamily: 'Inter',
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
-        ),
-        leading: GestureDetector(
-          onTap: Get.back,
-          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
-        ),
-      ),
-      body: Column(
+    final body = Column(
         children: [
+          // ── Watchlist tab bar ───────────────────────────────────
+          Obx(() {
+            final isWl = controller.activeTab.value == 'watchlist';
+            return _WatchlistTabBar(
+              isWatchlist: isWl,
+              allLabel: 'All Vehicles',
+              watchlistLabel: 'My Watchlist',
+              onAll: () => controller.setTab('all'),
+              onWatchlist: () => controller.setTab('watchlist'),
+            );
+          }),
+
           // ── Search bar ──────────────────────────────────────────
           Container(
             color: AppColors.surface,
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: TextField(
+              controller: controller.searchController,
               onChanged: controller.onSearch,
               style: AppTextStyles.body,
               decoration: InputDecoration(
@@ -73,29 +70,6 @@ class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
               ),
             ),
           ),
-
-          // ── Watchlist tabs ──────────────────────────────────────
-          Obx(() {
-            final isWl = controller.activeTab.value == 'watchlist';
-            return Container(
-              color: AppColors.surface,
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-              child: Row(children: [
-                _TabChip(
-                  label: 'All',
-                  selected: !isWl,
-                  onTap: () => controller.setTab('all'),
-                ),
-                const SizedBox(width: 8),
-                _TabChip(
-                  label: 'My Watchlist',
-                  selected: isWl,
-                  icon: Icons.star_rounded,
-                  onTap: () => controller.setTab('watchlist'),
-                ),
-              ]),
-            );
-          }),
 
           // ── Status filter chips ─────────────────────────────────
           Obx(() {
@@ -232,48 +206,115 @@ class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
             }),
           ),
         ],
+    );
+    if (embedded) return body;
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.navy,
+        elevation: 0,
+        title: Text(
+          'lbl_vehicles'.tr,
+          style: const TextStyle(
+            color: Colors.white,
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+        ),
+        leading: GestureDetector(
+          onTap: Get.back,
+          child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+        ),
+      ),
+      body: body,
+    );
+  }
+}
+
+// ── Watchlist Tab Bar ─────────────────────────────────────────────────────────
+class _WatchlistTabBar extends StatelessWidget {
+  final bool isWatchlist;
+  final String allLabel;
+  final String watchlistLabel;
+  final VoidCallback onAll;
+  final VoidCallback onWatchlist;
+  const _WatchlistTabBar({
+    required this.isWatchlist,
+    required this.allLabel,
+    required this.watchlistLabel,
+    required this.onAll,
+    required this.onWatchlist,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.surface,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _Tab(label: allLabel, selected: !isWatchlist, onTap: onAll),
+              _Tab(
+                label: watchlistLabel,
+                selected: isWatchlist,
+                icon: Icons.star_rounded,
+                onTap: onWatchlist,
+              ),
+            ],
+          ),
+          const Divider(height: 1, thickness: 1, color: AppColors.border),
+        ],
       ),
     );
   }
 }
 
-// ── Tab Chip ──────────────────────────────────────────────────────────────────
-class _TabChip extends StatelessWidget {
+class _Tab extends StatelessWidget {
   final String label;
   final bool selected;
   final IconData? icon;
   final VoidCallback onTap;
-  const _TabChip({required this.label, required this.selected, required this.onTap, this.icon});
+  const _Tab({required this.label, required this.selected, required this.onTap, this.icon});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.navy : AppColors.background,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selected ? AppColors.navy : AppColors.border,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
           children: [
-            if (icon != null) ...[
-              Icon(icon, size: 14, color: selected ? Colors.white : AppColors.mutedText),
-              const SizedBox(width: 4),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: selected ? Colors.white : AppColors.mutedText,
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    Icon(
+                      icon,
+                      size: 14,
+                      color: selected ? AppColors.navy : AppColors.mutedText,
+                    ),
+                    const SizedBox(width: 5),
+                  ],
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      color: selected ? AppColors.navy : AppColors.mutedText,
+                    ),
+                  ),
+                ],
               ),
+            ),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              height: 2,
+              color: selected ? AppColors.navy : Colors.transparent,
             ),
           ],
         ),
@@ -547,6 +588,8 @@ class _VehicleCard extends StatelessWidget {
                         _StaffRowTile(
                           role: 'Driver',
                           name: driverName,
+                          phone: vehicle['currentDriverPhone'] as String?,
+                          attendanceStatus: driverId != null ? controller.attendanceStatus[driverId] : null,
                           color: const Color(0xFF2563EB),
                           onAssign: () => _AssignStaffSheet.show(
                             context,
@@ -570,6 +613,8 @@ class _VehicleCard extends StatelessWidget {
                         _StaffRowTile(
                           role: 'Cleaner',
                           name: cleanerName,
+                          phone: vehicle['currentCleanerPhone'] as String?,
+                          attendanceStatus: cleanerId != null ? controller.attendanceStatus[cleanerId] : null,
                           color: const Color(0xFF7C3AED),
                           onAssign: () => _AssignStaffSheet.show(
                             context,
@@ -650,9 +695,19 @@ class _InfoChip extends StatelessWidget {
 }
 
 // ── Staff Row Tile ────────────────────────────────────────────────────────────
+Color _attendanceBorderColor(String? s) => switch (s) {
+  'APPROVED' => const Color(0xFF16A34A),
+  'PENDING'  => const Color(0xFFF59E0B),
+  'REJECTED' => const Color(0xFFEF4444),
+  _          => const Color(0xFFD1D5DB),
+};
+
 class _StaffRowTile extends StatelessWidget {
   final String role;
   final String? name;
+  final String? phone;
+  final String? photoUrl;
+  final String? attendanceStatus;
   final Color color;
   final VoidCallback onAssign;
   final Future<void> Function()? onUnassign;
@@ -661,6 +716,9 @@ class _StaffRowTile extends StatelessWidget {
     required this.color,
     required this.onAssign,
     this.name,
+    this.phone,
+    this.photoUrl,
+    this.attendanceStatus,
     this.onUnassign,
   });
 
@@ -670,19 +728,27 @@ class _StaffRowTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       child: Row(
         children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              role == 'Driver' ? Icons.drive_eta_outlined : Icons.cleaning_services_outlined,
-              size: 14,
-              color: color,
-            ),
-          ),
+          name != null
+              ? AvatarWidget(
+                  name: name!,
+                  imageUrl: photoUrl,
+                  size: 28,
+                  bgColor: color,
+                  borderColor: _attendanceBorderColor(attendanceStatus),
+                )
+              : Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    role == 'Driver' ? Icons.drive_eta_outlined : Icons.cleaning_services_outlined,
+                    size: 14,
+                    color: color,
+                  ),
+                ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -702,6 +768,14 @@ class _StaffRowTile extends StatelessWidget {
               ],
             ),
           ),
+          if (name != null && phone != null && phone!.isNotEmpty)
+            IconButton(
+              onPressed: () => launchUrl(Uri(scheme: 'tel', path: phone)),
+              icon: const Icon(Icons.phone_outlined, size: 16),
+              color: AppColors.success,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            ),
           if (onUnassign != null)
             IconButton(
               onPressed: onUnassign,

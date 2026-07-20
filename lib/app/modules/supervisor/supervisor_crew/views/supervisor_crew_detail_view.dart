@@ -4,6 +4,7 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/widgets/avatar_widget.dart';
 
 class SupervisorCrewDetailView extends StatefulWidget {
   final Map<String, dynamic> member;
@@ -45,7 +46,7 @@ class _State extends State<SupervisorCrewDetailView> {
     final role = m['role'] as String? ?? '';
     final phone = m['phone'] as String? ?? '—';
     final designation = m['designationName'] as String?;
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final photoUrl = m['profilePhotoUrl'] as String?;
     final avatarBg = role == 'DRIVER'
         ? const Color(0xFF1E3A5F)
         : const Color(0xFF374151);
@@ -86,27 +87,11 @@ class _State extends State<SupervisorCrewDetailView> {
                     ),
                     child: Row(
                       children: [
-                        Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: avatarBg,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              width: 2,
-                            ),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            initial,
-                            style: const TextStyle(
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w700,
-                              fontSize: 22,
-                              color: Colors.white,
-                            ),
-                          ),
+                        AvatarWidget(
+                          name: name,
+                          imageUrl: photoUrl,
+                          size: 56,
+                          bgColor: avatarBg,
                         ),
                         const SizedBox(width: 14),
                         Expanded(

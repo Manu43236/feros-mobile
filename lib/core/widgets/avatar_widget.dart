@@ -9,6 +9,7 @@ class AvatarWidget extends StatelessWidget {
   final String name;
   final double size;
   final Color? bgColor;
+  final Color? borderColor;
 
   const AvatarWidget({
     super.key,
@@ -16,37 +17,53 @@ class AvatarWidget extends StatelessWidget {
     this.imageUrl,
     this.size = 40,
     this.bgColor,
+    this.borderColor,
   });
+
+  static const double _borderWidth = 2.5;
+  static const double _gap = 2.0;
 
   @override
   Widget build(BuildContext context) {
     final bg = bgColor ?? AppColors.navy;
-    final fontSize = size * 0.36;
+    final innerSize = borderColor != null ? size - (_borderWidth + _gap) * 2 : size;
+    final fontSize = innerSize * 0.36;
 
+    Widget avatar;
     if (imageUrl != null && imageUrl!.isNotEmpty) {
-      return ClipOval(
+      avatar = ClipOval(
         child: CachedNetworkImage(
           imageUrl: imageUrl!,
-          width: size,
-          height: size,
+          width: innerSize,
+          height: innerSize,
           fit: BoxFit.cover,
-          placeholder: (_, __) => _initials(bg, fontSize),
-          errorWidget: (_, __, ___) => _initials(bg, fontSize),
+          placeholder: (_, __) => _initials(bg, fontSize, innerSize),
+          errorWidget: (_, __, ___) => _initials(bg, fontSize, innerSize),
         ),
       );
+    } else {
+      avatar = _initials(bg, fontSize, innerSize);
     }
 
-    return _initials(bg, fontSize);
-  }
+    if (borderColor == null) return avatar;
 
-  Widget _initials(Color bg, double fontSize) {
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: bg,
         shape: BoxShape.circle,
+        border: Border.all(color: borderColor!, width: _borderWidth),
       ),
+      padding: const EdgeInsets.all(_gap),
+      child: avatar,
+    );
+  }
+
+  Widget _initials(Color bg, double fontSize, double sz) {
+    return Container(
+      width: sz,
+      height: sz,
+      decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
       alignment: Alignment.center,
       child: Text(
         FerosStringUtils.initials(name),

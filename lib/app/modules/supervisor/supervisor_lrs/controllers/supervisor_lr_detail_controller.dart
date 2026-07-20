@@ -27,6 +27,8 @@ class SupervisorLrDetailController extends GetxController {
   final activeBreakdown   = Rxn<Map<String, dynamic>>();
 
   // Trip Expenses
+  final attendanceStatus   = <int, String>{}.obs; // userId → status
+
   final tripExpense        = Rxn<Map<String, dynamic>>();
   final isTripExpenseBusy  = false.obs;
   final tripExpenseError   = false.obs;
@@ -65,9 +67,26 @@ class SupervisorLrDetailController extends GetxController {
       final lrStatus = lr.value?['lrStatus'] as String? ?? '';
       if (lrStatus == 'IN_TRANSIT') _fetchBreakdown();
       fetchTripExpense();
+      _fetchAttendance();
     } catch (e) {
       debugPrint('[LR Detail] $e');
       state.value = ViewState.error;
+    }
+  }
+
+  Future<void> _fetchAttendance() async {
+    try {
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+      final res = await _api.get(ApiEndpoints.attendance, params: {'date': today});
+      final records = ((res.data as Map<String, dynamic>)['data'] as List)
+          .cast<Map<String, dynamic>>();
+      attendanceStatus.value = {
+        for (final r in records)
+          if (r['userId'] != null)
+            r['userId'] as int: r['approvalStatus'] as String? ?? 'PENDING',
+      };
+    } catch (e) {
+      debugPrint('[LR Detail] attendance fetch error (non-fatal): $e');
     }
   }
 

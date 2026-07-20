@@ -17,6 +17,8 @@ class SupervisorAttendanceController extends GetxController {
   final attendanceTypes = <Map<String, dynamic>>[].obs;
   final leaveTypes      = <Map<String, dynamic>>[].obs;
 
+  final watchlistedIds = <int>{}.obs;
+
   static final _dateFmt  = DateFormat('yyyy-MM-dd');
   static final _labelFmt = DateFormat('dd MMM yyyy, EEE');
 
@@ -60,6 +62,12 @@ class SupervisorAttendanceController extends GetxController {
     return null;
   }
 
+  List<Map<String, dynamic>> get watchlistCrew => crew.where((u) {
+        final id = u['id'];
+        final uid = id is int ? id : int.tryParse(id.toString()) ?? -1;
+        return watchlistedIds.contains(uid);
+      }).toList();
+
   // ── Lifecycle ─────────────────────────────────────────────────────────────────
   @override
   void onInit() {
@@ -67,10 +75,26 @@ class SupervisorAttendanceController extends GetxController {
     fetchAll();
   }
 
+  Future<void> _fetchWatchlistIds() async {
+    try {
+      final res = await _api.get(ApiEndpoints.watchlistStaffIds);
+      final raw = ((res.data as Map<String, dynamic>)['data'] as List);
+      final ids = raw.map((e) => e is int ? e : (e as num).toInt()).toSet();
+      watchlistedIds.assignAll(ids);
+    } catch (e) {
+      debugPrint('[Attendance] watchlist fetch error: $e');
+    }
+  }
+
   Future<void> fetchAll() async {
     state.value = ViewState.loading;
     try {
-      await Future.wait([_fetchAttendance(), _fetchCrew(), _fetchMasters()]);
+      await Future.wait([
+        _fetchAttendance(),
+        _fetchCrew(),
+        _fetchMasters(),
+        _fetchWatchlistIds(),
+      ]);
       state.value = ViewState.success;
     } catch (e) {
       debugPrint('[SupervisorAttendance] $e');

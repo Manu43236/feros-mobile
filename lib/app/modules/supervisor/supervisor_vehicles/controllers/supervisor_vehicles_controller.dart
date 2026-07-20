@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
@@ -8,13 +8,16 @@ import '../../../../../core/utils/view_state.dart';
 class SupervisorVehiclesController extends GetxController {
   final _api = Get.find<ApiClient>();
 
-  final state          = ViewState.loading.obs;
-  final _allVehicles   = <Map<String, dynamic>>[].obs;
-  final vehicles       = <Map<String, dynamic>>[].obs;
-  final searchQuery    = ''.obs;
-  final selectedStatus = 'ALL'.obs;
+  final state            = ViewState.loading.obs;
+  final _allVehicles     = <Map<String, dynamic>>[].obs;
+  final vehicles         = <Map<String, dynamic>>[].obs;
+  final searchQuery      = ''.obs;
+  final selectedStatus   = 'ALL'.obs;
+  final searchController = TextEditingController();
   final activeTab      = 'all'.obs;          // 'all' | 'watchlist'
   final watchlistedIds = <int>{}.obs;
+
+  final attendanceStatus = <int, String>{}.obs; // userId → 'APPROVED'|'PENDING'|…
 
   // ── Staff assignment ──────────────────────────────────────────────────────
   final staffUsers      = <Map<String, dynamic>>[].obs;
@@ -37,6 +40,23 @@ class SupervisorVehiclesController extends GetxController {
     super.onInit();
     fetchVehicles();
     _fetchWatchlistIds();
+    _fetchAttendance();
+  }
+
+  Future<void> _fetchAttendance() async {
+    try {
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+      final res = await _api.get(ApiEndpoints.attendance, params: {'date': today});
+      final records = ((res.data as Map<String, dynamic>)['data'] as List)
+          .cast<Map<String, dynamic>>();
+      attendanceStatus.value = {
+        for (final r in records)
+          if (r['userId'] != null)
+            r['userId'] as int: r['approvalStatus'] as String? ?? 'PENDING',
+      };
+    } catch (e) {
+      debugPrint('[Vehicles] attendance fetch error (non-fatal): $e');
+    }
   }
 
   Future<void> _fetchWatchlistIds() async {
@@ -52,22 +72,45 @@ class SupervisorVehiclesController extends GetxController {
 
   Future<void> toggleWatchlist(int vehicleId) async {
     final inWl = watchlistedIds.contains(vehicleId);
+    final reg = _allVehicles
+        .firstWhere((v) => v['id'] == vehicleId, orElse: () => {})['registrationNumber'] as String? ?? '';
+    if (inWl) {
+      watchlistedIds.remove(vehicleId);
+    } else {
+      watchlistedIds.add(vehicleId);
+    }
+    _apply();
     try {
       if (inWl) {
         await _api.delete(ApiEndpoints.watchlistVehicleById(vehicleId));
-        watchlistedIds.remove(vehicleId);
+        FerosSnackbar.success(reg.isNotEmpty ? '$reg removed from watchlist' : 'Removed from watchlist');
       } else {
         await _api.post(ApiEndpoints.watchlistVehicles, data: {'vehicleId': vehicleId});
-        watchlistedIds.add(vehicleId);
+        FerosSnackbar.success(reg.isNotEmpty ? '$reg added to watchlist' : 'Added to watchlist');
       }
     } catch (e) {
+      if (inWl) {
+        watchlistedIds.add(vehicleId);
+      } else {
+        watchlistedIds.remove(vehicleId);
+      }
+      _apply();
       FerosSnackbar.error('Failed to update watchlist');
     }
   }
 
   void setTab(String tab) {
     activeTab.value = tab;
+    searchQuery.value = '';
+    searchController.clear();
+    selectedStatus.value = 'ALL';
     _apply();
+  }
+
+  @override
+  void onClose() {
+    searchController.dispose();
+    super.onClose();
   }
 
   Future<void> fetchVehicles() async {
