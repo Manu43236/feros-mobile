@@ -198,6 +198,7 @@ class _OrderBanner extends StatelessWidget {
     final remaining = order['remainingWeight'];
     final orderDate = order['orderDate'] as String?;
     final eta = order['expectedDeliveryDate'] as String?;
+    final vehicleCount = (order['vehicleAllocations'] as List?)?.length ?? 0;
 
     final statusColor = _orderColor(status);
 
@@ -347,6 +348,11 @@ class _OrderBanner extends StatelessWidget {
                         icon: Icons.pending_outlined,
                         label: '${remaining}T left',
                       ),
+                    _BannerChip(
+                      icon: Icons.local_shipping,
+                      label: '$vehicleCount vehicle${vehicleCount == 1 ? '' : 's'}',
+                      sub: 'Assigned',
+                    ),
                     if (orderDate != null)
                       _BannerChip(
                         icon: Icons.calendar_today_outlined,
