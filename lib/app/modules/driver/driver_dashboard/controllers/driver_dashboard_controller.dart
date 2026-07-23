@@ -64,6 +64,24 @@ class DriverDashboardController extends GetxController {
   }
 
   Future<void> markOut(BuildContext context) async {
+    if (activeTrip.value != null) {
+      await showDialog<void>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Cannot Mark Out'),
+          content: const Text(
+              'You have an active trip in progress. Complete the trip before marking out.'),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
