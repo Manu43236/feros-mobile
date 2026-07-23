@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
 import '../../../../../core/popups/feros_snackbar.dart';
@@ -71,6 +72,13 @@ class _MarkAttendanceSheetState extends State<_MarkAttendanceSheet> {
   }
 
   Future<void> _takeSelfie() async {
+    final status = await Permission.camera.request();
+    if (!status.isGranted) {
+      if (mounted) FerosSnackbar.error('Camera permission is required to take a selfie');
+      if (status.isPermanentlyDenied) openAppSettings();
+      return;
+    }
+
     XFile? xFile;
     try {
       xFile = await ImagePicker().pickImage(

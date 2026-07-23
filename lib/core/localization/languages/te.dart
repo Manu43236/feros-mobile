@@ -84,6 +84,7 @@ const Map<String, String> te = {
   'nav_more': 'మరిన్ని',
   'nav_trips': 'ట్రిప్స్',
   'nav_attendance': 'అటెండెన్స్',
+  'nav_payslip': 'పే స్లిప్',
   'nav_services': 'సర్వీసెస్',
   'nav_inventory': 'ఇన్వెంటరీ',
   'nav_requests': 'రిక్వెస్ట్స్',

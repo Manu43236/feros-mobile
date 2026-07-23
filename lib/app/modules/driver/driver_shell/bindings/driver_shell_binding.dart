@@ -13,6 +13,7 @@ import '../../../service_men/service_men_dashboard/bindings/service_men_dashboar
 import '../../../service_men/service_men_services/bindings/service_men_services_binding.dart';
 import '../../../service_men/service_men_profile/bindings/service_men_profile_binding.dart';
 import '../../../service_men/service_men_tyres/bindings/service_men_tyres_binding.dart';
+import '../../../supervisor/supervisor_payslip/bindings/supervisor_payslip_binding.dart';
 import '../../../technician/technician_dashboard/bindings/technician_dashboard_binding.dart';
 
 class DriverShellBinding extends Bindings {
@@ -38,6 +39,7 @@ class DriverShellBinding extends Bindings {
       ServiceMenServicesBinding().dependencies();
       ServiceMenTyresBinding().dependencies();
       DriverAttendanceBinding().dependencies();
+      SupervisorPayslipBinding().dependencies();
       ServiceMenProfileBinding().dependencies();
     } else {
       DriverDashboardBinding().dependencies();

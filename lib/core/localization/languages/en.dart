@@ -83,6 +83,7 @@ const Map<String, String> en = {
   'nav_more': 'More',
   'nav_trips': 'Trips',
   'nav_attendance': 'Attendance',
+  'nav_payslip': 'Payslip',
   'nav_services': 'Services',
   'nav_inventory': 'Inventory',
   'nav_requests': 'Requests',

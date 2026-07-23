@@ -10,6 +10,7 @@ import 'package:feros/app/modules/service_men/service_men_profile/views/service_
 import 'package:feros/app/modules/service_men/service_men_tyres/views/service_men_tyres_view.dart';
 import 'package:feros/app/modules/service_men/service_men_breakdowns/controllers/service_men_breakdowns_controller.dart';
 import 'package:feros/app/modules/service_men/service_men_breakdowns/bindings/service_men_breakdowns_binding.dart';
+import 'package:feros/app/modules/supervisor/supervisor_payslip/views/supervisor_payslip_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -175,6 +176,7 @@ class DriverShellView extends GetView<DriverShellController> {
           const ServiceMenServicesView(),
           const ServiceMenTyresView(),
           DriverAttendanceView(),
+          const SupervisorPayslipView(),
           const ServiceMenProfileView(),
         ];
       case 'TECHNICIAN':
