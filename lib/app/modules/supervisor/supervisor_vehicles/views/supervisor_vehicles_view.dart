@@ -346,6 +346,9 @@ class _VehicleCard extends StatelessWidget {
     final driverName  = vehicle['currentDriverName']  as String?;
     final cleanerId   = vehicle['currentCleanerId']  != null ? (vehicle['currentCleanerId']  as num).toInt() : null;
     final cleanerName = vehicle['currentCleanerName'] as String?;
+    final isInTransit     = vehicle['isInTransit']     as bool? ?? false;
+    final activeLrNumber  = vehicle['activeLrNumber']  as String?;
+    final activeOrderNumber = vehicle['activeOrderNumber'] as String?;
 
     final rcExp = vehicle['rcExpiryDate'] as String?;
     final insExp = vehicle['insuranceExpiryDate'] as String?;
@@ -597,9 +600,16 @@ class _VehicleCard extends StatelessWidget {
                             vehicleId: intId,
                             role: 'DRIVER',
                             currentId: driverId,
+                            isInTransit: isInTransit,
+                            activeLrNumber: activeLrNumber,
+                            activeOrderNumber: activeOrderNumber,
                           ),
                           onUnassign: driverId != null
                               ? () async {
+                                  if (isInTransit) {
+                                    FerosSnackbar.error('Cannot remove driver during an active trip. Swap the driver instead.');
+                                    return;
+                                  }
                                   final ok = await controller.unassignDriver(intId);
                                   if (ok) {
                                     FerosSnackbar.success('Driver removed');
@@ -622,9 +632,16 @@ class _VehicleCard extends StatelessWidget {
                             vehicleId: intId,
                             role: 'CLEANER',
                             currentId: cleanerId,
+                            isInTransit: isInTransit,
+                            activeLrNumber: activeLrNumber,
+                            activeOrderNumber: activeOrderNumber,
                           ),
                           onUnassign: cleanerId != null
                               ? () async {
+                                  if (isInTransit) {
+                                    FerosSnackbar.error('Cannot remove cleaner during an active trip. Swap the cleaner instead.');
+                                    return;
+                                  }
                                   final ok = await controller.unassignCleaner(intId);
                                   if (ok) {
                                     FerosSnackbar.success('Cleaner removed');
@@ -818,11 +835,17 @@ class _AssignStaffSheet extends StatefulWidget {
   final int vehicleId;
   final String role;
   final int? currentId;
+  final bool isInTransit;
+  final String? activeLrNumber;
+  final String? activeOrderNumber;
   const _AssignStaffSheet({
     required this.controller,
     required this.vehicleId,
     required this.role,
     this.currentId,
+    this.isInTransit = false,
+    this.activeLrNumber,
+    this.activeOrderNumber,
   });
 
   static Future<void> show(
@@ -831,6 +854,9 @@ class _AssignStaffSheet extends StatefulWidget {
     required int vehicleId,
     required String role,
     int? currentId,
+    bool isInTransit = false,
+    String? activeLrNumber,
+    String? activeOrderNumber,
   }) async {
     await controller.loadStaffUsers();
     if (!context.mounted) return;
@@ -843,6 +869,9 @@ class _AssignStaffSheet extends StatefulWidget {
         vehicleId: vehicleId,
         role: role,
         currentId: currentId,
+        isInTransit: isInTransit,
+        activeLrNumber: activeLrNumber,
+        activeOrderNumber: activeOrderNumber,
       ),
     );
   }
@@ -946,7 +975,32 @@ class _AssignStaffSheetState extends State<_AssignStaffSheet> {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            if (widget.isInTransit) ...[
+              const SizedBox(height: 4),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFFBEB),
+                  border: Border.all(color: const Color(0xFFFCD34D)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Vehicle is on an active trip',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF92400E))),
+                    const SizedBox(height: 2),
+                    Text('LR: ${widget.activeLrNumber ?? '—'} · Order: ${widget.activeOrderNumber ?? '—'}',
+                        style: const TextStyle(fontSize: 11, color: Color(0xFFB45309))),
+                    const SizedBox(height: 2),
+                    const Text('Selecting a person will swap them mid-trip.',
+                        style: TextStyle(fontSize: 11, color: Color(0xFFB45309))),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
             const Divider(height: 1, color: AppColors.border),
             Expanded(
               child: Obx(() {
@@ -997,6 +1051,28 @@ class _AssignStaffSheetState extends State<_AssignStaffSheet> {
                           ? const Icon(Icons.check_circle, color: AppColors.success, size: 20)
                           : null,
                       onTap: () async {
+                        if (widget.isInTransit) {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              title: const Text('Confirm mid-trip swap?'),
+                              content: Text(
+                                'This will swap the $label on the active trip (LR: ${widget.activeLrNumber ?? '—'}).',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text('Confirm Swap'),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirm != true) return;
+                        }
                         Navigator.pop(context);
                         final bool ok;
                         if (widget.role == 'DRIVER') {
