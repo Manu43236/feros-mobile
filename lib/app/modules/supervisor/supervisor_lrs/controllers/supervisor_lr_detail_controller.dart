@@ -314,8 +314,8 @@ Future<bool> markDelivered(Map<String, dynamic> data) async {
       FerosSnackbar.success('Marked as delivered');
       isUpdating.value = false;
       return true;
-    } catch (_) {
-      FerosSnackbar.error('Failed to update');
+    } catch (e) {
+      FerosSnackbar.error(e.toString());
       isUpdating.value = false;
       return false;
     }

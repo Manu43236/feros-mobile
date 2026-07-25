@@ -1229,6 +1229,11 @@ class _MarkDeliveredSheetState extends State<_MarkDeliveredSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final startOdometer = widget.controller.lr.value?['startOdometer'];
+    final startOdomHint = startOdometer != null
+        ? 'Start ODM: ${startOdometer.toString()} km — end must be higher'
+        : null;
+
     return _SimpleSheet(
       title: 'lbl_mark_as_delivered'.tr,
       controller: widget.controller.isUpdating,
@@ -1242,6 +1247,13 @@ class _MarkDeliveredSheetState extends State<_MarkDeliveredSheet> {
           hint: 'Current meter reading',
           keyboard: const TextInputType.numberWithOptions(decimal: true),
         ),
+        if (startOdomHint != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            startOdomHint,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+          ),
+        ],
         const SizedBox(height: 16),
         _SheetLabel('lbl_delivered_weight_tonnes'.tr),
         const SizedBox(height: 6),
