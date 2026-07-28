@@ -10,7 +10,8 @@ import 'supervisor_crew_detail_view.dart';
 
 class SupervisorCrewView extends GetView<SupervisorCrewController> {
   final bool embedded;
-  const SupervisorCrewView({super.key, this.embedded = false});
+  final bool watchlistOnly;
+  const SupervisorCrewView({super.key, this.embedded = false, this.watchlistOnly = false});
 
   @override
   Widget build(BuildContext context) {
@@ -42,18 +43,6 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
   Widget _buildBody() {
     return Column(
         children: [
-          // ── Watchlist tab bar ───────────────────────────────────
-          Obx(() {
-            final isWl = controller.activeTab.value == 'watchlist';
-            return _WatchlistTabBar(
-              isWatchlist: isWl,
-              allLabel: 'All Staff',
-              watchlistLabel: 'My Watchlist',
-              onAll: () => controller.setTab('all'),
-              onWatchlist: () => controller.setTab('watchlist'),
-            );
-          }),
-
           // ── Search + Filter button ──────────────────────────────
           Container(
             color: AppColors.surface,
@@ -190,24 +179,38 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
                 );
               }
 
-              final list = controller.crew;
+              final list = watchlistOnly
+                  ? controller.watchlistCrew
+                  : controller.crew;
               if (list.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.badge_outlined,
+                      Icon(
+                        watchlistOnly
+                            ? Icons.star_border_rounded
+                            : Icons.badge_outlined,
                         size: 52,
                         color: AppColors.mutedText,
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'lbl_no_staff_found'.tr,
+                        watchlistOnly
+                            ? 'No drivers or cleaners in watchlist'
+                            : 'lbl_no_staff_found'.tr,
                         style: AppTextStyles.body.copyWith(
                           color: AppColors.mutedText,
                         ),
                       ),
+                      if (watchlistOnly) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tap + to add staff',
+                          style: AppTextStyles.caption
+                              .copyWith(color: AppColors.mutedText),
+                        ),
+                      ],
                     ],
                   ),
                 );
@@ -358,97 +361,6 @@ void _showFilterSheet(SupervisorCrewController c) {
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
   );
-}
-
-// ── Watchlist Tab Bar ─────────────────────────────────────────────────────────
-class _WatchlistTabBar extends StatelessWidget {
-  final bool isWatchlist;
-  final String allLabel;
-  final String watchlistLabel;
-  final VoidCallback onAll;
-  final VoidCallback onWatchlist;
-  const _WatchlistTabBar({
-    required this.isWatchlist,
-    required this.allLabel,
-    required this.watchlistLabel,
-    required this.onAll,
-    required this.onWatchlist,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.surface,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              _Tab(label: allLabel, selected: !isWatchlist, onTap: onAll),
-              _Tab(
-                label: watchlistLabel,
-                selected: isWatchlist,
-                icon: Icons.star_rounded,
-                onTap: onWatchlist,
-              ),
-            ],
-          ),
-          const Divider(height: 1, thickness: 1, color: AppColors.border),
-        ],
-      ),
-    );
-  }
-}
-
-class _Tab extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final IconData? icon;
-  final VoidCallback onTap;
-  const _Tab({required this.label, required this.selected, required this.onTap, this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (icon != null) ...[
-                    Icon(
-                      icon,
-                      size: 14,
-                      color: selected ? AppColors.navy : AppColors.mutedText,
-                    ),
-                    const SizedBox(width: 5),
-                  ],
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 13,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                      color: selected ? AppColors.navy : AppColors.mutedText,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              height: 2,
-              color: selected ? AppColors.navy : Colors.transparent,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _RF {

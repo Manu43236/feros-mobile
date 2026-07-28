@@ -149,6 +149,34 @@ class SupervisorCrewController extends GetxController {
       (u['isActive'] as bool? ?? false) &&
       (u['isAssigned'] as bool? ?? false)).length;
 
+  RxList<Map<String, dynamic>> get allCrew => _allCrew;
+
+  List<Map<String, dynamic>> get watchlistCrew {
+    final q      = searchQuery.value.trim().toLowerCase();
+    final role   = roleFilter.value;
+    final status = statusFilter.value;
+    return _allCrew.where((u) {
+      final id = u['id'];
+      final intId = id is int ? id : int.tryParse(id.toString()) ?? 0;
+      if (!watchlistedIds.contains(intId)) return false;
+      final name       = (u['name']  as String? ?? '').toLowerCase();
+      final phone      = (u['phone'] as String? ?? '');
+      final r          = (u['role']  as String? ?? '');
+      final isActive   = u['isActive']   as bool? ?? false;
+      final isAssigned = u['isAssigned'] as bool? ?? false;
+      if (role != 'ALL' && r != role) return false;
+      final matchStatus = switch (status) {
+        'AVAILABLE' => isActive && !isAssigned,
+        'ON_TRIP'   => isActive && isAssigned,
+        'INACTIVE'  => !isActive,
+        _           => true,
+      };
+      if (!matchStatus) return false;
+      if (q.isEmpty) return true;
+      return name.contains(q) || phone.contains(q);
+    }).toList();
+  }
+
   void onSearch(String v)       => searchQuery.value  = v;
   void onRoleFilter(String v)   => roleFilter.value   = v;
   void onStatusFilter(String v) => statusFilter.value = v;

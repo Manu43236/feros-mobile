@@ -13,24 +13,13 @@ import 'supervisor_vehicle_detail_view.dart';
 
 class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
   final bool embedded;
-  const SupervisorVehiclesView({super.key, this.embedded = false});
+  final bool watchlistOnly;
+  const SupervisorVehiclesView({super.key, this.embedded = false, this.watchlistOnly = false});
 
   @override
   Widget build(BuildContext context) {
     final body = Column(
         children: [
-          // ── Watchlist tab bar ───────────────────────────────────
-          Obx(() {
-            final isWl = controller.activeTab.value == 'watchlist';
-            return _WatchlistTabBar(
-              isWatchlist: isWl,
-              allLabel: 'All Vehicles',
-              watchlistLabel: 'My Watchlist',
-              onAll: () => controller.setTab('all'),
-              onWatchlist: () => controller.setTab('watchlist'),
-            );
-          }),
-
           // ── Search bar ──────────────────────────────────────────
           Container(
             color: AppColors.surface,
@@ -168,24 +157,38 @@ class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
                 );
               }
 
-              final list = controller.vehicles;
+              final list = watchlistOnly
+                  ? controller.watchlistVehicles
+                  : controller.vehicles;
               if (list.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.garage_outlined,
+                      Icon(
+                        watchlistOnly
+                            ? Icons.star_border_rounded
+                            : Icons.garage_outlined,
                         size: 52,
                         color: AppColors.mutedText,
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'lbl_no_vehicles_found'.tr,
+                        watchlistOnly
+                            ? 'No vehicles in watchlist'
+                            : 'lbl_no_vehicles_found'.tr,
                         style: AppTextStyles.body.copyWith(
                           color: AppColors.mutedText,
                         ),
                       ),
+                      if (watchlistOnly) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tap + to add vehicles',
+                          style: AppTextStyles.caption
+                              .copyWith(color: AppColors.mutedText),
+                        ),
+                      ],
                     ],
                   ),
                 );
@@ -228,97 +231,6 @@ class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
         ),
       ),
       body: body,
-    );
-  }
-}
-
-// ── Watchlist Tab Bar ─────────────────────────────────────────────────────────
-class _WatchlistTabBar extends StatelessWidget {
-  final bool isWatchlist;
-  final String allLabel;
-  final String watchlistLabel;
-  final VoidCallback onAll;
-  final VoidCallback onWatchlist;
-  const _WatchlistTabBar({
-    required this.isWatchlist,
-    required this.allLabel,
-    required this.watchlistLabel,
-    required this.onAll,
-    required this.onWatchlist,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.surface,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              _Tab(label: allLabel, selected: !isWatchlist, onTap: onAll),
-              _Tab(
-                label: watchlistLabel,
-                selected: isWatchlist,
-                icon: Icons.star_rounded,
-                onTap: onWatchlist,
-              ),
-            ],
-          ),
-          const Divider(height: 1, thickness: 1, color: AppColors.border),
-        ],
-      ),
-    );
-  }
-}
-
-class _Tab extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final IconData? icon;
-  final VoidCallback onTap;
-  const _Tab({required this.label, required this.selected, required this.onTap, this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (icon != null) ...[
-                    Icon(
-                      icon,
-                      size: 14,
-                      color: selected ? AppColors.navy : AppColors.mutedText,
-                    ),
-                    const SizedBox(width: 5),
-                  ],
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 13,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                      color: selected ? AppColors.navy : AppColors.mutedText,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              height: 2,
-              color: selected ? AppColors.navy : Colors.transparent,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

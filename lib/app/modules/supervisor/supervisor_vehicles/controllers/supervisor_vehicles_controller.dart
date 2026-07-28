@@ -128,6 +128,24 @@ class SupervisorVehiclesController extends GetxController {
     }
   }
 
+  RxList<Map<String, dynamic>> get allVehicles => _allVehicles;
+
+  List<Map<String, dynamic>> get watchlistVehicles {
+    final q = searchQuery.value.trim().toLowerCase();
+    final status = selectedStatus.value;
+    return _allVehicles.where((v) {
+      final id = v['id'];
+      final intId = id is int ? id : int.tryParse(id.toString()) ?? 0;
+      if (!watchlistedIds.contains(intId)) return false;
+      if (status != 'ALL' && v['currentStatusName'] != status) return false;
+      if (q.isEmpty) return true;
+      final reg   = (v['registrationNumber'] as String? ?? '').toLowerCase();
+      final type  = (v['vehicleTypeName']    as String? ?? '').toLowerCase();
+      final brand = (v['brandName']          as String? ?? '').toLowerCase();
+      return reg.contains(q) || type.contains(q) || brand.contains(q);
+    }).toList();
+  }
+
   void onSearch(String q) {
     searchQuery.value = q;
     _apply();
