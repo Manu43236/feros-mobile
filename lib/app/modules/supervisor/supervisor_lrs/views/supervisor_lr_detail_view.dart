@@ -1214,6 +1214,12 @@ class _MarkDeliveredSheetState extends State<_MarkDeliveredSheet> {
       );
       return;
     }
+    final rawStart = widget.controller.lr.value?['startOdometer'];
+    final startKm = rawStart is num ? rawStart.toDouble() : double.tryParse(rawStart?.toString() ?? '');
+    if (startKm != null && odometer <= startKm) {
+      FerosSnackbar.error('End odometer must be greater than start odometer (${startKm.toStringAsFixed(0)} km)');
+      return;
+    }
     final data = <String, dynamic>{
       'endOdometer': odometer,
       'deliveredAt': DateTime.now().toIso8601String(),

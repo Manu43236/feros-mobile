@@ -178,7 +178,7 @@ class _PayslipCardState extends State<_PayslipCard> {
               const Divider(height: 16),
               _row('lbl_net_pay'.tr, '₹${netPay.toStringAsFixed(2)}', bold: true),
             ],
-            if (status == 'PAID') ...[
+            if (status == 'PAID' || status == 'APPROVED') ...[
               const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,

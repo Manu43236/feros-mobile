@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../../core/widgets/shimmer_card.dart';
 import '../controllers/driver_attendance_controller.dart';
 import 'driver_attendance_sheet.dart';
 
@@ -29,9 +30,7 @@ class DriverAttendanceView extends GetView<DriverAttendanceController> {
       }
 
       return controller.isLoading.value
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.navy),
-            )
+          ? const ShimmerList(count: 6)
           : RefreshIndicator(
               onRefresh: controller.fetch,
               color: AppColors.navy,

@@ -8,6 +8,7 @@ import '../../../../../core/utils/view_state.dart';
 import '../../../../../core/pdf_viewer/pdf_viewer_view.dart';
 import '../../../../../core/pdf_viewer/pdf_viewer_binding.dart';
 import '../../../../../core/popups/feros_snackbar.dart';
+import '../../../../../core/exceptions/exception_handler.dart';
 
 class SupervisorLrDetailController extends GetxController {
   final _api = Get.find<ApiClient>();
@@ -315,7 +316,7 @@ Future<bool> markDelivered(Map<String, dynamic> data) async {
       isUpdating.value = false;
       return true;
     } catch (e) {
-      FerosSnackbar.error(e.toString());
+      FerosSnackbar.error(ExceptionHandler.handle(e).message);
       isUpdating.value = false;
       return false;
     }

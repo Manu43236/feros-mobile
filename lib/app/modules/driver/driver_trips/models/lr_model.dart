@@ -21,6 +21,7 @@ class LrModel {
   final String? startedByRole;
   final String? completedByName;
   final String? completedByRole;
+  final int? vehicleId;
 
   LrModel({
     required this.id,
@@ -45,6 +46,7 @@ class LrModel {
     this.startedByRole,
     this.completedByName,
     this.completedByRole,
+    this.vehicleId,
   });
 
   factory LrModel.fromJson(Map<String, dynamic> j) => LrModel(
@@ -70,5 +72,6 @@ class LrModel {
     startedByRole:   j['startedByRole']             as String?,
     completedByName: j['completedByName']           as String?,
     completedByRole: j['completedByRole']           as String?,
+    vehicleId:       j['vehicleId']                 as int?,
   );
 }

@@ -24,6 +24,9 @@ class DriverTripDetailController extends GetxController {
   final isPdfLoading       = false.obs;
   final hasActiveBreakdown  = false.obs;
   final isCheckingBreakdown = false.obs;
+  final vehicleDocs        = <Map<String, dynamic>>[].obs;
+  final myDocs             = <Map<String, dynamic>>[].obs;
+  final isDocsLoading      = false.obs;
 
   @override
   void onInit() {
@@ -35,6 +38,18 @@ class DriverTripDetailController extends GetxController {
     startOdometer.value   = lr.startOdometer;
     endOdometer.value     = lr.endOdometer;
     if (lr.lrStatus == 'IN_TRANSIT') checkBreakdown();
+    _fetchDocs();
+  }
+
+  Future<void> _fetchDocs() async {
+    isDocsLoading.value = true;
+    try {
+      final res  = await _api.get(ApiEndpoints.driverMyDocs(lr.vehicleId));
+      final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      vehicleDocs.value = List<Map<String, dynamic>>.from(data['vehicleDocs'] as List? ?? []);
+      myDocs.value      = List<Map<String, dynamic>>.from(data['myDocs']      as List? ?? []);
+    } catch (_) {}
+    isDocsLoading.value = false;
   }
 
   Future<void> checkBreakdown() async {
@@ -71,7 +86,10 @@ class DriverTripDetailController extends GetxController {
       startOdometer.value   = updated.startOdometer;
       endOdometer.value     = updated.endOdometer;
     } catch (_) {}
-    if (lrStatus.value == 'IN_TRANSIT') await checkBreakdown();
+    await Future.wait([
+      if (lrStatus.value == 'IN_TRANSIT') checkBreakdown(),
+      _fetchDocs(),
+    ]);
   }
 
   // ── Start Trip ─────────────────────────────────────────────────────────────

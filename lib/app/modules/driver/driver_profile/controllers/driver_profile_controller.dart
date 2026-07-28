@@ -8,7 +8,9 @@ class DriverProfileController extends GetxController {
   final _api  = Get.find<ApiClient>();
   final _auth = Get.find<AuthService>();
 
-  final totalTrips = Rxn<int>();
+  final totalTrips    = Rxn<int>();
+  final myDocs        = <Map<String, dynamic>>[].obs;
+  final isDocsLoading = false.obs;
 
   AuthService get auth => _auth;
 
@@ -21,6 +23,17 @@ class DriverProfileController extends GetxController {
   void onReady() {
     super.onReady();
     if (showTrips) _fetchTrips();
+    _fetchMyDocs();
+  }
+
+  Future<void> _fetchMyDocs() async {
+    isDocsLoading.value = true;
+    try {
+      final res  = await _api.get(ApiEndpoints.driverMyDocs());
+      final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      myDocs.value = List<Map<String, dynamic>>.from(data['myDocs'] as List? ?? []);
+    } catch (_) {}
+    isDocsLoading.value = false;
   }
 
   Future<void> _fetchTrips() async {

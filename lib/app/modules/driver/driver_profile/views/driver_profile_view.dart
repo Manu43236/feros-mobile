@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../../core/widgets/doc_file_preview.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/string_utils.dart';
@@ -107,6 +108,52 @@ class DriverProfileView extends GetView<DriverProfileController> {
                   ],
                 ),
               ),
+              const SizedBox(height: 12),
+
+              // ── My Documents ──────────────────────────────────
+              Obx(() {
+                if (controller.isDocsLoading.value) {
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: const [BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2))],
+                    ),
+                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.navy)),
+                  );
+                }
+                final docs = controller.myDocs;
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: const [BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2))],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        const Icon(Icons.badge_outlined, size: 18, color: AppColors.navy),
+                        const SizedBox(width: 8),
+                        Text('My Documents',
+                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy)),
+                      ]),
+                      const SizedBox(height: 12),
+                      const Divider(height: 1),
+                      const SizedBox(height: 8),
+                      if (docs.isEmpty)
+                        Text('No documents uploaded yet.',
+                            style: AppTextStyles.caption.copyWith(color: AppColors.mutedText))
+                      else
+                        ...docs.map((d) => _ProfileDocRow(doc: d)),
+                    ],
+                  ),
+                );
+              }),
               const SizedBox(height: 12),
 
               // ── Change PIN + Language ─────────────────────────
@@ -314,6 +361,75 @@ class _InfoTile extends StatelessWidget {
                   style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy)),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Profile Doc Row ───────────────────────────────────────────────────────────
+class _ProfileDocRow extends StatelessWidget {
+  final Map<String, dynamic> doc;
+  const _ProfileDocRow({required this.doc});
+
+  Color _expiryColor(String? expiry) {
+    if (expiry == null) return AppColors.mutedText;
+    try {
+      final d    = DateTime.parse(expiry);
+      final days = d.difference(DateTime.now()).inDays;
+      if (days < 0)  return const Color(0xFFDC2626);
+      if (days < 60) return const Color(0xFFD97706);
+      return const Color(0xFF16A34A);
+    } catch (_) {
+      return AppColors.mutedText;
+    }
+  }
+
+  String _fmtDate(String? raw) {
+    if (raw == null) return 'No Expiry';
+    try {
+      final d = DateTime.parse(raw);
+      const m = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return '${d.day} ${m[d.month]} ${d.year}';
+    } catch (_) {
+      return raw;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final typeName  = doc['documentTypeName'] as String? ?? '—';
+    final docNumber = doc['documentNumber']   as String?;
+    final expiry    = doc['expiryDate']        as String?;
+    final fileUrl   = doc['fileUrl']           as String?;
+    final verified  = doc['isVerified']        as bool? ?? false;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Text(typeName,
+                      style: AppTextStyles.body.copyWith(color: AppColors.navy)),
+                  if (verified) ...[
+                    const SizedBox(width: 4),
+                    const Icon(Icons.verified, size: 14, color: Color(0xFF16A34A)),
+                  ],
+                ]),
+                if (docNumber != null)
+                  Text(docNumber,
+                      style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                Text(_fmtDate(expiry),
+                    style: AppTextStyles.caption.copyWith(color: _expiryColor(expiry))),
+              ],
+            ),
+          ),
+          if (fileUrl != null && fileUrl.isNotEmpty)
+            DocFilePreview(fileUrl: fileUrl, docName: typeName),
         ],
       ),
     );

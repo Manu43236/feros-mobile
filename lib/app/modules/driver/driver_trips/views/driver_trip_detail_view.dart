@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../../core/widgets/doc_file_preview.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/widgets/info_row.dart';
@@ -353,6 +354,42 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                 ],
               ),
             ),
+            const SizedBox(height: 12),
+
+            // ── Documents ─────────────────────────────────────────
+            Obx(() {
+              if (controller.isDocsLoading.value) {
+                return const _SectionCard(
+                  child: Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.navy),
+                    ),
+                  ),
+                );
+              }
+              final vDocs = controller.vehicleDocs;
+              final mDocs = controller.myDocs;
+              if (vDocs.isEmpty && mDocs.isEmpty) return const SizedBox.shrink();
+              return _SectionCard(
+                title: 'Documents',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (vDocs.isNotEmpty) ...[
+                      _DocSubheader(label: controller.lr.vehicleNumber),
+                      ...vDocs.map((d) => _DocRow(doc: d)),
+                    ],
+                    if (vDocs.isNotEmpty && mDocs.isNotEmpty)
+                      const SizedBox(height: 8),
+                    if (mDocs.isNotEmpty) ...[
+                      _DocSubheader(label: 'My Documents'),
+                      ...mDocs.map((d) => _DocRow(doc: d)),
+                    ],
+                  ],
+                ),
+              );
+            }),
             const SizedBox(height: 12),
 
             // ── Odometer ──────────────────────────────────────────
@@ -719,6 +756,96 @@ class _AuditRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── Doc Subheader ─────────────────────────────────────────────────────────────
+class _DocSubheader extends StatelessWidget {
+  final String label;
+  const _DocSubheader({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        label,
+        style: AppTextStyles.caption.copyWith(
+          color: AppColors.mutedText,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Doc Row ───────────────────────────────────────────────────────────────────
+class _DocRow extends StatelessWidget {
+  final Map<String, dynamic> doc;
+  const _DocRow({required this.doc});
+
+  Color _expiryColor(String? expiry) {
+    if (expiry == null) return AppColors.mutedText;
+    try {
+      final d    = DateTime.parse(expiry);
+      final days = d.difference(DateTime.now()).inDays;
+      if (days < 0)  return const Color(0xFFDC2626);
+      if (days < 60) return const Color(0xFFD97706);
+      return const Color(0xFF16A34A);
+    } catch (_) {
+      return AppColors.mutedText;
+    }
+  }
+
+  String _fmtDate(String? raw) {
+    if (raw == null) return 'No Expiry';
+    try {
+      final d = DateTime.parse(raw);
+      const m = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return '${d.day} ${m[d.month]} ${d.year}';
+    } catch (_) {
+      return raw;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final typeName  = doc['documentTypeName'] as String? ?? '—';
+    final docNumber = doc['documentNumber']   as String?;
+    final expiry    = doc['expiryDate']        as String?;
+    final fileUrl   = doc['fileUrl']           as String?;
+    final verified  = doc['isVerified']        as bool? ?? false;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Text(typeName,
+                      style: AppTextStyles.body.copyWith(color: AppColors.navy)),
+                  if (verified) ...[
+                    const SizedBox(width: 4),
+                    const Icon(Icons.verified, size: 14, color: Color(0xFF16A34A)),
+                  ],
+                ]),
+                if (docNumber != null)
+                  Text(docNumber,
+                      style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                Text(_fmtDate(expiry),
+                    style: AppTextStyles.caption.copyWith(color: _expiryColor(expiry))),
+              ],
+            ),
+          ),
+          if (fileUrl != null && fileUrl.isNotEmpty)
+            DocFilePreview(fileUrl: fileUrl, docName: typeName),
+        ],
+      ),
     );
   }
 }

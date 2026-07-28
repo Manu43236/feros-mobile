@@ -120,6 +120,8 @@ class ApiEndpoints {
   static String staffProfileById(id)      => '/staff/profiles/$id';
   static String staffDocuments(id)        => '/staff/$id/documents';
   static String verifyStaffDoc(dId)       => '/staff/documents/$dId/verify';
+  static String driverMyDocs([int? vehicleId]) =>
+      vehicleId != null ? '/staff/driver/my-docs?vehicleId=$vehicleId' : '/staff/driver/my-docs';
 
   // Attendance
   static const attendance                 = '/attendance';
