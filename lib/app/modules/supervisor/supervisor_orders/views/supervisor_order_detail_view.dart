@@ -1278,19 +1278,7 @@ class _AssignVehicleSheetState extends State<_AssignVehicleSheet> {
       remarks: _remarksCtrl.text.trim().isEmpty ? null : _remarksCtrl.text.trim(),
     );
     if (allocationId == null) return;
-    // Carry-over pre-assigned staff to this order
-    if (_carryOverDriver) {
-      final dId = v['currentDriverId'] as int?;
-      if (dId != null) {
-        await widget.controller.assignDriver(allocationId: allocationId, userId: dId);
-      }
-    }
-    if (_carryOverCleaner) {
-      final cId = v['currentCleanerId'] as int?;
-      if (cId != null) {
-        await widget.controller.assignCleaner(allocationId: allocationId, userId: cId);
-      }
-    }
+    // Backend auto-assigns vehicle's current driver/cleaner on assignVehicle
     if (mounted) Navigator.of(context).pop();
   }
 
