@@ -28,6 +28,9 @@ dependencies:
   # OCR — odometer reading from photo
   google_mlkit_text_recognition: ^0.13.0
 
+  # In-app YouTube player
+  youtube_player_flutter: ^9.1.1
+
   # Location & permissions
   geolocator: ^13.0.2
   permission_handler: ^11.4.0

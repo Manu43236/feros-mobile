@@ -10,6 +10,7 @@ import '../controllers/supervisor_profile_controller.dart';
 import 'change_pin_view.dart';
 import 'supervisor_profile_edit_view.dart';
 import 'supervisor_profile_docs_view.dart';
+import '../../../tutorials/tutorials_view.dart';
 
 class SupervisorProfileView extends GetView<SupervisorProfileController> {
   const SupervisorProfileView({super.key});
@@ -175,6 +176,14 @@ class SupervisorProfileView extends GetView<SupervisorProfileController> {
                     style: AppTextStyles.body.copyWith(color: AppColors.navy)),
                 trailing: const Icon(Icons.chevron_right, color: AppColors.mutedText),
                 onTap: () => Get.to(() => const ChangePinView()),
+              ),
+              const Divider(height: 1, indent: 56),
+              ListTile(
+                leading: const Icon(Icons.play_circle_outline, color: AppColors.navy, size: 22),
+                title: Text('Training Tutorials',
+                    style: AppTextStyles.body.copyWith(color: AppColors.navy)),
+                trailing: const Icon(Icons.chevron_right, color: AppColors.mutedText),
+                onTap: () => Get.to(() => const TutorialsView()),
               ),
               const Divider(height: 1, indent: 56),
               const LanguageSwitcherTile(),

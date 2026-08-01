@@ -272,4 +272,7 @@ class ApiEndpoints {
 
   // Upload
   static const upload                  = '/upload';
+
+  // Tutorial Videos
+  static String tutorialVideos(String language) => '/tutorial-videos?language=$language';
 }
