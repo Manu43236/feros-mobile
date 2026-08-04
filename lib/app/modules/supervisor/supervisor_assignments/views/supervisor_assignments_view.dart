@@ -475,7 +475,8 @@ class _StaffHistoryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final wasUnassigned = row['unassignedAt'] != null;
+    final action = row['action'] as String? ?? 'Assigned';
+    final isUnassigned = action == 'Unassigned';
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -488,13 +489,7 @@ class _StaffHistoryRow extends StatelessWidget {
         children: [
           Row(
             children: [
-              _ActionBadge('Assigned', false),
-              if (wasUnassigned) ...[
-                const SizedBox(width: 6),
-                const Icon(Icons.arrow_forward, size: 12, color: AppColors.mutedText),
-                const SizedBox(width: 6),
-                _ActionBadge('Unassigned', true),
-              ],
+              _ActionBadge(action, isUnassigned),
               const Spacer(),
               Text(
                 '${row['userName'] ?? '—'} (${row['userRole'] ?? ''})',
@@ -508,14 +503,11 @@ class _StaffHistoryRow extends StatelessWidget {
             style: AppTextStyles.caption.copyWith(color: AppColors.navy),
           ),
           Text(
-            'By: ${row['assignedByName'] ?? '—'}  ·  ${_fmtDate(row['assignedAt'] as String?)}',
-            style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
-          ),
-          if (wasUnassigned)
-            Text(
-              'Removed by: ${row['unassignedByName'] ?? '—'}  ·  ${_fmtDate(row['unassignedAt'] as String?)}',
-              style: AppTextStyles.caption.copyWith(color: AppColors.error),
+            'By: ${row['actionByName'] ?? '—'}  ·  ${_fmtDate(row['actionAt'] as String?)}',
+            style: AppTextStyles.caption.copyWith(
+              color: isUnassigned ? AppColors.error : AppColors.mutedText,
             ),
+          ),
         ],
       ),
     );
