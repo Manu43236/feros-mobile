@@ -18,9 +18,11 @@ class DriverTripDetailController extends GetxController {
   final lrStatus              = ''.obs;
   final loadedWeight          = Rxn<double>();
   final deliveredWeight       = Rxn<double>();
-  final startOdometer         = Rxn<double>();
-  final endOdometer           = Rxn<double>();
-  final currentVehicleOdometer = Rxn<double>();
+  final startOdometer              = Rxn<double>();
+  final startOdometerRecordedAt    = Rxn<String>();
+  final endOdometer                = Rxn<double>();
+  final endOdometerRecordedAt      = Rxn<String>();
+  final currentVehicleOdometer     = Rxn<double>();
   final isUpdating         = false.obs;
   final isPdfLoading       = false.obs;
   final hasActiveBreakdown  = false.obs;
@@ -36,9 +38,11 @@ class DriverTripDetailController extends GetxController {
     lrStatus.value               = lr.lrStatus;
     loadedWeight.value           = lr.loadedWeight;
     deliveredWeight.value        = lr.deliveredWeight;
-    startOdometer.value          = lr.startOdometer;
-    endOdometer.value            = lr.endOdometer;
-    currentVehicleOdometer.value = lr.currentVehicleOdometer;
+    startOdometer.value           = lr.startOdometer;
+    startOdometerRecordedAt.value = lr.startOdometerRecordedAt;
+    endOdometer.value             = lr.endOdometer;
+    endOdometerRecordedAt.value   = lr.endOdometerRecordedAt;
+    currentVehicleOdometer.value  = lr.currentVehicleOdometer;
     if (lr.lrStatus == 'IN_TRANSIT') checkBreakdown();
     _fetchDocs();
   }
@@ -85,9 +89,11 @@ class DriverTripDetailController extends GetxController {
       lrStatus.value               = updated.lrStatus;
       loadedWeight.value           = updated.loadedWeight;
       deliveredWeight.value        = updated.deliveredWeight;
-      startOdometer.value          = updated.startOdometer;
-      endOdometer.value            = updated.endOdometer;
-      currentVehicleOdometer.value = updated.currentVehicleOdometer;
+      startOdometer.value           = updated.startOdometer;
+      startOdometerRecordedAt.value = updated.startOdometerRecordedAt;
+      endOdometer.value             = updated.endOdometer;
+      endOdometerRecordedAt.value   = updated.endOdometerRecordedAt;
+      currentVehicleOdometer.value  = updated.currentVehicleOdometer;
     } catch (_) {}
     await Future.wait([
       if (lrStatus.value == 'IN_TRANSIT') checkBreakdown(),

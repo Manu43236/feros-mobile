@@ -16,7 +16,9 @@ class LrModel {
   final String lrDate;
   final double? currentVehicleOdometer;
   final double? startOdometer;
+  final String? startOdometerRecordedAt;
   final double? endOdometer;
+  final String? endOdometerRecordedAt;
   final String? startedByName;
   final String? startedByRole;
   final String? completedByName;
@@ -41,7 +43,9 @@ class LrModel {
     required this.lrDate,
     this.currentVehicleOdometer,
     this.startOdometer,
+    this.startOdometerRecordedAt,
     this.endOdometer,
+    this.endOdometerRecordedAt,
     this.startedByName,
     this.startedByRole,
     this.completedByName,
@@ -66,9 +70,11 @@ class LrModel {
     deliveredWeight: (j['deliveredWeight']          as num?)?.toDouble(),
     lrDate:          j['lrDate']                    as String? ?? '—',
     currentVehicleOdometer: (j['currentVehicleOdometer'] as num?)?.toDouble(),
-    startOdometer:   (j['startOdometer']            as num?)?.toDouble(),
-    endOdometer:     (j['endOdometer']              as num?)?.toDouble(),
-    startedByName:   j['startedByName']             as String?,
+    startOdometer:            (j['startOdometer']            as num?)?.toDouble(),
+    startOdometerRecordedAt:   j['startOdometerRecordedAt']  as String?,
+    endOdometer:              (j['endOdometer']              as num?)?.toDouble(),
+    endOdometerRecordedAt:     j['endOdometerRecordedAt']    as String?,
+    startedByName:             j['startedByName']            as String?,
     startedByRole:   j['startedByRole']             as String?,
     completedByName: j['completedByName']           as String?,
     completedByRole: j['completedByRole']           as String?,

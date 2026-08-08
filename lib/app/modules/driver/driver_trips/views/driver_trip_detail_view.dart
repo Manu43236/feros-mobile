@@ -400,13 +400,13 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                   InfoRow(
                     label: 'lbl_start_odm'.tr,
                     value: controller.startOdometer.value != null
-                        ? '${controller.startOdometer.value!.toStringAsFixed(0)} km'
+                        ? '${controller.startOdometer.value!.toStringAsFixed(0)} km${controller.startOdometerRecordedAt.value != null ? '\n${_fmtDateTime(controller.startOdometerRecordedAt.value!)}' : ''}'
                         : '—',
                   ),
                   InfoRow(
                     label: 'lbl_end_odm'.tr,
                     value: controller.endOdometer.value != null
-                        ? '${controller.endOdometer.value!.toStringAsFixed(0)} km'
+                        ? '${controller.endOdometer.value!.toStringAsFixed(0)} km${controller.endOdometerRecordedAt.value != null ? '\n${_fmtDateTime(controller.endOdometerRecordedAt.value!)}' : ''}'
                         : '—',
                     showDivider: false,
                   ),
@@ -570,6 +570,19 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
 }
 
 // ── Section Card ──────────────────────────────────────────────────────────────
+String _fmtDateTime(String iso) {
+  try {
+    final dt = DateTime.parse(iso).toLocal();
+    final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    final h = dt.hour > 12 ? dt.hour - 12 : dt.hour == 0 ? 12 : dt.hour;
+    final m = dt.minute.toString().padLeft(2, '0');
+    final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+    return '${dt.day} ${months[dt.month - 1]} ${dt.year}, $h:$m $ampm';
+  } catch (_) {
+    return iso;
+  }
+}
+
 class _SectionCard extends StatelessWidget {
   final String? title;
   final Widget? action;
