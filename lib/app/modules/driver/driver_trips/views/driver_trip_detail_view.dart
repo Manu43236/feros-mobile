@@ -535,7 +535,7 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
       buttonLabel: 'btn_start_trip'.tr,
       buttonColor: AppColors.navy,
       instruction: 'lbl_start_trip_instruction'.tr,
-      minOdometer: controller.lr.currentVehicleOdometer,
+      minOdometer: controller.currentVehicleOdometer.value,
     );
     if (result == null) return;
     controller.startTrip(result);
