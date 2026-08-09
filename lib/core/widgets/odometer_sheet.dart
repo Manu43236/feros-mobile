@@ -126,10 +126,47 @@ Future<OdometerResult?> showOdometerSheet(
 }) async {
   File? capturedImage;
   bool isProcessing = false;
-  final ctrl = TextEditingController(
-    text: minOdometer != null ? minOdometer.toStringAsFixed(0) : '',
-  );
+
+  // First 2 digits of current odometer — shown locked in grey
+  final prefix = minOdometer != null
+      ? minOdometer.toStringAsFixed(0).padLeft(6, '0').substring(0, 2)
+      : '00';
+
+  // Driver types only last 4 digits — always starts empty
+  final ctrl = TextEditingController();
   final focusNode = FocusNode();
+
+  // Reconstruct full 6-digit value with auto-rollover
+  double reconstructFull(String typed) {
+    if (typed.isEmpty) return 0;
+    final padded = typed.padLeft(4, '0');
+    final combined = int.tryParse(prefix + padded) ?? 0;
+    if (minOdometer != null && combined < minOdometer) {
+      final prefixInt = int.parse(prefix);
+      if (prefixInt == 99) return double.parse('00$padded');
+      final newPrefix = (prefixInt + 1).toString().padLeft(2, '0');
+      return double.parse(newPrefix + padded);
+    }
+    return combined.toDouble();
+  }
+
+  // Live prefix display — updates as driver types each digit
+  // Uses min/max possible range to determine rollover certainty
+  String livePrefix(String typed) {
+    if (typed.isEmpty || minOdometer == null) return prefix;
+    final remaining = 4 - typed.length;
+    final maxPossible = int.tryParse(
+          prefix + typed + '9' * remaining,
+        ) ??
+        0;
+    if (maxPossible < minOdometer) {
+      // rollover is certain
+      final prefixInt = int.parse(prefix);
+      if (prefixInt == 99) return '00';
+      return (prefixInt + 1).toString().padLeft(2, '0');
+    }
+    return prefix;
+  }
 
   // 100 kmph × 24 h — physically impossible ceiling per day
   double? maxOdometer() {
@@ -138,12 +175,11 @@ Future<OdometerResult?> showOdometerSheet(
     return minOdometer + (days * 2400);
   }
 
-  double needleValue(String text, double? min) {
-    final v = double.tryParse(text);
-    if (v == null || v <= 0) return 0.0;
+  double needleValue(double fullVal, double? min) {
+    if (fullVal <= 0) return 0.0;
     final base = (min ?? 0).clamp(0, 900000).toDouble();
     final ceiling = math.max(base + 100000, 999999).toDouble();
-    return ((v - base) / (ceiling - base)).clamp(0.0, 1.0);
+    return ((fullVal - base) / (ceiling - base)).clamp(0.0, 1.0);
   }
 
   final result = await showModalBottomSheet<OdometerResult>(
@@ -156,19 +192,12 @@ Future<OdometerResult?> showOdometerSheet(
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setState) {
         void confirm() {
-          final val = double.tryParse(ctrl.text.trim());
-          if (val == null || val <= 0) {
+          final typed = ctrl.text.trim();
+          if (typed.isEmpty) {
             FerosSnackbar.error('err_invalid_odm'.tr);
             return;
           }
-          if (minOdometer != null && val < minOdometer) {
-            FerosSnackbar.error(
-              'err_odm_below_current'.trParams({
-                'value': minOdometer.toStringAsFixed(0),
-              }),
-            );
-            return;
-          }
+          final val = reconstructFull(typed);
           final ceiling = maxOdometer();
           if (ceiling != null && val > ceiling) {
             final days = DateTime.now().difference(tripStartDate!).inDays + 1;
@@ -223,19 +252,14 @@ Future<OdometerResult?> showOdometerSheet(
           setState(() => isProcessing = false);
         }
 
-        final hasValue =
-            ctrl.text.trim().isNotEmpty &&
-            double.tryParse(ctrl.text.trim()) != null;
-        final needlePos = needleValue(ctrl.text.trim(), minOdometer);
-        final enteredVal = double.tryParse(ctrl.text) ?? 0;
-        final belowMin =
-            minOdometer != null &&
-            ctrl.text.isNotEmpty &&
-            enteredVal < minOdometer;
-        final ceiling = maxOdometer();
-        final aboveMax = ceiling != null &&
-            ctrl.text.isNotEmpty &&
-            enteredVal > ceiling;
+        final typed       = ctrl.text.trim();
+        final hasValue    = typed.isNotEmpty;
+        final fullVal     = hasValue ? reconstructFull(typed) : 0.0;
+        final needlePos   = needleValue(fullVal, minOdometer);
+        final shownPrefix = livePrefix(typed);
+        final canConfirm  = typed.length == 4;
+        final ceiling     = maxOdometer();
+        final aboveMax    = ceiling != null && canConfirm && fullVal > ceiling;
 
         // Constrain sheet height and scroll when keyboard pushes content
         return AnimatedPadding(
@@ -317,16 +341,36 @@ Future<OdometerResult?> showOdometerSheet(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
-                                hasValue ? ctrl.text.trim() : '——',
-                                style: TextStyle(
-                                  color: hasValue ? _kNavy : _kMuted,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 2,
+                              RichText(
+                                text: TextSpan(
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 2,
+                                    fontFamily: 'Inter',
+                                  ),
+                                  children: [
+                                    // locked prefix — grey, updates live on rollover certainty
+                                    TextSpan(
+                                      text: shownPrefix,
+                                      style: const TextStyle(color: _kMuted),
+                                    ),
+                                    // typed digits — navy, dashes — muted
+                                    ...List.generate(4, (i) {
+                                      final ch = i < typed.length
+                                          ? typed[i]
+                                          : '-';
+                                      return TextSpan(
+                                        text: ch,
+                                        style: TextStyle(
+                                          color: ch == '-' ? _kMuted : _kNavy,
+                                        ),
+                                      );
+                                    }),
+                                  ],
                                 ),
                               ),
-                              Text(
+                              const Text(
                                 'km',
                                 style: TextStyle(
                                   color: _kMuted,
@@ -350,7 +394,7 @@ Future<OdometerResult?> showOdometerSheet(
                         keyboardType: TextInputType.number,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(6),
+                          LengthLimitingTextInputFormatter(4),
                         ],
                         autofocus: true,
                         onChanged: (_) => setState(() {}),
@@ -362,7 +406,7 @@ Future<OdometerResult?> showOdometerSheet(
                           letterSpacing: 2,
                         ),
                         decoration: InputDecoration(
-                          hintText: hint,
+                          hintText: '----',
                           hintStyle: const TextStyle(
                             color: _kMuted,
                             fontSize: 16,
@@ -405,33 +449,6 @@ Future<OdometerResult?> showOdometerSheet(
                       ),
                     ),
 
-                    // below-min warning
-                    if (belowMin) ...[
-                      const SizedBox(height: 6),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.warning_amber_rounded,
-                              size: 13,
-                              color: _kRed,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                'lbl_odm_min_hint'.trParams({
-                                  'value': minOdometer.toStringAsFixed(0),
-                                }),
-                                style: AppTextStyles.caption.copyWith(
-                                  color: _kRed,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
 
                     if (aboveMax) ...[
                       const SizedBox(height: 6),
@@ -538,9 +555,11 @@ Future<OdometerResult?> showOdometerSheet(
                             child: SizedBox(
                               height: 52,
                               child: ElevatedButton(
-                                onPressed: confirm,
+                                onPressed: canConfirm && !aboveMax ? confirm : null,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: buttonColor,
+                                  backgroundColor: canConfirm && !aboveMax
+                                      ? buttonColor
+                                      : const Color(0xFFCBD5E1),
                                   foregroundColor: Colors.white,
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(
