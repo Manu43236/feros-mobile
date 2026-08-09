@@ -16,6 +16,7 @@ import '../../driver_payslip/bindings/driver_payslip_binding.dart';
 import '../../driver_trips/models/lr_model.dart';
 import '../../driver_trips/views/driver_trip_detail_view.dart';
 import '../../driver_trips/bindings/driver_trip_detail_binding.dart';
+import '../../../../../core/exceptions/app_exception.dart';
 import '../../../../../core/utils/view_state.dart';
 import '../../../../../core/widgets/shimmer_card.dart';
 import '../controllers/driver_dashboard_controller.dart';
@@ -266,7 +267,7 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
       Get.find<AudioGuidanceService>().playTripStarted();
       Get.find<DriverDashboardController>().fetchDashboard();
     } catch (e) {
-      final msg = (e as dynamic)?.response?.data?['message'] as String?;
+      final msg = e is AppException ? e.message : null;
       Get.snackbar(
         'lbl_error'.tr,
         msg ?? 'err_failed_start_trip'.tr,
