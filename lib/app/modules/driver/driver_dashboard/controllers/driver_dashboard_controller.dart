@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/services/audio_guidance_service.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/utils/view_state.dart';
 
@@ -58,6 +59,7 @@ class DriverDashboardController extends GetxController {
       dutyLabel.value   = data['dutyLabel']  as String?;
 
       state.value = ViewState.success;
+      Get.find<AudioGuidanceService>().playForDashboard(data);
     } catch (_) {
       state.value = ViewState.error;
     }

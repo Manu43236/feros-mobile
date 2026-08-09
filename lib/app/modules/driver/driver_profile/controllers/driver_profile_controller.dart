@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
 import '../../../../../core/services/auth_service.dart';
@@ -11,6 +12,7 @@ class DriverProfileController extends GetxController {
   final totalTrips    = Rxn<int>();
   final myDocs        = <Map<String, dynamic>>[].obs;
   final isDocsLoading = false.obs;
+  final appVersion    = 'FEROS'.obs;
 
   AuthService get auth => _auth;
 
@@ -24,6 +26,12 @@ class DriverProfileController extends GetxController {
     super.onReady();
     if (showTrips) _fetchTrips();
     _fetchMyDocs();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    appVersion.value = 'FEROS v${info.version}';
   }
 
   Future<void> _fetchMyDocs() async {

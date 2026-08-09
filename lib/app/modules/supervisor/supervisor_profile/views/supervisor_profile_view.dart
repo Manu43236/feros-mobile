@@ -233,8 +233,8 @@ class SupervisorProfileView extends GetView<SupervisorProfileController> {
           const SizedBox(height: 24),
 
           Center(
-            child: Text('lbl_version'.tr,
-                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+            child: Obx(() => Text(controller.appVersion.value,
+                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText))),
           ),
           const SizedBox(height: 8),
         ],

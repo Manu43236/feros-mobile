@@ -6,6 +6,7 @@ import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/widgets/info_row.dart';
 import '../../../../../core/widgets/delivery_sheet.dart';
 import '../../../../../core/widgets/odometer_sheet.dart';
+import '../../../../../core/widgets/pulsing_start_button.dart';
 import '../controllers/driver_trip_detail_controller.dart';
 import '../../driver_breakdown/views/driver_breakdown_view.dart';
 import '../../driver_breakdown/bindings/driver_breakdown_binding.dart';
@@ -88,39 +89,14 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                   ],
 
                   if (controller.lrStatus.value == 'WEIGHT_LOADED') ...[
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     if (isDriver)
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: controller.isUpdating.value
+                      Center(
+                        child: PulsingStartButton(
+                          isLoading: controller.isUpdating.value,
+                          onTap: controller.isUpdating.value
                               ? null
                               : () => _onStartTrip(context, controller),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.navy,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: controller.isUpdating.value
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : Text(
-                                  'btn_start_trip'.tr,
-                                  style: AppTextStyles.caption.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
                         ),
                       )
                     else
@@ -194,38 +170,16 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                         ),
                       ),
                     ] else if (isDriver) ...[
-                      // ── Mark Delivered ───────────────────────────
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: controller.isUpdating.value
+                      // ── Stop Trip ─────────────────────────────────
+                      Center(
+                        child: PulsingStartButton(
+                          isLoading: controller.isUpdating.value,
+                          onTap: controller.isUpdating.value
                               ? null
                               : () => _onMarkDelivered(context, controller),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF16A34A),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: controller.isUpdating.value
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : Text(
-                                  'btn_mark_delivered'.tr,
-                                  style: AppTextStyles.caption.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                          color: const Color(0xFFDC2626),
+                          icon: Icons.stop_rounded,
+                          label: 'STOP TRIP',
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -545,6 +499,10 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
     BuildContext context,
     DriverTripDetailController controller,
   ) async {
+    final rawRecordedAt = controller.startOdometerRecordedAt.value;
+    final tripStartDate = rawRecordedAt != null
+        ? DateTime.tryParse(rawRecordedAt)
+        : null;
     final odmResult = await showOdometerSheet(
       context,
       title: 'lbl_end_trip_odm_title'.tr,
@@ -555,6 +513,7 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
         'value': controller.startOdometer.value?.toStringAsFixed(0) ?? '—',
       }),
       minOdometer: controller.startOdometer.value,
+      tripStartDate: tripStartDate,
     );
     if (odmResult == null) return;
 

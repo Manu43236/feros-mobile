@@ -6,6 +6,7 @@ import '../../../../../core/api/api_endpoints.dart';
 import '../../../../../core/popups/feros_snackbar.dart';
 import '../../../../../core/pdf_viewer/pdf_viewer_view.dart';
 import '../../../../../core/pdf_viewer/pdf_viewer_binding.dart';
+import '../../../../../core/services/audio_guidance_service.dart';
 import '../../../../../core/widgets/odometer_sheet.dart';
 import '../../../../../core/widgets/delivery_sheet.dart';
 import '../models/lr_model.dart';
@@ -114,6 +115,7 @@ class DriverTripDetailController extends GetxController {
       lrStatus.value      = 'IN_TRANSIT';
       startOdometer.value = result.odometer;
       FerosSnackbar.success('msg_trip_started'.tr);
+      Get.find<AudioGuidanceService>().playTripStarted();
     } catch (e) {
       FerosSnackbar.error(e.toString().contains('odometer')
           ? e.toString().replaceFirst('Exception: ', '')
@@ -137,6 +139,7 @@ class DriverTripDetailController extends GetxController {
       deliveredWeight.value = deliveryResult.weight;
       endOdometer.value     = odmResult.odometer;
       FerosSnackbar.success('msg_delivery_confirmed'.tr);
+      Get.find<AudioGuidanceService>().playTripEnded();
     } catch (e) {
       FerosSnackbar.error(e.toString().contains('odometer')
           ? e.toString().replaceFirst('Exception: ', '')

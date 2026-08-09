@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/services/audio_guidance_service.dart';
 import '../../../../../core/services/auth_service.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/widgets/delivery_sheet.dart';
 import '../../../../../core/widgets/odometer_sheet.dart';
+import '../../../../../core/widgets/pulsing_start_button.dart';
 import '../../driver_attendance/views/driver_attendance_sheet.dart';
 import '../../driver_payslip/views/driver_payslip_view.dart';
 import '../../driver_payslip/bindings/driver_payslip_binding.dart';
@@ -72,6 +74,7 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
       // ── State 3: ON TRIP ──────────────────────────────────────
       if (active != null) {
         final breakdownActive = controller.hasActiveTripBreakdown.value;
+        final usePulsingStop  = isDriver && !breakdownActive;
         return _HomeState(
           statusColor: breakdownActive
               ? const Color(0xFFDC2626)
@@ -89,25 +92,19 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
               : (isDriver ? 'btn_mark_done'.tr : 'btn_view_trip_details'.tr),
           actionIcon: breakdownActive
               ? Icons.refresh
-              : (isDriver ? Icons.check_circle_outline : Icons.info_outline),
+              : (isDriver ? Icons.stop_rounded : Icons.info_outline),
           actionColor: breakdownActive
               ? const Color(0xFFDC2626)
               : AppColors.navy,
-          onAction: 
-          breakdownActive
+          onAction: breakdownActive
               ? () => controller.fetchDashboard()
               : (isDriver
                     ? () => _markDoneFromHome(context, active)
                     : () => _openTrip(context, active)),
-          secondaryActionLabel: isDriver && !breakdownActive
-              ? 'btn_view_trip_details'.tr
-              : null,
-          onSecondaryAction: isDriver && !breakdownActive
-              ? () => _openTrip(context, active)
-              : null,
           onCardTap: () => _openTrip(context, active),
           bottomRow: _BottomNav(controller: controller, attended: attended),
           onRefresh: controller.fetchDashboard,
+          usePulsingStop: usePulsingStop,
         );
       }
 
@@ -115,6 +112,7 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
       if (nextReady != null) {
         final gateBlocked =
             isDriver && controller.isAttendanceEnforced.value && !attended;
+        final isStartAction = isDriver && !gateBlocked;
         return _HomeState(
           statusColor: const Color(0xFFD97706),
           statusIcon: Icons.inventory_2_outlined,
@@ -141,6 +139,7 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
           onCardTap: () => _openTrip(context, nextReady),
           bottomRow: _BottomNav(controller: controller, attended: attended),
           onRefresh: controller.fetchDashboard,
+          usePulsingStart: isStartAction,
         );
       }
 
@@ -187,6 +186,10 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
     final loadedWt = rawLoaded != null
         ? double.tryParse(rawLoaded.toString())
         : null;
+    final rawRecordedAt = tripData['startOdometerRecordedAt'] as String?;
+    final tripStartDate = rawRecordedAt != null
+        ? DateTime.tryParse(rawRecordedAt)
+        : null;
 
     final odmResult = await showOdometerSheet(
       context,
@@ -198,6 +201,7 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
         'value': startOdm?.toStringAsFixed(0) ?? '—',
       }),
       minOdometer: startOdm,
+      tripStartDate: tripStartDate,
     );
     if (odmResult == null) return;
 
@@ -219,6 +223,7 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
           'endOdometer': odmResult.odometer,
         },
       );
+      Get.find<AudioGuidanceService>().playTripEnded();
       Get.find<DriverDashboardController>().fetchDashboard();
     } catch (_) {
       Get.snackbar(
@@ -258,8 +263,8 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
         ApiEndpoints.lrById(lrId),
         data: {'lrStatus': 'IN_TRANSIT', 'startOdometer': result.odometer},
       );
-      Get.find<DriverDashboardController>()
-          .fetchDashboard(); // refreshes to ON TRIP state
+      Get.find<AudioGuidanceService>().playTripStarted();
+      Get.find<DriverDashboardController>().fetchDashboard();
     } catch (e) {
       final msg = (e as dynamic)?.response?.data?['message'] as String?;
       Get.snackbar(
@@ -1137,6 +1142,8 @@ class _HomeState extends StatelessWidget {
   final VoidCallback? onCardTap;
   final Widget bottomRow;
   final Future<void> Function() onRefresh;
+  final bool usePulsingStart;
+  final bool usePulsingStop;
 
   const _HomeState({
     required this.statusColor,
@@ -1153,6 +1160,8 @@ class _HomeState extends StatelessWidget {
     this.onCardTap,
     required this.bottomRow,
     required this.onRefresh,
+    this.usePulsingStart = false,
+    this.usePulsingStop = false,
   });
 
   @override
@@ -1228,6 +1237,8 @@ class _HomeState extends StatelessWidget {
                       onAction: onAction,
                       secondaryActionLabel: secondaryActionLabel,
                       onSecondaryAction: onSecondaryAction,
+                      usePulsingStart: usePulsingStart,
+                      usePulsingStop: usePulsingStop,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -1253,6 +1264,8 @@ class _TripInfoCard extends StatelessWidget {
   final VoidCallback onAction;
   final String? secondaryActionLabel;
   final VoidCallback? onSecondaryAction;
+  final bool usePulsingStart;
+  final bool usePulsingStop;
   const _TripInfoCard({
     required this.tripData,
     required this.statusColor,
@@ -1262,6 +1275,8 @@ class _TripInfoCard extends StatelessWidget {
     required this.onAction,
     this.secondaryActionLabel,
     this.onSecondaryAction,
+    this.usePulsingStart = false,
+    this.usePulsingStop = false,
   });
 
   String _roleLabel(String? role) {
@@ -1427,30 +1442,42 @@ class _TripInfoCard extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Primary action button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: onAction,
-              icon: Icon(actionIcon, size: 20),
-              label: Text(
-                actionLabel,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'Inter',
-                ),
+          if (usePulsingStart)
+            Center(child: PulsingStartButton(onTap: onAction))
+          else if (usePulsingStop)
+            Center(
+              child: PulsingStartButton(
+                onTap: onAction,
+                color: const Color(0xFFDC2626),
+                icon: Icons.stop_rounded,
+                label: 'STOP TRIP',
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: actionColor,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+            )
+          else
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: onAction,
+                icon: Icon(actionIcon, size: 20),
+                label: Text(
+                  actionLabel,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Inter',
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: actionColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
             ),
-          ),
           if (secondaryActionLabel != null && onSecondaryAction != null) ...[
             const SizedBox(height: 8),
             SizedBox(

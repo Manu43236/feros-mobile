@@ -4,6 +4,7 @@ import '../../../../../core/widgets/doc_file_preview.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/string_utils.dart';
+import '../../../../../core/services/audio_guidance_service.dart';
 import '../../../../../core/widgets/language_switcher_tile.dart';
 import '../controllers/driver_profile_controller.dart';
 import '../../../supervisor/supervisor_profile/views/change_pin_view.dart';
@@ -197,6 +198,10 @@ class DriverProfileView extends GetView<DriverProfileController> {
               ),
               const SizedBox(height: 24),
 
+              // ── Audio Guidance ────────────────────────────────
+              _AudioGuidanceCard(),
+              const SizedBox(height: 24),
+
               // ── Logout ────────────────────────────────────────
               SizedBox(
                 width: double.infinity,
@@ -243,9 +248,9 @@ class DriverProfileView extends GetView<DriverProfileController> {
 
               // ── App version ───────────────────────────────────
               Center(
-                child: Text('lbl_version'.tr,
+                child: Obx(() => Text(controller.appVersion.value,
                     style: AppTextStyles.caption
-                        .copyWith(color: AppColors.mutedText)),
+                        .copyWith(color: AppColors.mutedText))),
               ),
               const SizedBox(height: 8),
             ],
@@ -441,6 +446,92 @@ class _ProfileDocRow extends StatelessWidget {
           ),
           if (fileUrl != null && fileUrl.isNotEmpty)
             DocFilePreview(fileUrl: fileUrl, docName: typeName),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Audio Guidance Card ───────────────────────────────────────────────────────
+class _AudioGuidanceCard extends StatelessWidget {
+  static const _languages = [
+    {'code': 'te', 'label': 'Telugu'},
+    {'code': 'en', 'label': 'English'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final audio = Get.find<AudioGuidanceService>();
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.volume_up_rounded,
+                  size: 18, color: AppColors.navy),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('Audio Guidance',
+                    style: AppTextStyles.bodyMedium
+                        .copyWith(color: AppColors.navy)),
+              ),
+              Obx(() => Switch(
+                    value: audio.isEnabled.value,
+                    activeColor: AppColors.navy,
+                    onChanged: audio.setEnabled,
+                  )),
+            ],
+          ),
+          Obx(() {
+            if (!audio.isEnabled.value) return const SizedBox.shrink();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Divider(height: 20),
+                Text('Language',
+                    style: AppTextStyles.caption
+                        .copyWith(color: AppColors.mutedText)),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: audio.language.value,
+                  decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide:
+                            const BorderSide(color: Color(0xFFE2E8F0))),
+                    enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide:
+                            const BorderSide(color: Color(0xFFE2E8F0))),
+                    focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide:
+                            const BorderSide(color: AppColors.navy)),
+                  ),
+                  items: _languages
+                      .map((l) => DropdownMenuItem(
+                            value: l['code'],
+                            child: Text(l['label']!,
+                                style: AppTextStyles.body
+                                    .copyWith(color: AppColors.navy)),
+                          ))
+                      .toList(),
+                  onChanged: (v) {
+                    if (v != null) audio.setLanguage(v);
+                  },
+                ),
+              ],
+            );
+          }),
         ],
       ),
     );

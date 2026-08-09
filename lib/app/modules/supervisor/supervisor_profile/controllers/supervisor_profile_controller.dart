@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
 import '../../../../../core/popups/feros_dialog.dart';
@@ -14,6 +15,8 @@ class SupervisorProfileController extends GetxController {
   final _upload = Get.find<UploadService>();
 
   AuthService get auth => _auth;
+
+  final appVersion = 'FEROS'.obs;
 
   // ── profile ──────────────────────────────────────────────────────────────────
   final profile         = Rxn<Map<String, dynamic>>();
@@ -30,6 +33,12 @@ class SupervisorProfileController extends GetxController {
   void onInit() {
     super.onInit();
     fetchProfile();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    appVersion.value = 'FEROS v${info.version}';
   }
 
   int get _userId => _auth.user?.userId ?? 0;
