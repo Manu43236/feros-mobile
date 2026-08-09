@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../../core/services/audio_guidance_service.dart';
 import '../../../../../core/services/auth_service.dart';
 import '../../../../../core/widgets/feros_bottom_nav.dart';
 
 class DriverShellController extends GetxController {
   final currentIndex = 0.obs;
 
-  void onTabTapped(int index) => currentIndex.value = index;
+  void onTabTapped(int index) {
+    if (index != 0) Get.find<AudioGuidanceService>().stop();
+    currentIndex.value = index;
+  }
 
   List<NavItem> get navItems {
     final role = Get.find<AuthService>().user?.role ?? '';

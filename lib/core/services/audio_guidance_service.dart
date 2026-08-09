@@ -1,4 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 
@@ -10,20 +11,33 @@ const _kDefaultEnabled = true;
 
 enum _AudioClip { attendance, startTrip, endTrip }
 
-class AudioGuidanceService extends GetxService {
+class AudioGuidanceService extends GetxService with WidgetsBindingObserver {
   final _storage = const FlutterSecureStorage();
   final _player  = AudioPlayer();
 
   final isEnabled  = true.obs;
   final language   = _kDefaultLang.obs;
 
+  // Prevents replaying on pull-to-refresh; resets each fresh app open (onInit)
+  bool _hasPlayedThisSession = false;
+
   @override
   Future<void> onInit() async {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     final stored = await _storage.read(key: _kEnabled);
-    // default ON — only false if explicitly saved as 'false'
-    isEnabled.value  = stored != 'false';
-    language.value   = await _storage.read(key: _kLanguage) ?? _kDefaultLang;
+    isEnabled.value = stored != 'false';
+    language.value  = await _storage.read(key: _kLanguage) ?? _kDefaultLang;
+  }
+
+  // Stop audio when app goes to background
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached) {
+      stop();
+    }
   }
 
   Future<void> setEnabled(bool value) async {
@@ -38,9 +52,15 @@ class AudioGuidanceService extends GetxService {
 
   Future<void> playForDashboard(Map<String, dynamic> dashboard) async {
     if (!isEnabled.value) return;
+    if (_hasPlayedThisSession) return; // skip on pull-to-refresh
     final clip = _detectClip(dashboard);
     if (clip == null) return;
+    _hasPlayedThisSession = true;
     await _play(clip);
+  }
+
+  Future<void> stop() async {
+    await _player.stop();
   }
 
   Future<void> playTripStarted() => _playFile('trip_started.mp3');
@@ -63,15 +83,12 @@ class AudioGuidanceService extends GetxService {
   }
 
   _AudioClip? _detectClip(Map<String, dynamic> dashboard) {
-    // Active trip = already started
     final activeTrip = dashboard['activeTrip'] as Map<String, dynamic>?;
     if (activeTrip != null) return _AudioClip.endTrip;
 
-    // Upcoming trips = assigned but not started
     final upcoming = dashboard['upcomingTrips'] as List?;
     if (upcoming != null && upcoming.isNotEmpty) return _AudioClip.startTrip;
 
-    // No trips — check attendance
     final attended = dashboard['attendanceMarked'] as bool?;
     if (attended == false) return _AudioClip.attendance;
 
@@ -80,6 +97,7 @@ class AudioGuidanceService extends GetxService {
 
   @override
   void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
     _player.dispose();
     super.onClose();
   }
