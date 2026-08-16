@@ -47,6 +47,7 @@ class OfficeClientAdvancesTab extends GetView<OfficeClientAdvancesController> {
               style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600)),
           onPressed: () async {
             await showModalBottomSheet(
+        useSafeArea: true,
               context: context,
               isScrollControlled: true,
               backgroundColor: Colors.transparent,
@@ -180,8 +181,8 @@ class _RecordAdvanceSheetState extends State<_RecordAdvanceSheet> {
 
   Future<void> _loadClients() async {
     try {
-      final res = await _api.get(ApiEndpoints.clients);
-      final data = ((res.data as Map)['data'] as List? ?? [])
+      final res = await _api.get(ApiEndpoints.clients, params: {'size': 500});
+      final data = (((res.data as Map)['data'] as Map)['content'] as List? ?? [])
           .cast<Map<String, dynamic>>();
       if (mounted) setState(() { _clients = data; _isLoadingClients = false; });
     } catch (_) {

@@ -9,19 +9,30 @@ import '../../../../../core/popups/feros_dialog.dart';
 import '../controllers/office_shell_controller.dart';
 
 import '../../office_dashboard/views/office_home_tab.dart';
-import '../../office_more/views/office_more_tab.dart';
 import '../../office_orders/views/office_orders_tab.dart';
 import '../../office_vehicles/views/office_vehicles_tab.dart';
-
-// Reuse supervisor's profile / payslip / my-attendance views
-import '../../../supervisor/supervisor_profile/views/supervisor_profile_view.dart';
-import '../../../supervisor/supervisor_profile/bindings/supervisor_profile_binding.dart';
-import '../../../supervisor/supervisor_payslip/views/supervisor_payslip_view.dart';
-import '../../../supervisor/supervisor_payslip/bindings/supervisor_payslip_binding.dart';
+import '../../office_clients/views/office_clients_view.dart';
+import '../../office_finance/views/office_finance_view.dart';
+import '../../office_staff/views/office_staff_view.dart';
 import '../../office_attendance/views/office_attendance_view.dart';
+import '../../office_payroll/views/office_payroll_view.dart';
+import '../../office_inventory/views/office_inventory_view.dart';
+import '../../office_subscription/views/office_subscription_view.dart';
 import '../../office_notifications/views/office_notifications_view.dart';
 import '../../office_notifications/bindings/office_notifications_binding.dart';
-import '../../office_subscription/views/office_subscription_view.dart';
+
+// Profile / payslip
+import '../../../supervisor/supervisor_profile/views/supervisor_profile_view.dart';
+import '../../../supervisor/supervisor_payslip/views/supervisor_payslip_view.dart';
+import '../../../supervisor/supervisor_payslip/bindings/supervisor_payslip_binding.dart';
+
+// Fuel log + Meter reading + LRs
+import '../../../supervisor/supervisor_fuel_log/views/supervisor_fuel_log_view.dart';
+import '../../../supervisor/supervisor_fuel_log/bindings/supervisor_fuel_log_binding.dart';
+import '../../../supervisor/supervisor_meter_reading/views/supervisor_meter_reading_view.dart';
+import '../../../supervisor/supervisor_meter_reading/bindings/supervisor_meter_reading_binding.dart';
+import '../../../supervisor/supervisor_lrs/views/supervisor_lrs_view.dart';
+import '../../../supervisor/supervisor_lrs/bindings/supervisor_lrs_binding.dart';
 
 class OfficeShellView extends GetView<OfficeShellController> {
   const OfficeShellView({super.key});
@@ -43,7 +54,7 @@ class OfficeShellView extends GetView<OfficeShellController> {
             OfficeHomeTab(),
             OfficeOrdersTab(),
             OfficeVehiclesTab(),
-            OfficeMoreTab(),
+            SupervisorProfileView(),
           ],
         ),
         bottomNavigationBar: _OfficeNavBar(
@@ -56,7 +67,7 @@ class OfficeShellView extends GetView<OfficeShellController> {
 
   PreferredSizeWidget _buildAppBar() {
     final auth   = Get.find<AuthService>();
-    final titles = ['Home', 'Orders', 'Vehicles', 'More'];
+    final titles = ['Home', 'Orders', 'Vehicles', 'Profile'];
     final role   = auth.user?.role ?? '';
     final roleLabel = role == 'ADMIN' ? 'Admin' : 'Office Staff';
 
@@ -241,47 +252,68 @@ class _OfficeDrawer extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 8),
               children: [
-                _DrawerTile(
-                  icon: Icons.person_outline,
-                  label: 'My Profile',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Get.to(
-                      () => const SupervisorProfileView(),
-                      binding: SupervisorProfileBinding(),
-                    );
-                  },
-                ),
                 if (!isAdmin)
                   _DrawerTile(
                     icon: Icons.payments_outlined,
                     label: 'My Payslip',
                     onTap: () {
                       Navigator.of(context).pop();
-                      Get.to(
-                        () => const SupervisorPayslipView(),
-                        binding: SupervisorPayslipBinding(),
-                      );
+                      Get.to(() => const SupervisorPayslipView(), binding: SupervisorPayslipBinding());
                     },
                   ),
+                const _DrawerSectionLabel('Operations'),
                 _DrawerTile(
-                  icon: Icons.calendar_month_outlined,
+                  icon: Icons.receipt_long_outlined,
+                  label: 'Invoices',
+                  onTap: () { Navigator.of(context).pop(); Get.to(() => const OfficeFinanceView()); },
+                ),
+                _DrawerTile(
+                  icon: Icons.description_outlined,
+                  label: 'LR Register',
+                  onTap: () { Navigator.of(context).pop(); Get.to(() => const SupervisorLrsView(), binding: SupervisorLrsBinding()); },
+                ),
+                _DrawerTile(
+                  icon: Icons.business_outlined,
+                  label: 'Clients',
+                  onTap: () { Navigator.of(context).pop(); Get.to(() => const OfficeClientsView()); },
+                ),
+                _DrawerTile(
+                  icon: Icons.badge_outlined,
+                  label: 'Staff',
+                  onTap: () { Navigator.of(context).pop(); Get.to(() => const OfficeStaffView()); },
+                ),
+                _DrawerTile(
+                  icon: Icons.inventory_2_outlined,
+                  label: 'Inventory',
+                  onTap: () { Navigator.of(context).pop(); Get.to(() => const OfficeInventoryView()); },
+                ),
+                _DrawerTile(
+                  icon: Icons.fact_check_outlined,
                   label: 'Attendance',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Get.to(() => const OfficeAttendanceView());
-                  },
+                  onTap: () { Navigator.of(context).pop(); Get.to(() => const OfficeAttendanceView()); },
+                ),
+                _DrawerTile(
+                  icon: Icons.payments_outlined,
+                  label: 'Payroll',
+                  onTap: () { Navigator.of(context).pop(); Get.to(() => const OfficePayrollView()); },
+                ),
+                const _DrawerSectionLabel('Vehicles'),
+                _DrawerTile(
+                  icon: Icons.local_gas_station_outlined,
+                  label: 'Fuel Log',
+                  onTap: () { Navigator.of(context).pop(); Get.to(() => const SupervisorFuelLogView(), binding: SupervisorFuelLogBinding()); },
+                ),
+                _DrawerTile(
+                  icon: Icons.speed_outlined,
+                  label: 'Meter Reading',
+                  onTap: () { Navigator.of(context).pop(); Get.to(() => const SupervisorMeterReadingView(), binding: SupervisorMeterReadingBinding()); },
                 ),
                 if (isAdmin) ...[
-                  const Divider(height: 1, indent: 16, endIndent: 16),
-                  const SizedBox(height: 4),
+                  const _DrawerSectionLabel('Admin'),
                   _DrawerTile(
                     icon: Icons.workspace_premium_outlined,
                     label: 'Subscription',
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Get.to(() => const OfficeSubscriptionView());
-                    },
+                    onTap: () { Navigator.of(context).pop(); Get.to(() => const OfficeSubscriptionView()); },
                   ),
                 ],
                 const Divider(height: 1, indent: 16, endIndent: 16),
@@ -319,6 +351,29 @@ class _OfficeDrawer extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Drawer Section Label ──────────────────────────────────────────────────────
+class _DrawerSectionLabel extends StatelessWidget {
+  final String label;
+  const _DrawerSectionLabel(this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+      child: Text(
+        label.toUpperCase(),
+        style: const TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: AppColors.mutedText,
+          letterSpacing: 0.8,
+        ),
       ),
     );
   }
@@ -362,7 +417,7 @@ class _OfficeNavBar extends StatelessWidget {
       (Icons.dashboard_outlined,       Icons.dashboard,       'Home'),
       (Icons.assignment_outlined,      Icons.assignment,      'Orders'),
       (Icons.local_shipping_outlined,  Icons.local_shipping,  'Vehicles'),
-      (Icons.grid_view_outlined,       Icons.grid_view,       'More'),
+      (Icons.person_outline,            Icons.person,          'Profile'),
     ];
 
     return Container(

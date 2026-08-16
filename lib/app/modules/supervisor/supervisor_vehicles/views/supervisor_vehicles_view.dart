@@ -773,6 +773,7 @@ class _AssignStaffSheet extends StatefulWidget {
     await controller.loadStaffUsers();
     if (!context.mounted) return;
     await showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

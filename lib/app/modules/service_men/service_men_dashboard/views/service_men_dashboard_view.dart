@@ -585,6 +585,7 @@ class _TaskRow extends StatelessWidget {
       return;
     }
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -839,6 +840,7 @@ class _CompleteButton extends StatelessWidget {
     final odoCtrl = TextEditingController();
 
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(

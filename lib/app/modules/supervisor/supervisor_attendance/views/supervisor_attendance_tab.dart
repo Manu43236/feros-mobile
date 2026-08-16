@@ -1122,6 +1122,7 @@ void _showMarkCrewBottomSheet(
   final remarksCtrl         = TextEditingController();
 
   showModalBottomSheet(
+        useSafeArea: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.white,
@@ -1469,6 +1470,7 @@ void _showMarkBottomSheet(
   final selfieFile = Rxn<File>();
 
   showModalBottomSheet(
+        useSafeArea: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.white,

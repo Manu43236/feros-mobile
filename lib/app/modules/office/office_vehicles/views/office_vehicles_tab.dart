@@ -28,6 +28,7 @@ class OfficeVehiclesTab extends StatelessWidget {
       backgroundColor: AppColors.background,
       floatingActionButton: canManage
           ? FloatingActionButton.extended(
+              heroTag: 'vehicles_fab',
               onPressed: () async {
                 final added = await Get.to(
                   () => const OfficeVehicleFormView(),

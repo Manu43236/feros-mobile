@@ -247,6 +247,7 @@ class _PayrollsTab extends StatelessWidget {
     OfficePayrollController controller,
   ) {
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -265,6 +266,7 @@ class _PayrollsTab extends StatelessWidget {
       return;
     }
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -661,6 +663,7 @@ class _AdvancesTab extends StatelessWidget {
     OfficePayrollController controller,
   ) {
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

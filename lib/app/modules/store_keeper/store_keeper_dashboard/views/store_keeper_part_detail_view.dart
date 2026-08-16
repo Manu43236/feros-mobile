@@ -93,6 +93,7 @@ class _StoreKeeperPartDetailViewState extends State<StoreKeeperPartDetailView>
             isLow: isLow,
             onStockIn: () {
               showModalBottomSheet(
+        useSafeArea: true,
                 context: context,
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,
@@ -108,6 +109,7 @@ class _StoreKeeperPartDetailViewState extends State<StoreKeeperPartDetailView>
             },
             onStockOut: () {
               showModalBottomSheet(
+        useSafeArea: true,
                 context: context,
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,

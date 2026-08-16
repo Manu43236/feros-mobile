@@ -22,11 +22,11 @@ class OfficeAttendanceController extends GetxController {
   final pendingCount  = 0.obs;
   final rejectedCount = 0.obs;
 
-  // Date filters for pending / rejected (null = no filter)
-  final pendingFrom  = Rx<DateTime?>(null);
-  final pendingTo    = Rx<DateTime?>(null);
-  final rejectedFrom = Rx<DateTime?>(null);
-  final rejectedTo   = Rx<DateTime?>(null);
+  // Date filters
+  final pendingDate       = Rx<DateTime?>(null); // single-date filter for pending
+  final rejectedFrom      = Rx<DateTime?>(null);
+  final rejectedTo        = Rx<DateTime?>(null);
+  final pendingNameSearch = ''.obs;
 
   static const staffRoles = [
     'DRIVER', 'CLEANER', 'SUPERVISOR',
@@ -143,8 +143,22 @@ class OfficeAttendanceController extends GetxController {
   }
 
   // Client-side filtered views
-  List<Map<String, dynamic>> get filteredPending =>
-      _filterByDate(pendingList, pendingFrom.value, pendingTo.value);
+  List<Map<String, dynamic>> get filteredPending {
+    var list = pendingList.toList();
+    // single-date filter
+    final d = pendingDate.value;
+    if (d != null) {
+      final target = _fmt(d);
+      list = list.where((r) => r['attendanceDate'] == target).toList();
+    }
+    // name search
+    final q = pendingNameSearch.value.trim().toLowerCase();
+    if (q.isNotEmpty) {
+      list = list.where((r) =>
+        (r['userName'] as String? ?? '').toLowerCase().contains(q)).toList();
+    }
+    return list;
+  }
 
   List<Map<String, dynamic>> get filteredRejected =>
       _filterByDate(rejectedList, rejectedFrom.value, rejectedTo.value);
@@ -163,11 +177,10 @@ class OfficeAttendanceController extends GetxController {
     }).toList();
   }
 
-  void setPendingFrom(DateTime? d)  { pendingFrom.value  = d; }
-  void setPendingTo(DateTime? d)    { pendingTo.value    = d; }
-  void setRejectedFrom(DateTime? d) { rejectedFrom.value = d; }
-  void setRejectedTo(DateTime? d)   { rejectedTo.value   = d; }
-  void clearPendingFilter()  { pendingFrom.value  = pendingTo.value  = null; }
+  void setPendingDate(DateTime? d)  { pendingDate.value   = d; }
+  void setRejectedFrom(DateTime? d) { rejectedFrom.value  = d; }
+  void setRejectedTo(DateTime? d)   { rejectedTo.value    = d; }
+  void clearPendingFilter()  { pendingDate.value = null; pendingNameSearch.value = ''; }
   void clearRejectedFilter() { rejectedFrom.value = rejectedTo.value = null; }
 
   // Mark single attendance
@@ -193,6 +206,11 @@ class OfficeAttendanceController extends GetxController {
     await fetchByDate();
   }
 
+  Future<void> clearSignOut(int id) async {
+    await _api.delete(ApiEndpoints.clearSignOutAttendance(id));
+    await fetchByDate();
+  }
+
   Future<void> approve(int id) async {
     await _api.put(ApiEndpoints.approveAttendance(id), data: {});
     await fetchPending();
@@ -202,6 +220,20 @@ class OfficeAttendanceController extends GetxController {
 
   Future<void> reject(int id) async {
     await _api.put(ApiEndpoints.rejectAttendance(id), data: {});
+    await fetchPending();
+    await fetchRejected();
+    await fetchByDate();
+  }
+
+  Future<void> bulkApprove(List<int> ids) async {
+    await Future.wait(ids.map((id) => _api.put(ApiEndpoints.approveAttendance(id), data: {})));
+    await fetchPending();
+    await fetchRejected();
+    await fetchByDate();
+  }
+
+  Future<void> bulkReject(List<int> ids) async {
+    await Future.wait(ids.map((id) => _api.put(ApiEndpoints.rejectAttendance(id), data: {})));
     await fetchPending();
     await fetchRejected();
     await fetchByDate();

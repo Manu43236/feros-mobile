@@ -32,45 +32,60 @@ class OfficeDashboardView extends StatelessWidget {
       children: [
 
         // ── Stat Cards (2×2) ─────────────────────────────────────────
-        GridView.count(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 1.45,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
+        Column(
           children: [
-            _StatCard(
-              icon: Icons.assignment_outlined,
-              iconColor: AppColors.navy,
-              label: 'Active Orders',
-              value: '${controller.orderTotal.value}',
-              sub: '${controller.orderInTransit.value} in transit · ${controller.orderPending.value} pending',
-              onTap: () => _goToTab(1),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _StatCard(
+                    icon: Icons.assignment_outlined,
+                    iconColor: AppColors.navy,
+                    label: 'Active Orders',
+                    value: '${controller.orderTotal.value}',
+                    sub: '${controller.orderInTransit.value} in transit · ${controller.orderPending.value} pending',
+                    onTap: () => _goToTab(1),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _StatCard(
+                    icon: Icons.local_shipping_outlined,
+                    iconColor: AppColors.orange,
+                    label: 'Fleet Size',
+                    value: '${controller.vehicleTotal.value}',
+                    sub: '${controller.vehicleOnTrip.value} on trip · ${controller.vehicleAvailable.value} available',
+                    onTap: () => _goToTab(2),
+                  ),
+                ),
+              ],
             ),
-            _StatCard(
-              icon: Icons.local_shipping_outlined,
-              iconColor: AppColors.orange,
-              label: 'Fleet Size',
-              value: '${controller.vehicleTotal.value}',
-              sub: '${controller.vehicleOnTrip.value} on trip · ${controller.vehicleAvailable.value} available',
-              onTap: () => _goToTab(2),
-            ),
-            _StatCard(
-              icon: Icons.receipt_outlined,
-              iconColor: AppColors.error,
-              label: 'Outstanding',
-              value: _fmtRupee(controller.invoiceOutstanding.value),
-              sub: '${controller.invoiceOverdue.value} overdue invoices',
-              onTap: () => Get.to(() => const OfficeFinanceView()),
-            ),
-            _StatCard(
-              icon: Icons.people_outlined,
-              iconColor: AppColors.success,
-              label: "Today's Attendance",
-              value: '${controller.attPresent.value}',
-              sub: 'of ${controller.attTotal.value} staff · ${controller.attAbsent.value} absent',
-              onTap: () => Get.to(() => const OfficeAttendanceView()),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _StatCard(
+                    icon: Icons.receipt_outlined,
+                    iconColor: AppColors.error,
+                    label: 'Outstanding',
+                    value: _fmtRupee(controller.invoiceOutstanding.value),
+                    sub: '${controller.invoiceOverdue.value} overdue invoices',
+                    onTap: () => Get.to(() => const OfficeFinanceView()),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _StatCard(
+                    icon: Icons.people_outlined,
+                    iconColor: AppColors.success,
+                    label: "Today's Attendance",
+                    value: '${controller.attPresent.value}',
+                    sub: 'of ${controller.attTotal.value} staff · ${controller.attAbsent.value} absent',
+                    onTap: () => Get.to(() => const OfficeAttendanceView()),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -241,34 +256,34 @@ class _StatCard extends StatelessWidget {
             ],
             color: AppColors.surface,
           ),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
                   color: iconColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(7),
                 ),
-                child: Icon(icon, size: 15, color: iconColor),
+                child: Icon(icon, size: 14, color: iconColor),
               ),
-              const Spacer(),
+              const SizedBox(height: 6),
               Text(value,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: AppColors.bodyText,
                   )),
-              const SizedBox(height: 2),
               Text(label,
                   style: AppTextStyles.caption.copyWith(
-                      color: AppColors.mutedText, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 2),
+                      color: AppColors.mutedText, fontWeight: FontWeight.w600, fontSize: 10)),
+              const SizedBox(height: 1),
               Text(sub,
                   style: AppTextStyles.caption.copyWith(
-                      color: AppColors.mutedText, fontSize: 10),
+                      color: AppColors.mutedText, fontSize: 9),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis),
             ],

@@ -260,6 +260,7 @@ Future<OdometerResult?> showOdometerSheet(
       min == null ? null : (min / _kMaxKm).clamp(0.0, 1.0);
 
   final result = await showModalBottomSheet<OdometerResult>(
+        useSafeArea: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.white,

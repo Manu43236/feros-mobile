@@ -137,6 +137,7 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                         label: 'lbl_stock_in'.tr,
                         color: AppColors.navy,
                         onTap: () => showModalBottomSheet(
+        useSafeArea: true,
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
@@ -152,6 +153,7 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                         label: 'lbl_write_off'.tr,
                         color: const Color(0xFFDC2626),
                         onTap: () => showModalBottomSheet(
+        useSafeArea: true,
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
@@ -167,6 +169,7 @@ class StoreKeeperDashboardView extends GetView<StoreKeeperDashboardController> {
                         label: 'lbl_new_part'.tr,
                         color: const Color(0xFF0891B2),
                         onTap: () => showModalBottomSheet(
+        useSafeArea: true,
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
@@ -663,6 +666,7 @@ class StockInSheetState extends State<StockInSheet> {
 
   void _showPartPicker(BuildContext context, List<Map<String, dynamic>> parts) {
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -973,6 +977,7 @@ class StockOutSheetState extends State<StockOutSheet> {
 
   void _showPartPicker(BuildContext context, List<Map<String, dynamic>> parts) {
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -1438,6 +1443,7 @@ class _RecentRequestTile extends StatelessWidget {
       onTap: () {
         if (isPending) {
           showModalBottomSheet(
+        useSafeArea: true,
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,

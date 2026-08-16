@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -25,17 +26,20 @@ class _OfficeAttendanceViewState extends State<OfficeAttendanceView>
   late final TabController _tab;
   late final OfficeAttendanceController _ctrl;
   late final bool _isAdmin;
+  late final bool _canEdit;
 
   @override
   void initState() {
     super.initState();
-    _isAdmin = Get.find<AuthService>().user?.role == 'ADMIN';
+    final role = Get.find<AuthService>().user?.role ?? '';
+    _isAdmin = role == 'ADMIN';
+    _canEdit = _isAdmin || role == 'OFFICE_STAFF';
     Get.lazyPut<OfficeAttendanceController>(() => OfficeAttendanceController());
     _ctrl = Get.find<OfficeAttendanceController>();
     SupervisorMyAttendanceBinding().dependencies();
-    // ADMIN: Daily | My Attendance | Pending | Rejected  (4 tabs)
-    // OFFICE_STAFF: Daily | My Attendance  (2 tabs)
-    _tab = TabController(length: _isAdmin ? 4 : 2, vsync: this);
+    // ADMIN: Daily | Duty Times | My Attendance | Pending | Rejected  (5 tabs)
+    // OFFICE_STAFF: Daily | Duty Times | My Attendance  (3 tabs)
+    _tab = TabController(length: _isAdmin ? 5 : 3, vsync: this);
   }
 
   @override
@@ -72,6 +76,8 @@ class _OfficeAttendanceViewState extends State<OfficeAttendanceView>
                   final rc = _ctrl.rejectedCount.value;
                   return TabBar(
                     controller: _tab,
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
                     indicatorColor: Colors.white,
                     labelColor: Colors.white,
                     unselectedLabelColor: Colors.white.withValues(alpha: 0.55),
@@ -79,6 +85,7 @@ class _OfficeAttendanceViewState extends State<OfficeAttendanceView>
                         .copyWith(fontWeight: FontWeight.w600, fontSize: 12),
                     tabs: [
                       const Tab(text: 'Daily'),
+                      const Tab(text: 'Duty Times'),
                       const Tab(text: 'My Attendance'),
                       Tab(
                         child: Row(
@@ -117,6 +124,8 @@ class _OfficeAttendanceViewState extends State<OfficeAttendanceView>
                 })
               : TabBar(
                   controller: _tab,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
                   indicatorColor: Colors.white,
                   labelColor: Colors.white,
                   unselectedLabelColor: Colors.white.withValues(alpha: 0.55),
@@ -124,6 +133,7 @@ class _OfficeAttendanceViewState extends State<OfficeAttendanceView>
                       .copyWith(fontWeight: FontWeight.w600, fontSize: 12),
                   tabs: const [
                     Tab(text: 'Daily'),
+                    Tab(text: 'Duty Times'),
                     Tab(text: 'My Attendance'),
                   ],
                 ),
@@ -132,7 +142,8 @@ class _OfficeAttendanceViewState extends State<OfficeAttendanceView>
       body: TabBarView(
         controller: _tab,
         children: [
-          _DailyTab(ctrl: _ctrl, isAdmin: _isAdmin),
+          _DailyTab(ctrl: _ctrl, isAdmin: _isAdmin, canEdit: _canEdit),
+          _DutyTimesTab(ctrl: _ctrl),
           const _MyAttendanceTab(),
           if (_isAdmin) ...[
             _PendingTab(ctrl: _ctrl),
@@ -176,8 +187,8 @@ class _MarkAttendanceFabState extends State<_MarkAttendanceFab> {
 
   @override
   Widget build(BuildContext context) {
-    // Only show on "My Attendance" tab (index 1)
-    if (_currentTab != 1) return const SizedBox.shrink();
+    // Only show on "My Attendance" tab (index 2)
+    if (_currentTab != 2) return const SizedBox.shrink();
 
     final ctrl = Get.find<SupervisorMyAttendanceController>();
     return Obx(() {
@@ -410,10 +421,14 @@ class _MyTypeBadge extends StatelessWidget {
 
 void _showMyMarkSheet(
     BuildContext context, SupervisorMyAttendanceController ctrl) {
-  final remarks    = TextEditingController();
-  final selfieFile = Rxn<File>();
+  final remarks     = TextEditingController();
+  final leaveRsnCtr = TextEditingController();
+  final selfieFile  = Rxn<File>();
+  final typeId      = RxnInt();
+  final leaveTypeId = RxnInt();
 
   showModalBottomSheet(
+        useSafeArea: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.white,
@@ -421,102 +436,184 @@ void _showMyMarkSheet(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
     builder: (_) => Padding(
       padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
+        left: 20, right: 20, top: 20,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      child: Obx(() => SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.border, borderRadius: BorderRadius.circular(2)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text('Mark Today\'s Attendance',
-                style: AppTextStyles.heading4.copyWith(color: AppColors.navy)),
-            const SizedBox(height: 4),
-            Text(_officeFormatToday(),
-                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-            const SizedBox(height: 16),
+      child: Obx(() {
+        final types  = ctrl.attendanceTypes;
+        final leaves = ctrl.leaveTypes;
+        final selectedType = types.firstWhereOrNull(
+          (t) => (t['id'] as num?)?.toInt() == typeId.value);
+        final isLeave = (selectedType?['name'] as String? ?? '').toLowerCase().contains('leave');
 
-            _OfficeSelfieBox(selfieFile: selfieFile, disabled: ctrl.markLoading.value),
-            const SizedBox(height: 12),
-
-            Text('Remarks (Optional)',
-                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-            const SizedBox(height: 4),
-            TextField(
-              controller: remarks,
-              decoration: InputDecoration(
-                hintText: 'Optional',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text('Attendance will be reviewed and approved by admin.',
-                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-            const SizedBox(height: 16),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: ctrl.markLoading.value
-                    ? null
-                    : () async {
-                        final presentType = ctrl.attendanceTypes.firstWhereOrNull(
-                          (t) {
-                            final n = (t['name'] as String? ?? '').toLowerCase();
-                            return n.contains('present') && !n.contains('half');
-                          },
-                        );
-                        if (presentType == null) return;
-                        final ok = await ctrl.markAttendance(
-                          typeId: presentType['id'] as int,
-                          selfieFile: selfieFile.value,
-                          remarks: remarks.text,
-                        );
-                        if (ok && context.mounted) {
-                          Navigator.of(context).pop();
-                          Get.snackbar('Success', 'Attendance marked',
-                              backgroundColor: AppColors.success,
-                              colorText: Colors.white,
-                              snackPosition: SnackPosition.BOTTOM);
-                        } else if (!ok && context.mounted) {
-                          Get.snackbar('Error', 'Failed to mark attendance',
-                              backgroundColor: AppColors.error,
-                              colorText: Colors.white,
-                              snackPosition: SnackPosition.BOTTOM);
-                        }
-                      },
-                icon: ctrl.markLoading.value
-                    ? const SizedBox(width: 18, height: 18,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Icon(Icons.check_circle_outline, size: 20),
-                label: Text(
-                  ctrl.markLoading.value ? 'Marking…' : 'Mark Present',
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(color: Colors.white, fontWeight: FontWeight.w600),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.success,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        return SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border, borderRadius: BorderRadius.circular(2)),
                 ),
               ),
-            ),
-          ],
-        ),
-      )),
+              const SizedBox(height: 16),
+              Text('Mark Today\'s Attendance',
+                  style: AppTextStyles.heading4.copyWith(color: AppColors.navy)),
+              const SizedBox(height: 4),
+              Text(_officeFormatToday(),
+                  style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+              const SizedBox(height: 16),
+
+              Text('Attendance Type *',
+                  style: AppTextStyles.caption.copyWith(
+                      color: AppColors.bodyText, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 6),
+              DropdownButtonFormField<int>(
+                value: typeId.value,
+                decoration: InputDecoration(
+                  hintText: 'Select type',
+                  filled: true,
+                  fillColor: AppColors.background,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppColors.border)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppColors.border)),
+                ),
+                items: types.map((t) {
+                  final id   = (t['id'] as num).toInt();
+                  final name = t['name'] as String? ?? '';
+                  return DropdownMenuItem(value: id, child: Text(name));
+                }).toList(),
+                onChanged: (v) {
+                  typeId.value = v;
+                  if (!isLeave) leaveTypeId.value = null;
+                },
+              ),
+
+              if (isLeave) ...[
+                const SizedBox(height: 12),
+                Text('Leave Type',
+                    style: AppTextStyles.caption.copyWith(
+                        color: AppColors.bodyText, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 6),
+                DropdownButtonFormField<int>(
+                  value: leaveTypeId.value,
+                  decoration: InputDecoration(
+                    hintText: 'Select leave type',
+                    filled: true,
+                    fillColor: AppColors.background,
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: AppColors.border)),
+                    enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: AppColors.border)),
+                  ),
+                  items: [
+                    const DropdownMenuItem<int>(value: null, child: Text('Not specified')),
+                    ...leaves.map((t) {
+                      final id   = (t['id'] as num).toInt();
+                      final name = t['name'] as String? ?? '';
+                      return DropdownMenuItem(value: id, child: Text(name));
+                    }),
+                  ],
+                  onChanged: (v) => leaveTypeId.value = v,
+                ),
+                const SizedBox(height: 12),
+                Text('Leave Reason',
+                    style: AppTextStyles.caption.copyWith(
+                        color: AppColors.bodyText, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: leaveRsnCtr,
+                  decoration: InputDecoration(
+                    hintText: 'Optional reason',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+
+              _OfficeSelfieBox(selfieFile: selfieFile, disabled: ctrl.markLoading.value),
+              const SizedBox(height: 12),
+
+              Text('Remarks (Optional)',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+              const SizedBox(height: 4),
+              TextField(
+                controller: remarks,
+                decoration: InputDecoration(
+                  hintText: 'Optional',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text('Attendance will be reviewed and approved by admin.',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+              const SizedBox(height: 16),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: ctrl.markLoading.value || typeId.value == null
+                      ? null
+                      : () async {
+                          final ok = await ctrl.markAttendance(
+                            typeId: typeId.value!,
+                            leaveTypeId: isLeave ? leaveTypeId.value : null,
+                            leaveReason: isLeave ? leaveRsnCtr.text : null,
+                            selfieFile: selfieFile.value,
+                            remarks: remarks.text,
+                          );
+                          if (ok && context.mounted) {
+                            Navigator.of(context).pop();
+                            Get.snackbar('Success', 'Attendance marked',
+                                backgroundColor: AppColors.success,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM);
+                          } else if (!ok && context.mounted) {
+                            Get.snackbar('Error', 'Failed to mark attendance',
+                                backgroundColor: AppColors.error,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM);
+                          }
+                        },
+                  icon: ctrl.markLoading.value
+                      ? const SizedBox(
+                          width: 18, height: 18,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
+                      : const Icon(Icons.check_circle_outline, size: 20),
+                  label: Text(
+                    ctrl.markLoading.value ? 'Marking…' : 'Mark Attendance',
+                    style: AppTextStyles.bodyMedium
+                        .copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.navy,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
     ),
   );
 }
@@ -750,11 +847,263 @@ class _MyAttendanceCard extends StatelessWidget {
   }
 }
 
+// ── Duty Times Tab ─────────────────────────────────────────────────────────────
+class _DutyTimesTab extends StatelessWidget {
+  final OfficeAttendanceController ctrl;
+  const _DutyTimesTab({required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          color: AppColors.surface,
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          child: Obx(() {
+            final d = ctrl.selectedDate.value;
+            final now = DateTime.now();
+            final isToday =
+                d.year == now.year && d.month == now.month && d.day == now.day;
+            final label =
+                '${d.day.toString().padLeft(2, '0')} ${_mn(d.month)} ${d.year}';
+            return Row(
+              children: [
+                _NavBtn(icon: Icons.arrow_back_ios, onTap: () => ctrl.shiftDay(-1)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.calendar_today_outlined,
+                            size: 14, color: AppColors.navy),
+                        const SizedBox(width: 6),
+                        Text(label,
+                            style: AppTextStyles.body.copyWith(
+                                color: AppColors.navy,
+                                fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                _NavBtn(
+                  icon: Icons.chevron_right,
+                  onTap: isToday ? null : () => ctrl.shiftDay(1),
+                ),
+                if (!isToday) ...[
+                  const SizedBox(width: 6),
+                  GestureDetector(
+                    onTap: ctrl.goToday,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.navy.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text('Today',
+                          style: AppTextStyles.caption.copyWith(
+                              color: AppColors.navy, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+              ],
+            );
+          }),
+        ),
+
+        Obx(() {
+          final recs = ctrl.records;
+          final markedOut = recs.where((r) => r['markedOutAt'] != null).length;
+          final onDuty = recs.length - markedOut;
+          return Container(
+            color: AppColors.surface,
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+            child: Row(
+              children: [
+                _DutyChip('Marked Out', '$markedOut', AppColors.success),
+                _DutyChip('On Duty', '$onDuty', AppColors.warning),
+                _DutyChip('Present', '${recs.length}', AppColors.navy),
+              ],
+            ),
+          );
+        }),
+
+        Expanded(
+          child: Obx(() {
+            final state = ctrl.dailyState.value;
+            if (state == ViewState.loading) {
+              return const ShimmerList(count: 6, itemHeight: 64);
+            }
+            if (state == ViewState.error) {
+              return _ErrorWidget(
+                  message: 'Failed to load', onRetry: ctrl.fetchByDate);
+            }
+            final recs = ctrl.records;
+            if (recs.isEmpty) {
+              return Center(
+                child: Text('No attendance records for this date',
+                    style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+              );
+            }
+            return RefreshIndicator(
+              color: AppColors.navy,
+              onRefresh: ctrl.fetchAll,
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
+                itemCount: recs.length,
+                itemBuilder: (_, i) => _DutyRow(record: recs[i]),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  String _mn(int m) => const [
+        '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ][m];
+}
+
+class _DutyChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  const _DutyChip(this.label, this.value, this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.only(right: 6),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          children: [
+            Text(value,
+                style: AppTextStyles.bodyMedium.copyWith(
+                    color: color, fontWeight: FontWeight.w700)),
+            Text(label,
+                style: AppTextStyles.caption.copyWith(
+                    color: color.withValues(alpha: 0.8), fontSize: 9),
+                textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DutyRow extends StatelessWidget {
+  final Map<String, dynamic> record;
+  const _DutyRow({required this.record});
+
+  @override
+  Widget build(BuildContext context) {
+    final name    = record['userName'] as String? ?? '—';
+    final role    = record['roleName'] as String? ?? '';
+    final inTime  = _fmtTime(record['markedAt'] as String?);
+    final outTime = _fmtTime(record['markedOutAt'] as String?);
+    final isOut   = record['markedOutAt'] != null;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600)),
+                Text(role,
+                    style: AppTextStyles.caption.copyWith(
+                        color: AppColors.mutedText)),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.login, size: 12, color: AppColors.success),
+                  const SizedBox(width: 3),
+                  Text(inTime,
+                      style: AppTextStyles.caption.copyWith(
+                          color: AppColors.bodyText,
+                          fontWeight: FontWeight.w600)),
+                ],
+              ),
+              const SizedBox(height: 4),
+              if (isOut)
+                Row(
+                  children: [
+                    const Icon(Icons.logout, size: 12, color: AppColors.error),
+                    const SizedBox(width: 3),
+                    Text(outTime,
+                        style: AppTextStyles.caption.copyWith(
+                            color: AppColors.error, fontWeight: FontWeight.w600)),
+                  ],
+                )
+              else
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text('On Duty',
+                      style: AppTextStyles.caption.copyWith(
+                          color: AppColors.warning,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 10)),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _fmtTime(String? iso) {
+    if (iso == null) return '—';
+    try {
+      final dt = DateTime.parse(iso).toLocal();
+      final h  = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+      final m  = dt.minute.toString().padLeft(2, '0');
+      final ap = dt.hour < 12 ? 'AM' : 'PM';
+      return '$h:$m $ap';
+    } catch (_) { return '—'; }
+  }
+}
+
 // ── Daily Tab ──────────────────────────────────────────────────────────────────
 class _DailyTab extends StatefulWidget {
   final OfficeAttendanceController ctrl;
   final bool isAdmin;
-  const _DailyTab({required this.ctrl, required this.isAdmin});
+  final bool canEdit;
+  const _DailyTab({required this.ctrl, required this.isAdmin, required this.canEdit});
 
   @override
   State<_DailyTab> createState() => _DailyTabState();
@@ -773,7 +1122,7 @@ class _DailyTabState extends State<_DailyTab> {
   @override
   Widget build(BuildContext context) {
     final ctrl = widget.ctrl;
-    final isAdmin = widget.isAdmin;
+    final canEdit = widget.canEdit;
     return Column(
       children: [
         // Date navigator
@@ -994,8 +1343,8 @@ class _DailyTabState extends State<_DailyTab> {
                   return _AttendanceRow(
                     row: row,
                     isMarked: isMarked,
-                    isAdmin: isAdmin,
-                    onTap: isAdmin
+                    canEdit: canEdit,
+                    onTap: canEdit
                         ? () => _showMarkSheet(
                               context,
                               ctrl,
@@ -1039,6 +1388,7 @@ class _DailyTabState extends State<_DailyTab> {
     int? preUserId,
   }) {
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -1046,6 +1396,7 @@ class _DailyTabState extends State<_DailyTab> {
         ctrl: ctrl,
         record: record,
         preUserId: preUserId,
+        isAdmin: widget.isAdmin,
       ),
     );
   }
@@ -1071,12 +1422,12 @@ class _DailyTabState extends State<_DailyTab> {
 class _AttendanceRow extends StatelessWidget {
   final Map<String, dynamic> row;
   final bool isMarked;
-  final bool isAdmin;
+  final bool canEdit;
   final VoidCallback? onTap;
   const _AttendanceRow({
     required this.row,
     required this.isMarked,
-    required this.isAdmin,
+    required this.canEdit,
     required this.onTap,
   });
 
@@ -1087,6 +1438,8 @@ class _AttendanceRow extends StatelessWidget {
     final type = row['attendanceTypeName'] as String?;
     final approval = row['approvalStatus'] as String?;
     final markedBy = row['markedByName'] as String?;
+    final locationName = row['locationName'] as String?;
+    final hasGps = row['latitude'] != null && row['longitude'] != null;
 
     return GestureDetector(
       onTap: onTap,
@@ -1152,6 +1505,25 @@ class _AttendanceRow extends StatelessWidget {
                         fontSize: 10,
                       ),
                     ),
+                  if ((locationName != null && locationName.isNotEmpty) || hasGps)
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined,
+                            size: 10, color: AppColors.mutedText),
+                        const SizedBox(width: 2),
+                        Flexible(
+                          child: Text(
+                            locationName != null && locationName.isNotEmpty
+                                ? locationName
+                                : 'GPS tracked',
+                            style: AppTextStyles.caption.copyWith(
+                                color: AppColors.mutedText, fontSize: 9),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),
@@ -1168,7 +1540,7 @@ class _AttendanceRow extends StatelessWidget {
               ],
             ),
 
-            if (isAdmin) ...[
+            if (canEdit) ...[
               const SizedBox(width: 4),
               const Icon(
                 Icons.edit_outlined,
@@ -1279,66 +1651,264 @@ class _ApprovalChip extends StatelessWidget {
 }
 
 // ── Pending Tab ────────────────────────────────────────────────────────────────
-class _PendingTab extends StatelessWidget {
+class _PendingTab extends StatefulWidget {
   final OfficeAttendanceController ctrl;
   const _PendingTab({required this.ctrl});
+
+  @override
+  State<_PendingTab> createState() => _PendingTabState();
+}
+
+class _PendingTabState extends State<_PendingTab> {
+  final _selected = <int>{};
+  bool _bulkLoading = false;
+
+  OfficeAttendanceController get ctrl => widget.ctrl;
+
+  String _fmtDate(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')} ${['', 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.month]} ${d.year}';
+
+  Future<void> _handle(Future<void> Function() action, String success) async {
+    try {
+      await action();
+      FerosSnackbar.success(success);
+    } catch (_) {
+      FerosSnackbar.error('Action failed. Try again.');
+    }
+  }
+
+  Future<void> _bulkAction(bool approve) async {
+    if (_selected.isEmpty) return;
+    final ids = _selected.toList();
+    setState(() => _bulkLoading = true);
+    try {
+      if (approve) {
+        await ctrl.bulkApprove(ids);
+        FerosSnackbar.success('${ids.length} approved');
+      } else {
+        await ctrl.bulkReject(ids);
+        FerosSnackbar.success('${ids.length} rejected');
+      }
+      setState(() => _selected.clear());
+    } catch (_) {
+      FerosSnackbar.error('Action failed. Try again.');
+    } finally {
+      if (mounted) setState(() => _bulkLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       final s = ctrl.pendingState.value;
-      if (s == ViewState.loading) {
-        return const ShimmerList(count: 5, itemHeight: 80);
-      }
+      if (s == ViewState.loading) return const ShimmerList(count: 5, itemHeight: 80);
       if (s == ViewState.error) {
-        return _ErrorWidget(
-          message: 'Failed to load pending',
-          onRetry: ctrl.fetchPending,
-        );
+        return _ErrorWidget(message: 'Failed to load pending', onRetry: ctrl.fetchPending);
       }
 
       final list = ctrl.filteredPending;
-      final hasFilter =
-          ctrl.pendingFrom.value != null || ctrl.pendingTo.value != null;
+      final hasFilter = ctrl.pendingDate.value != null || ctrl.pendingNameSearch.value.isNotEmpty;
+      final allIds = list.map((r) => (r['id'] as num).toInt()).toSet();
+      final allSelected = allIds.isNotEmpty && _selected.containsAll(allIds);
 
       return Column(
         children: [
-          _DateFilterBar(
-            from: ctrl.pendingFrom.value,
-            to: ctrl.pendingTo.value,
-            onFromChanged: ctrl.setPendingFrom,
-            onToChanged: ctrl.setPendingTo,
-            onClear: hasFilter ? ctrl.clearPendingFilter : null,
-            totalCount: ctrl.pendingList.length,
-            filteredCount: list.length,
+          // Search bar
+          Container(
+            color: AppColors.surface,
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+            child: TextField(
+              onChanged: (v) => ctrl.pendingNameSearch.value = v.trim().toLowerCase(),
+              style: AppTextStyles.body,
+              decoration: InputDecoration(
+                hintText: 'Search by name…',
+                hintStyle: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+                prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.mutedText),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                filled: true,
+                fillColor: AppColors.background,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.border)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.border)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.navy)),
+              ),
+            ),
           ),
+
+          // Date chip filter
+          Container(
+            color: AppColors.surface,
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: ctrl.pendingDate.value ?? DateTime.now(),
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) ctrl.setPendingDate(picked);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: ctrl.pendingDate.value != null
+                          ? AppColors.navy.withValues(alpha: 0.08)
+                          : AppColors.background,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: ctrl.pendingDate.value != null ? AppColors.navy : AppColors.border,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.calendar_today_outlined, size: 13,
+                            color: ctrl.pendingDate.value != null ? AppColors.navy : AppColors.mutedText),
+                        const SizedBox(width: 6),
+                        Text(
+                          ctrl.pendingDate.value != null
+                              ? _fmtDate(ctrl.pendingDate.value!)
+                              : 'Filter by date',
+                          style: AppTextStyles.caption.copyWith(
+                            color: ctrl.pendingDate.value != null ? AppColors.navy : AppColors.mutedText,
+                            fontWeight: ctrl.pendingDate.value != null ? FontWeight.w600 : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (hasFilter) ...[
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: ctrl.clearPendingFilter,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text('Clear', style: AppTextStyles.caption.copyWith(
+                        color: AppColors.error, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+                const Spacer(),
+                if (hasFilter && list.length != ctrl.pendingList.length)
+                  Text('${list.length}/${ctrl.pendingList.length}',
+                      style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+              ],
+            ),
+          ),
+
+          // Bulk action bar
+          if (list.isNotEmpty)
+            Container(
+              color: _selected.isNotEmpty ? AppColors.navy : AppColors.surface,
+              padding: const EdgeInsets.fromLTRB(16, 6, 12, 6),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => setState(() {
+                      if (allSelected) { _selected.clear(); } else { _selected.addAll(allIds); }
+                    }),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          width: 18, height: 18,
+                          decoration: BoxDecoration(
+                            color: allSelected
+                                ? Colors.white
+                                : (_selected.isNotEmpty ? Colors.white.withValues(alpha: 0.2) : Colors.transparent),
+                            border: Border.all(
+                              color: _selected.isNotEmpty ? Colors.white : AppColors.border,
+                              width: 1.5,
+                            ),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: allSelected
+                              ? Icon(Icons.check, size: 12,
+                                  color: _selected.isNotEmpty ? AppColors.navy : AppColors.navy)
+                              : null,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _selected.isEmpty ? 'Select all' : '${_selected.length} selected',
+                          style: AppTextStyles.caption.copyWith(
+                            color: _selected.isNotEmpty ? Colors.white : AppColors.mutedText,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  if (_selected.isNotEmpty) ...[
+                    if (_bulkLoading)
+                      const SizedBox(width: 20, height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    else ...[
+                      GestureDetector(
+                        onTap: () => _bulkAction(false),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.white54),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text('Reject',
+                              style: TextStyle(color: Colors.white, fontFamily: 'Inter',
+                                  fontWeight: FontWeight.w600, fontSize: 12)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => _bulkAction(true),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.success,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text('Approve',
+                              style: TextStyle(color: Colors.white, fontFamily: 'Inter',
+                                  fontWeight: FontWeight.w600, fontSize: 12)),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      GestureDetector(
+                        onTap: () => setState(() => _selected.clear()),
+                        child: const Padding(
+                          padding: EdgeInsets.all(4),
+                          child: Icon(Icons.close, size: 18, color: Colors.white70),
+                        ),
+                      ),
+                    ],
+                  ],
+                ],
+              ),
+            ),
+
           Expanded(
             child: list.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.check_circle_outline,
-                          size: 52,
-                          color: AppColors.success,
-                        ),
+                        const Icon(Icons.check_circle_outline, size: 52, color: AppColors.success),
                         const SizedBox(height: 12),
                         Text(
-                          hasFilter
-                              ? 'No records in this range'
-                              : 'All caught up!',
-                          style: AppTextStyles.heading4.copyWith(
-                            color: AppColors.navy,
-                          ),
+                          hasFilter ? 'No records for this date' : 'All caught up!',
+                          style: AppTextStyles.heading4.copyWith(color: AppColors.navy),
                         ),
                         if (!hasFilter)
-                          Text(
-                            'No pending approvals',
-                            style: AppTextStyles.body.copyWith(
-                              color: AppColors.mutedText,
-                            ),
-                          ),
+                          Text('No pending approvals',
+                              style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
                       ],
                     ),
                   )
@@ -1348,19 +1918,20 @@ class _PendingTab extends StatelessWidget {
                     child: ListView.builder(
                       padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
                       itemCount: list.length,
-                      itemBuilder: (_, i) => _PendingCard(
-                        record: list[i],
-                        onApprove: () => _handle(
-                          context,
-                          () => ctrl.approve((list[i]['id'] as num).toInt()),
-                          'Attendance approved',
-                        ),
-                        onReject: () => _handle(
-                          context,
-                          () => ctrl.reject((list[i]['id'] as num).toInt()),
-                          'Attendance rejected',
-                        ),
-                      ),
+                      itemBuilder: (_, i) {
+                        final id = (list[i]['id'] as num).toInt();
+                        return _PendingCard(
+                          record: list[i],
+                          selected: _selected.contains(id),
+                          onToggleSelect: () => setState(() {
+                            if (_selected.contains(id)) { _selected.remove(id); } else { _selected.add(id); }
+                          }),
+                          onApprove: () => _handle(
+                            () => ctrl.approve(id), 'Attendance approved'),
+                          onReject: () => _handle(
+                            () => ctrl.reject(id), 'Attendance rejected'),
+                        );
+                      },
                     ),
                   ),
           ),
@@ -1368,72 +1939,96 @@ class _PendingTab extends StatelessWidget {
       );
     });
   }
-
-  Future<void> _handle(
-    BuildContext context,
-    Future<void> Function() action,
-    String success,
-  ) async {
-    try {
-      await action();
-      FerosSnackbar.success(success);
-    } catch (_) {
-      FerosSnackbar.error('Action failed. Try again.');
-    }
-  }
 }
 
 class _PendingCard extends StatelessWidget {
   final Map<String, dynamic> record;
   final VoidCallback onApprove;
   final VoidCallback onReject;
+  final bool selected;
+  final VoidCallback onToggleSelect;
   const _PendingCard({
     required this.record,
     required this.onApprove,
     required this.onReject,
+    required this.selected,
+    required this.onToggleSelect,
   });
 
   @override
   Widget build(BuildContext context) {
-    final name = record['userName'] as String? ?? '—';
-    final role = record['roleName'] as String? ?? '';
-    final date = record['attendanceDate'] as String? ?? '';
-    final type = record['attendanceTypeName'] as String? ?? '—';
-    final by = record['markedByName'] as String? ?? '';
+    final name      = record['userName'] as String? ?? '—';
+    final role      = record['roleName'] as String? ?? '';
+    final date      = record['attendanceDate'] as String? ?? '';
+    final type      = record['attendanceTypeName'] as String? ?? '—';
+    final by        = record['markedByName'] as String? ?? '';
+    final selfieUrl = record['selfieUrl'] as String?;
 
-    return Container(
+    return GestureDetector(
+      onLongPress: onToggleSelect,
+      child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: selected ? AppColors.navy.withValues(alpha: 0.05) : AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
+        border: Border.all(
+          color: selected ? AppColors.navy : AppColors.warning.withValues(alpha: 0.4),
+          width: selected ? 1.5 : 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              // Checkbox (always visible when any selected, else tap to start)
+              GestureDetector(
+                onTap: onToggleSelect,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    width: 20, height: 20,
+                    decoration: BoxDecoration(
+                      color: selected ? AppColors.navy : Colors.transparent,
+                      border: Border.all(color: selected ? AppColors.navy : AppColors.border, width: 1.5),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: selected
+                        ? const Icon(Icons.check, size: 13, color: Colors.white)
+                        : null,
+                  ),
+                ),
+              ),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       name,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
                     ),
                     Text(
                       role,
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.mutedText,
-                      ),
+                      style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
                     ),
                   ],
                 ),
               ),
               _TypeChip(type: type),
+              if (selfieUrl != null) ...[
+                const SizedBox(width: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: CachedNetworkImage(
+                    imageUrl: selfieUrl,
+                    width: 36, height: 36,
+                    fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 6),
@@ -1465,55 +2060,40 @@ class _PendingCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: onReject,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    side: const BorderSide(color: AppColors.error),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'Reject',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
+              OutlinedButton(
+                onPressed: onReject,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                  side: const BorderSide(color: AppColors.error),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  textStyle: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 12),
                 ),
+                child: const Text('Reject'),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: onApprove,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'Approve',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: onApprove,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  textStyle: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 12),
                 ),
+                child: const Text('Approve'),
               ),
             ],
           ),
         ],
       ),
-    );
+    ));
   }
 }
 
@@ -1607,11 +2187,12 @@ class _RejectedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = record['userName'] as String? ?? '—';
-    final role = record['roleName'] as String? ?? '';
-    final date = record['attendanceDate'] as String? ?? '';
-    final type = record['attendanceTypeName'] as String? ?? '—';
-    final by = record['approvedByName'] as String?;
+    final name      = record['userName'] as String? ?? '—';
+    final role      = record['roleName'] as String? ?? '';
+    final date      = record['attendanceDate'] as String? ?? '';
+    final type      = record['attendanceTypeName'] as String? ?? '—';
+    final by        = record['approvedByName'] as String?;
+    final selfieUrl = record['selfieUrl'] as String?;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -1646,6 +2227,19 @@ class _RejectedCard extends StatelessWidget {
                 ),
               ),
               _TypeChip(type: type),
+              if (selfieUrl != null) ...[
+                const SizedBox(width: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: CachedNetworkImage(
+                    imageUrl: selfieUrl,
+                    width: 36,
+                    height: 36,
+                    fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 6),
@@ -1709,8 +2303,14 @@ class _MarkAttendanceSheet extends StatefulWidget {
   final OfficeAttendanceController ctrl;
   final Map<String, dynamic>? record; // null = create, non-null = edit
   final int? preUserId; // pre-select unmarked staff
+  final bool isAdmin;
 
-  const _MarkAttendanceSheet({required this.ctrl, this.record, this.preUserId});
+  const _MarkAttendanceSheet({
+    required this.ctrl,
+    this.record,
+    this.preUserId,
+    this.isAdmin = false,
+  });
 
   @override
   State<_MarkAttendanceSheet> createState() => _MarkAttendanceSheetState();
@@ -1722,6 +2322,8 @@ class _MarkAttendanceSheetState extends State<_MarkAttendanceSheet> {
   String? _leaveTypeId;
   final _remarksCtr = TextEditingController();
   final _leaveRsnCtr = TextEditingController();
+  DateTime? _signInDt;
+  DateTime? _signOutDt;
   bool _loading = false;
 
   bool get _isEdit => widget.record != null;
@@ -1736,6 +2338,8 @@ class _MarkAttendanceSheetState extends State<_MarkAttendanceSheet> {
       _leaveTypeId = (r['leaveTypeId'] as num?)?.toString();
       _remarksCtr.text = r['remarks'] as String? ?? '';
       _leaveRsnCtr.text = r['leaveReason'] as String? ?? '';
+      _signInDt  = DateTime.tryParse(r['markedAt']    as String? ?? '');
+      _signOutDt = DateTime.tryParse(r['markedOutAt'] as String? ?? '');
     } else if (widget.preUserId != null) {
       _userId = widget.preUserId.toString();
     }
@@ -1775,6 +2379,8 @@ class _MarkAttendanceSheetState extends State<_MarkAttendanceSheet> {
           'leaveReason': _leaveRsnCtr.text.trim(),
         if (_remarksCtr.text.trim().isNotEmpty)
           'remarks': _remarksCtr.text.trim(),
+        if (_signInDt != null) 'signInTime': _signInDt!.toIso8601String(),
+        if (_signOutDt != null) 'signOutTime': _signOutDt!.toIso8601String(),
       };
       if (_isEdit) {
         final id = (widget.record!['id'] as num).toInt();
@@ -1906,7 +2512,60 @@ class _MarkAttendanceSheetState extends State<_MarkAttendanceSheet> {
             _label('Remarks'),
             const SizedBox(height: 6),
             _textField(_remarksCtr, 'Optional'),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
+
+            // Admin-only: sign-in/out time correction
+            if (widget.isAdmin && _isEdit) ...[
+              _label('Sign-in Time'),
+              const SizedBox(height: 6),
+              _TimePicker(
+                value: _signInDt,
+                hint: 'Pick time',
+                onPicked: (dt) => setState(() => _signInDt = dt),
+              ),
+              const SizedBox(height: 12),
+              _label('Sign-out Time'),
+              const SizedBox(height: 6),
+              _TimePicker(
+                value: _signOutDt,
+                hint: 'Not signed out',
+                onPicked: (dt) => setState(() => _signOutDt = dt),
+              ),
+              const SizedBox(height: 12),
+              if (_signOutDt != null)
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _loading ? null : () async {
+                      final id = (widget.record!['id'] as num).toInt();
+                      final nav = Navigator.of(context);
+                      setState(() => _loading = true);
+                      try {
+                        await widget.ctrl.clearSignOut(id);
+                        if (mounted) {
+                          nav.pop();
+                          FerosSnackbar.success('Sign-out cleared');
+                        }
+                      } catch (_) {
+                        FerosSnackbar.error('Failed to clear sign-out');
+                      } finally {
+                        if (mounted) setState(() => _loading = false);
+                      }
+                    },
+                    icon: const Icon(Icons.delete_outline, size: 16),
+                    label: const Text('Clear Sign-out'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                      side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 12),
+            ],
 
             SizedBox(
               width: double.infinity,
@@ -1974,6 +2633,51 @@ class _MarkAttendanceSheetState extends State<_MarkAttendanceSheet> {
       borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
     ),
   );
+}
+
+// ── Time Picker Row ────────────────────────────────────────────────────────────
+class _TimePicker extends StatelessWidget {
+  final DateTime? value;
+  final String hint;
+  final ValueChanged<DateTime?> onPicked;
+  const _TimePicker({required this.value, required this.hint, required this.onPicked});
+
+  String _fmt(DateTime dt) {
+    final h = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+    final m = dt.minute.toString().padLeft(2, '0');
+    final ampm = dt.hour < 12 ? 'AM' : 'PM';
+    return '$h:$m $ampm';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        final initial = value != null
+            ? TimeOfDay(hour: value!.hour, minute: value!.minute)
+            : TimeOfDay.now();
+        final picked = await showTimePicker(context: context, initialTime: initial);
+        if (picked == null) return;
+        final base = value ?? DateTime.now();
+        onPicked(DateTime(base.year, base.month, base.day, picked.hour, picked.minute));
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Text(
+          value != null ? _fmt(value!) : hint,
+          style: AppTextStyles.body.copyWith(
+            color: value != null ? AppColors.bodyText : AppColors.hintText,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ── Date Filter Bar (Pending / Rejected tabs) ──────────────────────────────────

@@ -19,6 +19,7 @@ Future<void> showMarkAttendanceSheet(
   VoidCallback? onMarked,
 }) {
   return showModalBottomSheet(
+        useSafeArea: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.white,

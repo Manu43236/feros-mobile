@@ -278,6 +278,7 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
             return;
           }
           showModalBottomSheet(
+        useSafeArea: true,
             context: Get.context!,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,

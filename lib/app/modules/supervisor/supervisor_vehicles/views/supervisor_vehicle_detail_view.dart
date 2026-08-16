@@ -1125,6 +1125,7 @@ class _AssignStaffSheet extends StatefulWidget {
     await controller.loadStaffUsers();
     if (!context.mounted) return;
     await showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -1609,6 +1610,7 @@ class _DocumentsTabState extends State<_DocumentsTab>
 
   void _showAddDocSheet(BuildContext context) {
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -2966,6 +2968,7 @@ void _showFuelSheet(
   Map<String, dynamic>? existing,
 }) {
   showModalBottomSheet(
+        useSafeArea: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -3792,6 +3795,7 @@ void _showMeterSheet(
   double lastKm,
 ) {
   showModalBottomSheet(
+        useSafeArea: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -5296,6 +5300,7 @@ class _ImagesTabBodyState extends State<_ImagesTabBody>
 
   void _showPickerSheet() {
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(

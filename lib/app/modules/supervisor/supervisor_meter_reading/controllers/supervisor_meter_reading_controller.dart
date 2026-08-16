@@ -10,20 +10,14 @@ class SupervisorMeterReadingController extends GetxController {
   final _api    = Get.find<ApiClient>();
   final _upload = Get.find<UploadService>();
 
-  final isLoading      = true.obs;
-  final isSaving       = false.obs;
+  final isLoading        = true.obs;
+  final isSaving         = false.obs;
   final isUploadingPhoto = false.obs;
-  final readings       = <Map<String, dynamic>>[].obs;
-  final vehicles       = <Map<String, dynamic>>[].obs;
-  final filterType     = 'ALL'.obs;
+  final readings         = <Map<String, dynamic>>[].obs;
+  final vehicles         = <Map<String, dynamic>>[].obs;
+  final filterType       = 'ALL'.obs;
 
-  // Stats from loaded list
-  int get totalCount => readings.length;
-  int get vehicleCount => readings.map((r) => r['vehicleId']).toSet().length;
-  int get alertCount   => readings.fold(0, (s, r) {
-    final alerts = r['serviceAlerts'] as List? ?? [];
-    return s + alerts.length;
-  });
+  final _allReadings = <Map<String, dynamic>>[];
 
   @override
   void onReady() {
@@ -35,10 +29,10 @@ class SupervisorMeterReadingController extends GetxController {
     isLoading.value = true;
     try {
       final results = await Future.wait([
-        _api.get(ApiEndpoints.meterReadings, params: _params()),
+        _api.get(ApiEndpoints.meterReadings),
         _api.get(ApiEndpoints.vehicles),
       ]);
-      _applyReadings(results[0]);
+      _storeReadings(results[0]);
       final vRaw = (results[1].data as Map<String, dynamic>)['data'] as List? ?? [];
       vehicles.value = vRaw.cast<Map<String, dynamic>>();
     } catch (e) {
@@ -50,31 +44,37 @@ class SupervisorMeterReadingController extends GetxController {
 
   Future<void> reload() async {
     try {
-      final res = await _api.get(ApiEndpoints.meterReadings, params: _params());
-      _applyReadings(res);
+      final res = await _api.get(ApiEndpoints.meterReadings);
+      _storeReadings(res);
     } catch (_) {
       FerosSnackbar.error('Failed to load readings');
     }
   }
 
-  void _applyReadings(dynamic res) {
+  void _storeReadings(dynamic res) {
     final data = (res.data as Map<String, dynamic>)['data'];
     if (data is List) {
-      readings.value = data.cast<Map<String, dynamic>>();
+      _allReadings
+        ..clear()
+        ..addAll(data.cast<Map<String, dynamic>>());
     } else if (data is Map) {
-      final content = data['content'] as List? ?? [];
-      readings.value = content.cast<Map<String, dynamic>>();
+      _allReadings
+        ..clear()
+        ..addAll((data['content'] as List? ?? []).cast<Map<String, dynamic>>());
     }
+    _applyFilter();
   }
 
-  Map<String, dynamic> _params() {
-    if (filterType.value != 'ALL') return {'readingType': filterType.value};
-    return {};
+  void _applyFilter() {
+    final type = filterType.value;
+    readings.value = type == 'ALL'
+        ? List.of(_allReadings)
+        : _allReadings.where((r) => r['readingType'] == type).toList();
   }
 
   void onFilterChanged(String type) {
     filterType.value = type;
-    reload();
+    _applyFilter();
   }
 
   Future<bool> addReading({
@@ -121,7 +121,8 @@ class SupervisorMeterReadingController extends GetxController {
   Future<bool> deleteReading(int id) async {
     try {
       await _api.delete(ApiEndpoints.meterReadingById(id));
-      readings.removeWhere((r) => r['id'] == id);
+      _allReadings.removeWhere((r) => r['id'] == id);
+      _applyFilter();
       FerosSnackbar.success('Reading deleted');
       return true;
     } catch (_) {

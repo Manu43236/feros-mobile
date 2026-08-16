@@ -248,6 +248,7 @@ class _ServiceMenServiceDetailViewState
     bool fetchStarted = false;
 
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -397,6 +398,7 @@ class _ServiceMenServiceDetailViewState
     });
 
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(

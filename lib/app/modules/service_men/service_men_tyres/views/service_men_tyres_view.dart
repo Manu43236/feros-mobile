@@ -423,6 +423,7 @@ class _PositionCard extends StatelessWidget {
     final tyres     = controller.availableTyres;
 
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -705,6 +706,7 @@ class _PositionCard extends StatelessWidget {
     );
 
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(

@@ -50,6 +50,7 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
             return IconButton(
               icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 20),
               onPressed: () => showModalBottomSheet(
+        useSafeArea: true,
                 context: context,
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,
@@ -194,6 +195,7 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
 
   void _showAddCheckpostSheet(BuildContext context) {
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -212,6 +214,7 @@ class SupervisorLrDetailView extends GetView<SupervisorLrDetailController> {
       return;
     }
     showModalBottomSheet(
+        useSafeArea: true,
       context: Get.context!,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -767,6 +770,7 @@ class _ActionButtons extends StatelessWidget {
                     color: AppColors.lrLoaded,
                     loading: busy,
                     onTap: () => showModalBottomSheet(
+        useSafeArea: true,
                       context: context,
                       isScrollControlled: true,
                       backgroundColor: Colors.transparent,
@@ -807,6 +811,7 @@ class _ActionButtons extends StatelessWidget {
                           color: AppColors.lrDelivered,
                           loading: busy,
                           onTap: () => showModalBottomSheet(
+        useSafeArea: true,
                             context: context,
                             isScrollControlled: true,
                             backgroundColor: Colors.transparent,
@@ -2051,6 +2056,7 @@ class _ProofCard extends StatelessWidget {
   void _showReviewSheet(BuildContext context, int proofId) {
     final remarksCtrl = TextEditingController();
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -2271,6 +2277,35 @@ class _TripExpenseSection extends StatelessWidget {
 
           // Expense sheet exists
           else ...[
+            // Driver Details card
+            if (expense['driverName'] != null || expense['driverPhone'] != null || expense['driverAccountNumber'] != null)
+              _Card(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Driver Details', style: AppTextStyles.caption.copyWith(color: AppColors.mutedText, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 10),
+                    if (expense['driverName'] != null)
+                      _InfoRow(label: 'Name', value: expense['driverName'] as String),
+                    if (expense['driverPhone'] != null)
+                      _InfoRow(label: 'Phone', value: expense['driverPhone'] as String, isPhone: true),
+                    if (expense['driverAccountNumber'] != null || expense['driverIfscCode'] != null || expense['driverBankName'] != null) ...[
+                      const Divider(height: 20),
+                      Text('Bank Details', style: AppTextStyles.caption.copyWith(color: AppColors.mutedText, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      if (expense['driverAccountNumber'] != null)
+                        _InfoRow(label: 'Account No.', value: expense['driverAccountNumber'] as String, mono: true),
+                      if (expense['driverIfscCode'] != null)
+                        _InfoRow(label: 'IFSC', value: expense['driverIfscCode'] as String, mono: true),
+                      if (expense['driverBankName'] != null)
+                        _InfoRow(label: 'Bank', value: expense['driverBankName'] as String),
+                    ],
+                  ],
+                ),
+              ),
+            if (expense['driverName'] != null || expense['driverPhone'] != null || expense['driverAccountNumber'] != null)
+              const SizedBox(height: 10),
+
             // Advance & Batta card
             _Card(
               child: Column(
@@ -2542,6 +2577,7 @@ class _TripExpenseSection extends StatelessWidget {
 
   void _showCreateSheet(BuildContext context) {
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -2551,6 +2587,7 @@ class _TripExpenseSection extends StatelessWidget {
 
   void _showAddItemSheet(BuildContext context) {
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -2562,6 +2599,7 @@ class _TripExpenseSection extends StatelessWidget {
     final expense = controller.tripExpense.value;
     if (expense == null) return;
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -2623,6 +2661,38 @@ class _ExpRow extends StatelessWidget {
         children: [
           Text(label, style: AppTextStyles.caption.copyWith(color: muted ? AppColors.hintText : AppColors.mutedText)),
           Text(formatted, style: AppTextStyles.caption.copyWith(color: AppColors.bodyText, fontWeight: bold ? FontWeight.w700 : FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool mono;
+  final bool isPhone;
+  const _InfoRow({required this.label, required this.value, this.mono = false, this.isPhone = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final valueWidget = isPhone
+        ? GestureDetector(
+            onTap: () => launchUrl(Uri.parse('tel:$value')),
+            child: Text(value, style: AppTextStyles.caption.copyWith(color: AppColors.navy, fontWeight: FontWeight.w600)),
+          )
+        : Text(value, style: AppTextStyles.caption.copyWith(
+            color: AppColors.bodyText,
+            fontWeight: FontWeight.w600,
+            fontFamily: mono ? 'monospace' : null,
+          ));
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+          valueWidget,
         ],
       ),
     );

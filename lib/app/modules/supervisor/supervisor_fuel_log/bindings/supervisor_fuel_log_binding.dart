@@ -4,6 +4,6 @@ import '../controllers/supervisor_fuel_log_controller.dart';
 class SupervisorFuelLogBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<SupervisorFuelLogController>(() => SupervisorFuelLogController());
+    Get.lazyPut<SupervisorFuelLogController>(() => SupervisorFuelLogController(), fenix: true);
   }
 }

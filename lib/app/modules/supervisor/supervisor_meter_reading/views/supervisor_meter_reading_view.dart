@@ -24,6 +24,7 @@ class SupervisorMeterReadingView extends GetView<SupervisorMeterReadingControlle
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'meter_reading_fab',
         onPressed: () => _showAddSheet(context),
         backgroundColor: AppColors.navy,
         foregroundColor: Colors.white,
@@ -34,11 +35,15 @@ class SupervisorMeterReadingView extends GetView<SupervisorMeterReadingControlle
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
+        final r        = controller.readings();
+        final total    = r.length;
+        final vehicles = r.map((x) => x['vehicleId']).toSet().length;
+        final alerts   = r.fold<int>(0, (s, x) => s + ((x['serviceAlerts'] as List?)?.length ?? 0));
         return RefreshIndicator(
           onRefresh: controller.fetchAll,
           child: CustomScrollView(
             slivers: [
-              SliverToBoxAdapter(child: _StatsRow(ctrl: controller)),
+              SliverToBoxAdapter(child: _StatsRow(total: total, vehicles: vehicles, alerts: alerts)),
               SliverToBoxAdapter(child: _FilterRow(ctrl: controller)),
               if (controller.readings.isEmpty)
                 const SliverFillRemaining(
@@ -84,6 +89,7 @@ class SupervisorMeterReadingView extends GetView<SupervisorMeterReadingControlle
   void _showAddSheet(BuildContext context) {
     if (!context.mounted) return;
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
@@ -97,27 +103,25 @@ class SupervisorMeterReadingView extends GetView<SupervisorMeterReadingControlle
 
 // ── Stats Row ─────────────────────────────────────────────────────────────────
 class _StatsRow extends StatelessWidget {
-  final SupervisorMeterReadingController ctrl;
-  const _StatsRow({required this.ctrl});
+  final int total, vehicles, alerts;
+  const _StatsRow({required this.total, required this.vehicles, required this.alerts});
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Row(
         children: [
-          _StatChip(label: 'Readings', value: ctrl.totalCount.toString(), color: AppColors.navy),
-          const SizedBox(width: 8),
-          _StatChip(label: 'Vehicles', value: ctrl.vehicleCount.toString(), color: Colors.blue),
-          const SizedBox(width: 8),
+          _StatChip(label: 'Readings', value: '$total', color: AppColors.navy),
+          _StatChip(label: 'Vehicles', value: '$vehicles', color: Colors.blue),
           _StatChip(
             label: 'Alerts',
-            value: ctrl.alertCount.toString(),
-            color: ctrl.alertCount > 0 ? AppColors.error : Colors.green,
+            value: '$alerts',
+            color: alerts > 0 ? AppColors.error : AppColors.success,
           ),
         ],
       ),
-    ));
+    );
   }
 }
 
@@ -130,17 +134,17 @@ class _StatChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        margin: const EdgeInsets.only(right: 6),
+        padding: const EdgeInsets.symmetric(vertical: 6),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withValues(alpha: 0.25)),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(value, style: AppTextStyles.bodyMedium.copyWith(color: color, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 2),
-            Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+            Text(label, style: AppTextStyles.caption.copyWith(color: color.withValues(alpha: 0.8), fontSize: 9)),
           ],
         ),
       ),
@@ -163,31 +167,42 @@ class _FilterRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => SizedBox(
-      height: 44,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _filters.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (_, i) {
-          final (value, label) = _filters[i];
-          final selected = ctrl.filterType.value == value;
-          return FilterChip(
-            label: Text(label),
-            selected: selected,
-            onSelected: (_) => ctrl.onFilterChanged(value),
-            selectedColor: AppColors.navy,
-            labelStyle: TextStyle(
-              color: selected ? Colors.white : AppColors.bodyText,
-              fontSize: 12,
-            ),
-            showCheckmark: false,
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-          );
-        },
-      ),
-    ));
+    return Obx(() {
+      final selected = ctrl.filterType.value;
+      return SizedBox(
+        height: 36,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: _filters.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 6),
+          itemBuilder: (_, i) {
+            final (value, label) = _filters[i];
+            final isSelected = selected == value;
+            return GestureDetector(
+              onTap: () => ctrl.onFilterChanged(value),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.navy : AppColors.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected ? AppColors.navy : AppColors.border,
+                  ),
+                ),
+                child: Text(
+                  label,
+                  style: AppTextStyles.caption.copyWith(
+                    color: isSelected ? Colors.white : AppColors.bodyText,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    });
   }
 }
 
@@ -219,14 +234,14 @@ class _ReadingCard extends StatelessWidget {
     final color  = _typeColors[type] ?? Colors.blueGrey;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
         side: const BorderSide(color: AppColors.border),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -251,17 +266,17 @@ class _ReadingCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.speed_outlined, size: 15, color: AppColors.mutedText),
+                const Icon(Icons.speed_outlined, size: 14, color: AppColors.mutedText),
                 const SizedBox(width: 4),
                 Text(
                   '$km km',
                   style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700, color: AppColors.navy),
                 ),
-                const SizedBox(width: 12),
-                const Icon(Icons.person_outline, size: 15, color: AppColors.mutedText),
+                const SizedBox(width: 10),
+                const Icon(Icons.person_outline, size: 14, color: AppColors.mutedText),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
@@ -270,24 +285,22 @@ class _ReadingCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                if (reading['recordedAt'] != null)
+                  Text(
+                    _formatDate(reading['recordedAt'] as String),
+                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                  ),
               ],
             ),
-            if (reading['recordedAt'] != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                _formatDate(reading['recordedAt'] as String),
-                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
-              ),
-            ],
             if (reading['notes'] != null) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 3),
               Text(
                 reading['notes'] as String,
                 style: AppTextStyles.caption.copyWith(color: AppColors.bodyText),
               ),
             ],
             if (alerts.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Wrap(
                 spacing: 6,
                 runSpacing: 4,
@@ -320,28 +333,26 @@ class _ReadingCard extends StatelessWidget {
                 }).toList(),
               ),
             ],
-            const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 if (reading['photoUrl'] != null)
-                  TextButton.icon(
+                  IconButton(
                     onPressed: () => launchUrl(Uri.parse(reading['photoUrl'] as String)),
-                    icon: const Icon(Icons.photo_outlined, size: 15),
-                    label: const Text('Photo'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.navy,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                    ),
+                    icon: const Icon(Icons.photo_outlined, size: 17),
+                    color: AppColors.navy,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    visualDensity: VisualDensity.compact,
                   ),
-                TextButton.icon(
+                const SizedBox(width: 8),
+                IconButton(
                   onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline, size: 15),
-                  label: const Text('Delete'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                  ),
+                  icon: const Icon(Icons.delete_outline, size: 17),
+                  color: AppColors.error,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  visualDensity: VisualDensity.compact,
                 ),
               ],
             ),

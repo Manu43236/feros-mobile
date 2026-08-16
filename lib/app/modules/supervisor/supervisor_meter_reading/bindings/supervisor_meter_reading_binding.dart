@@ -6,6 +6,7 @@ class SupervisorMeterReadingBinding extends Bindings {
   void dependencies() {
     Get.lazyPut<SupervisorMeterReadingController>(
       () => SupervisorMeterReadingController(),
+      fenix: true,
     );
   }
 }

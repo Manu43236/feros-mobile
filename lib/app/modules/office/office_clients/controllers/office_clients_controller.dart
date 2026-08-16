@@ -38,8 +38,9 @@ class OfficeClientsController extends GetxController {
     state.value = ViewState.loading;
     try {
       final res  = await _api.get(ApiEndpoints.clients);
-      final data = ((res.data as Map)['data'] as List? ?? [])
-          .cast<Map<String, dynamic>>();
+      final raw  = (res.data as Map)['data'];
+      final list = raw is List ? raw : (raw as Map?)?['content'] as List? ?? [];
+      final data = list.cast<Map<String, dynamic>>();
       clients.value = data;
       _applyFilter();
       state.value = ViewState.success;

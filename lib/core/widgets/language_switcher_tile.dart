@@ -37,6 +37,7 @@ class LanguageSwitcherTile extends StatelessWidget {
 
   void _showLanguageSheet(BuildContext context, LocaleService locale) {
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),

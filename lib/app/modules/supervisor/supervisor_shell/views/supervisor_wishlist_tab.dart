@@ -42,6 +42,7 @@ class _SupervisorWishlistTabState extends State<SupervisorWishlistTab>
   void _onFabTap() {
     if (_tab.index == 0) {
       showModalBottomSheet(
+        useSafeArea: true,
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
@@ -49,6 +50,7 @@ class _SupervisorWishlistTabState extends State<SupervisorWishlistTab>
       );
     } else {
       showModalBottomSheet(
+        useSafeArea: true,
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,

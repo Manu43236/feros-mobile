@@ -11,8 +11,10 @@ import '../../office_attendance/views/office_attendance_view.dart';
 import '../../office_payroll/views/office_payroll_view.dart';
 import '../../office_inventory/views/office_inventory_view.dart';
 import '../../office_subscription/views/office_subscription_view.dart';
-import '../../../supervisor/supervisor_fuel_log/controllers/supervisor_fuel_log_controller.dart';
+import '../../../supervisor/supervisor_fuel_log/bindings/supervisor_fuel_log_binding.dart';
 import '../../../supervisor/supervisor_fuel_log/views/supervisor_fuel_log_view.dart';
+import '../../../supervisor/supervisor_meter_reading/bindings/supervisor_meter_reading_binding.dart';
+import '../../../supervisor/supervisor_meter_reading/views/supervisor_meter_reading_view.dart';
 
 class OfficeMoreTab extends StatelessWidget {
   const OfficeMoreTab({super.key});
@@ -29,10 +31,10 @@ class OfficeMoreTab extends StatelessWidget {
       _Module(Icons.inventory_2_outlined,      'Inventory',  AppColors.orange,    () => Get.to(() => const OfficeInventoryView())),
       _Module(Icons.fact_check_outlined,       'Attendance', AppColors.success,   () => Get.to(() => const OfficeAttendanceView())),
       _Module(Icons.payments_outlined,         'Payroll',    const Color(0xFF0891B2), () => Get.to(() => const OfficePayrollView())),
-      _Module(Icons.local_gas_station_outlined, 'Fuel Log',  const Color(0xFF0F766E), () {
-        Get.lazyPut(() => SupervisorFuelLogController());
-        Get.to(() => const SupervisorFuelLogView(), transition: Transition.cupertino);
-      }),
+      _Module(Icons.local_gas_station_outlined, 'Fuel Log',  const Color(0xFF0F766E), () =>
+        Get.to(() => const SupervisorFuelLogView(), binding: SupervisorFuelLogBinding())),
+      _Module(Icons.speed_outlined, 'Meter Reading', const Color(0xFF7C3AED), () =>
+        Get.to(() => const SupervisorMeterReadingView(), binding: SupervisorMeterReadingBinding())),
       if (isAdmin)
         _Module(Icons.workspace_premium_outlined, 'Subscription', AppColors.warning, () => Get.to(() => const OfficeSubscriptionView())),
     ];

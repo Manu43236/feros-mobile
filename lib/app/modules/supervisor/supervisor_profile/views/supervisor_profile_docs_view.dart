@@ -42,6 +42,7 @@ class _State extends State<SupervisorProfileDocsView> {
   }
 
   void _showAddSheet() => showModalBottomSheet(
+        useSafeArea: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.white,

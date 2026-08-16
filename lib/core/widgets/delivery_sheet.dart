@@ -19,6 +19,7 @@ Future<DeliveryResult?> showDeliverySheet(
   );
 
   return await showModalBottomSheet<DeliveryResult>(
+        useSafeArea: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.white,

@@ -56,6 +56,7 @@ class _OfficeInvoiceDetailViewState extends State<OfficeInvoiceDetailView> {
   // ── Record Payment ──────────────────────────────────────────────────────────
   void _showRecordPayment() {
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -71,6 +72,7 @@ class _OfficeInvoiceDetailViewState extends State<OfficeInvoiceDetailView> {
     final current = _invoice?['invoiceStatus'] as String? ?? '';
     const statuses = ['DRAFT', 'SENT', 'PARTIALLY_PAID', 'OVERDUE', 'PAID'];
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(

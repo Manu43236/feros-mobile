@@ -101,6 +101,7 @@ class SupervisorOrderDetailView
                               onPressed: () {
                                 controller.fetchVehicles();
                                 showModalBottomSheet(
+        useSafeArea: true,
                                   context: tabContext,
                                   isScrollControlled: true,
                                   backgroundColor: Colors.transparent,
@@ -993,6 +994,7 @@ class _AllocationCard extends StatelessWidget {
   void _openReportBreakdownSheet(
       BuildContext context, int allocationId, String vehicleReg) {
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -1008,6 +1010,7 @@ class _AllocationCard extends StatelessWidget {
       BuildContext context, int allocationId, Map<String, dynamic> breakdown) {
     controller.fetchVehicles();
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -1021,6 +1024,7 @@ class _AllocationCard extends StatelessWidget {
   void _openCreateLrSheet(BuildContext context, int allocationId) {
     final allocWeight = allocation['allocatedWeight'];
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -1043,6 +1047,7 @@ class _AllocationCard extends StatelessWidget {
   }) {
     controller.fetchStaff();
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -1793,6 +1798,7 @@ class _LrsTab extends StatelessWidget {
 
   void _showCreateSheet(BuildContext context) {
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -3577,6 +3583,7 @@ class _OrderDetailCreateLrSheetState
     if (a == null) return;
     Navigator.of(context).pop();
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

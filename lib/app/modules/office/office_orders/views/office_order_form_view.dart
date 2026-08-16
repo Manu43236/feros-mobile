@@ -100,7 +100,7 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
   Future<void> _loadAll() async {
     try {
       final futures = <Future>[
-        _api.get(ApiEndpoints.clients),
+        _api.get(ApiEndpoints.clients, params: {'size': 500}),
         _api.get(ApiEndpoints.materialTypes),
         _api.get(ApiEndpoints.states),
         if (widget.isEdit)
@@ -109,7 +109,7 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
 
       final results = await Future.wait(futures);
 
-      final clientsData = ((results[0].data as Map)['data'] as List? ?? [])
+      final clientsData = (((results[0].data as Map)['data'] as Map)['content'] as List? ?? [])
           .cast<Map<String, dynamic>>();
       final materialsData = ((results[1].data as Map)['data'] as List? ?? [])
           .cast<Map<String, dynamic>>();

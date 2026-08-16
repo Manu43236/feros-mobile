@@ -163,6 +163,41 @@ class ServiceMenServicesController extends GetxController {
     }
   }
 
+  Future<Map<String, dynamic>?> createService({
+    required int vehicleId,
+    required String triggeredBy,
+    required String serviceType,
+    required String payerType,
+    required String serviceDate,
+    String? vendorName,
+    String? location,
+    int? odometer,
+    String? notes,
+    required List<Map<String, dynamic>> tasks,
+  }) async {
+    try {
+      final res = await _api.post(ApiEndpoints.vehicleServices, data: {
+        'vehicleId':   vehicleId,
+        'triggeredBy': triggeredBy,
+        'serviceType': serviceType,
+        'payerType':   payerType,
+        'serviceDate': serviceDate,
+        if (vendorName != null && vendorName.isNotEmpty) 'vendorName': vendorName,
+        if (location   != null && location.isNotEmpty)   'location':   location,
+        if (odometer   != null)                          'odometer':   odometer,
+        if (notes      != null && notes.isNotEmpty)      'notes':      notes,
+        'tasks': tasks,
+      });
+      final created = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      services.insert(0, created);
+      FerosSnackbar.success('Service created');
+      return created;
+    } catch (_) {
+      FerosSnackbar.error('Failed to create service');
+      return null;
+    }
+  }
+
   void _updateLocal(int id, Map<String, dynamic> updated) {
     final idx = services.indexWhere((s) => s['id'] == id);
     if (idx != -1) services[idx] = updated;

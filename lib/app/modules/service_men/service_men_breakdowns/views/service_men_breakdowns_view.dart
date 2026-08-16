@@ -169,6 +169,7 @@ class ServiceMenBreakdownsView
 
   void _showReportBreakdownSheet(BuildContext context) {
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -254,6 +255,7 @@ class ServiceMenBreakdownsView
     if (vehicleId == null || breakdownId == null) return;
 
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(

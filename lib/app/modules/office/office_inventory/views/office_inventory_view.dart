@@ -964,6 +964,7 @@ class _InfoRow extends StatelessWidget {
 // ── Stock In Sheet ────────────────────────────────────────────────────────────
 void _showStockInSheet(BuildContext context, OfficeInventoryController ctrl) {
   showModalBottomSheet(
+        useSafeArea: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -1143,6 +1144,7 @@ void _showPartSheet(
     BuildContext context, OfficeInventoryController ctrl,
     {Map<String, dynamic>? part}) {
   showModalBottomSheet(
+        useSafeArea: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -1360,6 +1362,7 @@ class _SparePartSheetState extends State<_SparePartSheet> {
 void _showPartReqSheet(
     BuildContext context, OfficeInventoryController ctrl, int id, int qtyReq) {
   showModalBottomSheet(
+        useSafeArea: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -1554,6 +1557,7 @@ class _PartReqSheetState extends State<_PartReqSheet> {
 void _showTyreReqSheet(BuildContext context, OfficeInventoryController ctrl,
     int id, Map<String, dynamic> request) {
   showModalBottomSheet(
+        useSafeArea: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,

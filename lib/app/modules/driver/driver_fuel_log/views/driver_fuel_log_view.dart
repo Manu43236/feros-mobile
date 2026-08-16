@@ -70,6 +70,7 @@ class DriverFuelLogView extends GetView<DriverFuelLogController> {
 
   Future<void> _showAddSheet(BuildContext context) async {
     await showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,

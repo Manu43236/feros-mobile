@@ -137,9 +137,21 @@ class _ServicesBody extends StatelessWidget {
 
   static const _filters = ['ALL', 'OPEN', 'IN_PROGRESS', 'COMPLETED'];
 
+  void _showCreateSheet(BuildContext context) {
+    showModalBottomSheet(
+      useSafeArea: true,
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CreateServiceSheet(controller: ctrl),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Obx(() => Column(
+    return Obx(() => Stack(
+          children: [
+            Column(
           children: [
             Container(
               color: Colors.white,
@@ -218,6 +230,21 @@ class _ServicesBody extends StatelessWidget {
                               },
                             ),
                     ),
+            ),
+          ],
+            ),
+            Positioned(
+              bottom: 16,
+              right: 16,
+              child: FloatingActionButton.extended(
+                heroTag: 'create_service_fab',
+                onPressed: () => _showCreateSheet(context),
+                backgroundColor: AppColors.navy,
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: Text('btn_create_service_record'.tr,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                        color: Colors.white, fontWeight: FontWeight.w600)),
+              ),
             ),
           ],
         ));
@@ -378,6 +405,7 @@ class _BreakdownsBody extends StatelessWidget {
 
   void _showReportBreakdownSheet(BuildContext context) {
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -420,6 +448,7 @@ class _BreakdownsBody extends StatelessWidget {
     final breakdownId = b['id']        as int?;
     if (vehicleId == null || breakdownId == null) return;
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -1809,6 +1838,474 @@ class _DurChip extends StatelessWidget {
                       selected ? FontWeight.w600 : FontWeight.w400,
                 )),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Create Service Sheet ───────────────────────────────────────────────────────
+class _CreateServiceSheet extends StatefulWidget {
+  final ServiceMenServicesController controller;
+  const _CreateServiceSheet({required this.controller});
+
+  @override
+  State<_CreateServiceSheet> createState() => _CreateServiceSheetState();
+}
+
+class _CreateServiceSheetState extends State<_CreateServiceSheet> {
+  final _api = Get.find<ApiClient>();
+
+  List<Map<String, dynamic>> _vehicles         = [];
+  List<Map<String, dynamic>> _taskTypes        = [];
+  Map<String, dynamic>?      _selectedVehicle;
+  bool                       _loadingVehicles  = true;
+  bool                       _loadingTasks     = false;
+
+  String _triggeredBy = 'SCHEDULED';
+  String _serviceType = 'INTERNAL';
+  String _payerType   = 'OWN_EXPENSE';
+  late String _serviceDate;
+
+  final _vendorCtrl   = TextEditingController();
+  final _locationCtrl = TextEditingController();
+  final _odometerCtrl = TextEditingController();
+  final _notesCtrl    = TextEditingController();
+  final _customCtrl   = TextEditingController();
+
+  bool _submitting = false;
+  bool _showCustom = false;
+  final List<_TaskDraft> _tasks = [];
+
+  static const _triggers = [
+    ('SCHEDULED',  'lbl_trigger_scheduled'),
+    ('BREAKDOWN',  'lbl_trigger_breakdown'),
+    ('ACCIDENT',   'lbl_trigger_accident'),
+    ('COMPLIANCE', 'lbl_trigger_compliance'),
+    ('WARRANTY',   'lbl_trigger_warranty'),
+  ];
+  static const _serviceTypes = [
+    ('INTERNAL',    'lbl_service_internal_short'),
+    ('THIRD_PARTY', 'lbl_service_third_party'),
+    ('OEM_CENTER',  'lbl_service_oem_center'),
+  ];
+  static const _payerTypes = [
+    ('OWN_EXPENSE',  'lbl_payer_own_expense'),
+    ('WARRANTY_OEM', 'lbl_payer_oem_warranty'),
+    ('WARRANTY_ANC', 'lbl_payer_anc_warranty'),
+    ('INSURANCE',    'lbl_payer_insurance'),
+    ('AMC',          'lbl_payer_amc'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _serviceDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    _loadVehicles();
+    _loadTaskTypes();
+  }
+
+  Future<void> _loadVehicles() async {
+    try {
+      final res  = await _api.get(ApiEndpoints.vehicles);
+      final list = ((res.data as Map<String, dynamic>)['data'] as List)
+          .cast<Map<String, dynamic>>()
+          .where((v) => v['isActive'] == true)
+          .toList();
+      if (mounted) setState(() { _vehicles = list; _loadingVehicles = false; });
+    } catch (_) {
+      if (mounted) setState(() => _loadingVehicles = false);
+    }
+  }
+
+  Future<void> _loadTaskTypes() async {
+    setState(() => _loadingTasks = true);
+    try {
+      final res  = await _api.get(ApiEndpoints.serviceTaskTypes);
+      final list = ((res.data as Map<String, dynamic>)['data'] as List)
+          .cast<Map<String, dynamic>>();
+      if (mounted) setState(() => _taskTypes = list);
+    } catch (_) {}
+    if (mounted) setState(() => _loadingTasks = false);
+  }
+
+  @override
+  void dispose() {
+    _vendorCtrl.dispose();
+    _locationCtrl.dispose();
+    _odometerCtrl.dispose();
+    _notesCtrl.dispose();
+    _customCtrl.dispose();
+    for (final t in _tasks) t.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateFormat('yyyy-MM-dd').parse(_serviceDate),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now(),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(colorScheme: const ColorScheme.light(primary: AppColors.navy)),
+        child: child!,
+      ),
+    );
+    if (picked != null) setState(() => _serviceDate = DateFormat('yyyy-MM-dd').format(picked));
+  }
+
+  void _addTask(int taskTypeId, String taskName) {
+    if (_tasks.any((t) => t.taskTypeId == taskTypeId)) return;
+    setState(() => _tasks.add(_TaskDraft(taskTypeId: taskTypeId, customName: taskName)));
+  }
+
+  void _addCustomTask() {
+    final name = _customCtrl.text.trim();
+    if (name.isEmpty) return;
+    setState(() {
+      _tasks.add(_TaskDraft(customName: name));
+      _customCtrl.clear();
+      _showCustom = false;
+    });
+  }
+
+  void _removeTask(int index) {
+    setState(() { _tasks[index].dispose(); _tasks.removeAt(index); });
+  }
+
+  Future<void> _submit() async {
+    if (_selectedVehicle == null) {
+      FerosSnackbar.error('lbl_select_vehicle'.tr);
+      return;
+    }
+    if (_tasks.isEmpty) {
+      FerosSnackbar.error('lbl_add_at_least_one_task'.tr);
+      return;
+    }
+    setState(() => _submitting = true);
+    final created = await widget.controller.createService(
+      vehicleId:   _selectedVehicle!['id'] as int,
+      triggeredBy: _triggeredBy,
+      serviceType: _serviceType,
+      payerType:   _payerType,
+      serviceDate: _serviceDate,
+      vendorName:  _serviceType != 'INTERNAL' && _vendorCtrl.text.trim().isNotEmpty ? _vendorCtrl.text.trim() : null,
+      location:    _locationCtrl.text.trim().isNotEmpty ? _locationCtrl.text.trim() : null,
+      odometer:    int.tryParse(_odometerCtrl.text.trim()),
+      notes:       _notesCtrl.text.trim().isNotEmpty ? _notesCtrl.text.trim() : null,
+      tasks: _tasks.map((t) {
+        t.cost        = double.tryParse(t.costCtrl.text.trim());
+        t.frequencyKm = int.tryParse(t.freqCtrl.text.trim());
+        return t.toMap();
+      }).toList(),
+    );
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    if (created != null) {
+      Navigator.pop(context);
+      Get.to(() => ServiceMenServiceDetailView(service: created));
+    }
+  }
+
+  Widget _sectionLabel(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(text, style: AppTextStyles.label.copyWith(color: AppColors.navy)),
+      );
+
+  Widget _chipRow(
+    List<(String, String)> options,
+    String selected,
+    void Function(String) onSelect,
+  ) =>
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: options.map((o) {
+          final active = selected == o.$1;
+          return GestureDetector(
+            onTap: () => setState(() => onSelect(o.$1)),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: active ? AppColors.navy : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: active ? AppColors.navy : AppColors.border),
+              ),
+              child: Text(o.$2.tr,
+                  style: AppTextStyles.caption.copyWith(
+                    color: active ? Colors.white : AppColors.bodyText,
+                    fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                  )),
+            ),
+          );
+        }).toList(),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final inputBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: AppColors.border),
+    );
+    const inputPadding = EdgeInsets.symmetric(horizontal: 12, vertical: 10);
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40, height: 4,
+              decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+              child: Row(children: [
+                const Icon(Icons.build_rounded, size: 18, color: AppColors.navy),
+                const SizedBox(width: 8),
+                Text('btn_create_service_record'.tr,
+                    style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
+              ]),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+
+                    // Vehicle
+                    _sectionLabel('lbl_vehicle'.tr),
+                    _loadingVehicles
+                        ? const SizedBox(height: 44, child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.navy)))
+                        : DropdownButtonFormField<Map<String, dynamic>>(
+                            value: _selectedVehicle,
+                            decoration: InputDecoration(
+                              hintText: 'lbl_select_vehicle'.tr,
+                              contentPadding: inputPadding,
+                              border: inputBorder,
+                              enabledBorder: inputBorder,
+                            ),
+                            items: _vehicles.map((v) => DropdownMenuItem(
+                              value: v,
+                              child: Text(v['registrationNumber'] as String? ?? ''),
+                            )).toList(),
+                            onChanged: (v) => setState(() => _selectedVehicle = v),
+                          ),
+
+                    const SizedBox(height: 16),
+
+                    // Trigger
+                    _sectionLabel('lbl_reason'.tr),
+                    _chipRow(_triggers, _triggeredBy, (v) {
+                      _triggeredBy = v;
+                      if (v == 'WARRANTY') { _serviceType = 'OEM_CENTER'; _payerType = 'WARRANTY_OEM'; }
+                    }),
+
+                    const SizedBox(height: 16),
+
+                    // Service type
+                    _sectionLabel('lbl_service_type'.tr),
+                    _chipRow(_serviceTypes, _serviceType, (v) => _serviceType = v),
+
+                    const SizedBox(height: 16),
+
+                    // Payer
+                    _sectionLabel('lbl_who_pays'.tr),
+                    _chipRow(_payerTypes, _payerType, (v) => _payerType = v),
+
+                    // Vendor (non-internal only)
+                    if (_serviceType != 'INTERNAL') ...[
+                      const SizedBox(height: 16),
+                      _sectionLabel('lbl_vendor_name'.tr),
+                      TextField(
+                        controller: _vendorCtrl,
+                        decoration: InputDecoration(
+                          hintText: _serviceType == 'OEM_CENTER' ? 'e.g. TATA Motors Service' : 'e.g. Raju Tyre Works',
+                          contentPadding: inputPadding,
+                          border: inputBorder,
+                          enabledBorder: inputBorder,
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 16),
+
+                    // Date + Odometer
+                    Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        _sectionLabel('lbl_service_date'.tr),
+                        GestureDetector(
+                          onTap: _pickDate,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                            decoration: BoxDecoration(border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(8)),
+                            child: Row(children: [
+                              const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.mutedText),
+                              const SizedBox(width: 6),
+                              Text(_serviceDate, style: AppTextStyles.body),
+                            ]),
+                          ),
+                        ),
+                      ])),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        _sectionLabel('lbl_odometer_optional'.tr),
+                        TextField(
+                          controller: _odometerCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(hintText: '42300', contentPadding: inputPadding, border: inputBorder, enabledBorder: inputBorder),
+                        ),
+                      ])),
+                    ]),
+
+                    const SizedBox(height: 16),
+
+                    // Location
+                    _sectionLabel('lbl_location_optional'.tr),
+                    TextField(
+                      controller: _locationCtrl,
+                      decoration: InputDecoration(hintText: 'e.g. Depot yard', contentPadding: inputPadding, border: inputBorder, enabledBorder: inputBorder),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Notes
+                    _sectionLabel('lbl_notes_optional'.tr),
+                    TextField(
+                      controller: _notesCtrl,
+                      maxLines: 2,
+                      decoration: InputDecoration(hintText: 'Any additional notes…', contentPadding: inputPadding, border: inputBorder, enabledBorder: inputBorder),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Tasks header
+                    Row(children: [
+                      Text('lbl_tasks'.tr, style: AppTextStyles.label.copyWith(color: AppColors.navy)),
+                      const Spacer(),
+                      TextButton.icon(
+                        onPressed: () => setState(() => _showCustom = !_showCustom),
+                        icon: const Icon(Icons.add, size: 14),
+                        label: Text('lbl_custom_name'.tr, style: AppTextStyles.caption),
+                        style: TextButton.styleFrom(foregroundColor: AppColors.navy, padding: EdgeInsets.zero),
+                      ),
+                    ]),
+
+                    // Custom task input
+                    if (_showCustom) ...[
+                      const SizedBox(height: 8),
+                      Row(children: [
+                        Expanded(child: TextField(
+                          controller: _customCtrl,
+                          decoration: InputDecoration(
+                            hintText: 'Task name…',
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            border: inputBorder,
+                            enabledBorder: inputBorder,
+                          ),
+                          onSubmitted: (_) => _addCustomTask(),
+                        )),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: _addCustomTask,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.navy,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          ),
+                          child: Text('btn_add_task'.tr, style: AppTextStyles.caption.copyWith(color: Colors.white)),
+                        ),
+                      ]),
+                    ],
+
+                    const SizedBox(height: 8),
+
+                    // Task type dropdown
+                    _loadingTasks
+                        ? const SizedBox(height: 44, child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.navy)))
+                        : DropdownButtonFormField<Map<String, dynamic>>(
+                            value: null,
+                            decoration: InputDecoration(
+                              hintText: 'lbl_select_task_type'.tr,
+                              contentPadding: inputPadding,
+                              border: inputBorder,
+                              enabledBorder: inputBorder,
+                            ),
+                            items: _taskTypes
+                                .where((t) => !_tasks.any((d) => d.taskTypeId == t['id']))
+                                .map((t) => DropdownMenuItem(value: t, child: Text(t['name'] as String? ?? '')))
+                                .toList(),
+                            onChanged: (t) { if (t != null) _addTask(t['id'] as int, t['name'] as String? ?? ''); },
+                          ),
+
+                    // Task list
+                    if (_tasks.isNotEmpty)
+                      ..._tasks.asMap().entries.map((e) {
+                        final i = e.key;
+                        final t = e.value;
+                        return Container(
+                          margin: const EdgeInsets.only(top: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.navy.withValues(alpha: 0.04),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.navy.withValues(alpha: 0.2)),
+                          ),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Row(children: [
+                              Expanded(child: Text(t.customName ?? '', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy))),
+                              GestureDetector(
+                                onTap: () => _removeTask(i),
+                                child: const Icon(Icons.close, size: 16, color: AppColors.mutedText),
+                              ),
+                            ]),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: t.costCtrl,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                labelText: '₹ Cost',
+                                labelStyle: AppTextStyles.caption,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppColors.border)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: AppColors.border)),
+                              ),
+                            ),
+                          ]),
+                        );
+                      }),
+
+                    const SizedBox(height: 24),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _submitting ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.navy,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: _submitting
+                            ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : Text('btn_create_service_record'.tr,
+                                style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

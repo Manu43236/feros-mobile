@@ -333,33 +333,26 @@ class _ClientCard extends StatelessWidget {
                   Row(
                     children: [
                       if (phone.isNotEmpty) ...[
-                        const Icon(
-                          Icons.phone_outlined,
-                          size: 12,
-                          color: AppColors.mutedText,
-                        ),
+                        const Icon(Icons.phone_outlined, size: 12, color: AppColors.mutedText),
                         const SizedBox(width: 4),
-                        Text(
-                          phone,
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.mutedText,
+                        Flexible(
+                          child: Text(
+                            phone,
+                            style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        if (city.isNotEmpty) const SizedBox(width: 10),
                       ],
                       if (city.isNotEmpty) ...[
-                        const Icon(
-                          Icons.location_on_outlined,
-                          size: 12,
-                          color: AppColors.mutedText,
-                        ),
+                        const Icon(Icons.location_on_outlined, size: 12, color: AppColors.mutedText),
                         const SizedBox(width: 4),
-                        Text(
-                          state.isNotEmpty ? '$city, $state' : city,
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.mutedText,
+                        Flexible(
+                          child: Text(
+                            state.isNotEmpty ? '$city, $state' : city,
+                            style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ],

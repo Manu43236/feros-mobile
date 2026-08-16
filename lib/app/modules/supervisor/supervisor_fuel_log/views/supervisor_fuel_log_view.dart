@@ -27,6 +27,7 @@ class SupervisorFuelLogView extends GetView<SupervisorFuelLogController> {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'fuel_log_fab',
         onPressed: () => _showFuelSheet(context),
         backgroundColor: AppColors.navy,
         child: const Icon(Icons.add, color: Colors.white),
@@ -41,7 +42,7 @@ class SupervisorFuelLogView extends GetView<SupervisorFuelLogController> {
             slivers: [
               // ── Stats row ───────────────────────────────────────────────────
               SliverToBoxAdapter(
-                child: Obx(() => _StatsRow(controller: controller)),
+                child: _StatsRow(controller: controller),
               ),
 
               // ── Search + Filter ─────────────────────────────────────────────
@@ -180,6 +181,7 @@ class SupervisorFuelLogView extends GetView<SupervisorFuelLogController> {
     }
     if (!context.mounted) return;
     await showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
@@ -525,7 +527,7 @@ class _FuelSheet extends StatelessWidget {
                         colorScheme: const ColorScheme.light(primary: AppColors.navy)),
                     child: child!),
                 );
-                if (date == null) return;
+                if (date == null || !ctx.mounted) return;
                 final time = await showTimePicker(
                   context: ctx,
                   initialTime: TimeOfDay.fromDateTime(controller.selectedDateTime.value),

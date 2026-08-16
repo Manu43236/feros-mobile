@@ -135,6 +135,7 @@ class ApiEndpoints {
   static String attendanceById(id)        => '/attendance/$id';
   static String approveAttendance(id)     => '/attendance/$id/approve';
   static String rejectAttendance(id)      => '/attendance/$id/reject';
+  static String clearSignOutAttendance(int id) => '/attendance/$id/sign-out';
   static String userAttendance(id)        => '/attendance/user/$id';
   static const attendanceRejected         = '/attendance/rejected';
   static const tripProofs                 = '/trip-proofs';

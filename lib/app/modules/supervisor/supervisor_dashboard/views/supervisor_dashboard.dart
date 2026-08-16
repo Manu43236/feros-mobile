@@ -294,6 +294,7 @@ void _showMarkSheet(BuildContext context, SupervisorDashboardController ctrl) {
   final selectedLeaveTypeId = RxnInt();
 
   showModalBottomSheet(
+        useSafeArea: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.white,

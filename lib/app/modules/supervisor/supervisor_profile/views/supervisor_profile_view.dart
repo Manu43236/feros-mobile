@@ -244,6 +244,7 @@ class SupervisorProfileView extends GetView<SupervisorProfileController> {
 
   Future<void> _pickPhoto(BuildContext context) async {
     final source = await showModalBottomSheet<ImageSource>(
+        useSafeArea: true,
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(

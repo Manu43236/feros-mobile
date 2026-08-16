@@ -75,6 +75,7 @@ class OfficeOrdersTab extends GetView<OfficeOrdersController> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'orders_fab',
         backgroundColor: AppColors.navy,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),

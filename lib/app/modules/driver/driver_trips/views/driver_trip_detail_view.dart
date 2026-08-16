@@ -391,6 +391,7 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
     DriverTripDetailController controller,
   ) async {
     final confirmed = await showModalBottomSheet<bool>(
+        useSafeArea: true,
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),

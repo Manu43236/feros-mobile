@@ -282,6 +282,7 @@ void _showMarkSheet(BuildContext context, SupervisorMyAttendanceController ctrl)
   final selectedLeaveTypeId = RxnInt();
 
   showModalBottomSheet(
+        useSafeArea: true,
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.white,

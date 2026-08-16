@@ -294,6 +294,7 @@ class OfficeStaffView extends StatelessWidget {
     OfficeStaffController controller,
   ) {
     showModalBottomSheet(
+        useSafeArea: true,
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

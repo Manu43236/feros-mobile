@@ -52,8 +52,8 @@ class _OfficeCreateInvoiceViewState extends State<OfficeCreateInvoiceView> {
 
   Future<void> _loadClients() async {
     try {
-      final res = await _api.get(ApiEndpoints.clients);
-      final data = ((res.data as Map)['data'] as List? ?? [])
+      final res = await _api.get(ApiEndpoints.clients, params: {'size': 500});
+      final data = (((res.data as Map)['data'] as Map)['content'] as List? ?? [])
           .cast<Map<String, dynamic>>();
       if (mounted)
         setState(() {

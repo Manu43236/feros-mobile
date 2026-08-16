@@ -858,9 +858,11 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  child: Container(
+                  child: SafeArea(
+                    top: false,
+                    child: Container(
                     color: AppColors.background,
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                     child: SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -893,6 +895,7 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
                               ),
                       ),
                     ),
+                  ),
                   ),
                 ),
               ],
