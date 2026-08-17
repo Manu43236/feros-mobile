@@ -1,5 +1,7 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:get/get.dart';
 import '../api/api_client.dart';
+import '../../core/utils/env_config.dart';
 import '../api/api_endpoints.dart';
 import '../models/user_model.dart';
 import 'storage_service.dart';
@@ -45,6 +47,13 @@ class AuthService extends GetxService {
     try {
       await Get.find<ApiClient>().post(ApiEndpoints.logout);
     } catch (_) {}
+
+    // Delete FCM token so this device stops receiving notifications immediately
+    if (EnvConfig.isProd) {
+      try {
+        await FirebaseMessaging.instance.deleteToken();
+      } catch (_) {}
+    }
 
     Get.offAllNamed(Routes.LOGIN);
     await _storage.clearAll();

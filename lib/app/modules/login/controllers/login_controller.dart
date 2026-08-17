@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:feros/core/services/storage_service.dart';
+import 'package:feros/core/utils/env_config.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -115,12 +117,18 @@ class LoginController extends GetxController {
     isLoading.value = true;
     try {
       final packageInfo = await PackageInfo.fromPlatform();
+      String? fcmToken;
+      if (EnvConfig.isProd) {
+        fcmToken = await FirebaseMessaging.instance.getToken();
+      }
+
       final response = await _api.post(ApiEndpoints.login, data: {
         'phone':      phoneController.text.trim(),
         'pin':        _pin,
         'deviceType': 'MOBILE',
         'deviceInfo': Platform.isAndroid ? 'Android' : 'iOS',
         'appVersion': packageInfo.version,
+        if (fcmToken != null) 'fcmToken': fcmToken,
       });
 
       final data    = response.data as Map<String, dynamic>;
@@ -138,6 +146,11 @@ class LoginController extends GetxController {
         Get.offAllNamed(Routes.FORCE_PIN_CHANGE);
       } else {
         Get.offAllNamed(_auth.roleHome);
+        if (EnvConfig.isProd) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            FirebaseMessaging.instance.requestPermission();
+          });
+        }
       }
     } on AccountLockedException catch (e) {
       _startLockTimer(e.lockedUntil);

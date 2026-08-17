@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "206785700779",
+    "project_id": "feros-552b2",
+    "storage_bucket": "feros-552b2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:206785700779:android:f5bc59e8a07a461e9768ee",
+        "android_client_info": {
+          "package_name": "com.feros.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyhAXFcMi6M3AR967UToZzJBWgDqBjJi0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
