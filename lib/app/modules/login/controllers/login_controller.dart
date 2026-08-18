@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:feros/core/services/storage_service.dart';
 import 'package:feros/core/utils/env_config.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -118,7 +119,7 @@ class LoginController extends GetxController {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       String? fcmToken;
-      if (EnvConfig.isProd) {
+      if (EnvConfig.isProd && !kDebugMode) {
         fcmToken = await FirebaseMessaging.instance.getToken();
       }
 

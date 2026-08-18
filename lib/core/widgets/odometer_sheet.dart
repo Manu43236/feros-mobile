@@ -1,10 +1,7 @@
-import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../popups/feros_snackbar.dart';
 import '../theme/app_text_styles.dart';
 
@@ -197,8 +194,7 @@ Future<OdometerResult?> showOdometerSheet(
   double? minOdometer,
   DateTime? tripStartDate, // when provided, enforces physics-based max delta
 }) async {
-  File? capturedImage;
-  bool isProcessing = false;
+
 
   // First 2 digits of current odometer — shown locked in grey
   final prefix = minOdometer != null
@@ -288,47 +284,6 @@ Future<OdometerResult?> showOdometerSheet(
           Navigator.of(ctx).pop(OdometerResult(odometer: val));
         }
 
-        Future<void> scanPhoto() async {
-          final picked = await ImagePicker().pickImage(
-            source: ImageSource.camera,
-            imageQuality: 85,
-          );
-          if (picked == null) return;
-          setState(() {
-            capturedImage = File(picked.path);
-            isProcessing = true;
-          });
-          try {
-            final recognizer = TextRecognizer();
-            final res = await recognizer.processImage(
-              InputImage.fromFile(capturedImage!),
-            );
-            recognizer.close();
-            final candidates = <int>{};
-            RegExp(r'\d{4,7}').allMatches(res.text).forEach((m) {
-              final v = int.tryParse(m.group(0)!);
-              if (v != null) candidates.add(v);
-            });
-            for (final block in res.blocks) {
-              for (final line in block.lines) {
-                final digits = line.elements
-                    .map((e) => e.text)
-                    .join('')
-                    .replaceAll(RegExp(r'[^\d]'), '');
-                if (digits.length >= 4 && digits.length <= 7) {
-                  final v = int.tryParse(digits);
-                  if (v != null) candidates.add(v);
-                }
-              }
-            }
-            if (candidates.isNotEmpty) {
-              final sorted = candidates.toList()
-                ..sort((a, b) => b.compareTo(a));
-              ctrl.text = sorted.first.toString();
-            }
-          } catch (_) {}
-          setState(() => isProcessing = false);
-        }
 
         final typed       = ctrl.text.trim();
         final typedDec    = ctrlDecimal.text.trim();
@@ -653,108 +608,32 @@ Future<OdometerResult?> showOdometerSheet(
 
                     const SizedBox(height: 16),
 
-                    // Scan + confirm row
+                    // Confirm button
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          // Scan button
-                          GestureDetector(
-                            onTap: scanPhoto,
-                            child: Container(
-                              height: 52,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _kSurface,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: _kBorderDm,
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: capturedImage != null
-                                  ? Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            4,
-                                          ),
-                                          child: Image.file(
-                                            capturedImage!,
-                                            width: 32,
-                                            height: 32,
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        isProcessing
-                                            ? const SizedBox(
-                                                width: 14,
-                                                height: 14,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                      color: _kNavy,
-                                                    ),
-                                              )
-                                            : const Icon(
-                                                Icons.refresh,
-                                                size: 16,
-                                                color: _kMuted,
-                                              ),
-                                      ],
-                                    )
-                                  : Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.camera_alt_outlined,
-                                          size: 20,
-                                          color: _kMuted,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          'Scan',
-                                          style: AppTextStyles.caption.copyWith(
-                                            color: _kMuted,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: canConfirm && !aboveMax ? confirm : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: canConfirm && !aboveMax
+                                ? buttonColor
+                                : const Color(0xFFCBD5E1),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          const SizedBox(width: 12),
-
-                          // Confirm button
-                          Expanded(
-                            child: SizedBox(
-                              height: 52,
-                              child: ElevatedButton(
-                                onPressed: canConfirm && !aboveMax ? confirm : null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: canConfirm && !aboveMax
-                                      ? buttonColor
-                                      : const Color(0xFFCBD5E1),
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: Text(
-                                  buttonLabel,
-                                  style: AppTextStyles.caption.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
+                          child: Text(
+                            buttonLabel,
+                            style: AppTextStyles.caption.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ],

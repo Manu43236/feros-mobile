@@ -196,6 +196,16 @@ class ApiEndpoints {
   static const taxes           = '/masters/global/taxes';
   static const serviceTaskTypes= '/masters/global/service-task-types';
 
+  // Vehicle Leases
+  static const vehicleLeases                                     = '/vehicle-leases';
+  static String vehicleLeaseById(id)                             => '/vehicle-leases/$id';
+  static String vehicleLeaseVehicles(id)                         => '/vehicle-leases/$id/vehicles';
+  static String vehicleLeaseSessions(id)                         => '/vehicle-leases/$id/sessions';
+  static String vehicleLeaseStartSession(id, assignmentId)       => '/vehicle-leases/$id/vehicles/$assignmentId/sessions';
+  static String vehicleLeaseEndSession(id, assignmentId)         => '/vehicle-leases/$id/vehicles/$assignmentId/sessions/end';
+  static String vehicleLeaseAssignDivision(id, assignmentId)     => '/vehicle-leases/$id/vehicles/$assignmentId/division';
+  static String clientDivisions(clientId)                        => '/clients/$clientId/divisions';
+
   // Supervisor Watchlists
   static const watchlistVehicles       = '/supervisor/watchlist/vehicles';
   static const watchlistVehicleIds     = '/supervisor/watchlist/vehicles/ids';

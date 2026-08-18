@@ -29,8 +29,6 @@ dependencies:
   flutter_image_compress: ^2.4.0
   cached_network_image: ^3.4.1
 
-  # OCR — odometer reading from photo
-  google_mlkit_text_recognition: ^0.13.0
 
   # In-app YouTube player
   youtube_player_flutter: ^9.1.1

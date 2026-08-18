@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -14,7 +15,9 @@ import 'core/utils/env_config.dart';
 import 'core/widgets/stg_banner.dart';
 
 @pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {}
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
 
 String _currentRole() {
   try {
@@ -61,15 +64,26 @@ void _handleNotificationTap(RemoteMessage message) {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (EnvConfig.isProd) {
-    await Firebase.initializeApp();
+  await Firebase.initializeApp();
+
+  if (!kDebugMode) {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-    // App opened from terminated state via notification
+    FirebaseMessaging.onMessage.listen((message) {
+      final n = message.notification;
+      if (n != null) {
+        Get.snackbar(
+          n.title ?? '',
+          n.body ?? '',
+          duration: const Duration(seconds: 4),
+        );
+      }
+    });
+
+    // getInitialMessage hangs on iOS simulator — skip in debug
     final initial = await FirebaseMessaging.instance.getInitialMessage();
     if (initial != null) _handleNotificationTap(initial);
 
-    // App brought to foreground via notification
     FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
   }
 

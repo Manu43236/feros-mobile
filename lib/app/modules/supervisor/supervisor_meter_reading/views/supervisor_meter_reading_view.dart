@@ -1,8 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../../core/theme/app_colors.dart';
@@ -384,8 +381,6 @@ class _AddReadingSheet extends StatefulWidget {
 class _AddReadingSheetState extends State<_AddReadingSheet> {
   int?   _vehicleId;
   String _type     = 'GENERAL';
-  File?  _photo;
-  bool   _scanning = false;
 
   final _kmCtrl    = TextEditingController();
   final _notesCtrl = TextEditingController();
@@ -404,40 +399,6 @@ class _AddReadingSheetState extends State<_AddReadingSheet> {
     super.dispose();
   }
 
-  Future<void> _takePhoto() async {
-    final picker = ImagePicker();
-    final xFile  = await picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 85,
-    );
-    if (xFile == null) return;
-    setState(() { _photo = File(xFile.path); _scanning = true; });
-    try {
-      final inputImage = InputImage.fromFile(_photo!);
-      final recognizer = TextRecognizer();
-      final result     = await recognizer.processImage(inputImage);
-      recognizer.close();
-      final candidates = <int>{};
-      RegExp(r'\d{4,7}').allMatches(result.text).forEach((m) {
-        final v = int.tryParse(m.group(0)!);
-        if (v != null) candidates.add(v);
-      });
-      for (final block in result.blocks) {
-        for (final line in block.lines) {
-          final digits = line.elements.map((e) => e.text).join('').replaceAll(RegExp(r'[^\d]'), '');
-          if (digits.length >= 4 && digits.length <= 7) {
-            final v = int.tryParse(digits);
-            if (v != null) candidates.add(v);
-          }
-        }
-      }
-      if (candidates.isNotEmpty) {
-        final sorted = candidates.toList()..sort((a, b) => b.compareTo(a));
-        _kmCtrl.text = sorted.first.toString();
-      }
-    } catch (_) {}
-    setState(() => _scanning = false);
-  }
 
   Future<void> _save() async {
     if (_vehicleId == null) {
@@ -457,7 +418,7 @@ class _AddReadingSheetState extends State<_AddReadingSheet> {
       vehicleId:  _vehicleId!,
       readingKm:  km,
       readingType: _type,
-      photoFile:  _photo,
+
       notes:      _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
     );
     if (ok && mounted) Navigator.pop(context);
@@ -531,66 +492,6 @@ class _AddReadingSheetState extends State<_AddReadingSheet> {
                   showCheckmark: false,
                 );
               }).toList(),
-            ),
-            const SizedBox(height: 12),
-
-            // Photo + OCR
-            GestureDetector(
-              onTap: _scanning ? null : _takePhoto,
-              child: Container(
-                width: double.infinity,
-                height: _photo != null ? 140 : 70,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: _photo != null
-                    ? Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(9),
-                            child: Image.file(_photo!, width: double.infinity, height: 140, fit: BoxFit.cover),
-                          ),
-                          if (_scanning)
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.black38,
-                                borderRadius: BorderRadius.circular(9),
-                              ),
-                              child: const Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                    SizedBox(height: 6),
-                                    Text('Reading...', style: TextStyle(color: Colors.white, fontSize: 12)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          Positioned(
-                            bottom: 8, right: 8,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.navy,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text('Retake', style: AppTextStyles.caption.copyWith(color: Colors.white)),
-                            ),
-                          ),
-                        ],
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.camera_alt_outlined, size: 24, color: AppColors.mutedText),
-                          const SizedBox(height: 4),
-                          Text('Tap to photo odometer (auto-reads)', style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-                        ],
-                      ),
-              ),
             ),
             const SizedBox(height: 12),
 

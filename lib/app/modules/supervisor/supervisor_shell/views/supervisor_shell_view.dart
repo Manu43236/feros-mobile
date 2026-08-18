@@ -32,6 +32,8 @@ import '../../supervisor_assignments/views/supervisor_assignments_view.dart';
 import '../../supervisor_assignments/bindings/supervisor_assignments_binding.dart';
 import '../../supervisor_fuel_log/views/supervisor_fuel_log_view.dart';
 import '../../supervisor_fuel_log/bindings/supervisor_fuel_log_binding.dart';
+import '../../../vehicle_leases/views/vehicle_leases_view.dart';
+import '../../../vehicle_leases/bindings/vehicle_leases_binding.dart';
 import '../../supervisor_meter_reading/views/supervisor_meter_reading_view.dart';
 import '../../supervisor_meter_reading/bindings/supervisor_meter_reading_binding.dart';
 
@@ -283,6 +285,21 @@ class _SupervisorDrawer extends StatelessWidget {
                     Get.to(
                       () => const SupervisorBreakdownView(),
                       binding: SupervisorBreakdownBinding(),
+                    );
+                  },
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                const SizedBox(height: 4),
+                _DrawerSectionLabel(label: 'Leases'),
+                _DrawerTile(
+                  icon: Icons.key_outlined,
+                  label: 'Vehicle Leases',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Get.to(
+                      () => const VehicleLeasesView(),
+                      binding: VehicleLeasesBinding(),
+                      transition: Transition.cupertino,
                     );
                   },
                 ),
