@@ -22,6 +22,7 @@ class VehicleLeasesController extends GetxController {
   final vehicles        = <Map<String, dynamic>>[].obs;
   final sessions        = <Map<String, dynamic>>[].obs;
   final divisions       = <Map<String, dynamic>>[].obs;
+  final drivers         = <Map<String, dynamic>>[].obs;
 
   // ── Session action state ─────────────────────────────────────────────────────
   final isActioning = false.obs;
@@ -90,6 +91,7 @@ class VehicleLeasesController extends GetxController {
     vehicles.clear();
     sessions.clear();
     divisions.clear();
+    drivers.clear();
     try {
       final results = await Future.wait([
         _api.get(ApiEndpoints.vehicleLeaseById(id)),
@@ -104,16 +106,33 @@ class VehicleLeasesController extends GetxController {
         ((results[2].data as Map)['data'] as List? ?? []).cast<Map<String, dynamic>>(),
       );
       final clientId = lease.value?['clientId'];
+      final results2 = await Future.wait([
+        if (clientId != null) _api.get(ApiEndpoints.clientDivisions(clientId)),
+        _api.get(ApiEndpoints.staffProfiles),
+      ]);
       if (clientId != null) {
-        final divRes = await _api.get(ApiEndpoints.clientDivisions(clientId));
         divisions.assignAll(
-          ((divRes.data as Map)['data'] as List? ?? []).cast<Map<String, dynamic>>(),
+          ((results2[0].data as Map)['data'] as List? ?? []).cast<Map<String, dynamic>>(),
         );
       }
+      final allStaff = ((results2.last.data as Map)['data'] as List? ?? [])
+          .cast<Map<String, dynamic>>();
+      drivers.assignAll(allStaff.where((s) => s['roleName'] == 'DRIVER').toList());
     } catch (_) {
       FerosSnackbar.error('Failed to load lease details');
     }
     isLoadingDetail.value = false;
+  }
+
+  Future<void> assignDriver(int leaseId, int assignmentId, int? driverStaffId) async {
+    try {
+      await _api.put(
+        ApiEndpoints.vehicleLeaseAssignDriver(leaseId, assignmentId),
+        data: {'driverStaffId': driverStaffId},
+      );
+    } catch (_) {
+      FerosSnackbar.error('Failed to assign driver');
+    }
   }
 
   Future<void> assignDivision(int leaseId, int assignmentId, int? divisionId) async {

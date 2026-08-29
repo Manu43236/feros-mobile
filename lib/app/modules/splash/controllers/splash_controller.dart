@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/storage_service.dart';
 import '../../../routes/app_pages.dart';
 
@@ -22,7 +23,7 @@ class SplashController extends GetxController {
           await storage.clearAll();
           Get.offAllNamed(Routes.LOGIN);
         } else {
-          Get.offAllNamed(_roleHome(role));
+          Get.offAllNamed(Get.find<AuthService>().roleHome);
         }
       } else {
         Get.offAllNamed(Routes.LOGIN);
@@ -33,15 +34,4 @@ class SplashController extends GetxController {
     }
   }
 
-  String _roleHome(String? role) {
-    switch (role) {
-      case 'SUPERVISOR':
-        return Routes.SUPERVISOR_SHELL;
-      case 'OFFICE_STAFF':
-      case 'ADMIN':
-        return Routes.OFFICE_SHELL;
-      default:
-        return Routes.SHELL; // DRIVER, CLEANER, SERVICE_MANAGER, TECHNICIAN, STORE_KEEPER
-    }
-  }
 }

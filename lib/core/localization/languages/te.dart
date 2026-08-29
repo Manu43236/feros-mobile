@@ -371,6 +371,8 @@ const Map<String, String> te = {
   'lbl_service_info': 'సర్వీస్ ఇన్ఫో',
   'lbl_timeline': 'టైమ్‌లైన్',
   'lbl_parts_used': 'యూజ్డ్ పార్ట్స్',
+  'lbl_parts_items_vendor': 'పార్ట్స్ / ఐటెమ్స్ (వెండార్ కోట్)',
+  'lbl_no_vendor_items_yet': 'ఇంకా పార్ట్స్ యాడ్ కాలేదు',
   'lbl_insurance_claim': 'ఇన్సూరెన్స్ క్లెయిమ్',
   'lbl_compliance_cert': 'కంప్లయెన్స్ సర్టిఫికేట్',
   'lbl_service_no': 'సర్వీస్ నంబర్',

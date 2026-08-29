@@ -8,8 +8,10 @@ abstract class Routes {
   static const HOME = _Paths.HOME;
   static const DASHBOARD = _Paths.DASHBOARD;
   static const SHELL            = _Paths.SHELL;
-  static const SUPERVISOR_SHELL = _Paths.SUPERVISOR_SHELL;
-  static const OFFICE_SHELL     = _Paths.OFFICE_SHELL;
+  static const SUPERVISOR_SHELL           = _Paths.SUPERVISOR_SHELL;
+  static const SUPERVISOR_EQUIPMENT_SHELL = _Paths.SUPERVISOR_EQUIPMENT_SHELL;
+  static const OFFICE_SHELL               = _Paths.OFFICE_SHELL;
+  static const OPERATOR_SHELL             = _Paths.OPERATOR_SHELL;
 
   // Vehicles
   static const VEHICLES = _Paths.VEHICLES;
@@ -67,8 +69,10 @@ abstract class _Paths {
   static const HOME = '/home';
   static const DASHBOARD = '/dashboard';
   static const SHELL            = '/shell';
-  static const SUPERVISOR_SHELL = '/supervisor';
-  static const OFFICE_SHELL     = '/office';
+  static const SUPERVISOR_SHELL           = '/supervisor';
+  static const SUPERVISOR_EQUIPMENT_SHELL = '/supervisor/equipment';
+  static const OFFICE_SHELL               = '/office';
+  static const OPERATOR_SHELL             = '/operator';
 
   static const VEHICLES = '/vehicles';
   static const VEHICLE_DETAIL = '/vehicles/detail';

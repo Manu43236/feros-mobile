@@ -13,9 +13,12 @@ class LoginView extends GetView<LoginController> {
     return Scaffold(
       backgroundColor: AppColors.sidebarBg,
       resizeToAvoidBottomInset: true,
-      body: Column(
+      body: Stack(
         children: [
-          // ── Top: navy bg + logo ──────────────────────────────────
+          Positioned.fill(child: const _SplitBg()),
+          Column(
+        children: [
+          // ── Top: split bg + logo ──────────────────────────────────
           Expanded(
             flex: 38,
             child: SafeArea(
@@ -231,6 +234,8 @@ class LoginView extends GetView<LoginController> {
               ),
             ),
           ),
+        ],
+      ),
         ],
       ),
     );
@@ -555,6 +560,23 @@ class _PinBox extends StatelessWidget {
         decoration: const InputDecoration(
           border: InputBorder.none,
           counterText: '',
+        ),
+      ),
+    );
+  }
+}
+
+class _SplitBg extends StatelessWidget {
+  const _SplitBg();
+
+  @override
+  Widget build(BuildContext context) {
+    return const DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.sidebarBg, AppColors.equipSidebar],
         ),
       ),
     );

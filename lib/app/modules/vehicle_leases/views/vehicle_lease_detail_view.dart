@@ -107,6 +107,7 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
     final isActive       = assignment['isActive'] as bool? ?? false;
     final regNo          = assignment['registrationNumber'] as String? ?? '—';
     final driverName     = assignment['driverName'] as String?;
+    final driverStaffId  = assignment['driverStaffId'] as int?;
     final vehicleType    = assignment['vehicleType'] as String?;
     final rate           = (assignment['ratePerVehicle'] as num?)?.toDouble() ?? 0;
     final rateTypeRaw    = controller.lease.value?['rateType'] as String? ?? '';
@@ -213,16 +214,32 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
             ],
             if (isActive) ...[
               const SizedBox(height: 10),
-              GestureDetector(
-                onTap: () => _showAssignDivisionSheet(context, assignmentId),
-                child: Text(
-                  divisionName != null ? 'Change Division' : 'Assign Division',
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.navy,
-                    fontWeight: FontWeight.w600,
-                    decoration: TextDecoration.underline,
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => _showAssignDriverSheet(context, assignmentId, driverStaffId),
+                    child: Text(
+                      driverName != null ? 'Change Driver' : 'Assign Driver',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 16),
+                  GestureDetector(
+                    onTap: () => _showAssignDivisionSheet(context, assignmentId),
+                    child: Text(
+                      divisionName != null ? 'Change Division' : 'Assign Division',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
             if (hasActive) ...[
@@ -234,6 +251,27 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
             ],
             // ── Session buttons ──────────────────────────────────
             if (isActive) ...[
+              if (!hasActive && driverName == null) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFF59E0B)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, size: 14, color: Color(0xFFD97706)),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Assign a driver before starting a session',
+                        style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF92400E)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -241,8 +279,10 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
                     Expanded(
                       child: _SessionButton(
                         label: 'Start Session',
-                        color: AppColors.navy,
-                        onTap: () => _showStartDialog(context, assignmentId),
+                        color: driverName != null ? AppColors.navy : const Color(0xFFD1D5DB),
+                        onTap: driverName != null
+                            ? () => _showStartDialog(context, assignmentId)
+                            : null,
                       ),
                     ),
                   if (hasActive)
@@ -318,6 +358,19 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
           );
           if (context.mounted) Navigator.pop(context);
         },
+      ),
+    );
+  }
+
+  void _showAssignDriverSheet(BuildContext context, int assignmentId, int? currentDriverStaffId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _AssignDriverSheet(
+        leaseId: leaseId,
+        assignmentId: assignmentId,
+        currentDriverStaffId: currentDriverStaffId,
       ),
     );
   }
@@ -467,8 +520,8 @@ class _Row extends StatelessWidget {
 class _SessionButton extends StatelessWidget {
   final String label;
   final Color color;
-  final VoidCallback onTap;
-  const _SessionButton({required this.label, required this.color, required this.onTap});
+  final VoidCallback? onTap;
+  const _SessionButton({required this.label, required this.color, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -553,6 +606,119 @@ class _SessionBottomSheet extends GetView<VehicleLeasesController> {
               child: controller.isActioning.value
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : Text(actionLabel, style: AppTextStyles.bodySemiBold.copyWith(color: Colors.white)),
+            )),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Assign Driver Sheet ───────────────────────────────────────────────────────
+class _AssignDriverSheet extends StatefulWidget {
+  final int leaseId;
+  final int assignmentId;
+  final int? currentDriverStaffId;
+
+  const _AssignDriverSheet({
+    required this.leaseId,
+    required this.assignmentId,
+    required this.currentDriverStaffId,
+  });
+
+  @override
+  State<_AssignDriverSheet> createState() => _AssignDriverSheetState();
+}
+
+class _AssignDriverSheetState extends State<_AssignDriverSheet> {
+  final _ctrl = Get.find<VehicleLeasesController>();
+  int? _selectedId;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedId = widget.currentDriverStaffId;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottom),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text('Assign Driver', style: AppTextStyles.heading3.copyWith(color: AppColors.bodyText)),
+          const SizedBox(height: 4),
+          Text("Select a driver from your staff, or leave as client's driver", style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+          const SizedBox(height: 16),
+          Obx(() {
+            final drvs = _ctrl.drivers;
+            if (drvs.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text('No drivers found in staff.', style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+              );
+            }
+            return Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.border),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<int?>(
+                  value: _selectedId,
+                  isExpanded: true,
+                  hint: Text("Client's driver", style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+                  items: [
+                    DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text("Client's driver", style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+                    ),
+                    ...drvs.map((d) => DropdownMenuItem<int?>(
+                      value: (d['id'] as num).toInt(),
+                      child: Text(d['name'] as String? ?? d['userName'] as String? ?? '', style: AppTextStyles.body.copyWith(color: AppColors.bodyText)),
+                    )),
+                  ],
+                  onChanged: (v) => setState(() => _selectedId = v),
+                ),
+              ),
+            );
+          }),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: Obx(() => ElevatedButton(
+              onPressed: _ctrl.isActioning.value
+                  ? null
+                  : () async {
+                      await _ctrl.assignDriver(widget.leaseId, widget.assignmentId, _selectedId);
+                      await _ctrl.fetchDetail(widget.leaseId);
+                      if (context.mounted) Navigator.pop(context);
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.navy,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 0,
+              ),
+              child: _ctrl.isActioning.value
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : Text('Confirm', style: AppTextStyles.bodySemiBold.copyWith(color: Colors.white)),
             )),
           ),
         ],

@@ -393,6 +393,8 @@ const Map<String, String> en = {
   'lbl_service_info': 'Service Info',
   'lbl_timeline': 'Timeline',
   'lbl_parts_used': 'Parts Used',
+  'lbl_parts_items_vendor': 'Parts / Items (Vendor Quote)',
+  'lbl_no_vendor_items_yet': 'No parts added yet',
   'lbl_insurance_claim': 'Insurance Claim',
   'lbl_compliance_cert': 'Compliance Certificate',
   'lbl_service_no': 'Service No',

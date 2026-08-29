@@ -4,9 +4,10 @@ class AppColors {
   AppColors._();
 
   // Brand
-  static const navy       = Color(0xFF1E3A5F);
-  static const orange     = Color(0xFFF97316);
-  static const sidebarBg  = Color(0xFF0F2137);
+  static const navy          = Color(0xFF1E3A5F);
+  static const orange        = Color(0xFFF97316);
+  static const sidebarBg     = Color(0xFF0F2137);
+  static const equipSidebar  = Color(0xFF1C1400); // equipment module dark brown
 
   // Background
   static const background = Color(0xFFF1F5F9);

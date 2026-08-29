@@ -14,13 +14,14 @@ import '../../../../../core/popups/feros_snackbar.dart';
 import '../controllers/supervisor_payslip_controller.dart';
 
 class SupervisorPayslipView extends GetView<SupervisorPayslipController> {
-  const SupervisorPayslipView({super.key});
+  final bool showAppBar;
+  const SupervisorPayslipView({super.key, this.showAppBar = true});
 
   @override
   Widget build(BuildContext context) {
     return Obx(() => Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
+      appBar: showAppBar ? AppBar(
         backgroundColor: AppColors.navy,
         elevation: 0,
         leading: GestureDetector(
@@ -37,7 +38,7 @@ class SupervisorPayslipView extends GetView<SupervisorPayslipController> {
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w600)),
         iconTheme: const IconThemeData(color: Colors.white),
-      ),
+      ) : null,
       body: controller.isLoading.value
           ? const ShimmerList(count: 4)
           : RefreshIndicator(

@@ -26,6 +26,8 @@ class ApiEndpoints {
   static String cancelService(id)         => '/vehicle-services/$id/cancel';
   static String completeTask(serviceId, taskId) => '/vehicle-services/$serviceId/tasks/$taskId/complete';
   static String addServiceTask(serviceId)       => '/vehicle-services/$serviceId/tasks';
+  static String vendorItems(serviceId)          => '/vehicle-services/$serviceId/vendor-items';
+  static String vendorItemById(serviceId, itemId) => '/vehicle-services/$serviceId/vendor-items/$itemId';
 
   // Service Manager
   static const serviceManagerDashboard                     = '/service-manager/dashboard';
@@ -204,6 +206,7 @@ class ApiEndpoints {
   static String vehicleLeaseStartSession(id, assignmentId)       => '/vehicle-leases/$id/vehicles/$assignmentId/sessions';
   static String vehicleLeaseEndSession(id, assignmentId)         => '/vehicle-leases/$id/vehicles/$assignmentId/sessions/end';
   static String vehicleLeaseAssignDivision(id, assignmentId)     => '/vehicle-leases/$id/vehicles/$assignmentId/division';
+  static String vehicleLeaseAssignDriver(id, assignmentId)       => '/vehicle-leases/$id/vehicles/$assignmentId/driver';
   static String clientDivisions(clientId)                        => '/clients/$clientId/divisions';
 
   // Supervisor Watchlists
@@ -280,6 +283,25 @@ class ApiEndpoints {
   static const tyreRequestsPending    = '/tyre-requests/pending';
   static String approveTyreRequest(id) => '/tyre-requests/$id/approve';
   static String rejectTyreRequest(id)  => '/tyre-requests/$id/reject';
+
+  // Equipment Work Orders (supervisor equipment flow)
+  static const equipWorkOrders                              = '/work-orders';
+  static String equipWorkOrderById(id)                     => '/work-orders/$id';
+  static String equipWoLogs(woId)                          => '/work-orders/$woId/logs';
+  static String equipWoLogById(woId, logId)                => '/work-orders/$woId/logs/$logId';
+  static String equipWoWorkEntries(woId)                   => '/work-orders/$woId/work-entries';
+  static String equipWoMachineEntries(woId, aId)           => '/work-orders/$woId/machines/$aId/work-entries';
+  static String equipWoStartSession(woId, aId)             => '/work-orders/$woId/machines/$aId/start';
+  static String equipWoStopSession(woId, aId)              => '/work-orders/$woId/machines/$aId/stop';
+  static String equipWoAssignDivision(woId, aId)           => '/work-orders/$woId/machines/$aId/division';
+  static String equipBreakdowns(equipId)                   => '/equipment/$equipId/breakdowns';
+
+  // Operator session logs
+  static const operatorSessionToday    = '/equipment-session-logs/my/today';
+  static const operatorSessionMy       = '/equipment-session-logs/my';
+  static const operatorSessionStart    = '/equipment-session-logs';
+  static String operatorSessionClose(id) => '/equipment-session-logs/$id/close';
+  static String operatorSessionDelete(id) => '/equipment-session-logs/$id';
 
   // Upload
   static const upload                  = '/upload';

@@ -132,12 +132,15 @@ class _ServiceMenServiceDetailViewState
 
   List<Map<String, dynamic>> _parts = [];
   bool _loadingParts = true;
+  List<Map<String, dynamic>> _vendorItems = [];
   Map<String, dynamic>? _invoice;
 
   @override
   void initState() {
     super.initState();
     _service = Map<String, dynamic>.from(widget.service);
+    _vendorItems = (_service['vendorItems'] as List?)
+            ?.cast<Map<String, dynamic>>() ?? [];
     _loadParts();
     if (_status == 'COMPLETED') _loadInvoice();
   }
@@ -380,6 +383,101 @@ class _ServiceMenServiceDetailViewState
             ),
           );
         },
+      ),
+    );
+  }
+
+  void _showAddVendorItemSheet() {
+    final descCtrl = TextEditingController();
+    final costCtrl = TextEditingController();
+
+    showModalBottomSheet(
+      useSafeArea: true,
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(
+          left: 24, right: 24, top: 24,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('btn_add_part'.tr,
+                style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
+            const SizedBox(height: 20),
+            Text('lbl_part_name'.tr,
+                style: AppTextStyles.label.copyWith(color: AppColors.navy)),
+            const SizedBox(height: 6),
+            TextField(
+              controller: descCtrl,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'e.g. Brake pad, Engine oil',
+                hintStyle: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.navy),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('lbl_cost_optional'.tr,
+                style: AppTextStyles.label.copyWith(color: AppColors.navy)),
+            const SizedBox(height: 6),
+            TextField(
+              controller: costCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                hintText: 'e.g. 500',
+                prefixText: '₹ ',
+                hintStyle: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.navy),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  final desc = descCtrl.text.trim();
+                  if (desc.isEmpty) {
+                    FerosSnackbar.error('Enter a part name');
+                    return;
+                  }
+                  final cost = double.tryParse(costCtrl.text.trim());
+                  Navigator.pop(context);
+                  final added = await _ctrl.addVendorItem(
+                    _service['id'] as int,
+                    description: desc,
+                    cost: cost,
+                  );
+                  if (added != null && mounted) {
+                    setState(() => _vendorItems.add(added));
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.navy,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                child: Text('btn_add_part'.tr,
+                    style: AppTextStyles.bodyMedium.copyWith(color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -786,6 +884,97 @@ class _ServiceMenServiceDetailViewState
                         ),
                 ),
                 const SizedBox(height: 12),
+
+                // ── Vendor Items (3rd Party / OEM only) ──────────────────
+                if (serviceType == 'THIRD_PARTY' || serviceType == 'OEM_CENTER') ...[
+                  _Section(
+                    title: 'lbl_parts_items_vendor'.tr,
+                    trailing: _status != 'COMPLETED'
+                        ? GestureDetector(
+                            onTap: _showAddVendorItemSheet,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.navy,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.add,
+                                      color: Colors.white, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text('btn_add_part'.tr,
+                                      style: AppTextStyles.caption.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          )
+                        : null,
+                    child: _vendorItems.isEmpty
+                        ? Text('lbl_no_vendor_items_yet'.tr,
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.mutedText))
+                        : Column(
+                            children: _vendorItems.map((item) {
+                              final cost = (item['cost'] as num?)?.toDouble();
+                              final itemId = item['id'] as int;
+                              return Dismissible(
+                                key: Key('vendor-$itemId'),
+                                direction: _status == 'COMPLETED'
+                                    ? DismissDirection.none
+                                    : DismissDirection.endToStart,
+                                background: Container(
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(right: 16),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.error.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.delete_outline,
+                                      color: AppColors.error, size: 20),
+                                ),
+                                confirmDismiss: (_) async {
+                                  final ok = await _ctrl.deleteVendorItem(
+                                      _service['id'] as int, itemId);
+                                  return ok;
+                                },
+                                onDismissed: (_) {
+                                  setState(() => _vendorItems
+                                      .removeWhere((v) => v['id'] == itemId));
+                                },
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 8),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          item['description'] as String? ?? '—',
+                                          style: AppTextStyles.body.copyWith(
+                                              color: AppColors.bodyText),
+                                        ),
+                                      ),
+                                      if (cost != null)
+                                        Text(
+                                          '₹${cost.toStringAsFixed(0)}',
+                                          style: AppTextStyles.bodyMedium
+                                              .copyWith(
+                                                  color: AppColors.navy,
+                                                  fontWeight: FontWeight.w600),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
 
                 // ── Parts Used ───────────────────────────────────────────
                 _Section(

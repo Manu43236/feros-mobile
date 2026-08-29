@@ -27,10 +27,17 @@ class AuthService extends GetxService {
   String get roleHome {
     switch (currentUser.value?.role) {
       case 'SUPERVISOR':
+        // Rental supervisor (no vehicles) → rental shell
+        // Vehicle supervisor (has vehicles) → existing shell (untouched)
+        if (currentUser.value?.isRentalSupervisor == true) {
+          return Routes.SUPERVISOR_EQUIPMENT_SHELL;
+        }
         return Routes.SUPERVISOR_SHELL;
       case 'OFFICE_STAFF':
       case 'ADMIN':
         return Routes.OFFICE_SHELL;
+      case 'OPERATOR':
+        return Routes.OPERATOR_SHELL;
       default:
         return Routes.SHELL;
     }

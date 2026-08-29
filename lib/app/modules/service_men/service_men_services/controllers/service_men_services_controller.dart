@@ -198,6 +198,32 @@ class ServiceMenServicesController extends GetxController {
     }
   }
 
+  Future<Map<String, dynamic>?> addVendorItem(
+    int serviceId, {
+    required String description,
+    double? cost,
+  }) async {
+    try {
+      final data = <String, dynamic>{'description': description};
+      if (cost != null) data['cost'] = cost;
+      final res = await _api.post(ApiEndpoints.vendorItems(serviceId), data: data);
+      return (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+    } catch (_) {
+      FerosSnackbar.error('err_failed_add_part'.tr);
+      return null;
+    }
+  }
+
+  Future<bool> deleteVendorItem(int serviceId, int itemId) async {
+    try {
+      await _api.delete(ApiEndpoints.vendorItemById(serviceId, itemId));
+      return true;
+    } catch (_) {
+      FerosSnackbar.error('Failed to remove item');
+      return false;
+    }
+  }
+
   void _updateLocal(int id, Map<String, dynamic> updated) {
     final idx = services.indexWhere((s) => s['id'] == id);
     if (idx != -1) services[idx] = updated;

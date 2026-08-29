@@ -56,13 +56,24 @@ class SupervisorShellView extends GetView<SupervisorShellController> {
             controller: controller,
           ),
           appBar: _buildAppBar(),
-          body: IndexedStack(
-            index: controller.currentIndex.value,
-            children: const [
-              SupervisorHomeTab(),
-              SupervisorWishlistTab(),
-              SupervisorOrdersTab(),
-              SupervisorAttendanceTab(),
+          body: Column(
+            children: [
+              if (Get.find<AuthService>().user?.canAccessEquipment ?? false)
+                ColoredBox(
+                  color: AppColors.navy,
+                  child: const _ShellToggle(isVehicleShell: true),
+                ),
+              Expanded(
+                child: IndexedStack(
+                  index: controller.currentIndex.value,
+                  children: const [
+                    SupervisorHomeTab(),
+                    SupervisorWishlistTab(),
+                    SupervisorOrdersTab(),
+                    SupervisorAttendanceTab(),
+                  ],
+                ),
+              ),
             ],
           ),
           bottomNavigationBar: _SupervisorNavBar(
@@ -167,6 +178,91 @@ class SupervisorShellView extends GetView<SupervisorShellController> {
     if (h < 12) return 'lbl_good_morning'.tr;
     if (h < 17) return 'lbl_good_afternoon'.tr;
     return 'lbl_good_evening'.tr;
+  }
+}
+
+// ── Shell Toggle ──────────────────────────────────────────────────────────────
+class _ShellToggle extends StatelessWidget {
+  final bool isVehicleShell;
+  const _ShellToggle({required this.isVehicleShell});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        height: 32,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _seg(
+              icon: Icons.local_shipping_outlined,
+              label: 'Vehicles',
+              active: isVehicleShell,
+              activeColor: AppColors.navy,
+              onTap: isVehicleShell
+                  ? null
+                  : () => Get.offAllNamed('/supervisor'),
+            ),
+            _seg(
+              icon: Icons.construction_outlined,
+              label: 'Equipment',
+              active: !isVehicleShell,
+              activeColor: AppColors.navy,
+              onTap: !isVehicleShell
+                  ? null
+                  : () => Get.offAllNamed('/supervisor/equipment'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _seg({
+    required IconData icon,
+    required String label,
+    required bool active,
+    required Color activeColor,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+        decoration: BoxDecoration(
+          color: active ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 13,
+              color: active ? activeColor : Colors.white.withValues(alpha: 0.8),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 12,
+                fontWeight:
+                    active ? FontWeight.w600 : FontWeight.w400,
+                color: active
+                    ? activeColor
+                    : Colors.white.withValues(alpha: 0.8),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -536,9 +632,7 @@ class _SupervisorNavBar extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeInOut,
+                    Container(
                       height: 3,
                       width: isActive ? 28 : 0,
                       margin: const EdgeInsets.only(bottom: 8),
