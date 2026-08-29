@@ -38,8 +38,8 @@ class OperatorDashboardController extends GetxController {
     try {
       final res  = await _api.get(ApiEndpoints.attendanceTodayStatus);
       final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>?;
-      final status = data?['status'] as String?;
-      isAttendanceIn.value = status == 'PRESENT';
+      final approvalStatus = data?['approvalStatus'] as String?;
+      isAttendanceIn.value = approvalStatus != null && approvalStatus != 'REJECTED';
     } catch (_) {}
   }
 
