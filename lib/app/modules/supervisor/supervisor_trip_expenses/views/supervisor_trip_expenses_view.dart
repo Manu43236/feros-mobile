@@ -6,6 +6,7 @@ import '../../../../../core/utils/view_state.dart';
 import '../../supervisor_lrs/controllers/supervisor_lr_detail_controller.dart';
 import '../../supervisor_lrs/views/supervisor_lr_detail_view.dart';
 import '../controllers/supervisor_trip_expenses_controller.dart';
+import '../../../../../core/widgets/shimmer_card.dart';
 
 class SupervisorTripExpensesView extends GetView<SupervisorTripExpensesController> {
   const SupervisorTripExpensesView({super.key});
@@ -65,7 +66,10 @@ class SupervisorTripExpensesView extends GetView<SupervisorTripExpensesControlle
           Expanded(
             child: Obx(() {
               if (controller.state.value == ViewState.loading) {
-                return const Center(child: CircularProgressIndicator(color: AppColors.navy));
+                return const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  child: ShimmerList(count: 5),
+                );
               }
               if (controller.state.value == ViewState.error) {
                 return Center(

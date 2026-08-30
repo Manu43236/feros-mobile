@@ -6,6 +6,7 @@ import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../core/popups/feros_dialog.dart';
 import '../controllers/supervisor_meter_reading_controller.dart';
+import '../../../../../../core/widgets/shimmer_card.dart';
 
 class SupervisorMeterReadingView extends GetView<SupervisorMeterReadingController> {
   const SupervisorMeterReadingView({super.key});
@@ -30,7 +31,10 @@ class SupervisorMeterReadingView extends GetView<SupervisorMeterReadingControlle
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
+          return const Padding(
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 24),
+            child: ShimmerList(count: 5),
+          );
         }
         final r        = controller.readings();
         final total    = r.length;

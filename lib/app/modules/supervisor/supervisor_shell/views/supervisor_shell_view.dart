@@ -507,11 +507,17 @@ class _SupervisorDrawer extends StatelessWidget {
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 const SizedBox(height: 8),
-                _DrawerTile(
-                  icon: Icons.logout,
-                  label: 'btn_logout'.tr,
+                Obx(() => _DrawerTile(
+                  icon: auth.isLoggingOut.value ? Icons.hourglass_top_outlined : Icons.logout,
+                  label: auth.isLoggingOut.value ? 'Logging out…' : 'btn_logout'.tr,
                   color: AppColors.error,
-                  onTap: () async {
+                  trailing: auth.isLoggingOut.value
+                      ? const SizedBox(
+                          width: 16, height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.error),
+                        )
+                      : null,
+                  onTap: auth.isLoggingOut.value ? null : () async {
                     Navigator.of(context).pop();
                     final confirmed = await FerosDialog.confirm(
                       title: 'btn_logout'.tr,
@@ -521,7 +527,7 @@ class _SupervisorDrawer extends StatelessWidget {
                     );
                     if (confirmed) auth.logout();
                   },
-                ),
+                )),
               ],
             ),
           ),
@@ -549,13 +555,15 @@ class _SupervisorDrawer extends StatelessWidget {
 class _DrawerTile extends StatelessWidget {
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final Color? color;
+  final Widget? trailing;
   const _DrawerTile({
     required this.icon,
     required this.label,
     required this.onTap,
     this.color,
+    this.trailing,
   });
 
   @override
@@ -564,6 +572,7 @@ class _DrawerTile extends StatelessWidget {
     return ListTile(
       leading: Icon(icon, color: c, size: 22),
       title: Text(label, style: AppTextStyles.body.copyWith(color: c)),
+      trailing: trailing,
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 20),
       minLeadingWidth: 24,

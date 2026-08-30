@@ -4,6 +4,7 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
 import '../controllers/supervisor_assignments_controller.dart';
+import '../../../../../core/widgets/shimmer_card.dart';
 
 class SupervisorAssignmentsView extends StatefulWidget {
   const SupervisorAssignmentsView({super.key});
@@ -122,7 +123,10 @@ class _VehicleTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       if (c.state.value == ViewState.loading) {
-        return const Center(child: CircularProgressIndicator(color: AppColors.navy));
+        return const Padding(
+          padding: EdgeInsets.fromLTRB(16, 12, 16, 24),
+          child: ShimmerList(count: 6),
+        );
       }
       if (c.state.value == ViewState.error) {
         return Center(
@@ -237,7 +241,10 @@ class _DriverTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       if (c.state.value == ViewState.loading) {
-        return const Center(child: CircularProgressIndicator(color: AppColors.navy));
+        return const Padding(
+          padding: EdgeInsets.fromLTRB(16, 12, 16, 24),
+          child: ShimmerList(count: 6),
+        );
       }
       final rows = c.driverRows;
       if (rows.isEmpty) {
@@ -355,7 +362,10 @@ class _HistoryTabState extends State<_HistoryTab> {
   Widget build(BuildContext context) {
     return Obx(() {
       if (widget.c.historyState.value == ViewState.loading) {
-        return const Center(child: CircularProgressIndicator(color: AppColors.navy));
+        return const Padding(
+          padding: EdgeInsets.fromLTRB(16, 12, 16, 24),
+          child: ShimmerList(count: 6),
+        );
       }
       if (widget.c.historyState.value == ViewState.error) {
         return Center(

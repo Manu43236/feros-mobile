@@ -23,7 +23,6 @@ class SupervisorVehiclesController extends GetxController {
   final staffUsers      = <Map<String, dynamic>>[].obs;
   final isLoadingStaff  = false.obs;
   final savingVehicleId = Rxn<int>();
-  bool _staffLoaded     = false;
 
   /// Distinct status names present in the fetched list
   List<String> get statusOptions {
@@ -187,8 +186,6 @@ class SupervisorVehiclesController extends GetxController {
 
   // ── Load available staff (today's attendance, not yet assigned) ───────────
   Future<void> loadStaffUsers() async {
-    if (_staffLoaded) return;
-    _staffLoaded = true;
     isLoadingStaff.value = true;
     try {
       final res = await _api.get(
@@ -213,7 +210,6 @@ class SupervisorVehiclesController extends GetxController {
     savingVehicleId.value = vehicleId;
     try {
       await _api.put(ApiEndpoints.vehicleAssignDriver(vehicleId), data: {'userId': userId});
-      _staffLoaded = false; // allow reload so newly assigned person is removed from list
       await fetchVehicles();
       return true;
     } catch (e) {
@@ -228,7 +224,7 @@ class SupervisorVehiclesController extends GetxController {
     savingVehicleId.value = vehicleId;
     try {
       await _api.delete(ApiEndpoints.vehicleAssignDriver(vehicleId));
-      _staffLoaded = false;
+
       await fetchVehicles();
       return true;
     } catch (e) {
@@ -243,7 +239,7 @@ class SupervisorVehiclesController extends GetxController {
     savingVehicleId.value = vehicleId;
     try {
       await _api.put(ApiEndpoints.vehicleAssignCleaner(vehicleId), data: {'userId': userId});
-      _staffLoaded = false;
+
       await fetchVehicles();
       return true;
     } catch (e) {
@@ -258,7 +254,7 @@ class SupervisorVehiclesController extends GetxController {
     savingVehicleId.value = vehicleId;
     try {
       await _api.delete(ApiEndpoints.vehicleAssignCleaner(vehicleId));
-      _staffLoaded = false;
+
       await fetchVehicles();
       return true;
     } catch (e) {

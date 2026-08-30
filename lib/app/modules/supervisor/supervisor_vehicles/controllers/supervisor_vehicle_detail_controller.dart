@@ -324,13 +324,12 @@ class SupervisorVehicleDetailController extends GetxController {
   }
 
   // ── Staff Assignment ──────────────────────────────────────────────────────────
-  final isStaffSaving = false.obs;
-  final staffUsers    = <Map<String, dynamic>>[].obs;
-  bool _staffLoaded   = false;
+  final isStaffSaving  = false.obs;
+  final isLoadingStaff = false.obs;
+  final staffUsers     = <Map<String, dynamic>>[].obs;
 
   Future<void> loadStaffUsers() async {
-    if (_staffLoaded) return;
-    _staffLoaded = true;
+    isLoadingStaff.value = true;
     try {
       final res = await _api.get(
         ApiEndpoints.users,
@@ -347,6 +346,8 @@ class SupervisorVehicleDetailController extends GetxController {
       }).toList());
     } catch (e) {
       debugPrint('[VehicleDetail] load staff users error: $e');
+    } finally {
+      isLoadingStaff.value = false;
     }
   }
 
@@ -358,8 +359,6 @@ class SupervisorVehicleDetailController extends GetxController {
         data: {'userId': userId},
       );
       await _fetchVehicle();
-      _staffLoaded = false;
-      staffUsers.clear();
       isStaffSaving.value = false;
       return null;
     } catch (e) {
@@ -391,8 +390,6 @@ class SupervisorVehicleDetailController extends GetxController {
         data: {'userId': userId},
       );
       await _fetchVehicle();
-      _staffLoaded = false;
-      staffUsers.clear();
       isStaffSaving.value = false;
       return null;
     } catch (e) {

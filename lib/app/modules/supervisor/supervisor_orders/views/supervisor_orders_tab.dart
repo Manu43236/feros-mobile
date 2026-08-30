@@ -7,6 +7,7 @@ import '../../../../../core/utils/date_utils.dart';
 import '../controllers/supervisor_orders_controller.dart';
 import '../controllers/supervisor_order_detail_controller.dart';
 import 'supervisor_order_detail_view.dart';
+import '../../../../../core/widgets/shimmer_card.dart';
 
 class SupervisorOrdersTab extends GetView<SupervisorOrdersController> {
   const SupervisorOrdersTab({super.key});
@@ -35,8 +36,10 @@ class SupervisorOrdersTab extends GetView<SupervisorOrdersController> {
         Expanded(
           child: Obx(() {
             if (controller.state.value == ViewState.loading) {
-              return const Center(
-                  child: CircularProgressIndicator(color: AppColors.navy));
+              return const Padding(
+                padding: EdgeInsets.fromLTRB(16, 12, 16, 24),
+                child: ShimmerList(count: 6),
+              );
             }
             if (controller.state.value == ViewState.error) {
               return _ErrorState(onRetry: () => controller.fetchOrders(reset: true));

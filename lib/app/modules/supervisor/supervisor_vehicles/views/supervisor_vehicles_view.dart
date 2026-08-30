@@ -7,6 +7,7 @@ import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/utils/view_state.dart';
 import '../../../../../core/popups/feros_snackbar.dart';
 import '../../../../../core/widgets/avatar_widget.dart';
+import '../../../../../core/widgets/shimmer_card.dart';
 import '../controllers/supervisor_vehicles_controller.dart';
 import '../bindings/supervisor_vehicle_detail_binding.dart';
 import 'supervisor_vehicle_detail_view.dart';
@@ -23,95 +24,71 @@ class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
           // ── Search bar ──────────────────────────────────────────
           Container(
             color: AppColors.surface,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: TextField(
-              controller: controller.searchController,
-              onChanged: controller.onSearch,
-              style: AppTextStyles.body,
-              decoration: InputDecoration(
-                hintText: 'lbl_search_vehicles'.tr,
-                hintStyle: AppTextStyles.body.copyWith(
-                  color: AppColors.mutedText,
-                ),
-                prefixIcon: const Icon(
-                  Icons.search,
-                  color: AppColors.mutedText,
-                  size: 20,
-                ),
-                filled: true,
-                fillColor: AppColors.background,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                    color: AppColors.navy,
-                    width: 1.5,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: TextField(
+                    controller: controller.searchController,
+                    onChanged: controller.onSearch,
+                    style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+                    decoration: InputDecoration(
+                      hintText: 'lbl_search_vehicles'.tr,
+                      hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
+                      prefixIcon: const Icon(Icons.search, color: AppColors.mutedText, size: 20),
+                      filled: true,
+                      fillColor: AppColors.background,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                Obx(() {
+                  if (controller.state.value != ViewState.success) return const SizedBox.shrink();
+                  final options = ['ALL', ...controller.statusOptions];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: options.map((s) {
+                          final isActive = controller.selectedStatus.value == s;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: GestureDetector(
+                              onTap: () => controller.onStatusFilter(s),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 180),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                                decoration: BoxDecoration(
+                                  color: isActive ? AppColors.navy : AppColors.background,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isActive ? AppColors.navy : AppColors.border,
+                                  ),
+                                ),
+                                child: Text(
+                                  s == 'ALL' ? 'lbl_all'.tr : s,
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: isActive ? Colors.white : AppColors.mutedText,
+                                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  );
+                }),
+              ],
             ),
           ),
-
-          // ── Status filter chips ─────────────────────────────────
-          Obx(() {
-            if (controller.state.value != ViewState.success) {
-              return const SizedBox.shrink();
-            }
-            final options = ['ALL', ...controller.statusOptions];
-            return Container(
-              color: AppColors.surface,
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: options.map((s) {
-                    final isSelected = controller.selectedStatus.value == s;
-                    return GestureDetector(
-                      onTap: () => controller.onStatusFilter(s),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.navy
-                              : AppColors.background,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.navy
-                                : AppColors.border,
-                          ),
-                        ),
-                        child: Text(
-                          s == 'ALL' ? 'lbl_all'.tr : s,
-                          style: AppTextStyles.caption.copyWith(
-                            color: isSelected
-                                ? Colors.white
-                                : AppColors.bodyText,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            );
-          }),
 
           const Divider(height: 1, color: AppColors.border),
 
@@ -119,8 +96,9 @@ class SupervisorVehiclesView extends GetView<SupervisorVehiclesController> {
           Expanded(
             child: Obx(() {
               if (controller.state.value == ViewState.loading) {
-                return const Center(
-                  child: CircularProgressIndicator(color: AppColors.navy),
+                return const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  child: ShimmerList(count: 6),
                 );
               }
               if (controller.state.value == ViewState.error) {
@@ -770,7 +748,7 @@ class _AssignStaffSheet extends StatefulWidget {
     String? activeLrNumber,
     String? activeOrderNumber,
   }) async {
-    await controller.loadStaffUsers();
+    controller.loadStaffUsers(); // fire-and-forget — sheet shows shimmer while loading
     if (!context.mounted) return;
     await showModalBottomSheet(
         useSafeArea: true,
@@ -918,8 +896,9 @@ class _AssignStaffSheetState extends State<_AssignStaffSheet> {
             Expanded(
               child: Obx(() {
                 if (widget.controller.isLoadingStaff.value) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: AppColors.navy),
+                  return const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: ShimmerList(count: 5, itemHeight: 64),
                   );
                 }
                 final users = _filtered;

@@ -10,7 +10,8 @@ import '../../app/routes/app_pages.dart';
 class AuthService extends GetxService {
   final _storage = Get.find<StorageService>();
 
-  final currentUser = Rxn<UserModel>();
+  final currentUser  = Rxn<UserModel>();
+  final isLoggingOut = false.obs;
 
   @override
   void onInit() async {
@@ -50,12 +51,11 @@ class AuthService extends GetxService {
   }
 
   Future<void> logout() async {
-    // Notify server to invalidate session (best-effort — don't block logout if it fails)
+    isLoggingOut.value = true;
     try {
       await Get.find<ApiClient>().post(ApiEndpoints.logout);
     } catch (_) {}
 
-    // Delete FCM token so this device stops receiving notifications immediately
     if (EnvConfig.isProd) {
       try {
         await FirebaseMessaging.instance.deleteToken();
@@ -65,5 +65,6 @@ class AuthService extends GetxService {
     Get.offAllNamed(Routes.LOGIN);
     await _storage.clearAll();
     currentUser.value = null;
+    isLoggingOut.value = false;
   }
 }

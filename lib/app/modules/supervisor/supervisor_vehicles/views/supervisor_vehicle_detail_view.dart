@@ -16,6 +16,7 @@ import '../../../../../core/services/upload_service.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
 import '../../../../../core/widgets/feros_select_field.dart';
+import '../../../../../core/widgets/shimmer_card.dart';
 import '../controllers/supervisor_vehicle_detail_controller.dart';
 import '../../../office/office_vehicles/views/office_vehicle_form_view.dart';
 import '../../../office/office_vehicles/views/office_service_detail_view.dart';
@@ -1122,7 +1123,7 @@ class _AssignStaffSheet extends StatefulWidget {
     required String role,
     int? currentId,
   }) async {
-    await controller.loadStaffUsers();
+    controller.loadStaffUsers(); // fire-and-forget — sheet shows shimmer while loading
     if (!context.mounted) return;
     await showModalBottomSheet(
         useSafeArea: true,
@@ -1241,6 +1242,12 @@ class _AssignStaffSheetState extends State<_AssignStaffSheet> {
             const Divider(height: 1, color: AppColors.border),
             Expanded(
               child: Obx(() {
+                if (widget.controller.isLoadingStaff.value) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: ShimmerList(count: 5, itemHeight: 64),
+                  );
+                }
                 final users = _filtered;
                 if (users.isEmpty) {
                   return Center(

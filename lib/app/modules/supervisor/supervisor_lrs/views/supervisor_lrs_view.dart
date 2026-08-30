@@ -9,6 +9,7 @@ import '../controllers/supervisor_lrs_controller.dart';
 import '../controllers/supervisor_lr_detail_controller.dart';
 import 'supervisor_lr_detail_view.dart';
 import 'supervisor_create_lr_sheet.dart';
+import '../../../../../core/widgets/shimmer_card.dart';
 
 class SupervisorLrsView extends GetView<SupervisorLrsController> {
   const SupervisorLrsView({super.key});
@@ -163,8 +164,9 @@ class SupervisorLrsView extends GetView<SupervisorLrsController> {
           Expanded(
             child: Obx(() {
               if (controller.state.value == ViewState.loading) {
-                return const Center(
-                  child: CircularProgressIndicator(color: AppColors.navy),
+                return const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  child: ShimmerList(count: 6),
                 );
               }
               if (controller.state.value == ViewState.error) {

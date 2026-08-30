@@ -7,6 +7,7 @@ import '../../../../../core/utils/view_state.dart';
 import '../../../../../core/widgets/avatar_widget.dart';
 import '../controllers/supervisor_crew_controller.dart';
 import 'supervisor_crew_detail_view.dart';
+import '../../../../../core/widgets/shimmer_card.dart';
 
 class SupervisorCrewView extends GetView<SupervisorCrewController> {
   final bool embedded;
@@ -141,8 +142,9 @@ class SupervisorCrewView extends GetView<SupervisorCrewController> {
           Expanded(
             child: Obx(() {
               if (controller.state.value == ViewState.loading) {
-                return const Center(
-                  child: CircularProgressIndicator(color: AppColors.navy),
+                return const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  child: ShimmerList(count: 6, itemHeight: 72),
                 );
               }
               if (controller.state.value == ViewState.error) {
