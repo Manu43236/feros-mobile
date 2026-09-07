@@ -632,96 +632,156 @@ class _AssignDriverSheet extends StatefulWidget {
 
 class _AssignDriverSheetState extends State<_AssignDriverSheet> {
   final _ctrl = Get.find<VehicleLeasesController>();
-  int? _selectedId;
+  final _search = TextEditingController();
+  String _query = '';
 
   @override
-  void initState() {
-    super.initState();
-    _selectedId = widget.currentDriverStaffId;
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> get _filtered {
+    final list = _ctrl.drivers.toList();
+    if (_query.isEmpty) return list;
+    final q = _query.toLowerCase();
+    return list.where((d) =>
+        (d['name'] as String? ?? '').toLowerCase().contains(q) ||
+        (d['phone'] as String? ?? '').contains(q)).toList();
+  }
+
+  Future<void> _select(int? staffId) async {
+    Navigator.pop(context);
+    await _ctrl.assignDriver(widget.leaseId, widget.assignmentId, staffId);
+    await _ctrl.fetchDetail(widget.leaseId);
   }
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
-    return Container(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottom),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40, height: 4,
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      builder: (_, scrollController) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 36, height: 4,
               decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text('Assign Driver', style: AppTextStyles.heading3.copyWith(color: AppColors.bodyText)),
-          const SizedBox(height: 4),
-          Text("Select a driver from your staff, or leave as client's driver", style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-          const SizedBox(height: 16),
-          Obx(() {
-            final drvs = _ctrl.drivers;
-            if (drvs.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text('No drivers found in staff.', style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
-              );
-            }
-            return Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.border),
-                borderRadius: BorderRadius.circular(10),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Text('Assign Driver', style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, size: 20),
+                    color: AppColors.mutedText,
+                    padding: EdgeInsets.zero,
+                  ),
+                ],
               ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<int?>(
-                  value: _selectedId,
-                  isExpanded: true,
-                  hint: Text("Client's driver", style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
-                  items: [
-                    DropdownMenuItem<int?>(
-                      value: null,
-                      child: Text("Client's driver", style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
-                    ),
-                    ...drvs.map((d) => DropdownMenuItem<int?>(
-                      value: (d['id'] as num).toInt(),
-                      child: Text(d['name'] as String? ?? d['userName'] as String? ?? '', style: AppTextStyles.body.copyWith(color: AppColors.bodyText)),
-                    )),
-                  ],
-                  onChanged: (v) => setState(() => _selectedId = v),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _search,
+                onChanged: (v) => setState(() => _query = v),
+                style: AppTextStyles.body,
+                decoration: InputDecoration(
+                  hintText: 'Search by name or phone…',
+                  hintStyle: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+                  prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.mutedText),
+                  isDense: true,
+                  filled: true,
+                  fillColor: AppColors.background,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.border)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.border)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.navy, width: 1.5)),
                 ),
               ),
-            );
-          }),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 44,
-            child: Obx(() => ElevatedButton(
-              onPressed: _ctrl.isActioning.value
-                  ? null
-                  : () async {
-                      await _ctrl.assignDriver(widget.leaseId, widget.assignmentId, _selectedId);
-                      await _ctrl.fetchDetail(widget.leaseId);
-                      if (context.mounted) Navigator.pop(context);
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.navy,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                elevation: 0,
-              ),
-              child: _ctrl.isActioning.value
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : Text('Confirm', style: AppTextStyles.bodySemiBold.copyWith(color: Colors.white)),
-            )),
-          ),
-        ],
+            ),
+            const SizedBox(height: 8),
+            const Divider(height: 1, color: AppColors.border),
+            Expanded(
+              child: Obx(() {
+                final users = _filtered;
+                final items = <Widget>[
+                  // "Client's driver" option at top
+                  ListTile(
+                    leading: const CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Color(0xFFF3F4F6),
+                      child: Icon(Icons.person_off_outlined, size: 18, color: AppColors.mutedText),
+                    ),
+                    title: Text("Client's driver", style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+                    trailing: widget.currentDriverStaffId == null
+                        ? const Icon(Icons.check_circle, color: AppColors.success, size: 20)
+                        : null,
+                    onTap: () => _select(null),
+                  ),
+                  const Divider(height: 1, indent: 56, color: AppColors.border),
+                ];
+                if (users.isEmpty) {
+                  return Column(
+                    children: [
+                      ...items,
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          _query.isEmpty
+                              ? 'No Driver available today'
+                              : 'No results for "$_query"',
+                          style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return ListView.separated(
+                  controller: scrollController,
+                  padding: const EdgeInsets.only(bottom: 16),
+                  itemCount: items.length + users.length,
+                  separatorBuilder: (_, i) => i >= items.length - 1
+                      ? const Divider(height: 1, indent: 56, color: AppColors.border)
+                      : const SizedBox.shrink(),
+                  itemBuilder: (_, i) {
+                    if (i < items.length) return items[i];
+                    final u = users[i - items.length];
+                    final uid = (u['id'] as num).toInt();
+                    final name = u['name'] as String? ?? u['userName'] as String? ?? '—';
+                    return ListTile(
+                      leading: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: AppColors.navy,
+                        child: Text(
+                          name.isNotEmpty ? name[0].toUpperCase() : '?',
+                          style: const TextStyle(color: Colors.white, fontSize: 14, fontFamily: 'Inter', fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      title: Text(name, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
+                      subtitle: Text(u['phone'] as String? ?? '', style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                      trailing: uid == widget.currentDriverStaffId
+                          ? const Icon(Icons.check_circle, color: AppColors.success, size: 20)
+                          : null,
+                      onTap: () => _select(uid),
+                    );
+                  },
+                );
+              }),
+            ),
+          ],
+        ),
       ),
     );
   }

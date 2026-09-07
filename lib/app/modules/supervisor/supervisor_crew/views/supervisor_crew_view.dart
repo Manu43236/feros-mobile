@@ -470,7 +470,9 @@ class _CrewCard extends StatelessWidget {
     final designation = member['designationName'] as String?;
     final isActive = member['isActive'] as bool? ?? true;
     final isAssigned = member['isAssigned'] as bool? ?? false;
+    final assignmentType = member['assignmentType'] as String?;
     final orderNum = member['activeOrderNumber'] as String?;
+    final leaseNum = member['activeLeaseNumber'] as String?;
     final trips = member['completedTripsCount'] ?? 0;
 
     final photoUrl = member['profilePhotoUrl'] as String?;
@@ -491,6 +493,8 @@ class _CrewCard extends StatelessWidget {
 
     final (statusBg, statusColor, statusLabel) = !isActive
         ? (const Color(0xFFF3F4F6), const Color(0xFF9CA3AF), 'lbl_inactive'.tr)
+        : isAssigned && assignmentType == 'LEASE'
+        ? (const Color(0xFFF5F3FF), const Color(0xFF7C3AED), 'On Lease')
         : isAssigned
         ? (const Color(0xFFFFF7ED), const Color(0xFFEA580C), 'lbl_on_trip_chip'.tr)
         : (const Color(0xFFF0FDF4), const Color(0xFF16A34A), 'lbl_available'.tr);
@@ -658,7 +662,19 @@ class _CrewCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (isAssigned && orderNum != null) ...[
+                        if (isAssigned && assignmentType == 'LEASE' && leaseNum != null) ...[
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              leaseNum,
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.mutedText,
+                                fontFamily: 'monospace',
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ] else if (isAssigned && orderNum != null) ...[
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(

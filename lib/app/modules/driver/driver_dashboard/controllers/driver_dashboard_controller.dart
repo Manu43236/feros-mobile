@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
 import '../../../../../core/services/audio_guidance_service.dart';
-import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/utils/view_state.dart';
 
 class DriverDashboardController extends GetxController {
@@ -20,6 +19,8 @@ class DriverDashboardController extends GetxController {
   final hasActiveTripBreakdown = false.obs;
   final assignedVehicle        = Rxn<Map<String, dynamic>>();
   final assignedOrder          = Rxn<Map<String, dynamic>>();
+  final activeLease            = Rxn<Map<String, dynamic>>();
+  final leaseSessions          = <Map<String, dynamic>>[].obs;
 
   // Duty / out tracking
   final markedOutAt  = Rxn<DateTime>();
@@ -52,6 +53,14 @@ class DriverDashboardController extends GetxController {
 
       assignedVehicle.value = data['assignedVehicle'] as Map<String, dynamic>?;
       assignedOrder.value   = data['assignedOrder']   as Map<String, dynamic>?;
+      activeLease.value     = data['activeLease']     as Map<String, dynamic>?;
+
+      final lease = activeLease.value;
+      if (lease != null) {
+        _fetchLeaseSessions(lease['leaseId'] as int, lease['assignmentId'] as int);
+      } else {
+        leaseSessions.clear();
+      }
 
       final outStr = data['markedOutAt'] as String?;
       markedOutAt.value = outStr != null ? DateTime.tryParse(outStr) : null;
@@ -127,6 +136,82 @@ class DriverDashboardController extends GetxController {
     } catch (e) {
       final msg = (e as dynamic)?.response?.data?['message'] as String?;
       Get.snackbar('Error', msg ?? 'Undo window expired',
+          backgroundColor: const Color(0xFFDC2626),
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+  Future<void> _fetchLeaseSessions(int leaseId, int assignmentId) async {
+    try {
+      final res = await _api.get(
+        '/vehicle-leases/$leaseId/sessions',
+        params: {'assignmentId': assignmentId},
+      );
+      final list = ((res.data as Map<String, dynamic>)['data'] as List?)
+              ?.cast<Map<String, dynamic>>() ?? [];
+      leaseSessions.value = list;
+    } catch (_) {
+      leaseSessions.clear();
+    }
+  }
+
+  Future<void> startLeaseSession({
+    required DateTime startTime,
+    double? odometer,
+  }) async {
+    final lease = activeLease.value;
+    if (lease == null) return;
+    final leaseId      = lease['leaseId']      as int;
+    final assignmentId = lease['assignmentId'] as int;
+    try {
+      final body = <String, dynamic>{
+        'startTime': startTime.toIso8601String(),
+        if (odometer != null) 'odometerStart': odometer,
+      };
+      await _api.post(
+        '/vehicle-leases/$leaseId/vehicles/$assignmentId/sessions',
+        data: body,
+      );
+      Get.snackbar('Session Started', 'Your session has been started.',
+          backgroundColor: const Color(0xFF16A34A),
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM);
+      fetchDashboard();
+    } catch (e) {
+      final msg = (e as dynamic)?.response?.data?['message'] as String?;
+      Get.snackbar('Error', msg ?? 'Failed to start session',
+          backgroundColor: const Color(0xFFDC2626),
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+  Future<void> endLeaseSession({
+    required DateTime endTime,
+    double? odometer,
+  }) async {
+    final lease = activeLease.value;
+    if (lease == null) return;
+    final leaseId      = lease['leaseId']      as int;
+    final assignmentId = lease['assignmentId'] as int;
+    try {
+      final body = <String, dynamic>{
+        'endTime': endTime.toIso8601String(),
+        if (odometer != null) 'odometerEnd': odometer,
+      };
+      await _api.put(
+        '/vehicle-leases/$leaseId/vehicles/$assignmentId/sessions/end',
+        data: body,
+      );
+      Get.snackbar('Session Ended', 'Your session has been recorded.',
+          backgroundColor: const Color(0xFF16A34A),
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM);
+      fetchDashboard();
+    } catch (e) {
+      final msg = (e as dynamic)?.response?.data?['message'] as String?;
+      Get.snackbar('Error', msg ?? 'Failed to end session',
           backgroundColor: const Color(0xFFDC2626),
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM);

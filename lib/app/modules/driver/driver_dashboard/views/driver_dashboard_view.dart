@@ -71,6 +71,7 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
       final attended = controller.isAttendanceMarked.value;
       final assignedOrder = controller.assignedOrder.value;
       final assignedVehicle = controller.assignedVehicle.value;
+      final activeLease = controller.activeLease.value;
 
       // ── State 3: ON TRIP ──────────────────────────────────────
       if (active != null) {
@@ -148,6 +149,16 @@ class DriverDashboardView extends GetView<DriverDashboardController> {
       if (assignedOrder != null) {
         return _AssignedOrderState(
           orderData: assignedOrder,
+          attended: attended,
+          controller: controller,
+          onRefresh: controller.fetchDashboard,
+        );
+      }
+
+      // ── State 0.4: ON LEASE ───────────────────────────────────
+      if (activeLease != null) {
+        return _AssignedLeaseState(
+          leaseData: activeLease,
           attended: attended,
           controller: controller,
           onRefresh: controller.fetchDashboard,
@@ -885,6 +896,567 @@ class _AssignedVehicleState extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── State 0.4: On Lease ───────────────────────────────────────────────────────
+class _AssignedLeaseState extends StatefulWidget {
+  final Map<String, dynamic> leaseData;
+  final bool attended;
+  final DriverDashboardController controller;
+  final Future<void> Function() onRefresh;
+  const _AssignedLeaseState({
+    required this.leaseData,
+    required this.attended,
+    required this.controller,
+    required this.onRefresh,
+  });
+
+  @override
+  State<_AssignedLeaseState> createState() => _AssignedLeaseStateBody();
+}
+
+class _AssignedLeaseStateBody extends State<_AssignedLeaseState> {
+  static const _purple = Color(0xFF7C3AED);
+
+  // Controllers live with the State — no disposal timing issues
+  late final TextEditingController _startTimeCtrl;
+  late final TextEditingController _startOdoCtrl;
+  late final TextEditingController _endTimeCtrl;
+  late final TextEditingController _endOdoCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimeCtrl = TextEditingController(text: _fmtDateTime(DateTime.now()));
+    _startOdoCtrl  = TextEditingController();
+    _endTimeCtrl   = TextEditingController(text: _fmtDateTime(DateTime.now()));
+    _endOdoCtrl    = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _startTimeCtrl.dispose();
+    _startOdoCtrl.dispose();
+    _endTimeCtrl.dispose();
+    _endOdoCtrl.dispose();
+    super.dispose();
+  }
+
+  static String _fmtDateTime(DateTime dt) {
+    final d  = dt.day.toString().padLeft(2, '0');
+    final mo = dt.month.toString().padLeft(2, '0');
+    final h  = dt.hour.toString().padLeft(2, '0');
+    final mi = dt.minute.toString().padLeft(2, '0');
+    final s  = dt.second.toString().padLeft(2, '0');
+    return '$d/$mo/${dt.year} $h:$mi:$s';
+  }
+
+  static DateTime? _parseDateTime(String s) {
+    try {
+      final parts     = s.split(' ');
+      final dateParts = parts[0].split('/');
+      final timeParts = parts[1].split(':');
+      return DateTime(
+        int.parse(dateParts[2]), int.parse(dateParts[1]), int.parse(dateParts[0]),
+        int.parse(timeParts[0]), int.parse(timeParts[1]), int.parse(timeParts[2]),
+      );
+    } catch (_) { return null; }
+  }
+
+  void _showStartSessionSheet() {
+    final lastOdo = (widget.leaseData['lastOdometer'] as num?)?.toDouble();
+    _startTimeCtrl.text = _fmtDateTime(DateTime.now());
+    _startOdoCtrl.text  = lastOdo != null ? lastOdo.toStringAsFixed(0) : '';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          left: 24, right: 24, top: 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Start Session', style: TextStyle(fontFamily: 'Inter', fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 20),
+            const Text('Start Time', style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF6B7280))),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _startTimeCtrl,
+              keyboardType: TextInputType.datetime,
+              decoration: InputDecoration(
+                hintText: 'dd/MM/yyyy HH:mm:ss',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text('Odometer (km) — optional', style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF6B7280))),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _startOdoCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                hintText: 'e.g. 45200',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  final dt = _parseDateTime(_startTimeCtrl.text.trim());
+                  if (dt == null) {
+                    Get.snackbar('Invalid time', 'Use dd/MM/yyyy HH:mm:ss format',
+                        backgroundColor: const Color(0xFFDC2626), colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+                    return;
+                  }
+                  final odo = double.tryParse(_startOdoCtrl.text.trim());
+                  Navigator.pop(ctx);
+                  widget.controller.startLeaseSession(startTime: dt, odometer: odo);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _purple, foregroundColor: Colors.white, elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Start Session', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w700, fontSize: 15)),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEndSessionSheet() {
+    _endTimeCtrl.text = _fmtDateTime(DateTime.now());
+    _endOdoCtrl.text  = '';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          left: 24, right: 24, top: 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('End Session', style: TextStyle(fontFamily: 'Inter', fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 20),
+            const Text('End Time', style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF6B7280))),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _endTimeCtrl,
+              keyboardType: TextInputType.datetime,
+              decoration: InputDecoration(
+                hintText: 'dd/MM/yyyy HH:mm:ss',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text('Odometer at End (km) — optional', style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF6B7280))),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _endOdoCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                hintText: 'e.g. 45800',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  final dt = _parseDateTime(_endTimeCtrl.text.trim());
+                  if (dt == null) {
+                    Get.snackbar('Invalid time', 'Use dd/MM/yyyy HH:mm:ss format',
+                        backgroundColor: const Color(0xFFDC2626), colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+                    return;
+                  }
+                  final odo = double.tryParse(_endOdoCtrl.text.trim());
+                  Navigator.pop(ctx);
+                  widget.controller.endLeaseSession(endTime: dt, odometer: odo);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFDC2626), foregroundColor: Colors.white, elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('End Session', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w700, fontSize: 15)),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final leaseData      = widget.leaseData;
+    final attended       = widget.attended;
+    final controller     = widget.controller;
+    final vehicleNumber  = leaseData['vehicleNumber']?.toString() ?? '—';
+    final clientName     = leaseData['clientName']?.toString() ?? '—';
+    final leaseNumber    = leaseData['leaseNumber']?.toString() ?? '—';
+    final divisionName   = leaseData['divisionName']?.toString();
+    final lastOdo        = (leaseData['lastOdometer'] as num?)?.toDouble();
+    final sessionStartTs = leaseData['sessionStartTime'] as String?;
+    final hasSession     = leaseData['activeSessionId'] != null;
+    final sessionStart   = sessionStartTs != null ? DateTime.tryParse(sessionStartTs) : null;
+
+    return RefreshIndicator(
+      onRefresh: widget.onRefresh,
+      color: _purple,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height - 160),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 32),
+                  Center(
+                    child: Container(
+                      width: 100, height: 100,
+                      decoration: const BoxDecoration(
+                        color: Color(0x147C3AED),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.route_outlined, size: 52, color: _purple),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Center(
+                    child: Text('On Lease', style: TextStyle(fontFamily: 'Inter', fontSize: 20, fontWeight: FontWeight.w700, color: _purple)),
+                  ),
+                  const SizedBox(height: 4),
+                  Center(
+                    child: Text(
+                      attended ? 'Attendance marked' : 'Mark attendance first',
+                      style: AppTextStyles.body.copyWith(color: attended ? const Color(0xFF16A34A) : const Color(0xFFD97706)),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Lease info card
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white, borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0x337C3AED)),
+                      boxShadow: const [BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2))],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _LeaseRow(icon: Icons.local_shipping_outlined, label: 'Vehicle', value: vehicleNumber),
+                        const SizedBox(height: 12),
+                        _LeaseRow(icon: Icons.business_outlined, label: 'Client', value: clientName),
+                        const SizedBox(height: 12),
+                        _LeaseRow(icon: Icons.receipt_long_outlined, label: 'Lease #', value: leaseNumber),
+                        if (divisionName != null) ...[
+                          const SizedBox(height: 12),
+                          _LeaseRow(icon: Icons.account_tree_outlined, label: 'Division', value: divisionName),
+                        ],
+                        if (lastOdo != null) ...[
+                          const SizedBox(height: 12),
+                          _LeaseRow(icon: Icons.speed_outlined, label: 'Odometer', value: '${lastOdo.toStringAsFixed(0)} km'),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Session status + action
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: hasSession ? const Color(0x0A16A34A) : const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: hasSession ? const Color(0x4D16A34A) : const Color(0xFFE5E7EB),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          hasSession ? Icons.circle : Icons.circle_outlined,
+                          size: 10,
+                          color: hasSession ? const Color(0xFF16A34A) : const Color(0xFF9CA3AF),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: hasSession && sessionStart != null
+                              ? Text(
+                                  'Working since ${_fmtDateTime(sessionStart)}',
+                                  style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF16A34A)),
+                                )
+                              : const Text(
+                                  'No active session',
+                                  style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF6B7280)),
+                                ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: attended
+                              ? (hasSession ? _showEndSessionSheet : _showStartSessionSheet)
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: hasSession ? const Color(0xFFDC2626) : _purple,
+                            foregroundColor: Colors.white, elevation: 0,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: Text(
+                            hasSession ? 'End' : 'Start',
+                            style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w700, fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Sessions history
+                  Obx(() {
+                    final sessions = controller.leaseSessions;
+                    if (sessions.isEmpty) return const SizedBox.shrink();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'My Sessions',
+                          style: TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF374151)),
+                        ),
+                        const SizedBox(height: 8),
+                        ...sessions.map((s) => _SessionTile(session: s)),
+                        const SizedBox(height: 4),
+                      ],
+                    );
+                  }),
+                  const SizedBox(height: 8),
+
+                  // Attendance / mark-out buttons
+                  Obx(() {
+                    final isOut   = controller.markedOutAt.value != null;
+                    final canUndo = controller.canUndoOut.value;
+                    final duty    = controller.dutyLabel.value;
+                    if (!controller.isAttendanceMarked.value) {
+                      return ElevatedButton.icon(
+                        onPressed: () => showMarkAttendanceSheet(context, onMarked: controller.fetchDashboard),
+                        icon: const Icon(Icons.check_circle_outline, size: 26),
+                        label: Text('btn_mark_attendance'.tr, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'Inter')),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF16A34A), foregroundColor: Colors.white, elevation: 0, padding: const EdgeInsets.symmetric(vertical: 18), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                      );
+                    }
+                    if (!isOut) {
+                      return ElevatedButton.icon(
+                        onPressed: () => controller.markOut(context),
+                        icon: const Icon(Icons.logout, size: 24),
+                        label: Text('btn_mark_out'.tr, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'Inter')),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626), foregroundColor: Colors.white, elevation: 0, padding: const EdgeInsets.symmetric(vertical: 18), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                      );
+                    }
+                    if (canUndo) {
+                      return ElevatedButton.icon(
+                        onPressed: controller.undoOut,
+                        icon: const Icon(Icons.undo, size: 24),
+                        label: Text('btn_undo_out'.tr, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'Inter')),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD97706), foregroundColor: Colors.white, elevation: 0, padding: const EdgeInsets.symmetric(vertical: 18), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                      );
+                    }
+                    return Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF16A34A).withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFF16A34A).withValues(alpha: 0.3)),
+                      ),
+                      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        const Icon(Icons.check_circle, size: 22, color: Color(0xFF16A34A)),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${'lbl_out_locked'.tr}${duty != null ? ' · $duty' : ''}',
+                          style: const TextStyle(color: Color(0xFF16A34A), fontFamily: 'Inter', fontWeight: FontWeight.w700, fontSize: 15),
+                        ),
+                      ]),
+                    );
+                  }),
+                  const SizedBox(height: 16),
+                  _BottomNav(controller: controller, attended: attended),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LeaseRow extends StatelessWidget {
+  final IconData icon;
+  final String label, value;
+  const _LeaseRow({required this.icon, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: AppColors.mutedText),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+              Text(value, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.navy)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Session Tile ──────────────────────────────────────────────────────────────
+class _SessionTile extends StatelessWidget {
+  final Map<String, dynamic> session;
+  const _SessionTile({required this.session});
+
+  static String _fmt(String? raw) {
+    if (raw == null) return '—';
+    try {
+      final dt = DateTime.parse(raw);
+      final d  = dt.day.toString().padLeft(2, '0');
+      final mo = dt.month.toString().padLeft(2, '0');
+      final h  = dt.hour.toString().padLeft(2, '0');
+      final mi = dt.minute.toString().padLeft(2, '0');
+      return '$d/$mo/${dt.year} $h:$mi';
+    } catch (_) { return raw; }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive      = session['isActive'] as bool? ?? false;
+    final startTime     = session['startTime'] as String?;
+    final endTime       = session['endTime'] as String?;
+    final kmDriven      = session['kmDriven'];
+    final hoursWorked   = session['hoursWorked'];
+    final division      = session['divisionName'] as String?;
+    final odoStart      = (session['odometerStart'] as num?)?.toDouble();
+    final odoEnd        = (session['odometerEnd']   as num?)?.toDouble();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: isActive ? const Color(0xFFF0FDF4) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isActive ? const Color(0xFF86EFAC) : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isActive ? Icons.circle : Icons.check_circle_outline,
+                size: 10,
+                color: isActive ? const Color(0xFF16A34A) : const Color(0xFF9CA3AF),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  isActive ? 'Active' : 'Completed',
+                  style: TextStyle(
+                    fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.w600,
+                    color: isActive ? const Color(0xFF16A34A) : const Color(0xFF6B7280),
+                  ),
+                ),
+              ),
+              if (kmDriven != null)
+                Text(
+                  '${double.tryParse(kmDriven.toString())?.toStringAsFixed(1) ?? kmDriven} km',
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF1E3A5F)),
+                ),
+              if (hoursWorked != null) ...[
+                const SizedBox(width: 8),
+                Text(
+                  '${double.tryParse(hoursWorked.toString())?.toStringAsFixed(1) ?? hoursWorked} hrs',
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF6B7280)),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Icon(Icons.play_arrow_rounded, size: 14, color: Color(0xFF6B7280)),
+              const SizedBox(width: 4),
+              Text(_fmt(startTime), style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF374151))),
+              if (endTime != null) ...[
+                const SizedBox(width: 8),
+                const Icon(Icons.stop_rounded, size: 14, color: Color(0xFF6B7280)),
+                const SizedBox(width: 4),
+                Text(_fmt(endTime), style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF374151))),
+              ],
+            ],
+          ),
+          if (odoStart != null) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.speed_outlined, size: 12, color: Color(0xFF9CA3AF)),
+                const SizedBox(width: 4),
+                Text(
+                  odoEnd != null
+                      ? '${odoStart.toStringAsFixed(0)} → ${odoEnd.toStringAsFixed(0)} km'
+                      : '${odoStart.toStringAsFixed(0)} km (start)',
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF9CA3AF)),
+                ),
+              ],
+            ),
+          ],
+          if (division != null) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.account_tree_outlined, size: 12, color: Color(0xFF9CA3AF)),
+                const SizedBox(width: 4),
+                Text(division, style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF9CA3AF))),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }

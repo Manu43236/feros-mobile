@@ -108,7 +108,7 @@ class VehicleLeasesController extends GetxController {
       final clientId = lease.value?['clientId'];
       final results2 = await Future.wait([
         if (clientId != null) _api.get(ApiEndpoints.clientDivisions(clientId)),
-        _api.get(ApiEndpoints.staffProfiles),
+        _api.get(ApiEndpoints.users, params: {'hasAttendanceToday': true}),
       ]);
       if (clientId != null) {
         divisions.assignAll(
@@ -117,7 +117,7 @@ class VehicleLeasesController extends GetxController {
       }
       final allStaff = ((results2.last.data as Map)['data'] as List? ?? [])
           .cast<Map<String, dynamic>>();
-      drivers.assignAll(allStaff.where((s) => s['roleName'] == 'DRIVER').toList());
+      drivers.assignAll(allStaff.where((s) => (s['role'] as String? ?? '') == 'DRIVER' && (s['isActive'] as bool? ?? false)).toList());
     } catch (_) {
       FerosSnackbar.error('Failed to load lease details');
     }

@@ -236,9 +236,10 @@ class _VehicleCard extends StatelessWidget {
     final driverName  = vehicle['currentDriverName']  as String?;
     final cleanerId   = vehicle['currentCleanerId']  != null ? (vehicle['currentCleanerId']  as num).toInt() : null;
     final cleanerName = vehicle['currentCleanerName'] as String?;
-    final isInTransit     = vehicle['isInTransit']     as bool? ?? false;
-    final activeLrNumber  = vehicle['activeLrNumber']  as String?;
+    final isInTransit       = vehicle['isInTransit']       as bool? ?? false;
+    final activeLrNumber    = vehicle['activeLrNumber']    as String?;
     final activeOrderNumber = vehicle['activeOrderNumber'] as String?;
+    final activeLeaseNumber = vehicle['activeLeaseNumber'] as String?;
 
     final rcExp = vehicle['rcExpiryDate'] as String?;
     final insExp = vehicle['insuranceExpiryDate'] as String?;
@@ -366,6 +367,16 @@ class _VehicleCard extends StatelessWidget {
                             ),
                           ),
                         ),
+                      if (statusType == 'ON_LEASE' && activeLeaseNumber != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          activeLeaseNumber,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.mutedText,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ],
                       if (!isActive) ...[
                         const SizedBox(height: 4),
                         Container(
