@@ -83,11 +83,6 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
   DateTime? _financeStart;
   DateTime? _financeEnd;
 
-  // ── Text controllers — GPS ────────────────────────────────────────────────────
-  final _gpsDeviceNumCtrl = TextEditingController();
-  final _gpsImeiCtrl = TextEditingController();
-  final _gpsProviderCtrl = TextEditingController();
-
   // ── Text controllers — Operations & Notes ────────────────────────────────────
   final _odometerCtrl = TextEditingController();
   final _fuelLevelCtrl = TextEditingController();
@@ -121,9 +116,6 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
       _ownerPanCtrl,
       _ownerAddrCtrl,
       _agreementAmtCtrl,
-      _gpsDeviceNumCtrl,
-      _gpsImeiCtrl,
-      _gpsProviderCtrl,
       _odometerCtrl,
       _fuelLevelCtrl,
       _notesCtrl,
@@ -202,10 +194,6 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
     _ownerPanCtrl.text = v['ownerPan'] as String? ?? '';
     _ownerAddrCtrl.text = v['ownerAddress'] as String? ?? '';
     _agreementAmtCtrl.text = v['agreementAmount']?.toString() ?? '';
-
-    _gpsDeviceNumCtrl.text = v['gpsDeviceNumber'] as String? ?? '';
-    _gpsImeiCtrl.text = v['gpsDeviceImei'] as String? ?? '';
-    _gpsProviderCtrl.text = v['gpsProvider'] as String? ?? '';
 
     _odometerCtrl.text = v['currentOdometerReading']?.toString() ?? '';
     _fuelLevelCtrl.text = v['currentFuelLevel']?.toString() ?? '';
@@ -311,14 +299,6 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
         final amt = double.tryParse(_agreementAmtCtrl.text.trim());
         if (amt != null) body['agreementAmount'] = amt;
       }
-
-      // GPS
-      if (_gpsDeviceNumCtrl.text.trim().isNotEmpty)
-        body['gpsDeviceNumber'] = _gpsDeviceNumCtrl.text.trim();
-      if (_gpsImeiCtrl.text.trim().isNotEmpty)
-        body['gpsDeviceImei'] = _gpsImeiCtrl.text.trim();
-      if (_gpsProviderCtrl.text.trim().isNotEmpty)
-        body['gpsProvider'] = _gpsProviderCtrl.text.trim();
 
       // Operations
       final odo = double.tryParse(_odometerCtrl.text.trim());
@@ -782,32 +762,6 @@ class _OfficeVehicleFormViewState extends State<OfficeVehicleFormView> {
                               ),
                             ),
                           ],
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // ── 5. GPS ────────────────────────────────────────────────
-                      _Section(
-                        'GPS & TRACKING',
-                        children: [
-                          _field(
-                            'Device Number',
-                            _gpsDeviceNumCtrl,
-                            'Enter GPS device number',
-                          ),
-                          const SizedBox(height: 12),
-                          _field(
-                            'IMEI',
-                            _gpsImeiCtrl,
-                            'Enter IMEI number',
-                            inputType: TextInputType.number,
-                          ),
-                          const SizedBox(height: 12),
-                          _field(
-                            'Provider',
-                            _gpsProviderCtrl,
-                            'e.g. Tata, Jio',
-                          ),
                         ],
                       ),
                       const SizedBox(height: 16),

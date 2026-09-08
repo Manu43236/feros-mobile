@@ -155,11 +155,6 @@ class SupervisorVehicleDetailView
                       text: 'Meter',
                       iconMargin: EdgeInsets.only(bottom: 2),
                     ),
-                    const Tab(
-                      icon: Icon(Icons.gps_fixed, size: 15),
-                      text: 'GPS & Notes',
-                      iconMargin: EdgeInsets.only(bottom: 2),
-                    ),
                     if (isOffice)
                       const Tab(
                         icon: Icon(Icons.photo_library_outlined, size: 15),
@@ -178,7 +173,6 @@ class SupervisorVehicleDetailView
                     _ServiceTabBody(controller: controller),
                     _FuelTabBody(controller: controller),
                     _MeterTabBody(controller: controller),
-                    _GpsNotesTab(v: v),
                     if (isOffice)
                       _ImagesTabBody(controller: controller, canManage: true),
                   ],
@@ -4095,56 +4089,6 @@ class _MeterReadingSheetState extends State<_MeterReadingSheet> {
           ),
         ),
       ),
-    );
-  }
-}
-
-// ── GPS & Notes Tab ───────────────────────────────────────────────────────────
-class _GpsNotesTab extends StatelessWidget {
-  final Map<String, dynamic> v;
-  const _GpsNotesTab({required this.v});
-
-  @override
-  Widget build(BuildContext context) {
-    final notes = v['notes'] as String?;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      children: [
-        _SectionHeader('GPS Tracking'),
-        const SizedBox(height: 8),
-        _InfoSection(
-          title: '',
-          rows: [
-            _IR('Device No.', v['gpsDeviceNumber']),
-            _IR('IMEI', v['gpsDeviceImei']),
-            _IR('Provider', v['gpsProvider']),
-            _IR(
-              'Odometer',
-              v['currentOdometerReading'] != null
-                  ? '${v['currentOdometerReading']} km'
-                  : null,
-            ),
-          ],
-        ),
-        if (notes != null && notes.isNotEmpty) ...[
-          const SizedBox(height: 20),
-          _SectionHeader('Notes'),
-          const SizedBox(height: 8),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Text(
-              notes,
-              style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
-            ),
-          ),
-        ],
-      ],
     );
   }
 }
