@@ -37,6 +37,7 @@ const _statusKeyMap = <String, String>{
   'IN_PROGRESS':      'status_in_progress',
   'COMPLETED':        'status_completed',
   'IN_REPAIR':        'status_in_repair',
+  'IN_SERVICE':       'status_in_service',
   'RESOLVED':         'status_resolved',
   'VEHICLE_REPLACED': 'status_resolved',
 

@@ -583,6 +583,8 @@ class _VehicleCard extends StatelessWidget {
         return (const Color(0xFFEA580C), const Color(0xFFFFF7ED));
       case 'IN_REPAIR':
         return (const Color(0xFFD97706), const Color(0xFFFFFBEB));
+      case 'IN_SERVICE':
+        return (const Color(0xFF7C3AED), const Color(0xFFF5F3FF));
       case 'BREAKDOWN':
         return (const Color(0xFFDC2626), const Color(0xFFFEF2F2));
       default:

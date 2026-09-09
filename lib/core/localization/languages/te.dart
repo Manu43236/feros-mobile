@@ -312,6 +312,7 @@ const Map<String, String> te = {
 
   // ── Service Men — Status ──────────────────────────────────────────────────
   'status_in_repair': 'రిపేర్‌లో ఉంది',
+  'status_in_service': 'సర్వీస్‌లో ఉంది',
   'status_requested': 'రిక్వెస్ట్ చేయబడింది',
 
   // ── Service Men — Breakdowns ──────────────────────────────────────────────

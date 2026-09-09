@@ -336,6 +336,7 @@ const Map<String, String> en = {
 
   // ── Service Men — Status ──────────────────────────────────────────────────
   'status_in_repair': 'In Repair',
+  'status_in_service': 'In Service',
   'status_requested': 'Requested',
 
   // ── Service Men — Breakdowns ──────────────────────────────────────────────
