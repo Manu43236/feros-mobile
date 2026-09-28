@@ -12,6 +12,13 @@ class DriverShellController extends GetxController {
     currentIndex.value = index;
   }
 
+  /// SM sees the equipment tab only when the tenant runs the equipment module.
+  /// Gate on moduleType (not the raw canAccessEquipment flag).
+  static bool get _smHasEquipment {
+    final mt = Get.find<AuthService>().user?.moduleType;
+    return mt == 'BOTH' || mt == 'EQUIPMENT';
+  }
+
   List<NavItem> get navItems {
     final role = Get.find<AuthService>().user?.role ?? '';
     switch (role) {
@@ -27,6 +34,8 @@ class DriverShellController extends GetxController {
         return [
           NavItem(label: 'nav_home'.tr,       icon: Icons.home_outlined,            activeIcon: Icons.home,              route: '/shell'),
           NavItem(label: 'nav_services'.tr,   icon: Icons.build_outlined,           activeIcon: Icons.build,             route: '/shell'),
+          if (_smHasEquipment)
+            NavItem(label: 'Equipment',       icon: Icons.precision_manufacturing_outlined, activeIcon: Icons.precision_manufacturing, route: '/shell'),
           NavItem(label: 'nav_tyres'.tr,      icon: Icons.tire_repair_outlined,     activeIcon: Icons.tire_repair,       route: '/shell'),
           NavItem(label: 'nav_attendance'.tr, icon: Icons.check_circle_outline,     activeIcon: Icons.check_circle,      route: '/shell'),
           NavItem(label: 'nav_payslip'.tr,    icon: Icons.receipt_outlined,         activeIcon: Icons.receipt,           route: '/shell'),

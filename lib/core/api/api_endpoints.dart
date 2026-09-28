@@ -296,6 +296,22 @@ class ApiEndpoints {
   static String equipWoAssignDivision(woId, aId)           => '/work-orders/$woId/machines/$aId/division';
   static String equipBreakdowns(equipId)                   => '/equipment/$equipId/breakdowns';
 
+  // Equipment Services (SM equipment console — parity with vehicle services)
+  static const equipAllServices                            = '/equipment/services';
+  static String equipServicesByEquipment(equipId)          => '/equipment/$equipId/services';
+  static String equipStartService(equipId, sid)            => '/equipment/$equipId/services/$sid/start';
+  static String equipCompleteService(equipId, sid)         => '/equipment/$equipId/services/$sid/complete';
+  static String equipAddServiceTask(equipId, sid)          => '/equipment/$equipId/services/$sid/tasks';
+  static String equipAssignServiceTask(equipId, sid, taskId) => '/equipment/$equipId/services/$sid/tasks/$taskId/assign';
+  static String equipRequestServicePart(equipId, sid)      => '/equipment/$equipId/services/$sid/parts';
+  static String equipServiceParts(equipId, sid)            => '/equipment/$equipId/services/$sid/parts';
+  static String equipServiceCharges(equipId, sid)          => '/equipment/$equipId/services/$sid/charges';
+  static String equipServiceVendorItems(equipId, sid)      => '/equipment/$equipId/services/$sid/vendor-items';
+  static String equipServiceVendorItemById(equipId, sid, itemId) => '/equipment/$equipId/services/$sid/vendor-items/$itemId';
+  static String equipServiceAttachments(equipId, sid)      => '/equipment/$equipId/services/$sid/attachments';
+  static String equipServiceAttachmentById(equipId, sid, attId) => '/equipment/$equipId/services/$sid/attachments/$attId';
+  static const equipServiceTaskTypes                       = '/masters/global/equipment-service-task-types';
+
   // Operator session logs
   static const operatorSessionToday    = '/equipment-session-logs/my/today';
   static const operatorSessionMy       = '/equipment-session-logs/my';

@@ -10,6 +10,9 @@ import 'package:feros/app/modules/service_men/service_men_profile/views/service_
 import 'package:feros/app/modules/service_men/service_men_tyres/views/service_men_tyres_view.dart';
 import 'package:feros/app/modules/service_men/service_men_breakdowns/controllers/service_men_breakdowns_controller.dart';
 import 'package:feros/app/modules/service_men/service_men_breakdowns/bindings/service_men_breakdowns_binding.dart';
+import 'package:feros/app/modules/service_men/service_men_equipment_services/views/service_men_equipment_services_view.dart';
+import 'package:feros/app/modules/service_men/service_men_equipment_services/controllers/service_men_equipment_services_controller.dart';
+import 'package:feros/app/modules/service_men/service_men_equipment_services/bindings/service_men_equipment_services_binding.dart';
 import 'package:feros/app/modules/supervisor/supervisor_payslip/views/supervisor_payslip_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -171,9 +174,15 @@ class DriverShellView extends GetView<DriverShellController> {
         if (!Get.isRegistered<ServiceMenBreakdownsController>()) {
           ServiceMenBreakdownsBinding().dependencies();
         }
+        final mt = Get.find<AuthService>().user?.moduleType;
+        final smEquip = mt == 'BOTH' || mt == 'EQUIPMENT';
+        if (smEquip && !Get.isRegistered<ServiceMenEquipmentServicesController>()) {
+          ServiceMenEquipmentServicesBinding().dependencies();
+        }
         return [
           const ServiceMenDashboardView(),
           const ServiceMenServicesView(),
+          if (smEquip) const ServiceMenEquipmentServicesView(),
           const ServiceMenTyresView(),
           DriverAttendanceView(),
           const SupervisorPayslipView(),
