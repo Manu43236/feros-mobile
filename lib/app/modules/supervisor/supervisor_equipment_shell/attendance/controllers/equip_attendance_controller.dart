@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../../../../core/api/api_client.dart';
 import '../../../../../../core/api/api_endpoints.dart';
+import '../../../../../../core/services/auth_service.dart';
 import '../../../../../../core/utils/view_state.dart';
 
 class EquipAttendanceController extends GetxController {
@@ -16,6 +17,13 @@ class EquipAttendanceController extends GetxController {
   final crew            = <Map<String, dynamic>>[].obs;
   final attendanceTypes = <Map<String, dynamic>>[].obs;
   final leaveTypes      = <Map<String, dynamic>>[].obs;
+  final watchlistedIds  = <int>{}.obs;
+
+  // Which staff roles this supervisor manages. Lease access → drivers +
+  // cleaners; equipment access → operators. Drives the attendance tabs.
+  late final bool canAccessEquipment;
+  late final bool canAccessLeases;
+  bool get bothEnabled => canAccessEquipment && canAccessLeases;
 
   static final _dateFmt  = DateFormat('yyyy-MM-dd');
   static final _labelFmt = DateFormat('dd MMM yyyy, EEE');
@@ -24,10 +32,10 @@ class EquipAttendanceController extends GetxController {
   String get dateStr   => _dateFmt.format(_today);
   String get dateLabel => _labelFmt.format(_today);
 
-  // ── Computed ──────────────────────────────────────────────────────────────
+  // ── Global stats (whole crew) — used by the home tab summary ─────────────────
   List<Map<String, dynamic>> get crewRecords {
-    final crewIds = crew.map((u) => u['id']).toSet();
-    return records.where((r) => crewIds.contains(r['userId'])).toList();
+    final ids = crew.map((u) => u['id']).toSet();
+    return records.where((r) => ids.contains(r['userId'])).toList();
   }
 
   int get present => crewRecords.where((r) {
@@ -40,22 +48,52 @@ class EquipAttendanceController extends GetxController {
 
   int get unmarked => crew.length - crewRecords.length;
 
-  List<Map<String, dynamic>> get unmarkedCrew {
-    final markedIds = crewRecords.map((r) => r['userId']).toSet();
-    return crew.where((u) => !markedIds.contains(u['id'])).toList();
+  // ── Role subsets ─────────────────────────────────────────────────────────────
+  List<Map<String, dynamic>> crewForRoles(List<String> roles) => crew
+      .where((u) => roles.contains((u['role'] as String? ?? '').toUpperCase()))
+      .toList();
+
+  bool isWatchlisted(dynamic id) {
+    final uid = id is int ? id : int.tryParse(id.toString()) ?? -1;
+    return watchlistedIds.contains(uid);
   }
 
   Map<String, dynamic>? recordForUser(dynamic userId) {
-    for (final r in crewRecords) {
+    for (final r in records) {
       if (r['userId'] == userId) return r;
     }
     return null;
   }
 
-  // ── Lifecycle ─────────────────────────────────────────────────────────────
+  // ── Scoped stats (over a given crew subset, e.g. one tab) ────────────────────
+  List<Map<String, dynamic>> _markedIn(List<Map<String, dynamic>> subset) {
+    final ids = subset.map((u) => u['id']).toSet();
+    return records.where((r) => ids.contains(r['userId'])).toList();
+  }
+
+  int presentIn(List<Map<String, dynamic>> subset) => _markedIn(subset).where((r) {
+    final t = (r['attendanceTypeName'] as String? ?? '').toLowerCase();
+    return t.contains('present') && !t.contains('half');
+  }).length;
+
+  int absentIn(List<Map<String, dynamic>> subset) => _markedIn(subset).where((r) =>
+      (r['attendanceTypeName'] as String? ?? '').toLowerCase().contains('absent')).length;
+
+  int unmarkedIn(List<Map<String, dynamic>> subset) =>
+      subset.length - _markedIn(subset).length;
+
+  List<Map<String, dynamic>> unmarkedCrewIn(List<Map<String, dynamic>> subset) {
+    final markedIds = _markedIn(subset).map((r) => r['userId']).toSet();
+    return subset.where((u) => !markedIds.contains(u['id'])).toList();
+  }
+
+  // ── Lifecycle ─────────────────────────────────────────────────────────────────
   @override
   void onInit() {
     super.onInit();
+    final user = Get.find<AuthService>().user;
+    canAccessEquipment = user?.canAccessEquipment ?? false;
+    canAccessLeases    = user?.canAccessLeases    ?? false;
     fetchAll();
   }
 
@@ -66,6 +104,7 @@ class EquipAttendanceController extends GetxController {
         _fetchAttendance(),
         _fetchCrew(),
         _fetchMasters(),
+        if (canAccessLeases) _fetchWatchlistIds(),
       ]);
       state.value = ViewState.success;
     } catch (e) {
@@ -88,8 +127,22 @@ class EquipAttendanceController extends GetxController {
     crew.assignAll(all.where((u) {
       final role   = (u['role'] as String? ?? '').toUpperCase();
       final active = u['isActive'] as bool? ?? true;
-      return active && role == 'OPERATOR';
+      if (!active) return false;
+      if (role == 'OPERATOR')                    return canAccessEquipment;
+      if (role == 'DRIVER' || role == 'CLEANER') return canAccessLeases;
+      return false;
     }).toList());
+  }
+
+  Future<void> _fetchWatchlistIds() async {
+    try {
+      final res = await _api.get(ApiEndpoints.watchlistStaffIds);
+      final raw = ((res.data as Map<String, dynamic>)['data'] as List);
+      watchlistedIds.assignAll(
+          raw.map((e) => e is int ? e : (e as num).toInt()).toSet());
+    } catch (e) {
+      debugPrint('[EquipAttendance] watchlist fetch error: $e');
+    }
   }
 
   Future<void> _fetchMasters() async {
@@ -107,7 +160,7 @@ class EquipAttendanceController extends GetxController {
     );
   }
 
-  // ── Mark single ───────────────────────────────────────────────────────────
+  // ── Mark single ───────────────────────────────────────────────────────────────
   Future<bool> markForUser({
     required int userId,
     required int attendanceTypeId,
@@ -133,9 +186,10 @@ class EquipAttendanceController extends GetxController {
     }
   }
 
-  // ── Bulk mark all unmarked ────────────────────────────────────────────────
-  Future<bool> markBulkPresent(int attendanceTypeId) async {
-    final unmkd = unmarkedCrew;
+  // ── Bulk mark all unmarked in a crew subset ────────────────────────────────────
+  Future<bool> markBulkPresent(
+      int attendanceTypeId, List<Map<String, dynamic>> subset) async {
+    final unmkd = unmarkedCrewIn(subset);
     if (unmkd.isEmpty) return true;
 
     bulkLoading.value = true;

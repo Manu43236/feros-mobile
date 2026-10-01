@@ -22,6 +22,8 @@ import '../../../supervisor/supervisor_my_attendance/views/supervisor_my_attenda
 import '../../../supervisor/supervisor_my_attendance/bindings/supervisor_my_attendance_binding.dart';
 import '../../../supervisor/supervisor_notifications/views/supervisor_notifications_view.dart';
 import '../../../supervisor/supervisor_notifications/bindings/supervisor_notifications_binding.dart';
+import '../../../supervisor/supervisor_crew/views/supervisor_crew_view.dart';
+import '../../../supervisor/supervisor_crew/bindings/supervisor_crew_binding.dart';
 
 class SupervisorEquipmentShellView
     extends GetView<SupervisorEquipmentShellController> {
@@ -515,6 +517,18 @@ class _EquipmentDrawer extends StatelessWidget {
                       Navigator.of(context).pop();
                       controller.currentIndex.value =
                           controller.bothEnabled ? 2 : 1;
+                    },
+                  ),
+                  _DrawerTile(
+                    icon: Icons.badge_outlined,
+                    label: 'Staff',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Get.to(
+                        () => const SupervisorCrewView(),
+                        binding: SupervisorCrewBinding(),
+                        transition: Transition.cupertino,
+                      );
                     },
                   ),
                 ],

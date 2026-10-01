@@ -23,14 +23,47 @@ class EquipAttendanceTab extends StatefulWidget {
 class _EquipAttendanceTabState extends State<EquipAttendanceTab>
     with SingleTickerProviderStateMixin {
   late final TabController _tab;
+  late final List<_StaffTabSpec> _staffTabs;
 
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 2, vsync: this);
+    _staffTabs = _buildStaffTabs(Get.find<EquipAttendanceController>());
+    _tab = TabController(length: _staffTabs.length + 1, vsync: this);
     if (!Get.isRegistered<SupervisorMyAttendanceController>()) {
       Get.put(SupervisorMyAttendanceController());
     }
+  }
+
+  // Lease access → drivers + cleaners; equipment access → operators.
+  // Both → separate Drivers / Cleaners / Operators tabs.
+  // Lease only → one combined list (mirrors the vehicle-shell attendance).
+  List<_StaffTabSpec> _buildStaffTabs(EquipAttendanceController ctrl) {
+    if (ctrl.bothEnabled) {
+      return const [
+        _StaffTabSpec(
+            label: 'Drivers', roles: ['DRIVER'],
+            showFavorites: true, allowBulk: false, emptyNoun: 'drivers'),
+        _StaffTabSpec(
+            label: 'Cleaners', roles: ['CLEANER'],
+            showFavorites: true, allowBulk: false, emptyNoun: 'cleaners'),
+        _StaffTabSpec(
+            label: 'Operators', roles: ['OPERATOR'],
+            showFavorites: false, allowBulk: true, emptyNoun: 'operators'),
+      ];
+    }
+    if (ctrl.canAccessEquipment) {
+      return const [
+        _StaffTabSpec(
+            label: 'Operators', roles: ['OPERATOR'],
+            showFavorites: false, allowBulk: true, emptyNoun: 'operators'),
+      ];
+    }
+    return const [
+      _StaffTabSpec(
+          label: 'Drivers & Cleaners', roles: ['DRIVER', 'CLEANER'],
+          showFavorites: true, allowBulk: false, emptyNoun: 'drivers or cleaners'),
+    ];
   }
 
   @override
@@ -41,12 +74,16 @@ class _EquipAttendanceTabState extends State<EquipAttendanceTab>
 
   @override
   Widget build(BuildContext context) {
+    final selfIndex = _staffTabs.length;
     return Column(
       children: [
         Container(
           color: AppColors.equipSidebar,
           child: TabBar(
             controller: _tab,
+            isScrollable: _staffTabs.length > 2,
+            tabAlignment:
+                _staffTabs.length > 2 ? TabAlignment.start : TabAlignment.fill,
             indicatorColor: Colors.white,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white.withValues(alpha: 0.5),
@@ -60,9 +97,9 @@ class _EquipAttendanceTabState extends State<EquipAttendanceTab>
               fontWeight: FontWeight.w400,
               fontSize: 13,
             ),
-            tabs: const [
-              Tab(text: 'Operators'),
-              Tab(text: 'My Attendance'),
+            tabs: [
+              for (final s in _staffTabs) Tab(text: s.label),
+              const Tab(text: 'My Attendance'),
             ],
           ),
         ),
@@ -70,8 +107,8 @@ class _EquipAttendanceTabState extends State<EquipAttendanceTab>
           child: TabBarView(
             controller: _tab,
             children: [
-              _OperatorsTab(),
-              _MyAttendanceSelfTab(tab: _tab),
+              for (final s in _staffTabs) _StaffAttendanceList(spec: s),
+              _MyAttendanceSelfTab(tab: _tab, selfIndex: selfIndex),
             ],
           ),
         ),
@@ -80,18 +117,54 @@ class _EquipAttendanceTabState extends State<EquipAttendanceTab>
   }
 }
 
-// ── Tab 1: Operators ──────────────────────────────────────────────────────────
-class _OperatorsTab extends StatelessWidget {
+// ── Staff tab spec ─────────────────────────────────────────────────────────────
+class _StaffTabSpec {
+  final String label;
+  final List<String> roles;
+  final bool showFavorites;
+  final bool allowBulk; // supervisor bulk-marks + re-marks (operators only)
+  final String emptyNoun;
+  const _StaffTabSpec({
+    required this.label,
+    required this.roles,
+    required this.showFavorites,
+    required this.allowBulk,
+    required this.emptyNoun,
+  });
+}
+
+// ── Staff attendance list (drivers / cleaners / operators) ──────────────────────
+class _StaffAttendanceList extends StatefulWidget {
+  final _StaffTabSpec spec;
+  const _StaffAttendanceList({required this.spec});
+
+  @override
+  State<_StaffAttendanceList> createState() => _StaffAttendanceListState();
+}
+
+class _StaffAttendanceListState extends State<_StaffAttendanceList> {
+  final _searchCtrl = TextEditingController();
+  String _search = '';
+  bool _showWatchlist = false;
+
+  EquipAttendanceController get ctrl => Get.find<EquipAttendanceController>();
+  _StaffTabSpec get spec => widget.spec;
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<EquipAttendanceController>();
     return Obx(() {
-      if (controller.state.value == ViewState.loading) {
+      if (ctrl.state.value == ViewState.loading) {
         return const Center(
           child: CircularProgressIndicator(color: AppColors.equipSidebar),
         );
       }
-      if (controller.state.value == ViewState.error) {
+      if (ctrl.state.value == ViewState.error) {
         return Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -103,7 +176,7 @@ class _OperatorsTab extends StatelessWidget {
                       AppTextStyles.body.copyWith(color: AppColors.mutedText)),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: controller.fetchAll,
+                onPressed: ctrl.fetchAll,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.equipSidebar,
                   foregroundColor: Colors.white,
@@ -117,273 +190,352 @@ class _OperatorsTab extends StatelessWidget {
         );
       }
 
-      return _AttendanceBody(controller: controller);
-    });
-  }
-}
-
-// ── Operators Body ─────────────────────────────────────────────────────────────
-class _AttendanceBody extends StatefulWidget {
-  final EquipAttendanceController controller;
-  const _AttendanceBody({required this.controller});
-
-  @override
-  State<_AttendanceBody> createState() => _AttendanceBodyState();
-}
-
-class _AttendanceBodyState extends State<_AttendanceBody> {
-  final _searchCtrl = TextEditingController();
-  String _search = '';
-
-  EquipAttendanceController get ctrl => widget.controller;
-
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
+      final roleCrew = ctrl.crewForRoles(spec.roles);
+      final baseCrew = (spec.showFavorites && _showWatchlist)
+          ? roleCrew.where((u) => ctrl.isWatchlisted(u['id'])).toList()
+          : roleCrew;
       final filtered = _search.isEmpty
-          ? ctrl.crew.toList()
-          : ctrl.crew.where((u) => (u['name'] as String? ?? '')
-              .toLowerCase()
-              .contains(_search)).toList();
+          ? baseCrew
+          : baseCrew
+              .where((u) => (u['name'] as String? ?? '')
+                  .toLowerCase()
+                  .contains(_search))
+              .toList();
 
-      return RefreshIndicator(
-        color: AppColors.equipSidebar,
-        onRefresh: ctrl.fetchAll,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-          children: [
-            // ── Date banner ────────────────────────────────────
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.equipSidebar,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
+      return Column(
+        children: [
+          if (spec.showFavorites)
+            _FavoritesToggle(
+              showWatchlist: _showWatchlist,
+              onAll: () => setState(() {
+                _showWatchlist = false;
+                _searchCtrl.clear();
+                _search = '';
+              }),
+              onFavorites: () => setState(() {
+                _showWatchlist = true;
+                _searchCtrl.clear();
+                _search = '';
+              }),
+            ),
+          Expanded(
+            child: RefreshIndicator(
+              color: AppColors.equipSidebar,
+              onRefresh: ctrl.fetchAll,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                 children: [
-                  const Icon(Icons.calendar_today_outlined,
-                      size: 14, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Text(
-                    ctrl.dateLabel,
-                    style: AppTextStyles.bodySemiBold
-                        .copyWith(color: Colors.white),
+                  // ── Date banner ──────────────────────────────────
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.equipSidebar,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today_outlined,
+                            size: 14, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Text(
+                          ctrl.dateLabel,
+                          style: AppTextStyles.bodySemiBold
+                              .copyWith(color: Colors.white),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(height: 12),
+
+                  // ── Stats row (scoped to this tab) ───────────────
+                  Row(
+                    children: [
+                      _StatCard(
+                        label: 'Present',
+                        value: ctrl.presentIn(roleCrew),
+                        color: AppColors.success,
+                      ),
+                      const SizedBox(width: 8),
+                      _StatCard(
+                        label: 'Absent',
+                        value: ctrl.absentIn(roleCrew),
+                        color: AppColors.error,
+                      ),
+                      const SizedBox(width: 8),
+                      _StatCard(
+                        label: 'Unmarked',
+                        value: ctrl.unmarkedIn(roleCrew),
+                        color: AppColors.mutedText,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  // ── Search bar ───────────────────────────────────
+                  TextField(
+                    controller: _searchCtrl,
+                    onChanged: (v) =>
+                        setState(() => _search = v.trim().toLowerCase()),
+                    style: AppTextStyles.body,
+                    decoration: InputDecoration(
+                      hintText: 'Search by name…',
+                      hintStyle: AppTextStyles.body
+                          .copyWith(color: AppColors.mutedText),
+                      prefixIcon: const Icon(Icons.search,
+                          size: 18, color: AppColors.mutedText),
+                      suffixIcon: _search.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.close, size: 16),
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                setState(() => _search = '');
+                              },
+                            )
+                          : null,
+                      isDense: true,
+                      contentPadding:
+                          const EdgeInsets.symmetric(vertical: 10),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppColors.border),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppColors.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide:
+                            const BorderSide(color: AppColors.equipSidebar),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // ── Section header + bulk mark ───────────────────
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${spec.label} · ${baseCrew.length}',
+                          style: AppTextStyles.bodyMedium
+                              .copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      if (spec.allowBulk &&
+                          !_showWatchlist &&
+                          ctrl.unmarkedCrewIn(roleCrew).isNotEmpty)
+                        Obx(() => TextButton.icon(
+                              onPressed: ctrl.bulkLoading.value
+                                  ? null
+                                  : () => _showBulkConfirm(
+                                      context, ctrl, roleCrew),
+                              icon: ctrl.bulkLoading.value
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.equipSidebar),
+                                    )
+                                  : const Icon(Icons.checklist_outlined,
+                                      size: 16),
+                              label: Text(
+                                'Bulk Mark (${ctrl.unmarkedCrewIn(roleCrew).length})',
+                                style: const TextStyle(
+                                    fontFamily: 'Inter', fontSize: 12),
+                              ),
+                              style: TextButton.styleFrom(
+                                  foregroundColor: AppColors.equipSidebar),
+                            )),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // ── List ─────────────────────────────────────────
+                  if (baseCrew.isEmpty)
+                    _emptyCard(_showWatchlist
+                        ? 'No favourites yet.\nMark some as favourite from the crew list.'
+                        : 'No ${spec.emptyNoun} found.')
+                  else if (filtered.isEmpty)
+                    _emptyCard('No results for "$_search"')
+                  else
+                    ...filtered.map((u) => _StaffRow(
+                        user: u, ctrl: ctrl, editable: spec.allowBulk)),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-
-            // ── Stats row ───────────────────────────────────────
-            Row(
-              children: [
-                _StatCard(
-                  label: 'Present',
-                  value: ctrl.present,
-                  color: AppColors.success,
-                ),
-                const SizedBox(width: 8),
-                _StatCard(
-                  label: 'Absent',
-                  value: ctrl.absent,
-                  color: AppColors.error,
-                ),
-                const SizedBox(width: 8),
-                _StatCard(
-                  label: 'Unmarked',
-                  value: ctrl.unmarked,
-                  color: AppColors.mutedText,
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-
-            // ── Search bar ──────────────────────────────────────
-            TextField(
-              controller: _searchCtrl,
-              onChanged: (v) =>
-                  setState(() => _search = v.trim().toLowerCase()),
-              style: AppTextStyles.body,
-              decoration: InputDecoration(
-                hintText: 'Search operator…',
-                hintStyle:
-                    AppTextStyles.body.copyWith(color: AppColors.mutedText),
-                prefixIcon: const Icon(Icons.search,
-                    size: 18, color: AppColors.mutedText),
-                suffixIcon: _search.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.close, size: 16),
-                        onPressed: () {
-                          _searchCtrl.clear();
-                          setState(() => _search = '');
-                        },
-                      )
-                    : null,
-                isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 10),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide:
-                      const BorderSide(color: AppColors.equipSidebar),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // ── Section header + bulk mark ──────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Operators · ${ctrl.crew.length}',
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(fontWeight: FontWeight.w600),
-                  ),
-                ),
-                if (ctrl.unmarkedCrew.isNotEmpty)
-                  Obx(() => TextButton.icon(
-                        onPressed: ctrl.bulkLoading.value
-                            ? null
-                            : () => _showBulkConfirm(context),
-                        icon: ctrl.bulkLoading.value
-                            ? const SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.equipSidebar),
-                              )
-                            : const Icon(Icons.checklist_outlined, size: 16),
-                        label: Text(
-                          'Bulk Mark (${ctrl.unmarkedCrew.length})',
-                          style: const TextStyle(
-                              fontFamily: 'Inter', fontSize: 12),
-                        ),
-                        style: TextButton.styleFrom(
-                            foregroundColor: AppColors.equipSidebar),
-                      )),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // ── Crew list ───────────────────────────────────────
-            if (ctrl.crew.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(28),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Center(
-                  child: Text(
-                    'No operators found.\nOperators are assigned through Work Orders.',
-                    style: AppTextStyles.body
-                        .copyWith(color: AppColors.mutedText),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              )
-            else if (filtered.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(28),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Center(
-                  child: Text(
-                    'No results for "$_search"',
-                    style: AppTextStyles.body
-                        .copyWith(color: AppColors.mutedText),
-                  ),
-                ),
-              )
-            else
-              ...filtered.map((u) => _OperatorRow(user: u, ctrl: ctrl)),
-          ],
-        ),
+          ),
+        ],
       );
     });
   }
 
-  void _showBulkConfirm(BuildContext context) {
-    final types = ctrl.attendanceTypes;
-    final presentType = types.firstWhereOrNull((t) =>
-        (t['name'] as String? ?? '').toLowerCase().contains('present') &&
-        !(t['name'] as String? ?? '').toLowerCase().contains('half'));
-
-    if (presentType == null) {
-      FerosSnackbar.error('Attendance types not loaded');
-      return;
-    }
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Bulk Mark Present',
-            style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600)),
-        content: Text(
-          'Mark all ${ctrl.unmarkedCrew.length} unmarked operator(s) as Present?',
-          style: AppTextStyles.body,
+  Widget _emptyCard(String message) => Container(
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.border),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel',
-                style: TextStyle(
-                    fontFamily: 'Inter', color: AppColors.mutedText)),
+        child: Center(
+          child: Text(
+            message,
+            style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+            textAlign: TextAlign.center,
           ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              final ok =
-                  await ctrl.markBulkPresent(presentType['id'] as int);
-              if (ok) {
-                FerosSnackbar.success(
-                    '${ctrl.crewRecords.length} operators marked present');
-              } else {
-                FerosSnackbar.error('Bulk mark failed');
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.equipSidebar,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('Mark Present',
-                style: TextStyle(fontFamily: 'Inter')),
+        ),
+      );
+}
+
+// ── All / Favorites toggle ──────────────────────────────────────────────────────
+class _FavoritesToggle extends StatelessWidget {
+  final bool showWatchlist;
+  final VoidCallback onAll;
+  final VoidCallback onFavorites;
+  const _FavoritesToggle({
+    required this.showWatchlist,
+    required this.onAll,
+    required this.onFavorites,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.surface,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _seg(label: 'All', selected: !showWatchlist, onTap: onAll),
+              _seg(
+                  label: 'Favorites',
+                  icon: Icons.star_rounded,
+                  selected: showWatchlist,
+                  onTap: onFavorites),
+            ],
           ),
+          const Divider(height: 1, thickness: 1, color: AppColors.border),
         ],
+      ),
+    );
+  }
+
+  Widget _seg({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+    IconData? icon,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon,
+                        size: 14,
+                        color: selected
+                            ? AppColors.equipSidebar
+                            : AppColors.mutedText),
+                    const SizedBox(width: 5),
+                  ],
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight:
+                          selected ? FontWeight.w700 : FontWeight.w500,
+                      color: selected
+                          ? AppColors.equipSidebar
+                          : AppColors.mutedText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              height: 2,
+              color: selected ? AppColors.equipSidebar : Colors.transparent,
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
+// ── Bulk mark confirmation ──────────────────────────────────────────────────────
+void _showBulkConfirm(BuildContext context, EquipAttendanceController ctrl,
+    List<Map<String, dynamic>> subset) {
+  final types = ctrl.attendanceTypes;
+  final presentType = types.firstWhereOrNull((t) =>
+      (t['name'] as String? ?? '').toLowerCase().contains('present') &&
+      !(t['name'] as String? ?? '').toLowerCase().contains('half'));
+
+  if (presentType == null) {
+    FerosSnackbar.error('Attendance types not loaded');
+    return;
+  }
+
+  final count = ctrl.unmarkedCrewIn(subset).length;
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('Bulk Mark Present',
+          style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600)),
+      content: Text(
+        'Mark all $count unmarked as Present?',
+        style: AppTextStyles.body,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel',
+              style: TextStyle(
+                  fontFamily: 'Inter', color: AppColors.mutedText)),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            Navigator.pop(context);
+            final ok =
+                await ctrl.markBulkPresent(presentType['id'] as int, subset);
+            if (ok) {
+              FerosSnackbar.success('$count marked present');
+            } else {
+              FerosSnackbar.error('Bulk mark failed');
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.equipSidebar,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8)),
+          ),
+          child:
+              const Text('Mark Present', style: TextStyle(fontFamily: 'Inter')),
+        ),
+      ],
+    ),
+  );
+}
+
 // ── Tab 2: My Attendance ──────────────────────────────────────────────────────
 class _MyAttendanceSelfTab extends StatefulWidget {
   final TabController tab;
-  const _MyAttendanceSelfTab({required this.tab});
+  final int selfIndex;
+  const _MyAttendanceSelfTab({required this.tab, required this.selfIndex});
 
   @override
   State<_MyAttendanceSelfTab> createState() => _MyAttendanceSelfTabState();
@@ -496,7 +648,7 @@ class _MyAttendanceSelfTabState extends State<_MyAttendanceSelfTab> {
           ),
 
           // ── FAB: mark own attendance ─────────────────────────
-          if (_currentTab == 1 && !marked)
+          if (_currentTab == widget.selfIndex && !marked)
             Positioned(
               bottom: 16,
               right: 16,
@@ -787,11 +939,13 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ── Operator Row ──────────────────────────────────────────────────────────────
-class _OperatorRow extends StatelessWidget {
+// ── Staff Row (driver / cleaner / operator) ─────────────────────────────────────
+class _StaffRow extends StatelessWidget {
   final Map<String, dynamic> user;
   final EquipAttendanceController ctrl;
-  const _OperatorRow({required this.user, required this.ctrl});
+  final bool editable; // supervisor may (re)mark — operators only
+  const _StaffRow(
+      {required this.user, required this.ctrl, required this.editable});
 
   @override
   Widget build(BuildContext context) {
@@ -845,8 +999,9 @@ class _OperatorRow extends StatelessWidget {
             if (record != null)
               _StatusChip(
                   label: typeName ?? '',
-                  onTap: () =>
-                      _showMarkSheet(context, userId as int, name))
+                  onTap: editable
+                      ? () => _showMarkSheet(context, userId as int, name)
+                      : null)
             else
               Obx(() => ctrl.markLoading.value
                   ? const SizedBox(
@@ -901,11 +1056,11 @@ class _OperatorRow extends StatelessWidget {
   }
 }
 
-// ── Status chip (tappable to re-mark) ────────────────────────────────────────
+// ── Status chip (read-only, or tappable to re-mark when onTap given) ──────────
 class _StatusChip extends StatelessWidget {
   final String label;
-  final VoidCallback onTap;
-  const _StatusChip({required this.label, required this.onTap});
+  final VoidCallback? onTap;
+  const _StatusChip({required this.label, this.onTap});
 
   Color _color(String name) {
     final n = name.toLowerCase();
@@ -936,8 +1091,10 @@ class _StatusChip extends StatelessWidget {
               style: AppTextStyles.caption.copyWith(
                   color: c, fontWeight: FontWeight.w600, fontSize: 11),
             ),
-            const SizedBox(width: 4),
-            Icon(Icons.edit_outlined, size: 10, color: c),
+            if (onTap != null) ...[
+              const SizedBox(width: 4),
+              Icon(Icons.edit_outlined, size: 10, color: c),
+            ],
           ],
         ),
       ),
