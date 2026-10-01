@@ -41,6 +41,7 @@ class DriverFuelLogController extends GetxController {
   final isFullTank       = false.obs;
 
   final litresCtrl       = TextEditingController();
+  final remainingCtrl    = TextEditingController();
   final costPerLitreCtrl = TextEditingController();
   final totalCostCtrl    = TextEditingController();
   final odmCtrl          = TextEditingController();
@@ -180,6 +181,15 @@ class DriverFuelLogController extends GetxController {
     final litresErr = validateLitres();
     if (litresErr != null) { FerosSnackbar.error(litresErr); return false; }
 
+    final remaining = double.tryParse(remainingCtrl.text.trim());
+    if (remaining == null || remaining < 0) {
+      FerosSnackbar.error('Enter fuel level before filling'); return false;
+    }
+    final cap = tankCapacity;
+    if (cap != null && remaining > cap) {
+      FerosSnackbar.error('Fuel before filling exceeds tank capacity'); return false;
+    }
+
     final litres    = double.parse(litresCtrl.text.trim());
     final costPerL  = double.tryParse(costPerLitreCtrl.text.trim());
     final totalCost = double.tryParse(totalCostCtrl.text.trim()) ??
@@ -193,6 +203,7 @@ class DriverFuelLogController extends GetxController {
       await _api.post(ApiEndpoints.fuelLogs, data: {
         'vehicleId':    vId,
         'litresFilled': litres,
+        'fuelLevelBeforeFill': remaining,
         'totalCost':    totalCost,
         if (costPerL != null) 'costPerLitre': costPerL,
         if (odm != null) 'odometerReading': odm,
@@ -217,6 +228,7 @@ class DriverFuelLogController extends GetxController {
     isFullTank.value = false;
     selectedDateTime.value = DateTime.now();
     litresCtrl.clear();
+    remainingCtrl.clear();
     costPerLitreCtrl.clear();
     totalCostCtrl.clear();
     odmCtrl.clear();

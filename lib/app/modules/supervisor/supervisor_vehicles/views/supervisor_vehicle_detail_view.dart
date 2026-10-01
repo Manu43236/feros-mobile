@@ -657,6 +657,24 @@ class _BasicInfoTab extends StatelessWidget {
             ),
             _IR('Tank Capacity', tankCap != null ? '$tankCap L' : null),
             _IR('Current Fuel', fuelLabel),
+            _IR(
+              'Avg Mileage',
+              v['avgMileageKmPerLitre'] != null
+                  ? '~${(v['avgMileageKmPerLitre'] as num).toStringAsFixed(2)} km/L'
+                  : null,
+            ),
+            _IR(
+              'Est. Fuel Now',
+              v['estimatedFuelLevel'] != null
+                  ? '~${(v['estimatedFuelLevel'] as num).toStringAsFixed(0)} L'
+                  : null,
+            ),
+            _IR(
+              'Est. Range',
+              v['estimatedRangeKm'] != null
+                  ? '~${(v['estimatedRangeKm'] as num).toStringAsFixed(0)} km'
+                  : null,
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -2360,14 +2378,15 @@ class _FuelTabBodyState extends State<_FuelTabBody>
             )
           : null;
 
-      final validMileage = logs
-          .where((l) => l['mileageKmPerLitre'] != null)
-          .toList();
-      final avgMileage = validMileage.isNotEmpty
-          ? (validMileage
-                    .map((l) => (l['mileageKmPerLitre'] as num).toDouble())
-                    .reduce((a, b) => a + b) /
-                validMileage.length)
+      // Backend-derived (last 3 full-tank fills) — approximate, single source of truth
+      final avgMileage = v['avgMileageKmPerLitre'] != null
+          ? (v['avgMileageKmPerLitre'] as num).toDouble()
+          : null;
+      final estFuel = v['estimatedFuelLevel'] != null
+          ? (v['estimatedFuelLevel'] as num).toDouble()
+          : null;
+      final estRange = v['estimatedRangeKm'] != null
+          ? (v['estimatedRangeKm'] as num).toDouble()
           : null;
 
       final totalSpend = logs.fold<double>(0.0, (sum, l) {
@@ -2439,6 +2458,8 @@ class _FuelTabBodyState extends State<_FuelTabBody>
             currentFuel: currentFuel,
             fuelPct: fuelPct,
             avgMileage: avgMileage,
+            estFuel: estFuel,
+            estRange: estRange,
             totalSpend: totalSpend,
             logCount: logs.length,
           ),
@@ -2533,6 +2554,7 @@ class _FuelTabBodyState extends State<_FuelTabBody>
 
 class _FuelSummaryCards extends StatelessWidget {
   final dynamic tankCap, currentFuel, avgMileage;
+  final double? estFuel, estRange;
   final int? fuelPct;
   final double totalSpend;
   final int logCount;
@@ -2543,6 +2565,8 @@ class _FuelSummaryCards extends StatelessWidget {
     required this.avgMileage,
     required this.totalSpend,
     required this.logCount,
+    this.estFuel,
+    this.estRange,
   });
 
   @override
@@ -2573,9 +2597,9 @@ class _FuelSummaryCards extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Current Fuel',
-                  style: TextStyle(
+                Text(
+                  estFuel != null ? 'Est. Fuel Now' : 'Current Fuel',
+                  style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -2585,7 +2609,9 @@ class _FuelSummaryCards extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  currentFuel != null ? '$currentFuel L' : '—',
+                  estFuel != null
+                      ? '~${estFuel!.toStringAsFixed(0)} L'
+                      : currentFuel != null ? '$currentFuel L' : '—',
                   style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 16,
@@ -2608,7 +2634,9 @@ class _FuelSummaryCards extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '$fuelPct% full',
+                    estRange != null
+                        ? '~${estRange!.toStringAsFixed(0)} km range'
+                        : '$fuelPct% full',
                     style: const TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 10,
@@ -2626,9 +2654,9 @@ class _FuelSummaryCards extends StatelessWidget {
           child: _SummaryCard(
             label: 'Avg Mileage',
             value: avgMileage != null
-                ? '${avgMileage!.toStringAsFixed(1)} km/L'
+                ? '~${avgMileage!.toStringAsFixed(2)} km/L'
                 : '—',
-            sub: 'full tank fills',
+            sub: avgMileage != null ? 'approx · last 3 fills' : 'add 2 full-tank fills',
             bg: const Color(0xFFF0FDF4),
             border: const Color(0xFFBBF7D0),
             labelColor: const Color(0xFF22C55E),
@@ -3043,6 +3071,7 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
 
   late final TextEditingController _dateCtrl;
   late final TextEditingController _litresCtrl;
+  late final TextEditingController _remainingCtrl;
   late final TextEditingController _odometerCtrl;
   late final TextEditingController _cplCtrl;
   late final TextEditingController _totalCtrl;
@@ -3073,6 +3102,13 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
     _litresCtrl = TextEditingController(
       text: e?['litresFilled']?.toString() ?? '',
     );
+    final veh = widget.controller.vehicle.value;
+    _remainingCtrl = TextEditingController(
+      text:
+          e?['fuelLevelBeforeFill']?.toString() ??
+          (veh?['estimatedFuelLevel'] ?? veh?['currentFuelLevel'])?.toString() ??
+          '',
+    );
     _odometerCtrl = TextEditingController(
       text:
           e?['odometerReading']?.toString() ??
@@ -3102,6 +3138,7 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
     for (final c in [
       _dateCtrl,
       _litresCtrl,
+      _remainingCtrl,
       _odometerCtrl,
       _cplCtrl,
       _totalCtrl,
@@ -3133,6 +3170,7 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
       'vehicleId': widget.controller.vehicleId,
       'fillDate': _dateCtrl.text,
       'litresFilled': double.tryParse(_litresCtrl.text),
+      'fuelLevelBeforeFill': double.tryParse(_remainingCtrl.text),
       'odometerReading': double.tryParse(_odometerCtrl.text),
       'costPerLitre': double.tryParse(_cplCtrl.text),
       'totalCost': double.tryParse(_totalCtrl.text),
@@ -3230,6 +3268,23 @@ class _FuelLogSheetState extends State<_FuelLogSheet> {
                   decoration: _inputDec('Select date'),
                   validator: (v) =>
                       (v == null || v.isEmpty) ? 'Required' : null,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Fuel level remaining BEFORE filling (required — drives mileage)
+              _SheetField(
+                label: 'Fuel Level Before Filling (L) *',
+                child: TextFormField(
+                  controller: _remainingCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: _inputDec('Remaining in tank now, e.g. 100'),
+                  validator: (v) =>
+                      (v == null || v.isEmpty || double.tryParse(v) == null)
+                      ? 'Required'
+                      : null,
                 ),
               ),
               const SizedBox(height: 12),

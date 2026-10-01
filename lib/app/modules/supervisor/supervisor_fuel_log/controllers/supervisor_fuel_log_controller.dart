@@ -48,6 +48,7 @@ class SupervisorFuelLogController extends GetxController {
   final editingId          = Rxn<int>();
 
   final litresCtrl       = TextEditingController();
+  final remainingCtrl    = TextEditingController();
   final costPerLitreCtrl = TextEditingController();
   final totalCostCtrl    = TextEditingController();
   final odmCtrl          = TextEditingController();
@@ -182,6 +183,7 @@ class SupervisorFuelLogController extends GetxController {
         ? DateTime.tryParse(log['fillDate'] as String) ?? DateTime.now()
         : DateTime.now();
     litresCtrl.text       = (log['litresFilled']    as num?)?.toString() ?? '';
+    remainingCtrl.text    = (log['fuelLevelBeforeFill'] as num?)?.toString() ?? '';
     costPerLitreCtrl.text = (log['costPerLitre']    as num?)?.toString() ?? '';
     totalCostCtrl.text    = (log['totalCost']       as num?)?.toString() ?? '';
     odmCtrl.text          = (log['odometerReading'] as num?)?.toString() ?? '';
@@ -201,6 +203,7 @@ class SupervisorFuelLogController extends GetxController {
     receiptUrl.value        = '';
     selectedDateTime.value  = DateTime.now();
     litresCtrl.clear();
+    remainingCtrl.clear();
     costPerLitreCtrl.clear();
     totalCostCtrl.clear();
     odmCtrl.clear();
@@ -236,6 +239,8 @@ class SupervisorFuelLogController extends GetxController {
     selectedVehicleId.value = vehicleId;
     final odm = currentOdm;
     if (odm != null) odmCtrl.text = odm.toStringAsFixed(0);
+    final est = _vehicleField('estimatedFuelLevel') ?? _vehicleField('currentFuelLevel');
+    remainingCtrl.text = est != null ? est.toStringAsFixed(0) : '';
     isFullTank.value = false;
     litresCtrl.clear();
     totalCostCtrl.clear();
@@ -278,6 +283,15 @@ class SupervisorFuelLogController extends GetxController {
     final litresErr = validateLitres();
     if (litresErr != null) { FerosSnackbar.error(litresErr); return false; }
 
+    final remaining = double.tryParse(remainingCtrl.text.trim());
+    if (remaining == null || remaining < 0) {
+      FerosSnackbar.error('Enter fuel level before filling'); return false;
+    }
+    final capBefore = tankCapacity;
+    if (capBefore != null && remaining > capBefore) {
+      FerosSnackbar.error('Fuel before filling exceeds tank capacity'); return false;
+    }
+
     final litres    = double.parse(litresCtrl.text.trim());
     final costPerL  = double.tryParse(costPerLitreCtrl.text.trim());
     final totalCost = double.tryParse(totalCostCtrl.text.trim()) ??
@@ -290,6 +304,7 @@ class SupervisorFuelLogController extends GetxController {
       final payload = <String, dynamic>{
         'vehicleId':    vId,
         'litresFilled': litres,
+        'fuelLevelBeforeFill': remaining,
         'totalCost':    totalCost,
         if (costPerL != null)                   'costPerLitre':    costPerL,
         if (odm != null)                        'odometerReading': odm,

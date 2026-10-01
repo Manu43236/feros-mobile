@@ -159,6 +159,16 @@ class _AddFuelSheet extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
+            // ── Fuel level before filling (required — drives mileage) ──────
+            _SectionLabel('Fuel Level Before Filling (L) *'),
+            _Field(
+              ctrl: controller.remainingCtrl,
+              keyboard: const TextInputType.numberWithOptions(decimal: true),
+              suffix: 'L',
+              hint: 'Remaining in tank now, e.g. 100',
+            ),
+            const SizedBox(height: 12),
+
             // ── Litres ────────────────────────────────────────────────────
             _SectionLabel(controller.maxFillable != null
                 ? 'Litres Filled * (max ${controller.maxFillable!.toStringAsFixed(1)} L)'
