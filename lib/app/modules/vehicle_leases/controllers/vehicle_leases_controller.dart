@@ -155,13 +155,15 @@ class VehicleLeasesController extends GetxController {
   Future<void> startSession(
     int leaseId,
     int assignmentId, {
+    int? driverStaffId,
     int? odometerStart,
     String? notes,
   }) async {
     isActioning.value = true;
     try {
+      // No startTime — backend stamps its own now(), avoids device clock skew.
       final payload = <String, dynamic>{
-        'startTime': DateTime.now().toIso8601String().substring(0, 19),
+        if (driverStaffId != null) 'driverStaffId': driverStaffId,
         if (odometerStart != null) 'odometerStart': odometerStart,
         if (notes != null && notes.isNotEmpty) 'notes': notes,
       };
@@ -183,8 +185,8 @@ class VehicleLeasesController extends GetxController {
   }) async {
     isActioning.value = true;
     try {
+      // No endTime — backend stamps its own now(), avoids device clock skew.
       final payload = <String, dynamic>{
-        'endTime': DateTime.now().toIso8601String().substring(0, 19),
         if (odometerEnd != null) 'odometerEnd': odometerEnd,
         if (notes != null && notes.isNotEmpty) 'notes': notes,
       };

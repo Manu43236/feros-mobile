@@ -324,6 +324,7 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
           final odm = int.tryParse(odmCtrl.text.trim());
           await controller.startSession(
             leaseId, assignmentId,
+            driverStaffId: assignment['driverStaffId'] as int?,
             odometerStart: odm,
             notes: notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
           );
@@ -716,26 +717,22 @@ class _AssignDriverSheetState extends State<_AssignDriverSheet> {
             Expanded(
               child: Obx(() {
                 final users = _filtered;
-                final items = <Widget>[
-                  // "Client's driver" option at top
-                  ListTile(
-                    leading: const CircleAvatar(
-                      radius: 18,
-                      backgroundColor: Color(0xFFF3F4F6),
-                      child: Icon(Icons.person_off_outlined, size: 18, color: AppColors.mutedText),
-                    ),
-                    title: Text("Client's driver", style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
-                    trailing: widget.currentDriverStaffId == null
-                        ? const Icon(Icons.check_circle, color: AppColors.success, size: 20)
-                        : null,
-                    onTap: () => _select(null),
+                // Our drivers first; "Client's driver" always pinned at the bottom.
+                final clientDriverTile = ListTile(
+                  leading: const CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Color(0xFFF3F4F6),
+                    child: Icon(Icons.person_off_outlined, size: 18, color: AppColors.mutedText),
                   ),
-                  const Divider(height: 1, indent: 56, color: AppColors.border),
-                ];
+                  title: Text("Client's driver", style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+                  trailing: widget.currentDriverStaffId == null
+                      ? const Icon(Icons.check_circle, color: AppColors.success, size: 20)
+                      : null,
+                  onTap: () => _select(null),
+                );
                 if (users.isEmpty) {
                   return Column(
                     children: [
-                      ...items,
                       Padding(
                         padding: const EdgeInsets.all(24),
                         child: Text(
@@ -745,19 +742,19 @@ class _AssignDriverSheetState extends State<_AssignDriverSheet> {
                           style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
                         ),
                       ),
+                      const Divider(height: 1, indent: 56, color: AppColors.border),
+                      clientDriverTile,
                     ],
                   );
                 }
                 return ListView.separated(
                   controller: scrollController,
                   padding: const EdgeInsets.only(bottom: 16),
-                  itemCount: items.length + users.length,
-                  separatorBuilder: (_, i) => i >= items.length - 1
-                      ? const Divider(height: 1, indent: 56, color: AppColors.border)
-                      : const SizedBox.shrink(),
+                  itemCount: users.length + 1,
+                  separatorBuilder: (_, _) => const Divider(height: 1, indent: 56, color: AppColors.border),
                   itemBuilder: (_, i) {
-                    if (i < items.length) return items[i];
-                    final u = users[i - items.length];
+                    if (i == users.length) return clientDriverTile;
+                    final u = users[i];
                     final uid = (u['id'] as num).toInt();
                     final name = u['name'] as String? ?? u['userName'] as String? ?? '—';
                     return ListTile(
