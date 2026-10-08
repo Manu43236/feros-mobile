@@ -760,8 +760,11 @@ class _BasicInfoTab extends StatelessWidget {
             ],
           ),
         ],
-        const SizedBox(height: 12),
-        _StaffCard(v: v, controller: controller),
+        // Leased vehicles are staffed from the lease — no assign-staff card here.
+        if ((v['currentStatusType'] as String? ?? '') != 'ON_LEASE') ...[
+          const SizedBox(height: 12),
+          _StaffCard(v: v, controller: controller),
+        ],
       ],
     );
   }
@@ -779,6 +782,9 @@ class _AssignStaffBar extends StatelessWidget {
     final cleanerName = v['currentCleanerName'] as String?;
     final driverId    = v['currentDriverId']  != null ? (v['currentDriverId']  as num).toInt() : null;
     final cleanerId   = v['currentCleanerId'] != null ? (v['currentCleanerId'] as num).toInt() : null;
+
+    // Leased vehicles are staffed from the lease, not here — hide the assign bar.
+    if ((v['currentStatusType'] as String? ?? '') == 'ON_LEASE') return const SizedBox.shrink();
 
     return Container(
       padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + MediaQuery.of(context).padding.bottom),

@@ -487,6 +487,16 @@ class _VehicleCard extends StatelessWidget {
                         ),
                       );
                     }
+                    // Leased vehicles are staffed from the lease — no assign here.
+                    if (statusType == 'ON_LEASE') {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text(
+                          'Driver & cleaner managed from the lease',
+                          style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                        ),
+                      );
+                    }
                     return Column(
                       children: [
                         _StaffRowTile(
