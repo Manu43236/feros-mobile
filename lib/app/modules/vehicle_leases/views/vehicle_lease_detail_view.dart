@@ -757,6 +757,11 @@ class _AssignDriverSheetState extends State<_AssignDriverSheet> {
                     final u = users[i];
                     final uid = (u['id'] as num).toInt();
                     final name = u['name'] as String? ?? u['userName'] as String? ?? '—';
+                    final busy = (u['isAssigned'] as bool? ?? false)
+                        ? (u['assignmentType'] == 'LEASE'
+                            ? 'On lease ${u['activeLeaseNumber'] ?? ''}'.trim()
+                            : 'On order ${u['activeOrderNumber'] ?? ''}'.trim())
+                        : null;
                     return ListTile(
                       leading: CircleAvatar(
                         radius: 18,
@@ -767,7 +772,11 @@ class _AssignDriverSheetState extends State<_AssignDriverSheet> {
                         ),
                       ),
                       title: Text(name, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
-                      subtitle: Text(u['phone'] as String? ?? '', style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                      subtitle: Text(
+                        busy != null ? '${u['phone'] ?? ''} · $busy' : (u['phone'] as String? ?? ''),
+                        style: AppTextStyles.caption.copyWith(
+                            color: busy != null ? const Color(0xFFB45309) : AppColors.mutedText),
+                      ),
                       trailing: uid == widget.currentDriverStaffId
                           ? const Icon(Icons.check_circle, color: AppColors.success, size: 20)
                           : null,

@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/exceptions/app_exception.dart';
 import '../../../../../core/popups/feros_snackbar.dart';
 
 class VehicleLeasesController extends GetxController {
@@ -124,12 +126,32 @@ class VehicleLeasesController extends GetxController {
     isLoadingDetail.value = false;
   }
 
-  Future<void> assignDriver(int leaseId, int assignmentId, int? driverStaffId) async {
+  Future<void> assignDriver(int leaseId, int assignmentId, int? driverStaffId,
+      {bool swap = false}) async {
     try {
       await _api.put(
         ApiEndpoints.vehicleLeaseAssignDriver(leaseId, assignmentId),
-        data: {'driverStaffId': driverStaffId},
+        data: {'driverStaffId': driverStaffId, 'swap': swap},
       );
+    } on ConflictException catch (e) {
+      // SWAPPABLE_CONFLICT → driver is on a normal/order vehicle (not mid-trip): offer to swap.
+      if (e.code == 'SWAPPABLE_CONFLICT') {
+        final confirmed = await Get.dialog<bool>(AlertDialog(
+          title: const Text('Swap driver?'),
+          content: Text('${e.message}\n\nUnassign them and move to this lease?'),
+          actions: [
+            TextButton(onPressed: () => Get.back(result: false), child: const Text('Cancel')),
+            TextButton(onPressed: () => Get.back(result: true), child: const Text('Swap')),
+          ],
+        )) ?? false;
+        if (confirmed) {
+          await assignDriver(leaseId, assignmentId, driverStaffId, swap: true);
+        }
+      } else {
+        FerosSnackbar.error(e.message); // HARD_BLOCK (on lease / in progress) — no swap
+      }
+    } on AppException catch (e) {
+      FerosSnackbar.error(e.message);
     } catch (_) {
       FerosSnackbar.error('Failed to assign driver');
     }

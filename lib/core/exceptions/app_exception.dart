@@ -40,6 +40,13 @@ class ValidationException extends AppException {
   ValidationException(String msg) : super(msg);
 }
 
+/// 409 with a machine-readable code (e.g. SWAPPABLE_CONFLICT vs HARD_BLOCK)
+/// so the UI can offer a "Swap" action instead of only showing the message.
+class ConflictException extends AppException {
+  final String? code;
+  ConflictException(String msg, this.code) : super(msg);
+}
+
 class UnknownException extends AppException {
   UnknownException() : super('Something went wrong. Please try again.');
 }

@@ -35,6 +35,15 @@ class ExceptionHandler {
           if (status == 402) return PaymentRequiredException();
           if (status == 403) return ForbiddenException(msg);
           if (status == 404) return NotFoundException(msg);
+          if (status == 409) {
+            String? code;
+            final body = error.response?.data;
+            if (body is Map<String, dynamic>) {
+              final data = body['data'];
+              if (data is Map<String, dynamic>) code = data['code'] as String?;
+            }
+            return ConflictException(msg ?? 'This action conflicts with an existing assignment.', code);
+          }
           if (status == 423) {
             final body = error.response?.data;
             String? lockedUntilStr;
