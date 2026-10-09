@@ -207,6 +207,7 @@ class ApiEndpoints {
   static String vehicleLeaseEndSession(id, assignmentId)         => '/vehicle-leases/$id/vehicles/$assignmentId/sessions/end';
   static String vehicleLeaseAssignDivision(id, assignmentId)     => '/vehicle-leases/$id/vehicles/$assignmentId/division';
   static String vehicleLeaseAssignDriver(id, assignmentId)       => '/vehicle-leases/$id/vehicles/$assignmentId/driver';
+  static String vehicleLeaseAssignCleaner(id, assignmentId)      => '/vehicle-leases/$id/vehicles/$assignmentId/cleaner';
   static String clientDivisions(clientId)                        => '/clients/$clientId/divisions';
 
   // Supervisor Watchlists

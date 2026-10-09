@@ -108,6 +108,8 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
     final regNo          = assignment['registrationNumber'] as String? ?? '—';
     final driverName     = assignment['driverName'] as String?;
     final driverStaffId  = assignment['driverStaffId'] as int?;
+    final cleanerName    = assignment['cleanerName'] as String?;
+    final cleanerStaffId = assignment['cleanerStaffId'] as int?;
     final vehicleType    = assignment['vehicleType'] as String?;
     final rate           = (assignment['ratePerVehicle'] as num?)?.toDouble() ?? 0;
     final rateTypeRaw    = controller.lease.value?['rateType'] as String? ?? '';
@@ -197,6 +199,16 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
                 ],
               ),
             ],
+            if (cleanerName != null) ...[
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  const Icon(Icons.cleaning_services_outlined, size: 13, color: AppColors.mutedText),
+                  const SizedBox(width: 4),
+                  Text(cleanerName, style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                ],
+              ),
+            ],
             const SizedBox(height: 4),
             Text(
               '₹${_fmt(rate)} / ${_rateLabel(rateTypeRaw)}',
@@ -214,7 +226,9 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
             ],
             if (isActive) ...[
               const SizedBox(height: 10),
-              Row(
+              Wrap(
+                spacing: 16,
+                runSpacing: 8,
                 children: [
                   GestureDetector(
                     onTap: () => _showAssignDriverSheet(context, assignmentId, driverStaffId),
@@ -227,7 +241,17 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  GestureDetector(
+                    onTap: () => _showAssignCleanerSheet(context, assignmentId, cleanerStaffId),
+                    child: Text(
+                      cleanerName != null ? 'Change Cleaner' : 'Assign Cleaner',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
                   GestureDetector(
                     onTap: () => _showAssignDivisionSheet(context, assignmentId),
                     child: Text(
@@ -372,6 +396,19 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
         leaseId: leaseId,
         assignmentId: assignmentId,
         currentDriverStaffId: currentDriverStaffId,
+      ),
+    );
+  }
+
+  void _showAssignCleanerSheet(BuildContext context, int assignmentId, int? currentCleanerStaffId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _AssignCleanerSheet(
+        leaseId: leaseId,
+        assignmentId: assignmentId,
+        currentCleanerStaffId: currentCleanerStaffId,
       ),
     );
   }
@@ -778,6 +815,184 @@ class _AssignDriverSheetState extends State<_AssignDriverSheet> {
                             color: busy != null ? const Color(0xFFB45309) : AppColors.mutedText),
                       ),
                       trailing: uid == widget.currentDriverStaffId
+                          ? const Icon(Icons.check_circle, color: AppColors.success, size: 20)
+                          : null,
+                      onTap: () => _select(uid),
+                    );
+                  },
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Assign Cleaner Sheet ──────────────────────────────────────────────────────
+class _AssignCleanerSheet extends StatefulWidget {
+  final int leaseId;
+  final int assignmentId;
+  final int? currentCleanerStaffId;
+
+  const _AssignCleanerSheet({
+    required this.leaseId,
+    required this.assignmentId,
+    required this.currentCleanerStaffId,
+  });
+
+  @override
+  State<_AssignCleanerSheet> createState() => _AssignCleanerSheetState();
+}
+
+class _AssignCleanerSheetState extends State<_AssignCleanerSheet> {
+  final _ctrl = Get.find<VehicleLeasesController>();
+  final _search = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> get _filtered {
+    final list = _ctrl.cleaners.toList();
+    if (_query.isEmpty) return list;
+    final q = _query.toLowerCase();
+    return list.where((d) =>
+        (d['name'] as String? ?? '').toLowerCase().contains(q) ||
+        (d['phone'] as String? ?? '').contains(q)).toList();
+  }
+
+  Future<void> _select(int? staffId) async {
+    Navigator.pop(context);
+    await _ctrl.assignCleaner(widget.leaseId, widget.assignmentId, staffId);
+    await _ctrl.fetchDetail(widget.leaseId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      builder: (_, scrollController) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Text('Assign Cleaner', style: AppTextStyles.heading3.copyWith(color: AppColors.navy)),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, size: 20),
+                    color: AppColors.mutedText,
+                    padding: EdgeInsets.zero,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _search,
+                onChanged: (v) => setState(() => _query = v),
+                style: AppTextStyles.body,
+                decoration: InputDecoration(
+                  hintText: 'Search by name or phone…',
+                  hintStyle: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+                  prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.mutedText),
+                  isDense: true,
+                  filled: true,
+                  fillColor: AppColors.background,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.border)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.border)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.navy, width: 1.5)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Divider(height: 1, color: AppColors.border),
+            Expanded(
+              child: Obx(() {
+                final users = _filtered;
+                // Our cleaners first; "No cleaner / client's cleaner" always pinned at the bottom.
+                final noCleanerTile = ListTile(
+                  leading: const CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Color(0xFFF3F4F6),
+                    child: Icon(Icons.person_off_outlined, size: 18, color: AppColors.mutedText),
+                  ),
+                  title: Text("No cleaner / client's cleaner", style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+                  trailing: widget.currentCleanerStaffId == null
+                      ? const Icon(Icons.check_circle, color: AppColors.success, size: 20)
+                      : null,
+                  onTap: () => _select(null),
+                );
+                if (users.isEmpty) {
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          _query.isEmpty
+                              ? 'No Cleaner available today'
+                              : 'No results for "$_query"',
+                          style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
+                        ),
+                      ),
+                      const Divider(height: 1, indent: 56, color: AppColors.border),
+                      noCleanerTile,
+                    ],
+                  );
+                }
+                return ListView.separated(
+                  controller: scrollController,
+                  padding: const EdgeInsets.only(bottom: 16),
+                  itemCount: users.length + 1,
+                  separatorBuilder: (_, _) => const Divider(height: 1, indent: 56, color: AppColors.border),
+                  itemBuilder: (_, i) {
+                    if (i == users.length) return noCleanerTile;
+                    final u = users[i];
+                    final uid = (u['id'] as num).toInt();
+                    final name = u['name'] as String? ?? u['userName'] as String? ?? '—';
+                    final busy = (u['isAssigned'] as bool? ?? false)
+                        ? (u['assignmentType'] == 'LEASE'
+                            ? 'On lease ${u['activeLeaseNumber'] ?? ''}'.trim()
+                            : 'On order ${u['activeOrderNumber'] ?? ''}'.trim())
+                        : null;
+                    return ListTile(
+                      leading: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: AppColors.navy,
+                        child: Text(
+                          name.isNotEmpty ? name[0].toUpperCase() : '?',
+                          style: const TextStyle(color: Colors.white, fontSize: 14, fontFamily: 'Inter', fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      title: Text(name, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
+                      subtitle: Text(
+                        busy != null ? '${u['phone'] ?? ''} · $busy' : (u['phone'] as String? ?? ''),
+                        style: AppTextStyles.caption.copyWith(
+                            color: busy != null ? const Color(0xFFB45309) : AppColors.mutedText),
+                      ),
+                      trailing: uid == widget.currentCleanerStaffId
                           ? const Icon(Icons.check_circle, color: AppColors.success, size: 20)
                           : null,
                       onTap: () => _select(uid),

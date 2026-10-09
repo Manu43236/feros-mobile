@@ -25,6 +25,7 @@ class VehicleLeasesController extends GetxController {
   final sessions        = <Map<String, dynamic>>[].obs;
   final divisions       = <Map<String, dynamic>>[].obs;
   final drivers         = <Map<String, dynamic>>[].obs;
+  final cleaners        = <Map<String, dynamic>>[].obs;
 
   // ── Session action state ─────────────────────────────────────────────────────
   final isActioning = false.obs;
@@ -94,6 +95,7 @@ class VehicleLeasesController extends GetxController {
     sessions.clear();
     divisions.clear();
     drivers.clear();
+    cleaners.clear();
     try {
       final results = await Future.wait([
         _api.get(ApiEndpoints.vehicleLeaseById(id)),
@@ -119,7 +121,14 @@ class VehicleLeasesController extends GetxController {
       }
       final allStaff = ((results2.last.data as Map)['data'] as List? ?? [])
           .cast<Map<String, dynamic>>();
-      drivers.assignAll(allStaff.where((s) => (s['role'] as String? ?? '') == 'DRIVER' && (s['isActive'] as bool? ?? false)).toList());
+      // Available-only: hide staff already on a lease (hard conflict). Order/normal-assigned staff
+      // stay visible with their "On order" marker so Swap still works.
+      bool onLease(Map<String, dynamic> s) =>
+          (s['isAssigned'] as bool? ?? false) && s['assignmentType'] == 'LEASE';
+      drivers.assignAll(allStaff.where((s) =>
+          (s['role'] as String? ?? '') == 'DRIVER' && (s['isActive'] as bool? ?? false) && !onLease(s)).toList());
+      cleaners.assignAll(allStaff.where((s) =>
+          (s['role'] as String? ?? '') == 'CLEANER' && (s['isActive'] as bool? ?? false) && !onLease(s)).toList());
     } catch (_) {
       FerosSnackbar.error('Failed to load lease details');
     }
@@ -154,6 +163,37 @@ class VehicleLeasesController extends GetxController {
       FerosSnackbar.error(e.message);
     } catch (_) {
       FerosSnackbar.error('Failed to assign driver');
+    }
+  }
+
+  Future<void> assignCleaner(int leaseId, int assignmentId, int? cleanerStaffId,
+      {bool swap = false}) async {
+    try {
+      await _api.put(
+        ApiEndpoints.vehicleLeaseAssignCleaner(leaseId, assignmentId),
+        data: {'cleanerStaffId': cleanerStaffId, 'swap': swap},
+      );
+    } on ConflictException catch (e) {
+      // SWAPPABLE_CONFLICT → cleaner is on a normal/order vehicle (not mid-trip): offer to swap.
+      if (e.code == 'SWAPPABLE_CONFLICT') {
+        final confirmed = await Get.dialog<bool>(AlertDialog(
+          title: const Text('Swap cleaner?'),
+          content: Text('${e.message}\n\nUnassign them and move to this lease?'),
+          actions: [
+            TextButton(onPressed: () => Get.back(result: false), child: const Text('Cancel')),
+            TextButton(onPressed: () => Get.back(result: true), child: const Text('Swap')),
+          ],
+        )) ?? false;
+        if (confirmed) {
+          await assignCleaner(leaseId, assignmentId, cleanerStaffId, swap: true);
+        }
+      } else {
+        FerosSnackbar.error(e.message); // HARD_BLOCK (on lease / in progress) — no swap
+      }
+    } on AppException catch (e) {
+      FerosSnackbar.error(e.message);
+    } catch (_) {
+      FerosSnackbar.error('Failed to assign cleaner');
     }
   }
 
