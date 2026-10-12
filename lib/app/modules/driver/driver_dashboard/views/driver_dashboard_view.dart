@@ -1118,6 +1118,7 @@ class _AssignedLeaseStateBody extends State<_AssignedLeaseState> {
     final clientName     = leaseData['clientName']?.toString() ?? '—';
     final leaseNumber    = leaseData['leaseNumber']?.toString() ?? '—';
     final divisionName   = leaseData['divisionName']?.toString();
+    final shiftLabel     = leaseData['shiftLabel']?.toString();
     final lastOdo        = (leaseData['lastOdometer'] as num?)?.toDouble();
     final sessionStartTs = leaseData['sessionStartTime'] as String?;
     final hasSession     = leaseData['activeSessionId'] != null;
@@ -1176,6 +1177,10 @@ class _AssignedLeaseStateBody extends State<_AssignedLeaseState> {
                         _LeaseRow(icon: Icons.business_outlined, label: 'Client', value: clientName),
                         const SizedBox(height: 12),
                         _LeaseRow(icon: Icons.receipt_long_outlined, label: 'Lease #', value: leaseNumber),
+                        if (shiftLabel != null) ...[
+                          const SizedBox(height: 10),
+                          _LeaseRow(icon: Icons.schedule_outlined, label: 'Shift', value: shiftLabel),
+                        ],
                         if (divisionName != null) ...[
                           const SizedBox(height: 12),
                           _LeaseRow(icon: Icons.account_tree_outlined, label: 'Division', value: divisionName),

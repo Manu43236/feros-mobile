@@ -27,6 +27,10 @@ class VehicleLeasesController extends GetxController {
   final drivers         = <Map<String, dynamic>>[].obs;
   final cleaners        = <Map<String, dynamic>>[].obs;
 
+  // ── Shift roster state (shift-duty leases) ─────────────────────────────────────
+  final shiftAssignments = <Map<String, dynamic>>[].obs;
+  final shiftRosterDate  = DateTime.now().obs;
+
   // ── Session action state ─────────────────────────────────────────────────────
   final isActioning = false.obs;
 
@@ -194,6 +198,42 @@ class VehicleLeasesController extends GetxController {
       FerosSnackbar.error(e.message);
     } catch (_) {
       FerosSnackbar.error('Failed to assign cleaner');
+    }
+  }
+
+  // ── Shift roster (shift-duty leases) ──────────────────────────────────────────
+  String _ymd(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  Future<void> fetchShiftAssignments(int leaseId) async {
+    try {
+      final day = _ymd(shiftRosterDate.value);
+      final res = await _api.get(ApiEndpoints.vehicleLeaseShiftAssignments(leaseId),
+          params: {'from': day, 'to': day});
+      shiftAssignments.value = List<Map<String, dynamic>>.from(res.data['data'] as List? ?? []);
+    } catch (_) {
+      shiftAssignments.clear();
+    }
+  }
+
+  Future<void> assignShift(int leaseId, int assignmentId, int shiftId,
+      {int? driverStaffId, int? cleanerStaffId}) async {
+    try {
+      await _api.put(
+        ApiEndpoints.vehicleLeaseAssignShift(leaseId, assignmentId),
+        data: {
+          'shiftId': shiftId,
+          'workDate': _ymd(shiftRosterDate.value),
+          'driverStaffId': driverStaffId,
+          'cleanerStaffId': cleanerStaffId,
+        },
+      );
+      await fetchShiftAssignments(leaseId);
+      FerosSnackbar.success('Shift assigned');
+    } on AppException catch (e) {
+      FerosSnackbar.error(e.message);
+    } catch (_) {
+      FerosSnackbar.error('Failed to assign shift');
     }
   }
 

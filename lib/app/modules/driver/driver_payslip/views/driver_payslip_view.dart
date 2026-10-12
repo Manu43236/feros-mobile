@@ -107,6 +107,7 @@ class _PayslipCardState extends State<_PayslipCard> {
     final presentDays     = p['presentDays']       as int?    ?? 0;
     final totalDays       = p['totalDays']         as int?    ?? 0;
     final grossPay        = (p['grossPay']         as num?)?.toDouble() ?? 0;
+    final shiftPay        = (p['shiftPay']         as num?)?.toDouble() ?? 0;
     final totalDeductions = (p['totalDeductions']  as num?)?.toDouble() ?? 0;
     final advanceDeductions = (p['advanceDeductions'] as num?)?.toDouble() ?? 0;
 
@@ -171,6 +172,8 @@ class _PayslipCardState extends State<_PayslipCard> {
               const Divider(height: 1),
               const SizedBox(height: 12),
               _row('lbl_gross_pay'.tr, '₹${grossPay.toStringAsFixed(2)}'),
+              if (shiftPay > 0)
+                _row('Lease Shift Earnings', '₹${shiftPay.toStringAsFixed(2)}'),
               _row('lbl_deductions_label'.tr, '- ₹${totalDeductions.toStringAsFixed(2)}'),
               if (advanceDeductions > 0)
                 _row('lbl_advance_recovery'.tr,

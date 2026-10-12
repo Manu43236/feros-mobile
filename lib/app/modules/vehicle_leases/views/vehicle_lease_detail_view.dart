@@ -263,6 +263,18 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
                       ),
                     ),
                   ),
+                  if (controller.lease.value?['shiftDuty'] == true)
+                    GestureDetector(
+                      onTap: () => _showShiftRosterSheet(context, assignmentId, regNo),
+                      child: Text(
+                        'Manage Shifts',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.navy,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ],
@@ -328,6 +340,165 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
         ),
       );
     });
+  }
+
+  // ── Shift roster (shift-duty leases) ────────────────────────────────────────
+  void _showShiftRosterSheet(BuildContext context, int assignmentId, String regNo) {
+    controller.fetchShiftAssignments(leaseId);
+    final shifts = List<Map<String, dynamic>>.from(controller.lease.value?['shifts'] as List? ?? []);
+
+    Map<String, dynamic>? cellFor(int shiftId) {
+      for (final r in controller.shiftAssignments) {
+        if ((r['assignmentId'] as num?)?.toInt() == assignmentId &&
+            (r['shiftId'] as num?)?.toInt() == shiftId) return r;
+      }
+      return null;
+    }
+
+    String ymd(DateTime d) =>
+        '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+    void pickStaff(int shiftId, bool isDriver, int? curDriverId, int? curCleanerId) {
+      final list = isDriver ? controller.drivers : controller.cleaners;
+      Get.bottomSheet(
+        Container(
+          decoration: const BoxDecoration(
+            color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(isDriver ? 'Select Driver' : 'Select Cleaner',
+                  style: AppTextStyles.bodySemiBold.copyWith(color: AppColors.bodyText)),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(Icons.person_off_outlined, color: AppColors.mutedText),
+                title: Text(isDriver ? "Client's driver" : "Client's cleaner",
+                    style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+                onTap: () {
+                  Get.back();
+                  controller.assignShift(leaseId, assignmentId, shiftId,
+                      driverStaffId: isDriver ? null : curDriverId,
+                      cleanerStaffId: isDriver ? curCleanerId : null);
+                },
+              ),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: list.map((s) {
+                    final sid = (s['id'] as num).toInt();
+                    return ListTile(
+                      leading: const Icon(Icons.person_outline, color: AppColors.navy),
+                      title: Text(s['name'] as String? ?? '—',
+                          style: AppTextStyles.body.copyWith(color: AppColors.bodyText)),
+                      onTap: () {
+                        Get.back();
+                        controller.assignShift(leaseId, assignmentId, shiftId,
+                            driverStaffId: isDriver ? sid : curDriverId,
+                            cleanerStaffId: isDriver ? curCleanerId : sid);
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        isScrollControlled: true,
+      );
+    }
+
+    Get.bottomSheet(
+      Container(
+        decoration: const BoxDecoration(
+          color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+        padding: const EdgeInsets.all(16),
+        child: Obx(() {
+          final date = controller.shiftRosterDate.value;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Shift Roster — $regNo',
+                  style: AppTextStyles.bodySemiBold.copyWith(color: AppColors.bodyText)),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(Icons.event_outlined, size: 15, color: AppColors.mutedText),
+                  const SizedBox(width: 6),
+                  Text(ymd(date), style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context, initialDate: date,
+                        firstDate: DateTime(2020), lastDate: DateTime(2100));
+                      if (picked != null) {
+                        controller.shiftRosterDate.value = picked;
+                        await controller.fetchShiftAssignments(leaseId);
+                      }
+                    },
+                    child: const Text('Change date'),
+                  ),
+                ],
+              ),
+              const Divider(),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: shifts.map((sh) {
+                    final shiftId = (sh['id'] as num).toInt();
+                    final cell = cellFor(shiftId);
+                    final driverName = cell?['driverName'] as String?;
+                    final cleanerName = cell?['cleanerName'] as String?;
+                    final curDriverId = cell?['driverStaffId'] as int?;
+                    final curCleanerId = cell?['cleanerStaffId'] as int?;
+                    final hasCell = cell != null;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.border),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Shift ${sh['shiftNumber']} · ${sh['startTime']}–${sh['endTime']}',
+                              style: AppTextStyles.bodySemiBold.copyWith(color: AppColors.navy)),
+                          const SizedBox(height: 6),
+                          GestureDetector(
+                            onTap: () => pickStaff(shiftId, true, curDriverId, curCleanerId),
+                            child: Row(children: [
+                              const Icon(Icons.person_outline, size: 14, color: AppColors.mutedText),
+                              const SizedBox(width: 4),
+                              Text('Driver: ${driverName ?? (hasCell ? "Client's driver" : "Tap to assign")}',
+                                  style: AppTextStyles.caption.copyWith(color: AppColors.bodyText)),
+                            ]),
+                          ),
+                          const SizedBox(height: 4),
+                          GestureDetector(
+                            onTap: () => pickStaff(shiftId, false, curDriverId, curCleanerId),
+                            child: Row(children: [
+                              const Icon(Icons.cleaning_services_outlined, size: 14, color: AppColors.mutedText),
+                              const SizedBox(width: 4),
+                              Text('Cleaner: ${cleanerName ?? (hasCell ? "Client's cleaner" : "Tap to assign")}',
+                                  style: AppTextStyles.caption.copyWith(color: AppColors.bodyText)),
+                            ]),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
+      isScrollControlled: true,
+    );
   }
 
   void _showStartDialog(BuildContext context, int assignmentId) {
