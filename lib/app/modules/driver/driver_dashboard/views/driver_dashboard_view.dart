@@ -966,6 +966,20 @@ class _AssignedLeaseStateBody extends State<_AssignedLeaseState> {
     } catch (_) { return null; }
   }
 
+  Widget _sessionActionButton(String label, Color color, VoidCallback? onPressed) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color, foregroundColor: Colors.white, elevation: 0,
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      child: Text(label, style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w700, fontSize: 13)),
+    );
+  }
+
   void _showStartSessionSheet() {
     final lastOdo = (widget.leaseData['lastOdometer'] as num?)?.toDouble();
     _startTimeCtrl.text = _fmtDateTime(DateTime.now());
@@ -1123,6 +1137,11 @@ class _AssignedLeaseStateBody extends State<_AssignedLeaseState> {
     final sessionStartTs = leaseData['sessionStartTime'] as String?;
     final hasSession     = leaseData['activeSessionId'] != null;
     final sessionStart   = sessionStartTs != null ? DateTime.tryParse(sessionStartTs) : null;
+    // Shift leases: backend gates these — start only during your shift window, end only your own session.
+    final sessionMine    = leaseData['activeSessionMine'] == true;
+    final canStart       = leaseData['canStartSession'] == true;
+    final otherDriver    = leaseData['activeSessionDriverName']?.toString();
+    final iAmWorking     = hasSession && sessionMine;
 
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
@@ -1198,49 +1217,44 @@ class _AssignedLeaseStateBody extends State<_AssignedLeaseState> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
-                      color: hasSession ? const Color(0x0A16A34A) : const Color(0xFFF9FAFB),
+                      color: iAmWorking ? const Color(0x0A16A34A) : const Color(0xFFF9FAFB),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: hasSession ? const Color(0x4D16A34A) : const Color(0xFFE5E7EB),
+                        color: iAmWorking ? const Color(0x4D16A34A) : const Color(0xFFE5E7EB),
                       ),
                     ),
                     child: Row(
                       children: [
                         Icon(
-                          hasSession ? Icons.circle : Icons.circle_outlined,
+                          iAmWorking ? Icons.circle : Icons.circle_outlined,
                           size: 10,
-                          color: hasSession ? const Color(0xFF16A34A) : const Color(0xFF9CA3AF),
+                          color: iAmWorking ? const Color(0xFF16A34A) : const Color(0xFF9CA3AF),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: hasSession && sessionStart != null
-                              ? Text(
-                                  'Working since ${_fmtDateTime(sessionStart)}',
-                                  style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF16A34A)),
-                                )
-                              : const Text(
-                                  'No active session',
-                                  style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF6B7280)),
-                                ),
+                          child: Text(
+                            iAmWorking && sessionStart != null
+                                ? 'Working since ${_fmtDateTime(sessionStart)}'
+                                : hasSession && !sessionMine
+                                    ? 'In use by ${otherDriver ?? 'another driver'}'
+                                    : canStart
+                                        ? 'No active session'
+                                        : 'Not your shift window',
+                            style: TextStyle(
+                              fontFamily: 'Inter', fontSize: 13,
+                              fontWeight: iAmWorking ? FontWeight.w600 : FontWeight.w400,
+                              color: iAmWorking ? const Color(0xFF16A34A) : const Color(0xFF6B7280),
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: attended
-                              ? (hasSession ? _showEndSessionSheet : _showStartSessionSheet)
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: hasSession ? const Color(0xFFDC2626) : _purple,
-                            foregroundColor: Colors.white, elevation: 0,
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          child: Text(
-                            hasSession ? 'End' : 'Start',
-                            style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w700, fontSize: 13),
-                          ),
-                        ),
+                        // End my own session; or Start / take over only during my shift window.
+                        if (iAmWorking)
+                          _sessionActionButton('End', const Color(0xFFDC2626),
+                              attended ? _showEndSessionSheet : null)
+                        else if (canStart)
+                          _sessionActionButton(hasSession ? 'Take over' : 'Start', _purple,
+                              attended ? _showStartSessionSheet : null),
                       ],
                     ),
                   ),
