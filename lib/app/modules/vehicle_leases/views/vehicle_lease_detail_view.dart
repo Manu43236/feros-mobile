@@ -230,28 +230,31 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
                 spacing: 16,
                 runSpacing: 8,
                 children: [
-                  GestureDetector(
-                    onTap: () => _showAssignDriverSheet(context, assignmentId, driverStaffId),
-                    child: Text(
-                      driverName != null ? 'Change Driver' : 'Assign Driver',
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.navy,
-                        fontWeight: FontWeight.w600,
-                        decoration: TextDecoration.underline,
+                  // Shift leases assign crew per shift via Manage Shifts, not at vehicle level
+                  if (controller.lease.value?['shiftDuty'] != true) ...[
+                    GestureDetector(
+                      onTap: () => _showAssignDriverSheet(context, assignmentId, driverStaffId),
+                      child: Text(
+                        driverName != null ? 'Change Driver' : 'Assign Driver',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.navy,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                        ),
                       ),
                     ),
-                  ),
-                  GestureDetector(
-                    onTap: () => _showAssignCleanerSheet(context, assignmentId, cleanerStaffId),
-                    child: Text(
-                      cleanerName != null ? 'Change Cleaner' : 'Assign Cleaner',
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.navy,
-                        fontWeight: FontWeight.w600,
-                        decoration: TextDecoration.underline,
+                    GestureDetector(
+                      onTap: () => _showAssignCleanerSheet(context, assignmentId, cleanerStaffId),
+                      child: Text(
+                        cleanerName != null ? 'Change Cleaner' : 'Assign Cleaner',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.navy,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                   GestureDetector(
                     onTap: () => _showAssignDivisionSheet(context, assignmentId),
                     child: Text(
@@ -287,7 +290,7 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
             ],
             // ── Session buttons ──────────────────────────────────
             if (isActive) ...[
-              if (!hasActive && driverName == null) ...[
+              if (!hasActive && driverName == null && controller.lease.value?['shiftDuty'] != true) ...[
                 const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
