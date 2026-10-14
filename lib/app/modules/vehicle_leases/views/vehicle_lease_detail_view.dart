@@ -78,21 +78,74 @@ class _VehiclesTab extends GetView<VehicleLeasesController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final lease = controller.lease.value;
+      final shiftDuty = lease?['shiftDuty'] == true;
+      final shifts = List<Map<String, dynamic>>.from(lease?['shifts'] as List? ?? []);
       final vs = controller.vehicles;
-      if (vs.isEmpty) {
+      if (vs.isEmpty && !shiftDuty) {
         return Center(
           child: Text('No vehicles assigned', style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
         );
       }
-      return ListView.builder(
+      return ListView(
         padding: const EdgeInsets.all(12),
-        itemCount: vs.length,
-        itemBuilder: (_, i) => _VehicleAssignmentCard(
-          assignment: vs[i],
-          leaseId: leaseId,
-        ),
+        children: [
+          if (shiftDuty && shifts.isNotEmpty) _ShiftSummaryCard(shifts: shifts),
+          if (vs.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: Text('No vehicles assigned', style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
+              ),
+            ),
+          ...vs.map((a) => _VehicleAssignmentCard(assignment: a, leaseId: leaseId)),
+        ],
       );
     });
+  }
+}
+
+// ── Shift summary (shift-duty leases) ───────────────────────────────────────────
+class _ShiftSummaryCard extends StatelessWidget {
+  final List<Map<String, dynamic>> shifts;
+  const _ShiftSummaryCard({required this.shifts});
+
+  @override
+  Widget build(BuildContext context) {
+    String pay(Object? v) => '₹${((v as num?)?.toDouble() ?? 0).toStringAsFixed(0)}';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Shifts (${shifts.length})',
+              style: AppTextStyles.bodySemiBold.copyWith(color: AppColors.navy)),
+          const SizedBox(height: 8),
+          ...shifts.map((s) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text('Shift ${s['shiftNumber']} · ${s['startTime']}–${s['endTime']}',
+                          style: AppTextStyles.caption.copyWith(color: AppColors.bodyText)),
+                    ),
+                    Text(
+                      'Driver ${pay(s['driverPay'])}'
+                      '${s['cleanerPay'] != null ? ' · Cleaner ${pay(s['cleanerPay'])}' : ''}',
+                      style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                    ),
+                  ],
+                ),
+              )),
+        ],
+      ),
+    );
   }
 }
 
@@ -419,12 +472,28 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
         padding: const EdgeInsets.all(16),
         child: Obx(() {
           final date = controller.shiftRosterDate.value;
+          final divisionName = assignment['divisionName'] as String?;
+          final dayTotal = controller.shiftAssignments
+              .where((r) => (r['assignmentId'] as num?)?.toInt() == assignmentId)
+              .fold<double>(0, (s, r) =>
+                  s + ((r['driverPay'] as num?)?.toDouble() ?? 0) + ((r['cleanerPay'] as num?)?.toDouble() ?? 0));
           return Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Shift Roster — $regNo',
-                  style: AppTextStyles.bodySemiBold.copyWith(color: AppColors.bodyText)),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('Shift Roster — $regNo',
+                        style: AppTextStyles.bodySemiBold.copyWith(color: AppColors.bodyText)),
+                  ),
+                  Text('₹${dayTotal.toStringAsFixed(0)}/day',
+                      style: AppTextStyles.bodySemiBold.copyWith(color: AppColors.navy)),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(divisionName != null ? 'Division: $divisionName' : 'No division',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
               const SizedBox(height: 6),
               Row(
                 children: [
@@ -470,6 +539,12 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
                         children: [
                           Text('Shift ${sh['shiftNumber']} · ${sh['startTime']}–${sh['endTime']}',
                               style: AppTextStyles.bodySemiBold.copyWith(color: AppColors.navy)),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Driver ₹${((sh['driverPay'] as num?)?.toDouble() ?? 0).toStringAsFixed(0)}'
+                            '${sh['cleanerPay'] != null ? ' · Cleaner ₹${(sh['cleanerPay'] as num).toDouble().toStringAsFixed(0)}' : ''}',
+                            style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                          ),
                           const SizedBox(height: 6),
                           GestureDetector(
                             onTap: () => pickStaff(shiftId, true, curDriverId, curCleanerId),
