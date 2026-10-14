@@ -31,6 +31,47 @@ class VehicleLeasesController extends GetxController {
   final shiftAssignments = <Map<String, dynamic>>[].obs;
   final shiftRosterDate  = DateTime.now().obs;
 
+  // Today's (±1 day) shift rows for the vehicle card's "current shift" display — kept separate
+  // from shiftAssignments so opening Manage Shifts on another date doesn't change the card.
+  final cardShifts = <Map<String, dynamic>>[].obs;
+
+  int? _timeToMin(String? t) {
+    if (t == null) return null;
+    final p = t.split(':');
+    if (p.length < 2) return null;
+    return int.parse(p[0]) * 60 + int.parse(p[1]);
+  }
+
+  /// The shift row (for a vehicle) whose window covers *now* — handles night shifts crossing midnight.
+  Map<String, dynamic>? currentShiftFor(int assignmentId) {
+    final now = DateTime.now();
+    for (final r in cardShifts) {
+      if ((r['assignmentId'] as num?)?.toInt() != assignmentId) continue;
+      final wd = DateTime.tryParse(r['workDate'] as String? ?? '');
+      final s = _timeToMin(r['startTime'] as String?);
+      final e = _timeToMin(r['endTime'] as String?);
+      if (wd == null || s == null || e == null) continue;
+      final start = DateTime(wd.year, wd.month, wd.day, s ~/ 60, s % 60);
+      var end = DateTime(wd.year, wd.month, wd.day, e ~/ 60, e % 60);
+      if (e <= s) end = end.add(const Duration(days: 1)); // crosses midnight
+      if (!now.isBefore(start) && now.isBefore(end)) return r;
+    }
+    return null;
+  }
+
+  Future<void> _fetchCardShifts(int leaseId) async {
+    try {
+      String ymd(DateTime d) =>
+          '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      final now = DateTime.now();
+      final res = await _api.get(ApiEndpoints.vehicleLeaseShiftAssignments(leaseId),
+          params: {'from': ymd(now.subtract(const Duration(days: 1))), 'to': ymd(now)});
+      cardShifts.value = List<Map<String, dynamic>>.from(res.data['data'] as List? ?? []);
+    } catch (_) {
+      cardShifts.clear();
+    }
+  }
+
   // ── Session action state ─────────────────────────────────────────────────────
   final isActioning = false.obs;
 
@@ -133,6 +174,11 @@ class VehicleLeasesController extends GetxController {
           (s['role'] as String? ?? '') == 'DRIVER' && (s['isActive'] as bool? ?? false) && !onLease(s)).toList());
       cleaners.assignAll(allStaff.where((s) =>
           (s['role'] as String? ?? '') == 'CLEANER' && (s['isActive'] as bool? ?? false) && !onLease(s)).toList());
+      if (lease.value?['shiftDuty'] == true) {
+        await _fetchCardShifts(id);
+      } else {
+        cardShifts.clear();
+      }
     } catch (_) {
       FerosSnackbar.error('Failed to load lease details');
     }
@@ -229,6 +275,7 @@ class VehicleLeasesController extends GetxController {
         },
       );
       await fetchShiftAssignments(leaseId);
+      await _fetchCardShifts(leaseId);
       FerosSnackbar.success('Shift assigned');
     } on AppException catch (e) {
       FerosSnackbar.error(e.message);

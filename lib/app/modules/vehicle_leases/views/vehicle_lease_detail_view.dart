@@ -78,74 +78,18 @@ class _VehiclesTab extends GetView<VehicleLeasesController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final lease = controller.lease.value;
-      final shiftDuty = lease?['shiftDuty'] == true;
-      final shifts = List<Map<String, dynamic>>.from(lease?['shifts'] as List? ?? []);
       final vs = controller.vehicles;
-      if (vs.isEmpty && !shiftDuty) {
+      if (vs.isEmpty) {
         return Center(
           child: Text('No vehicles assigned', style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
         );
       }
-      return ListView(
+      return ListView.builder(
         padding: const EdgeInsets.all(12),
-        children: [
-          if (shiftDuty && shifts.isNotEmpty) _ShiftSummaryCard(shifts: shifts),
-          if (vs.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Center(
-                child: Text('No vehicles assigned', style: AppTextStyles.body.copyWith(color: AppColors.mutedText)),
-              ),
-            ),
-          ...vs.map((a) => _VehicleAssignmentCard(assignment: a, leaseId: leaseId)),
-        ],
+        itemCount: vs.length,
+        itemBuilder: (_, i) => _VehicleAssignmentCard(assignment: vs[i], leaseId: leaseId),
       );
     });
-  }
-}
-
-// ── Shift summary (shift-duty leases) ───────────────────────────────────────────
-class _ShiftSummaryCard extends StatelessWidget {
-  final List<Map<String, dynamic>> shifts;
-  const _ShiftSummaryCard({required this.shifts});
-
-  @override
-  Widget build(BuildContext context) {
-    String pay(Object? v) => '₹${((v as num?)?.toDouble() ?? 0).toStringAsFixed(0)}';
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Shifts (${shifts.length})',
-              style: AppTextStyles.bodySemiBold.copyWith(color: AppColors.navy)),
-          const SizedBox(height: 8),
-          ...shifts.map((s) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text('Shift ${s['shiftNumber']} · ${s['startTime']}–${s['endTime']}',
-                          style: AppTextStyles.caption.copyWith(color: AppColors.bodyText)),
-                    ),
-                    Text(
-                      'Driver ${pay(s['driverPay'])}'
-                      '${s['cleanerPay'] != null ? ' · Cleaner ${pay(s['cleanerPay'])}' : ''}',
-                      style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
-                    ),
-                  ],
-                ),
-              )),
-        ],
-      ),
-    );
   }
 }
 
@@ -171,6 +115,12 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
     return Obx(() {
       final activeSession = controller.activeSessionFor(assignmentId);
       final hasActive     = activeSession != null;
+      final isShift       = controller.lease.value?['shiftDuty'] == true;
+      final cur           = isShift ? controller.currentShiftFor(assignmentId) : null;
+      // Current-shift crew drives the card (display only) on shift leases; vehicle-level on normal leases.
+      final curDriverId   = cur?['driverStaffId'] as int?;
+      final curDriverName = isShift ? (cur?['driverName'] as String?) : driverName;
+      final sessionDriverName = isShift ? curDriverName : driverName;
 
       return Container(
         margin: const EdgeInsets.only(bottom: 10),
@@ -242,31 +192,62 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
             const SizedBox(height: 6),
             if (vehicleType != null)
               Text(vehicleType, style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-            if (driverName != null) ...[
+            if (isShift) ...[
+              const SizedBox(height: 6),
+              if (cur != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.navy.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text('Shift ${cur['shiftNumber']} · ${cur['startTime']}–${cur['endTime']}',
+                      style: AppTextStyles.caption.copyWith(color: AppColors.navy, fontWeight: FontWeight.w600)),
+                )
+              else
+                Text('No active shift right now',
+                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText, fontStyle: FontStyle.italic)),
+              const SizedBox(height: 4),
+              Row(children: [
+                const Icon(Icons.person_outline, size: 13, color: AppColors.mutedText),
+                const SizedBox(width: 4),
+                Text(curDriverName ?? (cur != null ? "Client's driver" : '—'),
+                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+              ]),
               const SizedBox(height: 2),
-              Row(
-                children: [
-                  const Icon(Icons.person_outline, size: 13, color: AppColors.mutedText),
-                  const SizedBox(width: 4),
-                  Text(driverName, style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-                ],
+              Row(children: [
+                const Icon(Icons.cleaning_services_outlined, size: 13, color: AppColors.mutedText),
+                const SizedBox(width: 4),
+                Text((cur?['cleanerName'] as String?) ?? (cur != null ? "Client's cleaner" : '—'),
+                    style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+              ]),
+            ] else ...[
+              if (driverName != null) ...[
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    const Icon(Icons.person_outline, size: 13, color: AppColors.mutedText),
+                    const SizedBox(width: 4),
+                    Text(driverName, style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                  ],
+                ),
+              ],
+              if (cleanerName != null) ...[
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    const Icon(Icons.cleaning_services_outlined, size: 13, color: AppColors.mutedText),
+                    const SizedBox(width: 4),
+                    Text(cleanerName, style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 4),
+              Text(
+                '₹${_fmt(rate)} / ${_rateLabel(rateTypeRaw)}',
+                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
               ),
             ],
-            if (cleanerName != null) ...[
-              const SizedBox(height: 2),
-              Row(
-                children: [
-                  const Icon(Icons.cleaning_services_outlined, size: 13, color: AppColors.mutedText),
-                  const SizedBox(width: 4),
-                  Text(cleanerName, style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
-                ],
-              ),
-            ],
-            const SizedBox(height: 4),
-            Text(
-              '₹${_fmt(rate)} / ${_rateLabel(rateTypeRaw)}',
-              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
-            ),
             if (divisionName != null) ...[
               const SizedBox(height: 4),
               Row(
@@ -343,7 +324,7 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
             ],
             // ── Session buttons ──────────────────────────────────
             if (isActive) ...[
-              if (!hasActive && driverName == null && controller.lease.value?['shiftDuty'] != true) ...[
+              if (!hasActive && sessionDriverName == null) ...[
                 const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
@@ -356,9 +337,9 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
                     children: [
                       const Icon(Icons.warning_amber_rounded, size: 14, color: Color(0xFFD97706)),
                       const SizedBox(width: 6),
-                      const Text(
-                        'Assign a driver before starting a session',
-                        style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF92400E)),
+                      Text(
+                        isShift ? 'No driver on the current shift' : 'Assign a driver before starting a session',
+                        style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF92400E)),
                       ),
                     ],
                   ),
@@ -371,9 +352,9 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
                     Expanded(
                       child: _SessionButton(
                         label: 'Start Session',
-                        color: driverName != null ? AppColors.navy : const Color(0xFFD1D5DB),
-                        onTap: driverName != null
-                            ? () => _showStartDialog(context, assignmentId)
+                        color: sessionDriverName != null ? AppColors.navy : const Color(0xFFD1D5DB),
+                        onTap: sessionDriverName != null
+                            ? () => _showStartDialog(context, assignmentId, driverStaffId: isShift ? curDriverId : driverStaffId)
                             : null,
                       ),
                     ),
@@ -473,24 +454,12 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
         child: Obx(() {
           final date = controller.shiftRosterDate.value;
           final divisionName = assignment['divisionName'] as String?;
-          final dayTotal = controller.shiftAssignments
-              .where((r) => (r['assignmentId'] as num?)?.toInt() == assignmentId)
-              .fold<double>(0, (s, r) =>
-                  s + ((r['driverPay'] as num?)?.toDouble() ?? 0) + ((r['cleanerPay'] as num?)?.toDouble() ?? 0));
           return Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text('Shift Roster — $regNo',
-                        style: AppTextStyles.bodySemiBold.copyWith(color: AppColors.bodyText)),
-                  ),
-                  Text('₹${dayTotal.toStringAsFixed(0)}/day',
-                      style: AppTextStyles.bodySemiBold.copyWith(color: AppColors.navy)),
-                ],
-              ),
+              Text('Shift Roster — $regNo',
+                  style: AppTextStyles.bodySemiBold.copyWith(color: AppColors.bodyText)),
               const SizedBox(height: 2),
               Text(divisionName != null ? 'Division: $divisionName' : 'No division',
                   style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
@@ -539,32 +508,38 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
                         children: [
                           Text('Shift ${sh['shiftNumber']} · ${sh['startTime']}–${sh['endTime']}',
                               style: AppTextStyles.bodySemiBold.copyWith(color: AppColors.navy)),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Driver ₹${((sh['driverPay'] as num?)?.toDouble() ?? 0).toStringAsFixed(0)}'
-                            '${sh['cleanerPay'] != null ? ' · Cleaner ₹${(sh['cleanerPay'] as num).toDouble().toStringAsFixed(0)}' : ''}',
-                            style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
-                          ),
                           const SizedBox(height: 6),
-                          GestureDetector(
-                            onTap: () => pickStaff(shiftId, true, curDriverId, curCleanerId),
-                            child: Row(children: [
-                              const Icon(Icons.person_outline, size: 14, color: AppColors.mutedText),
-                              const SizedBox(width: 4),
-                              Text('Driver: ${driverName ?? (hasCell ? "Client's driver" : "Tap to assign")}',
+                          Row(children: [
+                            const Icon(Icons.person_outline, size: 14, color: AppColors.mutedText),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text('Driver: ${driverName ?? (hasCell ? "Client's driver" : "—")}',
                                   style: AppTextStyles.caption.copyWith(color: AppColors.bodyText)),
-                            ]),
-                          ),
-                          const SizedBox(height: 4),
-                          GestureDetector(
-                            onTap: () => pickStaff(shiftId, false, curDriverId, curCleanerId),
-                            child: Row(children: [
-                              const Icon(Icons.cleaning_services_outlined, size: 14, color: AppColors.mutedText),
-                              const SizedBox(width: 4),
-                              Text('Cleaner: ${cleanerName ?? (hasCell ? "Client's cleaner" : "Tap to assign")}',
+                            ),
+                            GestureDetector(
+                              onTap: () => pickStaff(shiftId, true, curDriverId, curCleanerId),
+                              child: Text(driverName != null ? 'Change Driver' : 'Assign Driver',
+                                  style: AppTextStyles.caption.copyWith(
+                                      color: AppColors.navy, fontWeight: FontWeight.w600,
+                                      decoration: TextDecoration.underline)),
+                            ),
+                          ]),
+                          const SizedBox(height: 6),
+                          Row(children: [
+                            const Icon(Icons.cleaning_services_outlined, size: 14, color: AppColors.mutedText),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text('Cleaner: ${cleanerName ?? (hasCell ? "Client's cleaner" : "—")}',
                                   style: AppTextStyles.caption.copyWith(color: AppColors.bodyText)),
-                            ]),
-                          ),
+                            ),
+                            GestureDetector(
+                              onTap: () => pickStaff(shiftId, false, curDriverId, curCleanerId),
+                              child: Text(cleanerName != null ? 'Change Cleaner' : 'Assign Cleaner',
+                                  style: AppTextStyles.caption.copyWith(
+                                      color: AppColors.navy, fontWeight: FontWeight.w600,
+                                      decoration: TextDecoration.underline)),
+                            ),
+                          ]),
                         ],
                       ),
                     );
@@ -579,7 +554,7 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
     );
   }
 
-  void _showStartDialog(BuildContext context, int assignmentId) {
+  void _showStartDialog(BuildContext context, int assignmentId, {int? driverStaffId}) {
     final odmCtrl   = TextEditingController();
     final notesCtrl = TextEditingController();
     showModalBottomSheet(
@@ -597,7 +572,7 @@ class _VehicleAssignmentCard extends GetView<VehicleLeasesController> {
           final odm = int.tryParse(odmCtrl.text.trim());
           await controller.startSession(
             leaseId, assignmentId,
-            driverStaffId: assignment['driverStaffId'] as int?,
+            driverStaffId: driverStaffId ?? assignment['driverStaffId'] as int?,
             odometerStart: odm,
             notes: notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
           );

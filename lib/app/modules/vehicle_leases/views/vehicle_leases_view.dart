@@ -202,10 +202,33 @@ class _LeaseCard extends StatelessWidget {
                 ],
               ],
             ),
+            if (lease['shiftDuty'] == true) ..._shiftRows(),
           ],
         ),
       ),
     );
+  }
+
+  // Shift windows (no pay) shown on the lease list for shift-duty leases
+  List<Widget> _shiftRows() {
+    final shifts = List<Map<String, dynamic>>.from(lease['shifts'] as List? ?? []);
+    if (shifts.isEmpty) return const [];
+    return [
+      const SizedBox(height: 8),
+      Row(
+        children: [
+          const Icon(Icons.schedule_outlined, size: 14, color: AppColors.mutedText),
+          const SizedBox(width: 4),
+          Text('${shifts.length} shift${shifts.length == 1 ? '' : 's'}',
+              style: AppTextStyles.caption.copyWith(color: AppColors.navy, fontWeight: FontWeight.w600)),
+        ],
+      ),
+      const SizedBox(height: 2),
+      Text(
+        shifts.map((s) => 'S${s['shiftNumber']} ${s['startTime']}–${s['endTime']}').join('   ·   '),
+        style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+      ),
+    ];
   }
 }
 
