@@ -73,6 +73,9 @@ class ApiEndpoints {
   static String orderPdf(id)             => '/orders/$id/pdf';
   static String orderForceDeliver(id)     => '/orders/$id/force-deliver';
   static String orderPaymentStatus(id)    => '/orders/$id/payment-status';
+  static String orderSettlement(id)        => '/orders/$id/settlement';
+  static String orderPayments(id)          => '/orders/$id/payments';
+  static String orderPayment(oId, pId)     => '/orders/$oId/payments/$pId';
   static const vehicleAllocationHistory  = '/orders/vehicle-allocation-history';
   static const staffAssignmentHistory    = '/vehicles/staff-assignment-history';
 
@@ -191,6 +194,7 @@ class ApiEndpoints {
   static const vehicleBrands   = '/masters/global/vehicle-brands';
   static const fuelTypes       = '/masters/global/fuel-types';
   static const materialTypes   = '/masters/global/material-types';
+  static const units           = '/masters/global/units';
   static const documentTypes      = '/masters/global/document-types';
   static const employmentTypes    = '/masters/global/employment-types';
   static const attendanceTypes    = '/masters/global/attendance-types';

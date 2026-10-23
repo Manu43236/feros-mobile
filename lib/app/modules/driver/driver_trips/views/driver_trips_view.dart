@@ -211,8 +211,8 @@ class _LrCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   lr.loadedWeight != null
-                      ? '${lr.loadedWeight!.toStringAsFixed(1)}T ${'lbl_t_loaded'.tr}'
-                      : '${lr.allocatedWeight.toStringAsFixed(1)}T ${'lbl_t_allocated'.tr}',
+                      ? '${lr.loadedWeight!.toStringAsFixed(1)} ${lr.unitName} ${'lbl_t_loaded'.tr}'
+                      : '${lr.allocatedWeight.toStringAsFixed(1)} ${lr.unitName} ${'lbl_t_allocated'.tr}',
                   style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
                 ),
               ],

@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../../../core/api/api_client.dart';
 import '../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/services/auth_service.dart';
 import '../../../../../core/utils/view_state.dart';
 import '../../../../../core/pdf_viewer/pdf_viewer_view.dart';
 import '../../../../../core/pdf_viewer/pdf_viewer_binding.dart';
@@ -11,6 +12,18 @@ import '../../../../../core/popups/feros_snackbar.dart';
 
 class SupervisorOrderDetailController extends GetxController {
   final _api = Get.find<ApiClient>();
+  final _auth = Get.find<AuthService>();
+
+  // ── Settlement ledger (advance / payment / deduction) — V1 enhancement ──────
+  final settlement        = Rxn<Map<String, dynamic>>();
+  final isAddingPayment    = false.obs;
+  final deletingPaymentId  = Rxn<int>();
+
+  /// Only admin / office staff may add or delete money entries.
+  bool get canManageSettlement {
+    final r = _auth.currentUser.value?.role;
+    return r == 'OFFICE_STAFF' || r == 'ADMIN' || r == 'SUPER_ADMIN';
+  }
 
   final state        = ViewState.loading.obs;
   final order        = Rxn<Map<String, dynamic>>();
@@ -55,6 +68,7 @@ class SupervisorOrderDetailController extends GetxController {
       final results = await Future.wait([
         _api.get(ApiEndpoints.orderById(orderId)),
         _api.get(ApiEndpoints.lrsByOrder(orderId)),
+        _api.get(ApiEndpoints.orderSettlement(orderId)),
       ]);
 
       order.value = (results[0].data as Map<String, dynamic>)['data']
@@ -62,6 +76,9 @@ class SupervisorOrderDetailController extends GetxController {
 
       lrs.value = ((results[1].data as Map<String, dynamic>)['data'] as List)
           .cast<Map<String, dynamic>>();
+
+      settlement.value = (results[2].data as Map<String, dynamic>)['data']
+          as Map<String, dynamic>;
 
       state.value = ViewState.success;
 
@@ -387,5 +404,46 @@ class SupervisorOrderDetailController extends GetxController {
       FerosSnackbar.error('Failed to load PDF');
     }
     pdfLoadingId.value = null;
+  }
+
+  // ── Settlement: add / delete money entries ──────────────────────────────────
+  Future<void> _refreshOrderQuietly() async {
+    try {
+      final res = await _api.get(ApiEndpoints.orderById(orderId));
+      order.value =
+          (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+    } catch (_) {/* badge refresh is best-effort */}
+  }
+
+  Future<bool> addPayment(Map<String, dynamic> data) async {
+    isAddingPayment.value = true;
+    try {
+      final res = await _api.post(ApiEndpoints.orderPayments(orderId), data: data);
+      settlement.value =
+          (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      await _refreshOrderQuietly();
+      FerosSnackbar.success('Entry recorded');
+      return true;
+    } catch (e) {
+      FerosSnackbar.error(e.toString());
+      return false;
+    } finally {
+      isAddingPayment.value = false;
+    }
+  }
+
+  Future<void> deletePayment(int paymentId) async {
+    deletingPaymentId.value = paymentId;
+    try {
+      final res = await _api.delete(ApiEndpoints.orderPayment(orderId, paymentId));
+      settlement.value =
+          (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      await _refreshOrderQuietly();
+      FerosSnackbar.success('Entry removed');
+    } catch (e) {
+      FerosSnackbar.error(e.toString());
+    } finally {
+      deletingPaymentId.value = null;
+    }
   }
 }

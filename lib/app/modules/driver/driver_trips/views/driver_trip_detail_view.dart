@@ -285,19 +285,19 @@ class DriverTripDetailView extends GetView<DriverTripDetailController> {
                   InfoRow(
                     label: 'lbl_allocated'.tr,
                     value:
-                        '${controller.lr.allocatedWeight.toStringAsFixed(1)} T',
+                        '${controller.lr.allocatedWeight.toStringAsFixed(1)} ${controller.lr.unitName}',
                   ),
                   if (controller.loadedWeight.value != null)
                     InfoRow(
                       label: 'lbl_loaded_label'.tr,
                       value:
-                          '${controller.loadedWeight.value!.toStringAsFixed(1)} T',
+                          '${controller.loadedWeight.value!.toStringAsFixed(1)} ${controller.lr.unitName}',
                     ),
                   controller.deliveredWeight.value != null
                       ? InfoRow(
                           label: 'lbl_delivered_label'.tr,
                           value:
-                              '${controller.deliveredWeight.value!.toStringAsFixed(1)} T',
+                              '${controller.deliveredWeight.value!.toStringAsFixed(1)} ${controller.lr.unitName}',
                           showDivider: false,
                         )
                       : InfoRow(

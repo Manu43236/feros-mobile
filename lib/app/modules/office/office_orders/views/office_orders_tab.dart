@@ -204,10 +204,12 @@ class _OfficeOrderCard extends StatelessWidget {
     final status      = order['orderStatus']         as String? ?? '';
     final orderNumber = order['orderNumber']         as String? ?? '—';
     final clientName  = order['clientName']          as String? ?? '—';
+    final consigneeName = order['consigneeClientName'] as String?;
     final fromCity    = order['sourceCityName']      as String? ?? '—';
     final toCity      = order['destinationCityName'] as String? ?? '—';
     final material    = order['materialTypeName']    as String? ?? '—';
     final weight      = order['totalWeight'];
+    final unitName    = order['unitName'] as String? ?? 'T';
     final deliveryDate= order['expectedDeliveryDate'] as String?;
     final isPending   = status == 'PENDING';
 
@@ -263,13 +265,20 @@ class _OfficeOrderCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
 
-              // ── Client ──────────────────────────────────────────
+              // ── Client (billing party) ──────────────────────────
               Text(
                 clientName,
                 style: AppTextStyles.body
                     .copyWith(color: AppColors.mutedText),
                 overflow: TextOverflow.ellipsis,
               ),
+              if (consigneeName != null && consigneeName.isNotEmpty)
+                Text(
+                  'Consignee: $consigneeName',
+                  style: AppTextStyles.caption
+                      .copyWith(color: AppColors.mutedText),
+                  overflow: TextOverflow.ellipsis,
+                ),
               const SizedBox(height: 10),
 
               // ── Route ───────────────────────────────────────────
@@ -312,7 +321,7 @@ class _OfficeOrderCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       weight != null
-                          ? '$material · ${weight}T'
+                          ? '$material · $weight $unitName'
                           : material,
                       style: AppTextStyles.caption
                           .copyWith(color: AppColors.mutedText),

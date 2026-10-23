@@ -197,6 +197,7 @@ class _OrderBanner extends StatelessWidget {
     final totalWeight = order['totalWeight'];
     final weightFulfilled = order['totalWeightFulfilled'];
     final remaining = order['remainingWeight'];
+    final unit = order['unitName'] as String? ?? 'T';
     final orderDate = order['orderDate'] as String?;
     final eta = order['expectedDeliveryDate'] as String?;
     final vehicleCount = (order['vehicleAllocations'] as List?)?.length ?? 0;
@@ -250,7 +251,22 @@ class _OrderBanner extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: () => showModalBottomSheet(
+                      useSafeArea: true,
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => _SettlementSheet(controller: controller),
+                    ),
+                    child: const Icon(
+                      Icons.account_balance_wallet_outlined,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   Obx(() => GestureDetector(
                     onTap: controller.isShareingPdf.value
                         ? null
@@ -338,16 +354,16 @@ class _OrderBanner extends StatelessWidget {
                     if (totalWeight != null)
                       _BannerChip(
                         icon: Icons.scale_outlined,
-                        label: '${totalWeight}T total',
+                        label: '$totalWeight $unit total',
                         sub: weightFulfilled != null
-                            ? '${weightFulfilled}T done'
+                            ? '$weightFulfilled $unit done'
                             : null,
                       ),
                     if (remaining != null &&
                         double.tryParse(remaining.toString())! > 0)
                       _BannerChip(
                         icon: Icons.pending_outlined,
-                        label: '${remaining}T left',
+                        label: '$remaining $unit left',
                       ),
                     _BannerChip(
                       icon: Icons.local_shipping,
@@ -374,6 +390,50 @@ class _OrderBanner extends StatelessWidget {
                   ],
                 ),
               ),
+              // ── Money snapshot (value / paid / balance) ─────────
+              Obx(() {
+                final s = controller.settlement.value;
+                if (s == null) return const SizedBox.shrink();
+                final bal = (s['balance'] as num?) ?? 0;
+                Widget cell(String label, String value, {Color? valueColor}) => Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(label,
+                              style: AppTextStyles.caption.copyWith(
+                                color: Colors.white.withValues(alpha: 0.5),
+                              )),
+                          const SizedBox(height: 2),
+                          Text(value,
+                              style: TextStyle(
+                                color: valueColor ?? Colors.white,
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              )),
+                        ],
+                      ),
+                    );
+                return Container(
+                  margin: const EdgeInsets.only(top: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      cell('Order Value', _inr((s['orderValue'] as num?) ?? 0)),
+                      cell('Paid', _inr((s['totalReceived'] as num?) ?? 0)),
+                      cell('Balance', _inr(bal),
+                          valueColor: bal <= 0
+                              ? const Color(0xFF6EE7B7)
+                              : const Color(0xFFFCD34D)),
+                    ],
+                  ),
+                );
+              }),
+
               // ── Status action buttons ──────────────────────────
               Obx(() {
                 final isLoading = controller.isUpdatingStatus.value;
@@ -597,6 +657,8 @@ class _AssignmentsTab extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             children: [
               _OrderSummaryRow(order: order),
+              _MaterialsManifest(order: order),
+              _AllocationBreakdown(order: order),
               const SizedBox(height: 4),
               if (allocations.isEmpty)
                 SizedBox(height: 180, child: _buildEmpty()),
@@ -636,6 +698,54 @@ class _AssignmentsTab extends StatelessWidget {
   }
 }
 
+// Vehicle allocation breakdown by stage. Zero buckets hidden. Add-on: summary may be absent.
+class _AllocationBreakdown extends StatelessWidget {
+  final Map<String, dynamic> order;
+  const _AllocationBreakdown({required this.order});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = order['allocationSummary'] as Map<String, dynamic>?;
+    if (s == null || (s['total'] as num? ?? 0) == 0) return const SizedBox.shrink();
+
+    int v(String k) => (s[k] as num?)?.toInt() ?? 0;
+    final buckets = <List<dynamic>>[
+      ['allocated', 'Allocated', Colors.grey],
+      ['inTrip', 'On Trip', Colors.blue],
+      ['delivered', 'Delivered', Colors.amber.shade800],
+      ['invoiced', 'Billed', Colors.green],
+      ['cancelled', 'Cancelled', Colors.red],
+    ].where((b) => v(b[0] as String) > 0).toList();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: buckets.map((b) {
+          final color = b[2] as Color;
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              '${v(b[0] as String)} ${b[1]}',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
 // ── Allocation Card ───────────────────────────────────────────────────────────
 class _AllocationCard extends StatelessWidget {
   final Map<String, dynamic> allocation;
@@ -649,6 +759,7 @@ class _AllocationCard extends StatelessWidget {
     final vehicle = allocation['vehicleRegistrationNumber'] as String? ?? '—';
     final type = allocation['vehicleTypeName'] as String?;
     final weight = allocation['allocatedWeight'];
+    final unit = controller.order.value?['unitName'] as String? ?? 'T';
     final status = allocation['allocationStatus'] as String? ?? '';
     final loadDate = allocation['expectedLoadDate'] as String?;
     final delivDate = allocation['expectedDeliveryDate'] as String?;
@@ -822,7 +933,7 @@ class _AllocationCard extends StatelessWidget {
                   runSpacing: 6,
                   children: [
                     if (weight != null)
-                      _InfoChip(Icons.scale_outlined, '${weight}T'),
+                      _InfoChip(Icons.scale_outlined, '$weight $unit'),
                     if (loadDate != null)
                       _InfoChip(
                         Icons.upload_outlined,
@@ -1448,7 +1559,7 @@ class _AssignVehicleSheetState extends State<_AssignVehicleSheet> {
           ],
 
           // ── Allocated Weight ─────────────────────────────────────
-          _SheetLabel('Allocated Weight (tons)', isRequired: true),
+          _SheetLabel('Allocated Quantity', isRequired: true),
           const SizedBox(height: 6),
           TextField(
             controller: _weightCtrl,
@@ -1932,6 +2043,7 @@ class _LrCard extends StatelessWidget {
     final fromCity = lr['fromCity'] as String? ?? '—';
     final toCity = lr['toCity'] as String? ?? '—';
     final weight = lr['allocatedWeight'];
+    final unit = lr['unitName'] as String? ?? 'T';
     final lrDate = lr['lrDate'] as String?;
 
     final statusColor = _lrColor(status);
@@ -2068,7 +2180,7 @@ class _LrCard extends StatelessWidget {
                   Row(
                     children: [
                       if (weight != null) ...[
-                        _InfoChip(Icons.scale_outlined, '${weight}T'),
+                        _InfoChip(Icons.scale_outlined, '$weight $unit'),
                         const SizedBox(width: 12),
                       ],
                       if (lrDate != null)
@@ -2180,6 +2292,62 @@ class _InfoChip extends StatelessWidget {
           style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
         ),
       ],
+    );
+  }
+}
+
+// ── Materials manifest (multi-material orders) ────────────────────────────────
+class _MaterialsManifest extends StatelessWidget {
+  final Map<String, dynamic> order;
+  const _MaterialsManifest({required this.order});
+
+  @override
+  Widget build(BuildContext context) {
+    final isMulti = order['isMultiMaterial'] == true;
+    final items = (order['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    if (!isMulti || items.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.inventory_2_outlined, size: 14, color: AppColors.mutedText),
+              const SizedBox(width: 6),
+              Text('MATERIALS (${items.length})',
+                  style: AppTextStyles.caption.copyWith(
+                      color: AppColors.navy, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...items.map((it) {
+            final name = it['materialName'] as String? ?? '—';
+            final qty = it['quantity'];
+            final unit = it['unitName'] as String? ?? '';
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  Expanded(
+                      child: Text(name,
+                          style: AppTextStyles.body.copyWith(color: AppColors.bodyText))),
+                  Text('$qty $unit',
+                      style: AppTextStyles.body.copyWith(
+                          color: AppColors.mutedText, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 }
@@ -3476,7 +3644,7 @@ class _CreateLrSheetState extends State<_CreateLrSheet> {
                   const SizedBox(height: 20),
 
                   // ── Loaded Weight ─────────────────────────────────────────
-                  _SheetLabel('Loaded Weight (tonnes)'),
+                  _SheetLabel('Loaded Quantity'),
                   const SizedBox(height: 6),
                   TextField(
                     controller: _weightCtrl,
@@ -3744,6 +3912,544 @@ class _OrderDetailCreateLrSheetState
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Settlement (advance / payment / deduction) — V1 enhancement ─────────────────
+
+// ponytail: whole-rupee display grouping (Indian). Settlement amounts are whole ₹.
+String _inr(num value) {
+  final neg = value < 0;
+  final digits = value.abs().round().toString();
+  String out;
+  if (digits.length <= 3) {
+    out = digits;
+  } else {
+    final last3 = digits.substring(digits.length - 3);
+    var rest = digits.substring(0, digits.length - 3);
+    final groups = <String>[];
+    while (rest.length > 2) {
+      groups.insert(0, rest.substring(rest.length - 2));
+      rest = rest.substring(0, rest.length - 2);
+    }
+    if (rest.isNotEmpty) groups.insert(0, rest);
+    out = '${groups.join(',')},$last3';
+  }
+  return '${neg ? '-' : ''}₹$out';
+}
+
+const _paymentTypeLabels = {
+  'ADVANCE': 'Advance',
+  'PAYMENT': 'Payment',
+  'DEDUCTION': 'Deduction',
+};
+const _deductionReasonLabels = {
+  'FUEL': 'Fuel',
+  'MAMULU': 'Mamulu',
+  'PENALTY': 'Penalty / Late',
+  'SHORTAGE': 'Shortage / Damage',
+  'MISC': 'Misc',
+  'OTHER': 'Other',
+};
+const _paymentModes = ['CASH', 'UPI', 'NEFT', 'RTGS', 'CHEQUE', 'OTHER'];
+
+/// Full-height bottom sheet opened from the banner wallet button.
+/// Shows summary + inline add form (office/admin) + entries list.
+class _SettlementSheet extends StatefulWidget {
+  final SupervisorOrderDetailController controller;
+  const _SettlementSheet({required this.controller});
+
+  @override
+  State<_SettlementSheet> createState() => _SettlementSheetState();
+}
+
+class _SettlementSheetState extends State<_SettlementSheet> {
+  bool _adding = false;
+  String _type = 'ADVANCE';
+  String _mode = 'CASH';
+  String _reason = 'FUEL';
+  final _amountCtrl = TextEditingController();
+  final _remarksCtrl = TextEditingController();
+  DateTime _date = DateTime.now();
+  final Map<String, String> _errors = {};
+
+  @override
+  void dispose() {
+    _amountCtrl.dispose();
+    _remarksCtrl.dispose();
+    super.dispose();
+  }
+
+  bool get _isDeduction => _type == 'DEDUCTION';
+
+  void _resetForm() {
+    _type = 'ADVANCE';
+    _mode = 'CASH';
+    _reason = 'FUEL';
+    _amountCtrl.clear();
+    _remarksCtrl.clear();
+    _date = DateTime.now();
+    _errors.clear();
+  }
+
+  Future<void> _submit() async {
+    final amount = double.tryParse(_amountCtrl.text.trim());
+    final balance = (widget.controller.settlement.value?['balance'] as num?) ?? 0;
+    final e = <String, String>{};
+    if (amount == null || amount <= 0) {
+      e['amount'] = 'Enter a valid amount';
+    } else if (amount > balance) {
+      e['amount'] = 'Exceeds remaining balance (${_inr(balance)})';
+    }
+    setState(() {
+      _errors
+        ..clear()
+        ..addAll(e);
+    });
+    if (e.isNotEmpty) return;
+
+    final data = <String, dynamic>{
+      'type': _type,
+      'amount': amount,
+      'txnDate': _date.toIso8601String().substring(0, 10),
+      if (_isDeduction) 'deductionReason': _reason else 'paymentMode': _mode,
+      if (_remarksCtrl.text.trim().isNotEmpty) 'remarks': _remarksCtrl.text.trim(),
+    };
+    final ok = await widget.controller.addPayment(data);
+    if (ok) setState(() { _resetForm(); _adding = false; });
+  }
+
+  InputDecoration _deco({bool hasError = false}) => InputDecoration(
+        filled: true,
+        fillColor: AppColors.background,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        hintStyle: AppTextStyles.hint,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: hasError ? AppColors.error : AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: hasError ? AppColors.error : AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.navy),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                const Icon(Icons.account_balance_wallet_outlined,
+                    color: AppColors.navy, size: 20),
+                const SizedBox(width: 8),
+                Text('Payments & Settlement',
+                    style: AppTextStyles.bodySemiBold.copyWith(color: AppColors.navy)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Flexible(
+            child: Obx(() {
+              final s = widget.controller.settlement.value;
+              if (s == null) {
+                return const Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Center(child: CircularProgressIndicator(color: AppColors.navy)),
+                );
+              }
+              final entries =
+                  (s['entries'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+              final balance = (s['balance'] as num?) ?? 0;
+              final canManage = widget.controller.canManageSettlement;
+
+              return SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + bottomInset),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Summary ──
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Column(
+                        children: [
+                          _SummaryRow(label: 'Order Value', value: _inr((s['orderValue'] as num?) ?? 0)),
+                          _SummaryRow(label: 'Advance', value: _inr((s['totalAdvance'] as num?) ?? 0)),
+                          _SummaryRow(label: 'Payments', value: _inr((s['totalPaid'] as num?) ?? 0)),
+                          _SummaryRow(label: 'Received', value: _inr((s['totalReceived'] as num?) ?? 0)),
+                          _SummaryRow(
+                            label: 'Deductions',
+                            value: _inr((s['totalDeductions'] as num?) ?? 0),
+                            valueColor: AppColors.orange,
+                          ),
+                          const Divider(height: 20, color: AppColors.border),
+                          _SummaryRow(
+                            label: 'Balance',
+                            value: _inr(balance),
+                            bold: true,
+                            valueColor: balance <= 0 ? AppColors.success : AppColors.error,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Inline add ──
+                    if (canManage)
+                      _adding
+                          ? _buildAddForm()
+                          : SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: ElevatedButton.icon(
+                                onPressed: () => setState(() => _adding = true),
+                                icon: const Icon(Icons.add, size: 18),
+                                label: const Text('Add Entry',
+                                    style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.navy,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                            ),
+                    const SizedBox(height: 16),
+
+                    // ── Entries ──
+                    Text('Entries',
+                        style: AppTextStyles.bodySemiBold.copyWith(color: AppColors.bodyText)),
+                    const SizedBox(height: 8),
+                    if (entries.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: Center(
+                          child: Text('No entries yet.',
+                              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                        ),
+                      )
+                    else
+                      ...entries.map((e) => _EntryCard(entry: e, controller: widget.controller)),
+                  ],
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddForm() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('New Entry',
+                  style: AppTextStyles.bodySemiBold.copyWith(color: AppColors.bodyText)),
+              GestureDetector(
+                onTap: () => setState(() { _resetForm(); _adding = false; }),
+                child: const Icon(Icons.close, size: 18, color: AppColors.mutedText),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          FerosSelectField<String>(
+            label: 'Type',
+            title: 'Select Type',
+            hint: 'Select type',
+            isRequired: true,
+            selectedDisplay: _paymentTypeLabels[_type],
+            items: _paymentTypeLabels.keys.toList(),
+            itemLabel: (t) => _paymentTypeLabels[t]!,
+            onSelected: (t) => setState(() => _type = t),
+          ),
+          const SizedBox(height: 12),
+
+          const _SheetLabel('Amount (₹)', isRequired: true),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _amountCtrl,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+            ],
+            style: AppTextStyles.body,
+            decoration: _deco(hasError: _errors.containsKey('amount'))
+                .copyWith(hintText: '0.00'),
+          ),
+          if (_errors.containsKey('amount'))
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(_errors['amount']!,
+                  style: AppTextStyles.caption.copyWith(color: AppColors.error)),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Remaining balance: ${_inr((widget.controller.settlement.value?['balance'] as num?) ?? 0)}',
+                style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+              ),
+            ),
+          const SizedBox(height: 12),
+
+          const _SheetLabel('Date', isRequired: true),
+          const SizedBox(height: 6),
+          _SheetDateField(
+            value: _date,
+            hint: 'Pick date',
+            onPicked: (d) => setState(() => _date = d),
+          ),
+          const SizedBox(height: 12),
+
+          if (_isDeduction)
+            FerosSelectField<String>(
+              label: 'Deduction Reason',
+              title: 'Select Reason',
+              hint: 'Select reason',
+              isRequired: true,
+              selectedDisplay: _deductionReasonLabels[_reason],
+              items: _deductionReasonLabels.keys.toList(),
+              itemLabel: (r) => _deductionReasonLabels[r]!,
+              onSelected: (r) => setState(() => _reason = r),
+            )
+          else
+            FerosSelectField<String>(
+              label: 'Payment Mode',
+              title: 'Select Mode',
+              hint: 'Select mode',
+              isRequired: true,
+              selectedDisplay: _mode,
+              items: _paymentModes,
+              itemLabel: (m) => m,
+              onSelected: (m) => setState(() => _mode = m),
+            ),
+          const SizedBox(height: 12),
+
+          const _SheetLabel('Remarks'),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _remarksCtrl,
+            style: AppTextStyles.body,
+            decoration: _deco().copyWith(hintText: 'Optional note...'),
+          ),
+          const SizedBox(height: 16),
+
+          Obx(() => SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed:
+                      widget.controller.isAddingPayment.value ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.navy,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: widget.controller.isAddingPayment.value
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Save Entry',
+                          style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15)),
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool bold;
+  final Color? valueColor;
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.bold = false,
+    this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label,
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.mutedText,
+                fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
+              )),
+          Text(value,
+              style: AppTextStyles.body.copyWith(
+                color: valueColor ?? AppColors.bodyText,
+                fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
+              )),
+        ],
+      ),
+    );
+  }
+}
+
+class _EntryCard extends StatelessWidget {
+  final Map<String, dynamic> entry;
+  final SupervisorOrderDetailController controller;
+  const _EntryCard({required this.entry, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final type = entry['type'] as String? ?? '';
+    final isDeduction = type == 'DEDUCTION';
+    final amount = (entry['amount'] as num?) ?? 0;
+    final modeOrReason = isDeduction
+        ? (_deductionReasonLabels[entry['deductionReason']] ?? '—')
+        : (entry['paymentMode'] as String? ?? '—');
+    final id = entry['id'] as int;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isDeduction
+                            ? const Color(0xFFFFF1E6)
+                            : const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        _paymentTypeLabels[type] ?? type,
+                        style: AppTextStyles.caption.copyWith(
+                          color: isDeduction ? AppColors.orange : AppColors.navy,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(modeOrReason,
+                        style: AppTextStyles.caption.copyWith(color: AppColors.mutedText)),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${entry['txnDate'] ?? ''}'
+                  '${entry['createdByName'] != null ? ' · ${entry['createdByName']}' : ''}',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.mutedText),
+                ),
+                if ((entry['remarks'] as String?)?.isNotEmpty == true) ...[
+                  const SizedBox(height: 2),
+                  Text(entry['remarks'] as String,
+                      style: AppTextStyles.caption.copyWith(color: AppColors.bodyText)),
+                ],
+              ],
+            ),
+          ),
+          Text(
+            '${isDeduction ? '− ' : ''}${_inr(amount)}',
+            style: AppTextStyles.bodySemiBold.copyWith(
+              color: isDeduction ? AppColors.orange : AppColors.bodyText,
+            ),
+          ),
+          if (controller.canManageSettlement) ...[
+            const SizedBox(width: 4),
+            Obx(() => controller.deletingPaymentId.value == id
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 20),
+                    color: AppColors.mutedText,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () async {
+                      final ok = await FerosDialog.confirm(
+                        title: 'Remove entry',
+                        message: 'Remove this money entry from the order settlement?',
+                        confirmText: 'Remove',
+                      );
+                      if (ok) controller.deletePayment(id);
+                    },
+                  )),
+          ],
+        ],
       ),
     );
   }

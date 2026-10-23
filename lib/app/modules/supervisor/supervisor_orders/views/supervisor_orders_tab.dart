@@ -181,6 +181,7 @@ class _OrderCard extends StatelessWidget {
     final toCity        = order['destinationCityName']  as String? ?? '—';
     final material      = order['materialTypeName']     as String? ?? '—';
     final weight        = order['totalWeight'];
+    final unitName      = order['unitName'] as String? ?? 'T';
     final deliveryDate  = order['expectedDeliveryDate'] as String?;
 
     return GestureDetector(
@@ -267,7 +268,7 @@ class _OrderCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    weight != null ? '$material · ${weight}T' : material,
+                    weight != null ? '$material · $weight $unitName' : material,
                     style:
                         AppTextStyles.caption.copyWith(color: AppColors.mutedText),
                     overflow: TextOverflow.ellipsis,

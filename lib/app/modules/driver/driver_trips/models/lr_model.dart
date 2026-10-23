@@ -11,6 +11,7 @@ class LrModel {
   final String fromCity;
   final String toCity;
   final double allocatedWeight;
+  final String unitName;
   final double? loadedWeight;
   final double? deliveredWeight;
   final String lrDate;
@@ -38,6 +39,7 @@ class LrModel {
     required this.fromCity,
     required this.toCity,
     required this.allocatedWeight,
+    this.unitName = 'T',
     this.loadedWeight,
     this.deliveredWeight,
     required this.lrDate,
@@ -66,6 +68,7 @@ class LrModel {
     fromCity:        j['fromCity']                  as String? ?? '—',
     toCity:          j['toCity']                    as String? ?? '—',
     allocatedWeight: (j['allocatedWeight']          as num?)?.toDouble() ?? 0,
+    unitName: (j['unitName'] as String?) ?? 'T',
     loadedWeight:    (j['loadedWeight']             as num?)?.toDouble(),
     deliveredWeight: (j['deliveredWeight']          as num?)?.toDouble(),
     lrDate:          j['lrDate']                    as String? ?? '—',

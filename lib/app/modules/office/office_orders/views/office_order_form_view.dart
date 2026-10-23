@@ -39,12 +39,17 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
   // ── Master data ──────────────────────────────────────────────────────────
   List<Map<String, dynamic>> _clients = [];
   List<Map<String, dynamic>> _materials = [];
+  List<Map<String, dynamic>> _units = [];
   List<Map<String, dynamic>> _states = [];
   List<Map<String, dynamic>> _srcCities = [];
   List<Map<String, dynamic>> _dstCities = [];
 
+  // ── Multi-material (cargo manifest) ────────────────────────────────────────
+  bool _multiMaterial = false;
+  final List<_ManifestRow> _items = [];
+
   static final _rateTypes = <Map<String, dynamic>>[
-    {'id': 'PER_TON', 'name': 'Per Ton'},
+    {'id': 'PER_TON', 'name': 'Per Unit'},
     {'id': 'PER_TRIP', 'name': 'Per Trip'},
     {'id': 'PER_KM', 'name': 'Per KM'},
   ];
@@ -56,6 +61,13 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
 
   // ── Selected values ──────────────────────────────────────────────────────
   Map<String, dynamic>? _selectedClient;
+  // Party details (optional). _selectedClient = placing client.
+  Map<String, dynamic>? _selectedConsignor;
+  Map<String, dynamic>? _selectedConsignee;
+  // Who is billed. Null → bill the placing client.
+  Map<String, dynamic>? _selectedBillingClient;
+  // Unit of measure for the quantity. Defaults to Tons.
+  Map<String, dynamic>? _selectedUnit;
   Map<String, dynamic>? _selectedMaterial;
   Map<String, dynamic>? _srcState;
   Map<String, dynamic>? _srcCity;
@@ -93,6 +105,7 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
     _customMaterialCtrl.dispose();
     _specialInstCtrl.dispose();
     _remarksCtrl.dispose();
+    for (final row in _items) row.dispose();
     super.dispose();
   }
 
@@ -103,6 +116,7 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
         _api.get(ApiEndpoints.clients, params: {'size': 500}),
         _api.get(ApiEndpoints.materialTypes),
         _api.get(ApiEndpoints.states),
+        _api.get(ApiEndpoints.units),
         if (widget.isEdit)
           _api.get(ApiEndpoints.orderById(widget.editOrderId!)),
       ];
@@ -115,6 +129,8 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
           .cast<Map<String, dynamic>>();
       final statesData = ((results[2].data as Map)['data'] as List? ?? [])
           .cast<Map<String, dynamic>>();
+      final unitsData = ((results[3].data as Map)['data'] as List? ?? [])
+          .cast<Map<String, dynamic>>();
 
       if (!mounted) return;
       setState(() {
@@ -125,12 +141,16 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
           {'id': -1, 'name': 'Other (specify manually)'},
         ];
         _isLoadingMaterials = false;
+        _units = unitsData;
+        // Default the unit to Tons (matches backend default) when not already chosen.
+        final tons = _units.where((u) => (u['name'] as String?)?.toLowerCase() == 'tons');
+        _selectedUnit ??= tons.isNotEmpty ? tons.first : null;
         _states = statesData;
         _isLoadingStates = false;
       });
 
-      if (widget.isEdit && results.length == 4) {
-        final order = (results[3].data as Map)['data'] as Map<String, dynamic>;
+      if (widget.isEdit && results.length == 5) {
+        final order = (results[4].data as Map)['data'] as Map<String, dynamic>;
         await _prefillFromOrder(order, statesData);
       }
     } catch (_) {
@@ -159,6 +179,24 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
         setState(() => _selectedClient = match.first);
     }
 
+    // ── Parties (optional) ──────────────────────────────────────────────
+    final consignorId = order['consignorClientId'] as int?;
+    if (consignorId != null) {
+      final m = _clients.where((c) => c['id'] == consignorId);
+      if (m.isNotEmpty && mounted) setState(() => _selectedConsignor = m.first);
+    }
+    final consigneeId = order['consigneeClientId'] as int?;
+    if (consigneeId != null) {
+      final m = _clients.where((c) => c['id'] == consigneeId);
+      if (m.isNotEmpty && mounted) setState(() => _selectedConsignee = m.first);
+    }
+    // Only treat as an explicit billing client when it differs from the placing client.
+    final billingId = order['billingPartyClientId'] as int?;
+    if (billingId != null && billingId != clientId) {
+      final m = _clients.where((c) => c['id'] == billingId);
+      if (m.isNotEmpty && mounted) setState(() => _selectedBillingClient = m.first);
+    }
+
     // ── Material ─────────────────────────────────────────────────────────
     final materialId = order['materialTypeId'] as int?;
     final customMat = order['customMaterialName'] as String?;
@@ -178,8 +216,31 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
       }
     }
 
+    // ── Multi-material manifest ───────────────────────────────────────────
+    if (order['isMultiMaterial'] == true) {
+      final rawItems = (order['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      final rows = <_ManifestRow>[];
+      for (final it in rawItems) {
+        final row = _ManifestRow();
+        final mId = it['materialTypeId'] as int?;
+        final mMatch = _materials.where((m) => m['id'] == mId);
+        if (mMatch.isNotEmpty) row.material = mMatch.first;
+        final uId = it['unitId'] as int?;
+        final uMatch = _units.where((u) => u['id'] == uId);
+        if (uMatch.isNotEmpty) row.unit = uMatch.first;
+        row.qtyCtrl.text = (it['quantity'] as num?)?.toString() ?? '';
+        rows.add(row);
+      }
+      if (mounted) setState(() { _multiMaterial = true; _items..clear()..addAll(rows); });
+    }
+
     // ── Weight, rate, addresses ───────────────────────────────────────────
     _weightCtrl.text = (order['totalWeight'] as num?)?.toString() ?? '';
+    final unitId = order['unitId'] as int?;
+    if (unitId != null) {
+      final uM = _units.where((u) => u['id'] == unitId);
+      if (uM.isNotEmpty && mounted) setState(() => _selectedUnit = uM.first);
+    }
     _freightRateCtrl.text = (order['freightRate'] as num?)?.toString() ?? '';
     _srcAddressCtrl.text = order['sourceAddress'] as String? ?? '';
     _dstAddressCtrl.text = order['destinationAddress'] as String? ?? '';
@@ -319,10 +380,24 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
   bool _validate() {
     final e = <String, String>{};
     if (_selectedClient == null) e['client'] = 'Select a client';
-    if (_selectedMaterial == null) e['material'] = 'Select material type';
-    if (_selectedMaterial?['id'] == -1 &&
-        _customMaterialCtrl.text.trim().isEmpty) {
-      e['material'] = 'Enter material name';
+    if (_multiMaterial) {
+      if (_items.isEmpty) {
+        e['material'] = 'Add at least one material';
+      } else {
+        for (final row in _items) {
+          if (row.material == null) { e['material'] = 'Select material on every row'; break; }
+          if (row.material?['id'] == -1 && row.customCtrl.text.trim().isEmpty) { e['material'] = 'Enter name for "Other" rows'; break; }
+          final q = double.tryParse(row.qtyCtrl.text.trim());
+          if (q == null || q <= 0) { e['material'] = 'Quantity must be greater than zero'; break; }
+          if (row.unit == null) { e['material'] = 'Select a unit on every row'; break; }
+        }
+      }
+    } else {
+      if (_selectedMaterial == null) e['material'] = 'Select material type';
+      if (_selectedMaterial?['id'] == -1 &&
+          _customMaterialCtrl.text.trim().isEmpty) {
+        e['material'] = 'Enter material name';
+      }
     }
     final w = double.tryParse(_weightCtrl.text.trim());
     if (w == null || w <= 0) e['weight'] = 'Enter a valid weight';
@@ -347,7 +422,11 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
     try {
       final body = <String, dynamic>{
         'clientId': _selectedClient!['id'],
+        if (_selectedConsignor != null) 'consignorClientId': _selectedConsignor!['id'],
+        if (_selectedConsignee != null) 'consigneeClientId': _selectedConsignee!['id'],
+        if (_selectedBillingClient != null) 'billingPartyClientId': _selectedBillingClient!['id'],
         'totalWeight': double.parse(_weightCtrl.text.trim()),
+        if (_selectedUnit != null) 'unitId': _selectedUnit!['id'],
         'sourceStateId': _srcState!['id'],
         'sourceCityId': _srcCity!['id'],
         'destinationStateId': _dstState!['id'],
@@ -356,7 +435,18 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
         'freightRate': double.parse(_freightRateCtrl.text.trim()),
       };
 
-      if (_selectedMaterial?['id'] == -1) {
+      if (_multiMaterial) {
+        body['isMultiMaterial'] = true;
+        body['items'] = _items.map((row) {
+          final isOther = row.material?['id'] == -1;
+          return <String, dynamic>{
+            if (!isOther) 'materialTypeId': row.material?['id'],
+            if (isOther) 'customMaterialName': row.customCtrl.text.trim(),
+            'quantity': double.parse(row.qtyCtrl.text.trim()),
+            'unitId': row.unit?['id'],
+          };
+        }).toList();
+      } else if (_selectedMaterial?['id'] == -1) {
         body['customMaterialName'] = _customMaterialCtrl.text.trim();
       } else if (_selectedMaterial != null) {
         body['materialTypeId'] = _selectedMaterial!['id'];
@@ -487,28 +577,65 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
             errorText: _errors['client'],
           ),
     const SizedBox(height: 12),
-    _isLoadingMaterials
-        ? const _FieldShimmer()
-        : FerosSelectField<Map<String, dynamic>>(
-            label: 'Material Type *',
-            title: 'Select Material',
-            hint: 'Search material...',
-            items: _materials,
-            itemLabel: (m) => m['name'] as String? ?? '',
-            selectedDisplay: _selectedMaterial?['name'] as String?,
-            onSelected: (m) => setState(() => _selectedMaterial = m),
-            errorText: _errors['material'],
-          ),
-    if (_selectedMaterial?['id'] == -1) ...[
-      const SizedBox(height: 12),
-      _LabelledField(
-        label: 'Custom Material Name *',
-        child: _buildTextField(_customMaterialCtrl, 'Enter material name'),
+    if (!_isLoadingClients) ...[
+      FerosSelectField<Map<String, dynamic>>(
+        label: 'Consignor (Sender)',
+        title: 'Select Consignor',
+        hint: 'Search client...',
+        items: _clients,
+        itemLabel: (c) => c['clientName'] as String? ?? '',
+        selectedDisplay: _selectedConsignor?['clientName'] as String?,
+        onSelected: (c) => setState(() => _selectedConsignor = c),
       ),
+      const SizedBox(height: 12),
+      FerosSelectField<Map<String, dynamic>>(
+        label: 'Consignee (Receiver)',
+        title: 'Select Consignee',
+        hint: 'Search client...',
+        items: _clients,
+        itemLabel: (c) => c['clientName'] as String? ?? '',
+        selectedDisplay: _selectedConsignee?['clientName'] as String?,
+        onSelected: (c) => setState(() => _selectedConsignee = c),
+      ),
+      const SizedBox(height: 12),
+      FerosSelectField<Map<String, dynamic>>(
+        label: 'Billing Client (defaults to client)',
+        title: 'Select Billing Client',
+        hint: 'Search client...',
+        items: _clients,
+        itemLabel: (c) => c['clientName'] as String? ?? '',
+        selectedDisplay: _selectedBillingClient?['clientName'] as String?,
+        onSelected: (c) => setState(() => _selectedBillingClient = c),
+      ),
+      const SizedBox(height: 12),
     ],
+    _buildMultiToggle(),
+    const SizedBox(height: 12),
+    if (!_multiMaterial) ...[
+      _isLoadingMaterials
+          ? const _FieldShimmer()
+          : FerosSelectField<Map<String, dynamic>>(
+              label: 'Material Type *',
+              title: 'Select Material',
+              hint: 'Search material...',
+              items: _materials,
+              itemLabel: (m) => m['name'] as String? ?? '',
+              selectedDisplay: _selectedMaterial?['name'] as String?,
+              onSelected: (m) => setState(() => _selectedMaterial = m),
+              errorText: _errors['material'],
+            ),
+      if (_selectedMaterial?['id'] == -1) ...[
+        const SizedBox(height: 12),
+        _LabelledField(
+          label: 'Custom Material Name *',
+          child: _buildTextField(_customMaterialCtrl, 'Enter material name'),
+        ),
+      ],
+    ] else
+      ..._buildManifestRows(),
     const SizedBox(height: 12),
     _LabelledField(
-      label: 'Total Weight (tons) *',
+      label: 'Quantity *',
       child: TextField(
         controller: _weightCtrl,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -519,6 +646,17 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
         decoration: _inputDecoration('e.g. 10.5', errorText: _errors['weight']),
       ),
     ),
+    const SizedBox(height: 12),
+    if (!_isLoadingForm)
+      FerosSelectField<Map<String, dynamic>>(
+        label: 'Unit *',
+        title: 'Select Unit',
+        hint: 'Search unit...',
+        items: _units,
+        itemLabel: (u) => u['name'] as String? ?? '',
+        selectedDisplay: _selectedUnit?['name'] as String?,
+        onSelected: (u) => setState(() => _selectedUnit = u),
+      ),
     const SizedBox(height: 12),
     _LabelledField(
       label: 'Order Date',
@@ -538,6 +676,129 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
       ),
     ),
   ];
+
+  // ── Multi-material toggle + manifest rows ──────────────────────────────────
+  Widget _buildMultiToggle() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text('Multiple materials (cargo manifest)', style: AppTextStyles.label),
+          ),
+          Switch(
+            value: _multiMaterial,
+            activeColor: AppColors.orange,
+            onChanged: (v) => setState(() {
+              _multiMaterial = v;
+              if (v && _items.isEmpty) _items.add(_ManifestRow());
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildManifestRows() {
+    final widgets = <Widget>[];
+    if (_errors['material'] != null) {
+      widgets.add(Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(_errors['material']!,
+            style: AppTextStyles.caption.copyWith(color: AppColors.error)),
+      ));
+    }
+    for (var i = 0; i < _items.length; i++) {
+      final row = _items[i];
+      final isOther = row.material?['id'] == -1;
+      widgets.add(Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text('Material ${i + 1}',
+                    style: AppTextStyles.caption.copyWith(
+                        color: AppColors.mutedText, fontWeight: FontWeight.w600)),
+                const Spacer(),
+                if (_items.length > 1)
+                  GestureDetector(
+                    onTap: () => setState(() => _items.removeAt(i).dispose()),
+                    child: const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            FerosSelectField<Map<String, dynamic>>(
+              label: 'Material *',
+              title: 'Select Material',
+              hint: 'Search material...',
+              items: _materials,
+              itemLabel: (m) => m['name'] as String? ?? '',
+              selectedDisplay: row.material?['name'] as String?,
+              onSelected: (m) => setState(() => row.material = m),
+            ),
+            if (isOther) ...[
+              const SizedBox(height: 8),
+              _buildTextField(row.customCtrl, 'Enter material name'),
+            ],
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _LabelledField(
+                    label: 'Quantity *',
+                    child: TextField(
+                      controller: row.qtyCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
+                      style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
+                      decoration: _inputDecoration('e.g. 100'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FerosSelectField<Map<String, dynamic>>(
+                    label: 'Unit *',
+                    title: 'Select Unit',
+                    hint: 'Unit',
+                    items: _units,
+                    itemLabel: (u) => u['name'] as String? ?? '',
+                    selectedDisplay: row.unit?['name'] as String?,
+                    onSelected: (u) => setState(() => row.unit = u),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ));
+    }
+    widgets.add(Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        onPressed: () => setState(() => _items.add(_ManifestRow())),
+        icon: const Icon(Icons.add, size: 18, color: AppColors.navy),
+        label: Text('Add Material',
+            style: AppTextStyles.body.copyWith(color: AppColors.navy, fontWeight: FontWeight.w600)),
+      ),
+    ));
+    return widgets;
+  }
 
   List<Widget> _buildSource() => [
     _isLoadingStates
@@ -734,6 +995,19 @@ class _OfficeOrderFormViewState extends State<OfficeOrderFormView> {
       style: AppTextStyles.body.copyWith(color: AppColors.bodyText),
       decoration: _inputDecoration(hint, errorText: errorText),
     );
+  }
+}
+
+// ── Manifest row (one cargo-manifest line) ───────────────────────────────────────
+class _ManifestRow {
+  Map<String, dynamic>? material;
+  Map<String, dynamic>? unit;
+  final qtyCtrl = TextEditingController();
+  final customCtrl = TextEditingController();
+
+  void dispose() {
+    qtyCtrl.dispose();
+    customCtrl.dispose();
   }
 }
 
