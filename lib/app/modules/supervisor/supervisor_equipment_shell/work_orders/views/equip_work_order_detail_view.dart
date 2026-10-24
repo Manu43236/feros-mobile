@@ -321,7 +321,8 @@ class _MachineCard extends GetView<EquipWorkOrderDetailController> {
   @override
   Widget build(BuildContext context) {
     final assignmentId = assignment['id'] as int;
-    final serial       = assignment['serialNumber']      as String? ?? '—';
+    final serial       = assignment['registrationNumber'] as String?
+        ?? assignment['serialNumber'] as String? ?? '—';
     final typeName     = assignment['equipmentTypeName'] as String? ?? '—';
     final makeName     = assignment['makeName']          as String? ?? '';
     final modelName    = assignment['modelName']         as String? ?? '';
