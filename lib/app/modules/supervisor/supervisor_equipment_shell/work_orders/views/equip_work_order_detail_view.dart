@@ -135,17 +135,45 @@ class EquipWorkOrderDetailView
     );
   }
   void _showStartSheet(BuildContext context, Map<String, dynamic> assignment) {
-    final id           = assignment['id'] as int;
-    final serial       = assignment['serialNumber'] as String? ?? '—';
-    final lastHmr      = assignment['lastLogEndHourMeter'];
-    final operatorType = assignment['operatorType'] as String? ?? 'OWN_STAFF';
-    final staffId      = assignment['operatorStaffId'] as int?;
-    final hiredName    = assignment['hiredOperatorName'] as String?;
+    final id        = assignment['id'] as int;
+    final serial    = assignment['serialNumber'] as String? ?? '—';
+    final lastHmr   = assignment['lastLogEndHourMeter'];
+    final rawOpType = assignment['operatorType'] as String?;
+    final staffId   = assignment['operatorStaffId'] as int?;
+    final hiredName = assignment['hiredOperatorName'] as String?;
 
-    final hmrCtrl = TextEditingController(
-      text: lastHmr != null ? lastHmr.toString() : '',
-    );
+    // Standing own-staff operator.
+    if (rawOpType == 'OWN_STAFF' && staffId != null) {
+      _openHmrStart(context, id, serial, lastHmr,
+          operatorType: 'OWN_STAFF', operatorStaffId: staffId);
+      return;
+    }
+    // Standing client's operator (name optional).
+    if (rawOpType == 'CLIENT_PROVIDED' || rawOpType == 'HIRED') {
+      _openHmrStart(context, id, serial, lastHmr,
+          operatorType: 'CLIENT_PROVIDED', hiredName: hiredName);
+      return;
+    }
+    // Shift-duty WO: derive the operator from the shift covering now (own staff, else client's).
+    final shiftDuty = assignment['shiftDuty'] as bool? ?? false;
+    if (shiftDuty) {
+      final shiftOp = controller.currentShiftOperator(id);
+      if (shiftOp != null && shiftOp['operatorStaffId'] != null) {
+        _openHmrStart(context, id, serial, lastHmr,
+            operatorType: 'OWN_STAFF', operatorStaffId: shiftOp['operatorStaffId'] as int?);
+      } else {
+        // Client's own operator or no assignment — CLIENT_PROVIDED, no staff ID needed.
+        _openHmrStart(context, id, serial, lastHmr, operatorType: 'CLIENT_PROVIDED');
+      }
+      return;
+    }
+    // No operator — the greyed Start button should prevent reaching here.
+    FerosSnackbar.error('Assign an operator before starting the session.');
+  }
 
+  void _openHmrStart(BuildContext context, int id, String serial, dynamic lastHmr,
+      {required String operatorType, int? operatorStaffId, String? hiredName}) {
+    final hmrCtrl = TextEditingController(text: lastHmr != null ? lastHmr.toString() : '');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -167,8 +195,9 @@ class EquipWorkOrderDetailView
             id,
             startMeter: meter,
             operatorType: operatorType,
-            operatorStaffId: operatorType == 'OWN_STAFF' ? staffId : null,
-            hiredOperatorName: operatorType == 'HIRED' ? hiredName : null,
+            operatorStaffId: operatorType == 'OWN_STAFF' ? operatorStaffId : null,
+            // Client's operator — name optional, no payroll.
+            hiredOperatorName: operatorType != 'OWN_STAFF' ? hiredName : null,
           );
           if (ok && context.mounted) Navigator.pop(context);
         },
@@ -328,10 +357,16 @@ class _MachineCard extends GetView<EquipWorkOrderDetailController> {
     final modelName    = assignment['modelName']         as String? ?? '';
     final workStatus   = assignment['machineWorkStatus'] as String? ?? '';
     final divisionName = assignment['divisionName']      as String?;
+    final rawOpType    = assignment['operatorType'] as String?;
     final operatorName = (assignment['operatorStaffName'] as String?)
-        ?? (assignment['hiredOperatorName'] as String?);
+        ?? (assignment['hiredOperatorName'] as String?)
+        ?? ((rawOpType == 'CLIENT_PROVIDED' || rawOpType == 'HIRED') ? "Client's operator" : null);
+    final cleanerName = (assignment['cleanerStaffName'] as String?)
+        ?? (assignment['clientCleanerName'] as String?);
     final lastHmr      = assignment['lastLogEndHourMeter'];
     final activeEntry  = assignment['activeWorkEntry'];
+    final shiftDuty    = (controller.wo.value?['shiftDuty'] as bool?) ?? false;
+    final shifts       = ((controller.wo.value?['shifts'] as List?) ?? []).cast<Map<String, dynamic>>();
     final isActive     = activeEntry != null;
 
     return Container(
@@ -378,46 +413,91 @@ class _MachineCard extends GetView<EquipWorkOrderDetailController> {
               style: AppTextStyles.body.copyWith(color: AppColors.mutedText),
             ),
             const SizedBox(height: 10),
-            // Operator + division row
-            Row(
-              children: [
-                if (operatorName != null) ...[
-                  const Icon(Icons.person_outline,
-                      size: 13, color: AppColors.mutedText),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      operatorName,
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.bodyText),
-                      overflow: TextOverflow.ellipsis,
+            // Shift-duty WOs carry crew per shift (not on the assignment) — show that roster,
+            // so the card matches the Manage Shifts sheet / web. Non-shift shows the standing crew.
+            if (shiftDuty)
+              _shiftCrewSummary(controller, assignmentId, shifts, divisionName)
+            else ...[
+              // Operator + division row
+              Row(
+                children: [
+                  if (operatorName != null) ...[
+                    const Icon(Icons.person_outline,
+                        size: 13, color: AppColors.mutedText),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        operatorName,
+                        style: AppTextStyles.caption
+                            .copyWith(color: AppColors.bodyText),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ] else
-                  const Expanded(
-                    child: Text('No operator assigned',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 12,
-                          color: AppColors.mutedText,
-                        )),
-                  ),
-                if (divisionName != null) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.infoLight,
-                      borderRadius: BorderRadius.circular(10),
+                  ] else
+                    const Expanded(
+                      child: Text('No operator assigned',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 12,
+                            color: AppColors.mutedText,
+                          )),
                     ),
-                    child: Text(
-                      divisionName,
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.info, fontSize: 11),
+                  if (divisionName != null) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.infoLight,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        divisionName,
+                        style: AppTextStyles.caption
+                            .copyWith(color: AppColors.info, fontSize: 11),
+                      ),
                     ),
-                  ),
+                  ],
                 ],
+              ),
+              if (cleanerName != null) ...[
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.cleaning_services_outlined,
+                        size: 13, color: AppColors.mutedText),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        cleanerName,
+                        style: AppTextStyles.caption
+                            .copyWith(color: AppColors.bodyText),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
+              children: [
+                // Shift-duty WOs assign crew per shift, not at machine level
+                if (shiftDuty)
+                  _crewLink('Manage Shifts', () =>
+                      _showShiftAssignSheet(context, controller, assignmentId, shifts))
+                else ...[
+                  _crewLink(operatorName != null ? 'Change Operator' : 'Assign Operator', () =>
+                      _showAssignOperatorSheet(context, controller, assignmentId,
+                          showRemove: operatorName != null)),
+                  _crewLink(cleanerName != null ? 'Change Cleaner' : 'Assign Cleaner', () =>
+                      _showAssignCleanerSheet(context, controller, assignmentId,
+                          showRemove: cleanerName != null)),
+                ],
+                _crewLink(divisionName != null ? 'Change Division' : 'Assign Division', () =>
+                    _showDivisionPicker(context, controller, assignmentId)),
               ],
             ),
             if (lastHmr != null) ...[
@@ -436,9 +516,49 @@ class _MachineCard extends GetView<EquipWorkOrderDetailController> {
               ),
             ],
             const SizedBox(height: 12),
-            // Session button
+            // Session button — supervisor starts on behalf of the operator
             Obx(() {
               final loading = controller.sessionLoading.value == assignmentId;
+              // A session can only start once an operator is assigned — standing operator,
+              // or (shift-duty) the operator on the shift covering now.
+              // Shift-duty: supervisor can always start — client's own or no operator assigned is fine.
+              final hasOperator = operatorName != null || shiftDuty;
+              // Not running and no operator → grey out Start and tell the supervisor to assign one.
+              if (!isActive && !hasOperator) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: null,
+                        icon: const Icon(Icons.play_circle_outline,
+                            size: 18, color: AppColors.mutedText),
+                        label: Text(
+                          'Start Session',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.mutedText,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                              color: AppColors.mutedText.withValues(alpha: 0.3)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Operator not assigned — assign an operator to start the session.',
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.warning, fontSize: 11),
+                    ),
+                  ],
+                );
+              }
               final btnColor =
                   isActive ? AppColors.error : AppColors.equipSidebar;
               return SizedBox(
@@ -816,4 +936,579 @@ class _HmrBottomSheet extends StatelessWidget {
       ),
     );
   }
+}
+
+// Chip-style button used inside the shift roster sheet (shows the picked name).
+Widget _crewChip(String label, IconData icon, VoidCallback onTap, {bool active = false}) {
+  return Expanded(
+    child: OutlinedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 15),
+      label: Text(label, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: active ? Colors.white : AppColors.equipSidebar,
+        backgroundColor: active ? AppColors.equipSidebar : null,
+        side: BorderSide(color: active ? AppColors.equipSidebar : const Color(0x33000000)),
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        minimumSize: const Size(0, 34),
+      ),
+    ),
+  );
+}
+
+// ── Crew assign link + picker (operator / cleaner / division) — lease pattern ───
+Widget _crewLink(String label, VoidCallback onTap) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Text(
+      label,
+      style: AppTextStyles.caption.copyWith(
+        color: AppColors.equipSidebar,
+        fontWeight: FontWeight.w600,
+        decoration: TextDecoration.underline,
+      ),
+    ),
+  );
+}
+
+void _showDivisionPicker(
+  BuildContext context,
+  EquipWorkOrderDetailController controller,
+  int assignmentId,
+) {
+  final divisions = controller.divisions;
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+    builder: (ctx) => Padding(
+      padding: EdgeInsets.only(left: 16, right: 16, top: 16,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Select Division', style: AppTextStyles.heading4),
+          const SizedBox(height: 10),
+          ListTile(
+            dense: true,
+            leading: const Icon(Icons.close, size: 20),
+            title: const Text('No division'),
+            onTap: () async { Navigator.pop(ctx); await controller.assignDivision(assignmentId, null); },
+          ),
+          if (divisions.isEmpty)
+            const Padding(padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: Text('No divisions for this client', style: TextStyle(color: AppColors.mutedText))))
+          else
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: divisions.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (_, i) {
+                  final d = divisions[i];
+                  return ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.location_city_outlined, size: 20),
+                    title: Text(d['name'] as String? ?? '—'),
+                    onTap: () async { Navigator.pop(ctx); await controller.assignDivision(assignmentId, d['id'] as int); },
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
+// Per-shift crew summary on a shift-duty machine card — reads today's roster reactively so
+// the card shows who's on each shift (own staff or the client's own), matching web.
+Widget _shiftCrewSummary(EquipWorkOrderDetailController controller, int assignmentId,
+    List<Map<String, dynamic>> shifts, String? divisionName) {
+  final today = DateTime.now().toIso8601String().split('T').first;
+  Map<String, dynamic>? todayRowFor(int sid) {
+    for (final r in controller.shiftToday) {
+      if (r['assignmentId'] == assignmentId && r['shiftId'] == sid && r['workDate'] == today) return r;
+    }
+    return null;
+  }
+  String opLabel(Map<String, dynamic>? row) {
+    if (row == null) return '—';
+    if (row['operatorStaffId'] != null) return row['operatorName'] as String? ?? 'Operator';
+    final n = row['clientOperatorName'] as String?;
+    return (n != null && n.isNotEmpty) ? '$n (Client)' : "Client's operator";
+  }
+  String? clLabel(Map<String, dynamic>? row) {
+    if (row == null) return null;
+    if (row['cleanerStaffId'] != null) return row['cleanerName'] as String? ?? 'Cleaner';
+    final n = row['clientCleanerName'] as String?;
+    return (n != null && n.isNotEmpty) ? '$n (Client)' : null;
+  }
+  String crewLine(Map<String, dynamic>? row) {
+    final cl = clLabel(row);
+    return '${opLabel(row)}${cl != null ? ' · Cleaner $cl' : ''}';
+  }
+  return Obx(() {
+    final cs = controller.currentShift(assignmentId);
+    final csShift = cs?['shift'] as Map<String, dynamic>?;
+    final csRow = cs?['row'] as Map<String, dynamic>?;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Current shift running now (overnight shifts resolve to yesterday in the early morning).
+        Row(children: [
+          const Icon(Icons.schedule, size: 13, color: AppColors.equipSidebar),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              csShift == null
+                  ? 'No active shift right now'
+                  : 'Now · Shift ${csShift['shiftNumber']}: ${crewLine(csRow)}',
+              style: AppTextStyles.caption
+                  .copyWith(color: AppColors.bodyText, fontWeight: FontWeight.w600),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (divisionName != null) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                  color: AppColors.infoLight, borderRadius: BorderRadius.circular(10)),
+              child: Text(divisionName,
+                  style: AppTextStyles.caption.copyWith(color: AppColors.info, fontSize: 11)),
+            ),
+          ],
+        ]),
+        const SizedBox(height: 6),
+        // Today's roster (all shifts) for context.
+        ...shifts.map((sh) {
+          final row = todayRowFor(sh['id'] as int);
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 2),
+            child: Text(
+              'Shift ${sh['shiftNumber']}: ${crewLine(row)}',
+              style: AppTextStyles.caption.copyWith(color: AppColors.mutedText, fontSize: 11),
+              overflow: TextOverflow.ellipsis,
+            ),
+          );
+        }),
+      ],
+    );
+  });
+}
+
+void _showShiftAssignSheet(
+  BuildContext context,
+  EquipWorkOrderDetailController controller,
+  int assignmentId,
+  List<Map<String, dynamic>> shifts,
+) {
+  final workDate = DateTime.now().toIso8601String().split('T').first;
+  // shiftId -> {opId?, opName?, opClient(bool), opClientName?, clId?, clName?, clClient(bool), clClientName?}
+  final sel = <int, Map<String, dynamic>>{};
+  // Text controllers for optional client names — keyed by "$shiftId-op" / "$shiftId-cl"
+  final nameCtrl = <String, TextEditingController>{};
+
+  // Pre-fill from today's saved roster so current crew (incl. client names) shows — like web.
+  // A saved row with no own-staff id = client's own (mirrors the web shift grid). The roster
+  // holds yesterday+today, so match this sheet's workDate (today).
+  for (final sh in shifts) {
+    final sid = sh['id'] as int;
+    Map<String, dynamic>? row;
+    for (final r in controller.shiftToday) {
+      if (r['assignmentId'] == assignmentId && r['shiftId'] == sid && r['workDate'] == workDate) { row = r; break; }
+    }
+    if (row == null) continue;
+    final opStaffId = row['operatorStaffId'] as int?;
+    final clStaffId = row['cleanerStaffId'] as int?;
+    sel[sid] = {
+      'opId': opStaffId, 'opName': row['operatorName'], 'opClient': opStaffId == null,
+      'clId': clStaffId, 'clName': row['cleanerName'], 'clClient': clStaffId == null,
+    };
+    if (opStaffId == null) {
+      nameCtrl['$sid-op'] = TextEditingController(text: row['clientOperatorName'] as String? ?? '');
+    }
+    if (clStaffId == null) {
+      nameCtrl['$sid-cl'] = TextEditingController(text: row['clientCleanerName'] as String? ?? '');
+    }
+  }
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+    builder: (ctx) => StatefulBuilder(builder: (ctx, setSheet) {
+      return SingleChildScrollView(
+        padding: EdgeInsets.only(
+            left: 16, right: 16, top: 16, bottom: MediaQuery.of(ctx).viewInsets.bottom + 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Shift Crew · $workDate', style: AppTextStyles.heading4),
+            const SizedBox(height: 4),
+            const Text('Assign operator & cleaner per shift for today.',
+                style: TextStyle(fontSize: 12, color: AppColors.mutedText)),
+            const SizedBox(height: 10),
+            if (shifts.isEmpty)
+              const Padding(padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Text('No shifts defined on this work order.',
+                      style: TextStyle(color: AppColors.mutedText)))
+            else
+              ...shifts.map((sh) {
+                final sid = sh['id'] as int;
+                final s = sel[sid] ?? {};
+                final opClient = s['opClient'] as bool? ?? false;
+                final clClient = s['clClient'] as bool? ?? false;
+                final opNameCtrl = nameCtrl.putIfAbsent('$sid-op', () => TextEditingController());
+                final clNameCtrl = nameCtrl.putIfAbsent('$sid-cl', () => TextEditingController());
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                      color: AppColors.background, borderRadius: BorderRadius.circular(10)),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text('Shift ${sh['shiftNumber']} · ${sh['startTime']}–${sh['endTime']}',
+                              style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600)),
+                        ),
+                        if (controller.shiftToday.any((r) => r['assignmentId'] == assignmentId
+                            && r['shiftId'] == sid && r['workDate'] == workDate))
+                          GestureDetector(
+                            onTap: () async {
+                              Navigator.pop(ctx);
+                              await controller.clearShift(assignmentId, sid, workDate);
+                            },
+                            child: Text('Clear',
+                                style: AppTextStyles.caption
+                                    .copyWith(color: AppColors.error, fontWeight: FontWeight.w600)),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Operator row
+                    Row(children: [
+                      _crewChip(
+                        opClient ? "Client's own" : (s['opName'] as String? ?? 'Operator'),
+                        Icons.person_add_alt,
+                        () => _showCrewPicker(ctx, controller, 'Select Operator', controller.operators,
+                            (uid) async {
+                          setSheet(() => sel[sid] = {...s, 'opId': uid, 'opClient': false,
+                              'opName': controller.operators.firstWhere((u) => u['id'] == uid)['name']});
+                          return true;
+                        }),
+                        active: s['opId'] != null,
+                      ),
+                      const SizedBox(width: 8),
+                      _crewChip("Client's own", Icons.business_center, () {
+                        setSheet(() {
+                          sel[sid] = {...s, 'opId': null, 'opName': null, 'opClient': !opClient};
+                          if (!opClient) opNameCtrl.clear();
+                        });
+                      }, active: opClient),
+                    ]),
+                    if (opClient) ...[
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: opNameCtrl,
+                        decoration: InputDecoration(
+                          hintText: 'Operator name (optional)',
+                          hintStyle: const TextStyle(fontSize: 12, color: AppColors.mutedText),
+                          isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+                        ),
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    // Cleaner row
+                    Row(children: [
+                      _crewChip(
+                        clClient ? "Client's own" : (s['clName'] as String? ?? 'Cleaner'),
+                        Icons.cleaning_services,
+                        () => _showCrewPicker(ctx, controller, 'Select Cleaner', controller.cleaners,
+                            (uid) async {
+                          setSheet(() => sel[sid] = {...s, 'clId': uid, 'clClient': false,
+                              'clName': controller.cleaners.firstWhere((u) => u['id'] == uid)['name']});
+                          return true;
+                        }),
+                        active: s['clId'] != null,
+                      ),
+                      const SizedBox(width: 8),
+                      _crewChip("Client's own", Icons.business_center, () {
+                        setSheet(() {
+                          sel[sid] = {...s, 'clId': null, 'clName': null, 'clClient': !clClient};
+                          if (!clClient) clNameCtrl.clear();
+                        });
+                      }, active: clClient),
+                    ]),
+                    if (clClient) ...[
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: clNameCtrl,
+                        decoration: InputDecoration(
+                          hintText: 'Cleaner name (optional)',
+                          hintStyle: const TextStyle(fontSize: 12, color: AppColors.mutedText),
+                          isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+                        ),
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    SizedBox(width: double.infinity, child: ElevatedButton(
+                      onPressed: (s['opId'] == null && !opClient && s['clId'] == null && !clClient) ? null : () async {
+                        Navigator.pop(ctx);
+                        await controller.assignShift(assignmentId,
+                            shiftId: sid, workDate: workDate,
+                            operatorStaffId: s['opId'] as int?,
+                            clientOperatorName: opClient ? opNameCtrl.text.trim() : null,
+                            cleanerStaffId: s['clId'] as int?,
+                            clientCleanerName: clClient ? clNameCtrl.text.trim() : null);
+                      },
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.equipSidebar, foregroundColor: Colors.white,
+                          minimumSize: const Size(0, 36)),
+                      child: const Text('Assign this shift', style: TextStyle(fontSize: 13)),
+                    )),
+                  ]),
+                );
+              }),
+          ],
+        ),
+      );
+    }),
+  );
+}
+
+// Operator assign chooser: our own staff, the client's own operator (name optional),
+// or remove the operator entirely (when one is assigned).
+void _showAssignOperatorSheet(
+    BuildContext context, EquipWorkOrderDetailController controller, int assignmentId,
+    {bool showRemove = false}) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+    builder: (ctx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 8),
+          ListTile(
+            leading: const Icon(Icons.badge_outlined, color: AppColors.equipSidebar),
+            title: const Text('Own Staff'),
+            subtitle: const Text('Assign one of our operators'),
+            onTap: () {
+              Navigator.pop(ctx);
+              _showCrewPicker(context, controller, 'Select Operator', controller.operators,
+                  (userId) => controller.assignOperator(assignmentId,
+                      operatorType: 'OWN_STAFF', operatorStaffId: userId, swap: false));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.person_pin_outlined, color: AppColors.equipSidebar),
+            title: const Text("Client's Operator"),
+            subtitle: const Text('Client runs the machine (name optional)'),
+            onTap: () {
+              Navigator.pop(ctx);
+              _showClientOperatorNameSheet(context, controller, assignmentId);
+            },
+          ),
+          if (showRemove)
+            ListTile(
+              leading: const Icon(Icons.person_remove_outlined, color: AppColors.error),
+              title: Text('Remove operator',
+                  style: AppTextStyles.body.copyWith(color: AppColors.error)),
+              subtitle: const Text('Leave the machine with no operator'),
+              onTap: () {
+                Navigator.pop(ctx);
+                controller.removeOperator(assignmentId);
+              },
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
+  );
+}
+
+// Cleaner assign chooser: our own staff, or remove the cleaner entirely.
+void _showAssignCleanerSheet(
+    BuildContext context, EquipWorkOrderDetailController controller, int assignmentId,
+    {bool showRemove = false}) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+    builder: (ctx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 8),
+          ListTile(
+            leading: const Icon(Icons.cleaning_services_outlined, color: AppColors.equipSidebar),
+            title: const Text('Own Staff'),
+            subtitle: const Text('Assign one of our cleaners'),
+            onTap: () {
+              Navigator.pop(ctx);
+              _showCrewPicker(context, controller, 'Select Cleaner', controller.cleaners,
+                  (userId) => controller.assignCleaner(assignmentId,
+                      cleanerStaffId: userId, swap: false));
+            },
+          ),
+          if (showRemove)
+            ListTile(
+              leading: const Icon(Icons.person_remove_outlined, color: AppColors.error),
+              title: Text('Remove cleaner',
+                  style: AppTextStyles.body.copyWith(color: AppColors.error)),
+              subtitle: const Text('Leave the machine with no cleaner'),
+              onTap: () {
+                Navigator.pop(ctx);
+                controller.removeCleaner(assignmentId);
+              },
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
+  );
+}
+
+void _showClientOperatorNameSheet(
+    BuildContext context, EquipWorkOrderDetailController controller, int assignmentId) {
+  final nameCtrl = TextEditingController();
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+    builder: (ctx) => Padding(
+      padding: EdgeInsets.only(
+          left: 16, right: 16, top: 16,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Client's Operator", style: AppTextStyles.heading4),
+          const SizedBox(height: 10),
+          TextField(
+            controller: nameCtrl,
+            textCapitalization: TextCapitalization.words,
+            decoration: InputDecoration(
+              hintText: 'Operator name (optional)',
+              isDense: true,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.equipSidebar,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              onPressed: () async {
+                final ok = await controller.assignOperator(assignmentId,
+                    operatorType: 'CLIENT_PROVIDED',
+                    hiredOperatorName: nameCtrl.text.trim(),
+                    swap: false);
+                if (ok && ctx.mounted) Navigator.pop(ctx);
+              },
+              child: const Text('Assign'),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+void _showCrewPicker(
+  BuildContext context,
+  EquipWorkOrderDetailController controller,
+  String title,
+  List<Map<String, dynamic>> staff,
+  Future<bool> Function(int userId) onPick,
+) {
+  final search = TextEditingController();
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+    builder: (ctx) {
+      return StatefulBuilder(builder: (ctx, setSheet) {
+        final q = search.text.trim().toLowerCase();
+        final list = q.isEmpty
+            ? staff
+            : staff.where((u) => (u['name'] as String? ?? '').toLowerCase().contains(q)).toList();
+        return Padding(
+          padding: EdgeInsets.only(
+              left: 16, right: 16, top: 16,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: AppTextStyles.heading4),
+              const SizedBox(height: 10),
+              TextField(
+                controller: search,
+                onChanged: (_) => setSheet(() {}),
+                decoration: InputDecoration(
+                  hintText: 'Search staff…',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  isDense: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (list.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(child: Text('No staff found', style: TextStyle(color: AppColors.mutedText))),
+                )
+              else
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: list.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (_, i) {
+                      final u = list[i];
+                      return ListTile(
+                        dense: true,
+                        leading: const Icon(Icons.person_outline, size: 20),
+                        title: Text(u['name'] as String? ?? '—'),
+                        onTap: () async {
+                          Navigator.pop(ctx);
+                          await onPick(u['id'] as int);
+                        },
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        );
+      });
+    },
+  );
 }

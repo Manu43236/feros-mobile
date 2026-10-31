@@ -301,6 +301,11 @@ class ApiEndpoints {
   static String equipWoStartSession(woId, aId)             => '/work-orders/$woId/machines/$aId/start';
   static String equipWoStopSession(woId, aId)              => '/work-orders/$woId/machines/$aId/stop';
   static String equipWoAssignDivision(woId, aId)           => '/work-orders/$woId/machines/$aId/division';
+  // Crew parity — persistent operator/cleaner assign + shift assign (mirror of leases)
+  static String equipWoAssignOperator(woId, aId)           => '/work-orders/$woId/machines/$aId/operator';
+  static String equipWoAssignCleaner(woId, aId)            => '/work-orders/$woId/machines/$aId/cleaner';
+  static String equipWoAssignShift(woId, aId)              => '/work-orders/$woId/machines/$aId/shift-assignments';
+  static String equipWoShiftAssignments(woId)              => '/work-orders/$woId/shift-assignments';
   static String equipBreakdowns(equipId)                   => '/equipment/$equipId/breakdowns';
 
   // Equipment Services (SM equipment console — parity with vehicle services)
