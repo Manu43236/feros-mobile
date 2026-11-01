@@ -275,15 +275,18 @@ class EquipWorkOrderDetailController extends GetxController {
   }
 
   Future<bool> assignShift(int assignmentId,
-      {required int shiftId, required String workDate, int? operatorStaffId, String? clientOperatorName, int? cleanerStaffId, String? clientCleanerName}) async {
+      {required int shiftId, required String workDate, int? operatorStaffId, bool clientOperator = false,
+      String? clientOperatorName, int? cleanerStaffId, bool clientCleaner = false, String? clientCleanerName}) async {
     sessionLoading.value = assignmentId;
     try {
       await _api.put(ApiEndpoints.equipWoAssignShift(woId, assignmentId), data: {
         'shiftId': shiftId,
         'workDate': workDate,
         if (operatorStaffId != null) 'operatorStaffId': operatorStaffId,
+        'clientOperator': clientOperator,
         if (clientOperatorName != null && clientOperatorName.isNotEmpty) 'clientOperatorName': clientOperatorName,
         if (cleanerStaffId != null) 'cleanerStaffId': cleanerStaffId,
+        'clientCleaner': clientCleaner,
         if (clientCleanerName != null && clientCleanerName.isNotEmpty) 'clientCleanerName': clientCleanerName,
       });
       FerosSnackbar.success('Shift crew assigned');

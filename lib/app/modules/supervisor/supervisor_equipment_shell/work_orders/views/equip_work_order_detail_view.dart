@@ -1038,14 +1038,20 @@ Widget _shiftCrewSummary(EquipWorkOrderDetailController controller, int assignme
   String opLabel(Map<String, dynamic>? row) {
     if (row == null) return '—';
     if (row['operatorStaffId'] != null) return row['operatorName'] as String? ?? 'Operator';
-    final n = row['clientOperatorName'] as String?;
-    return (n != null && n.isNotEmpty) ? '$n (Client)' : "Client's operator";
+    if (row['clientOperator'] == true) {
+      final n = row['clientOperatorName'] as String?;
+      return (n != null && n.isNotEmpty) ? '$n (Client)' : "Client's operator";
+    }
+    return '—';
   }
   String? clLabel(Map<String, dynamic>? row) {
     if (row == null) return null;
     if (row['cleanerStaffId'] != null) return row['cleanerName'] as String? ?? 'Cleaner';
-    final n = row['clientCleanerName'] as String?;
-    return (n != null && n.isNotEmpty) ? '$n (Client)' : null;
+    if (row['clientCleaner'] == true) {
+      final n = row['clientCleanerName'] as String?;
+      return (n != null && n.isNotEmpty) ? '$n (Client)' : "Client's cleaner";
+    }
+    return null;
   }
   String crewLine(Map<String, dynamic>? row) {
     final cl = clLabel(row);
@@ -1125,14 +1131,16 @@ void _showShiftAssignSheet(
     if (row == null) continue;
     final opStaffId = row['operatorStaffId'] as int?;
     final clStaffId = row['cleanerStaffId'] as int?;
+    final opClient = row['clientOperator'] == true;
+    final clClient = row['clientCleaner'] == true;
     sel[sid] = {
-      'opId': opStaffId, 'opName': row['operatorName'], 'opClient': opStaffId == null,
-      'clId': clStaffId, 'clName': row['cleanerName'], 'clClient': clStaffId == null,
+      'opId': opStaffId, 'opName': row['operatorName'], 'opClient': opClient,
+      'clId': clStaffId, 'clName': row['cleanerName'], 'clClient': clClient,
     };
-    if (opStaffId == null) {
+    if (opClient) {
       nameCtrl['$sid-op'] = TextEditingController(text: row['clientOperatorName'] as String? ?? '');
     }
-    if (clStaffId == null) {
+    if (clClient) {
       nameCtrl['$sid-cl'] = TextEditingController(text: row['clientCleanerName'] as String? ?? '');
     }
   }
@@ -1214,6 +1222,26 @@ void _showShiftAssignSheet(
                           if (!opClient) opNameCtrl.clear();
                         });
                       }, active: opClient),
+                      if (s['opId'] != null || opClient) ...[
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () {
+                            setSheet(() => sel[sid] = {...s, 'opId': null, 'opName': null, 'opClient': false});
+                            opNameCtrl.clear();
+                            final clId = s['clId'] as int?;
+                            final clClient = s['clClient'] as bool? ?? false;
+                            if (clId == null && !clClient) {
+                              controller.clearShift(assignmentId, sid, workDate);
+                            } else {
+                              controller.assignShift(assignmentId, shiftId: sid, workDate: workDate,
+                                  operatorStaffId: null, clientOperator: false,
+                                  cleanerStaffId: clId, clientCleaner: clClient,
+                                  clientCleanerName: clClient ? clNameCtrl.text.trim() : null);
+                            }
+                          },
+                          child: const Icon(Icons.close, size: 16, color: AppColors.error),
+                        ),
+                      ],
                     ]),
                     if (opClient) ...[
                       const SizedBox(height: 6),
@@ -1249,6 +1277,26 @@ void _showShiftAssignSheet(
                           if (!clClient) clNameCtrl.clear();
                         });
                       }, active: clClient),
+                      if (s['clId'] != null || clClient) ...[
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () {
+                            setSheet(() => sel[sid] = {...s, 'clId': null, 'clName': null, 'clClient': false});
+                            clNameCtrl.clear();
+                            final opId = s['opId'] as int?;
+                            final opClientNow = s['opClient'] as bool? ?? false;
+                            if (opId == null && !opClientNow) {
+                              controller.clearShift(assignmentId, sid, workDate);
+                            } else {
+                              controller.assignShift(assignmentId, shiftId: sid, workDate: workDate,
+                                  operatorStaffId: opId, clientOperator: opClientNow,
+                                  clientOperatorName: opClientNow ? opNameCtrl.text.trim() : null,
+                                  cleanerStaffId: null, clientCleaner: false);
+                            }
+                          },
+                          child: const Icon(Icons.close, size: 16, color: AppColors.error),
+                        ),
+                      ],
                     ]),
                     if (clClient) ...[
                       const SizedBox(height: 6),
@@ -1270,8 +1318,10 @@ void _showShiftAssignSheet(
                         await controller.assignShift(assignmentId,
                             shiftId: sid, workDate: workDate,
                             operatorStaffId: s['opId'] as int?,
+                            clientOperator: opClient,
                             clientOperatorName: opClient ? opNameCtrl.text.trim() : null,
                             cleanerStaffId: s['clId'] as int?,
+                            clientCleaner: clClient,
                             clientCleanerName: clClient ? clNameCtrl.text.trim() : null);
                       },
                       style: ElevatedButton.styleFrom(
