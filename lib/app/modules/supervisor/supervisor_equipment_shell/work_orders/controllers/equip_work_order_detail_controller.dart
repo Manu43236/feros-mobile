@@ -353,6 +353,27 @@ class EquipWorkOrderDetailController extends GetxController {
     }
   }
 
+  // ── Report breakdown (same standalone endpoint as the breakdown tab) ─────────
+  Future<bool> reportBreakdown(int assignmentId, int equipmentId,
+      {required String reason, String? location, String? notes}) async {
+    sessionLoading.value = assignmentId;
+    try {
+      await _api.post(ApiEndpoints.equipBreakdowns(equipmentId), data: {
+        'reason': reason,
+        if (location != null && location.isNotEmpty) 'location': location,
+        if (notes != null && notes.isNotEmpty) 'notes': notes,
+      });
+      FerosSnackbar.success('Breakdown reported');
+      await fetchDetail();
+      return true;
+    } catch (e) {
+      FerosSnackbar.error(_errMsg(e) ?? 'Failed to report breakdown');
+      return false;
+    } finally {
+      sessionLoading.value = null;
+    }
+  }
+
   // ── Add daily log ──────────────────────────────────────────────────────────
   Future<bool> addLog(Map<String, dynamic> body) async {
     isAddingLog.value = true;

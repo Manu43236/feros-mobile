@@ -82,7 +82,7 @@ class EquipBreakdownView extends GetView<EquipBreakdownController> {
                       border: Border.all(color: AppColors.border),
                     ),
                     child: Text(
-                      'No active machines found.\nMachines appear when a work order is IN_PROGRESS.',
+                      'No active machines found.',
                       style: AppTextStyles.body
                           .copyWith(color: AppColors.mutedText),
                       textAlign: TextAlign.center,

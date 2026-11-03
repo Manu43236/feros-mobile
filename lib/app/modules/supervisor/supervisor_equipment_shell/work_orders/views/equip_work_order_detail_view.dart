@@ -120,6 +120,9 @@ class EquipWorkOrderDetailView
                     else
                       ...assignments.map((a) => _MachineCard(
                             assignment: a,
+                            // Crew edits + session start only make sense on live WOs — not drafts or terminal states.
+                            crewEditable: !const ['DRAFT', 'COMPLETED', 'CANCELLED']
+                                .contains(wo['status'] as String? ?? ''),
                             onStart: (ctx) => _showStartSheet(ctx, a),
                             onStop: (ctx) => _showStopSheet(ctx, a),
                           )),
@@ -339,10 +342,12 @@ class _WoHeaderCard extends StatelessWidget {
 // ── Machine Card ──────────────────────────────────────────────────────────────
 class _MachineCard extends GetView<EquipWorkOrderDetailController> {
   final Map<String, dynamic> assignment;
+  final bool crewEditable;
   final void Function(BuildContext) onStart;
   final void Function(BuildContext) onStop;
   const _MachineCard({
     required this.assignment,
+    required this.crewEditable,
     required this.onStart,
     required this.onStop,
   });
@@ -350,6 +355,7 @@ class _MachineCard extends GetView<EquipWorkOrderDetailController> {
   @override
   Widget build(BuildContext context) {
     final assignmentId = assignment['id'] as int;
+    final equipmentId  = assignment['equipmentId'] as int?;
     final serial       = assignment['registrationNumber'] as String?
         ?? assignment['serialNumber'] as String? ?? '—';
     final typeName     = assignment['equipmentTypeName'] as String? ?? '—';
@@ -479,27 +485,33 @@ class _MachineCard extends GetView<EquipWorkOrderDetailController> {
                 ),
               ],
             ],
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 16,
-              runSpacing: 8,
-              children: [
-                // Shift-duty WOs assign crew per shift, not at machine level
-                if (shiftDuty)
-                  _crewLink('Manage Shifts', () =>
-                      _showShiftAssignSheet(context, controller, assignmentId, shifts))
-                else ...[
-                  _crewLink(operatorName != null ? 'Change Operator' : 'Assign Operator', () =>
-                      _showAssignOperatorSheet(context, controller, assignmentId,
-                          showRemove: operatorName != null)),
-                  _crewLink(cleanerName != null ? 'Change Cleaner' : 'Assign Cleaner', () =>
-                      _showAssignCleanerSheet(context, controller, assignmentId,
-                          showRemove: cleanerName != null)),
+            if (crewEditable) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 16,
+                runSpacing: 8,
+                children: [
+                  // Shift-duty WOs assign crew per shift, not at machine level
+                  if (shiftDuty)
+                    _crewLink('Manage Shifts', () =>
+                        _showShiftAssignSheet(context, controller, assignmentId, shifts))
+                  else ...[
+                    _crewLink(operatorName != null ? 'Change Operator' : 'Assign Operator', () =>
+                        _showAssignOperatorSheet(context, controller, assignmentId,
+                            showRemove: operatorName != null)),
+                    _crewLink(cleanerName != null ? 'Change Cleaner' : 'Assign Cleaner', () =>
+                        _showAssignCleanerSheet(context, controller, assignmentId,
+                            showRemove: cleanerName != null)),
+                  ],
+                  _crewLink(divisionName != null ? 'Change Division' : 'Assign Division', () =>
+                      _showDivisionPicker(context, controller, assignmentId)),
+                  if (equipmentId != null && workStatus != 'BREAKDOWN')
+                    _crewLink('Report Breakdown', () =>
+                        _showReportBreakdownSheet(context, controller, assignmentId, equipmentId),
+                        color: AppColors.error),
                 ],
-                _crewLink(divisionName != null ? 'Change Division' : 'Assign Division', () =>
-                    _showDivisionPicker(context, controller, assignmentId)),
-              ],
-            ),
+              ),
+            ],
             if (lastHmr != null) ...[
               const SizedBox(height: 6),
               Row(
@@ -515,6 +527,7 @@ class _MachineCard extends GetView<EquipWorkOrderDetailController> {
                 ],
               ),
             ],
+            if (crewEditable) ...[
             const SizedBox(height: 12),
             // Session button — supervisor starts on behalf of the operator
             Obx(() {
@@ -602,6 +615,7 @@ class _MachineCard extends GetView<EquipWorkOrderDetailController> {
                 ),
               );
             }),
+            ],
           ],
         ),
       ),
@@ -957,13 +971,13 @@ Widget _crewChip(String label, IconData icon, VoidCallback onTap, {bool active =
 }
 
 // ── Crew assign link + picker (operator / cleaner / division) — lease pattern ───
-Widget _crewLink(String label, VoidCallback onTap) {
+Widget _crewLink(String label, VoidCallback onTap, {Color color = AppColors.equipSidebar}) {
   return GestureDetector(
     onTap: onTap,
     child: Text(
       label,
       style: AppTextStyles.caption.copyWith(
-        color: AppColors.equipSidebar,
+        color: color,
         fontWeight: FontWeight.w600,
         decoration: TextDecoration.underline,
       ),
@@ -1018,6 +1032,77 @@ void _showDivisionPicker(
                 },
               ),
             ),
+        ],
+      ),
+    ),
+  );
+}
+
+void _showReportBreakdownSheet(
+  BuildContext context,
+  EquipWorkOrderDetailController controller,
+  int assignmentId,
+  int equipmentId,
+) {
+  final reasonCtrl   = TextEditingController();
+  final locationCtrl = TextEditingController();
+  final notesCtrl    = TextEditingController();
+
+  InputDecoration decor(String hint) => InputDecoration(
+        hintText: hint,
+        hintStyle: AppTextStyles.body.copyWith(color: AppColors.hintText),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      );
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+    builder: (ctx) => Padding(
+      padding: EdgeInsets.only(left: 16, right: 16, top: 16,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Report Breakdown', style: AppTextStyles.heading4),
+          const SizedBox(height: 12),
+          TextField(controller: reasonCtrl, maxLines: 3,
+              style: AppTextStyles.body, decoration: decor('Reason *')),
+          const SizedBox(height: 10),
+          TextField(controller: locationCtrl,
+              style: AppTextStyles.body, decoration: decor('Location (optional)')),
+          const SizedBox(height: 10),
+          TextField(controller: notesCtrl, maxLines: 2,
+              style: AppTextStyles.body, decoration: decor('Notes (optional)')),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () async {
+                final reason = reasonCtrl.text.trim();
+                if (reason.isEmpty) {
+                  FerosSnackbar.error('Reason is required');
+                  return;
+                }
+                Navigator.pop(ctx);
+                await controller.reportBreakdown(assignmentId, equipmentId,
+                    reason: reason,
+                    location: locationCtrl.text.trim(),
+                    notes: notesCtrl.text.trim());
+              },
+              child: Text('Report Breakdown',
+                  style: AppTextStyles.bodySemiBold.copyWith(color: Colors.white)),
+            ),
+          ),
         ],
       ),
     ),

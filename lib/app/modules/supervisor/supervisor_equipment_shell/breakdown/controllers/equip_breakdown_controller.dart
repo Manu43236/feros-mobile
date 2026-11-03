@@ -16,29 +16,20 @@ class EquipBreakdownController extends GetxController {
     _loadMachines();
   }
 
-  // ── Flatten machines from active work orders ──────────────────────────────
+  // ── All active machines (standalone — mirrors vehicle breakdown) ───────────
   Future<void> _loadMachines() async {
     try {
-      final res = await _api.get(
-        ApiEndpoints.equipWorkOrders,
-        params: {'page': '0', 'size': '100', 'status': 'IN_PROGRESS'},
-      );
-      final page = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? {};
-      final list = (page['content'] as List? ?? []).cast<Map<String, dynamic>>();
-
-      final seen = <int>{};
-      final result = <Map<String, dynamic>>[];
-      for (final wo in list) {
-        final assignments =
-            (wo['assignments'] as List? ?? []).cast<Map<String, dynamic>>();
-        for (final a in assignments) {
-          final eqId = a['equipmentId'] as int?;
-          if (eqId != null && seen.add(eqId)) {
-            result.add(a);
-          }
-        }
-      }
-      machines.assignAll(result);
+      final res  = await _api.get(ApiEndpoints.equipmentList);
+      final list = ((res.data as Map<String, dynamic>)['data'] as List? ?? [])
+          .cast<Map<String, dynamic>>();
+      machines.assignAll(list
+          .where((e) => e['isActive'] == true && e['workStatus'] != 'BREAKDOWN')
+          .map((e) => {
+                'equipmentId': e['id'],
+                'serialNumber': e['serialNumber'] ?? e['registrationNumber'],
+                'equipmentTypeName': e['equipmentTypeName'],
+              })
+          .toList());
     } catch (e) {
       debugPrint('[EquipBreakdown] load machines: $e');
     } finally {

@@ -306,6 +306,7 @@ class ApiEndpoints {
   static String equipWoAssignCleaner(woId, aId)            => '/work-orders/$woId/machines/$aId/cleaner';
   static String equipWoAssignShift(woId, aId)              => '/work-orders/$woId/machines/$aId/shift-assignments';
   static String equipWoShiftAssignments(woId)              => '/work-orders/$woId/shift-assignments';
+  static const equipmentList                               = '/equipment';
   static String equipBreakdowns(equipId)                   => '/equipment/$equipId/breakdowns';
 
   // Equipment Services (SM equipment console — parity with vehicle services)
