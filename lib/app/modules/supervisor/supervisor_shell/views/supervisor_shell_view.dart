@@ -32,6 +32,8 @@ import '../../supervisor_assignments/views/supervisor_assignments_view.dart';
 import '../../supervisor_assignments/bindings/supervisor_assignments_binding.dart';
 import '../../supervisor_fuel_log/views/supervisor_fuel_log_view.dart';
 import '../../supervisor_fuel_log/bindings/supervisor_fuel_log_binding.dart';
+import '../../supervisor_def_requests/views/supervisor_def_requests_view.dart';
+import '../../supervisor_def_requests/bindings/supervisor_def_requests_binding.dart';
 import '../../../vehicle_leases/views/vehicle_leases_view.dart';
 import '../../../vehicle_leases/bindings/vehicle_leases_binding.dart';
 import '../../supervisor_meter_reading/views/supervisor_meter_reading_view.dart';
@@ -453,6 +455,18 @@ class _SupervisorDrawer extends StatelessWidget {
                     Get.to(
                       () => const SupervisorFuelLogView(),
                       binding: SupervisorFuelLogBinding(),
+                      transition: Transition.cupertino,
+                    );
+                  },
+                ),
+                _DrawerTile(
+                  icon: Icons.local_drink_outlined,
+                  label: 'DEF Requests',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Get.to(
+                      () => const SupervisorDefRequestsView(),
+                      binding: SupervisorDefRequestsBinding(),
                       transition: Transition.cupertino,
                     );
                   },

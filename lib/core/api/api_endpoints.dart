@@ -170,6 +170,10 @@ class ApiEndpoints {
   static String approveServicePart(id)    => '/inventory/service-parts/$id/approve';
   static String removeServicePart(id)     => '/inventory/service-parts/$id';
 
+  // Consumable (DEF/AdBlue) issue requests — supervisor creates, store-keeper issues
+  static const consumableRequests         = '/consumable-requests';
+  static const consumableRequestsMy       = '/consumable-requests/my';
+
   // Masters — Tenant
   static const routes          = '/masters/tenant/routes';
   static const designations    = '/masters/tenant/designations';
